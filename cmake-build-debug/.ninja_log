@@ -1,0 +1,20 @@
+# ninja log v5
+10	5040	1678086305146300723	CMakeFiles/VulkanDemo.dir/vk.cpp.o	d814b48d3db76005
+15	2418	1678023103619009183	CMakeFiles/VulkanDemo.dir/Buffer.cpp.o	4989451a0e50b804
+16	2303	1678023103473026510	CMakeFiles/VulkanDemo.dir/PipelineBase.cpp.o	c0cd87d3e04b351f
+480	583	1678086406764077170	VulkanDemo	dfba0601fda15d17
+16	2302	1678023103497029024	CMakeFiles/VulkanDemo.dir/FrameBuffer.cpp.o	1db1afb75c82ee78
+6	480	1678086406663398695	CMakeFiles/VulkanDemo.dir/Queue.cpp.o	d56df2e91fa73c4e
+26	1944	1678023284047614456	CMakeFiles/VulkanDemo.dir/Device.cpp.o	84595bff0304e39b
+3733	4313	1678000618395716000	ext/VulkanMemoryAllocator/src/libVulkanMemoryAllocatord.a	26806b0fc15cff0e
+17	3732	1678000617799467747	ext/VulkanMemoryAllocator/src/CMakeFiles/VulkanMemoryAllocator.dir/VmaUsage.cpp.o	f857a0e4ae533df3
+6	666	1678069262776183031	CMakeFiles/VulkanDemo.dir/ext/stb_image/stb_image.c.o	fe5d0b6f7ab6f5e8
+18	2665	1678023284127475531	CMakeFiles/VulkanDemo.dir/Descriptor/DescriptorPool.cpp.o	21c6211f608f22d5
+13	406	1678086373806604223	CMakeFiles/VulkanDemo.dir/Command/CommandPool.cpp.o	f3d445dd1fa7a3d9
+22	1312	1678074079603539094	CMakeFiles/VulkanDemo.dir/Image.cpp.o	c809838c35063fa0
+18	2326	1678023103472182988	CMakeFiles/VulkanDemo.dir/RenderPass.cpp.o	8d8b05cc7b4e3d4f
+12	849	1678074175095108522	CMakeFiles/VulkanDemo.dir/CommandBuffer.cpp.o	e810dbc899a02431
+9	833	1678024754348989137	CMakeFiles/VulkanDemo.dir/Descriptor/DescriptorSet.cpp.o	3b5aecda4ee39e56
+12	724	1678086300853403899	CMakeFiles/VulkanDemo.dir/Sync/Fence.cpp.o	5c95b21dd684d4da
+0	124	1678090387790357852	build.ninja	e34a899e53bb5491
+4	805	1678024659246615085	CMakeFiles/VulkanDemo.dir/Descriptor/DescriptorLayout.cpp.o	1498d488e3ee8474

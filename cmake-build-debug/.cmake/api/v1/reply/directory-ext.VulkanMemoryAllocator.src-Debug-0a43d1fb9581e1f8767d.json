@@ -1,0 +1,113 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install",
+			"include"
+		],
+		"files" : 
+		[
+			"ext/VulkanMemoryAllocator/src/cmake/install_target.cmake",
+			"ext/VulkanMemoryAllocator/src/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 1
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 47,
+				"parent" : 0
+			},
+			{
+				"file" : 0,
+				"parent" : 1
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 5,
+				"parent" : 2
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 13,
+				"parent" : 2
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 16,
+				"parent" : 2
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 26,
+				"parent" : 2
+			}
+		]
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 3,
+			"component" : "Unspecified",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"ext/VulkanMemoryAllocator/src/libVulkanMemoryAllocatord.a"
+			],
+			"targetId" : "VulkanMemoryAllocator::@27d300c58d5abb4de11e",
+			"targetIndex" : 1,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 4,
+			"component" : "Unspecified",
+			"destination" : "include",
+			"paths" : 
+			[
+				"ext/VulkanMemoryAllocator/include/vk_mem_alloc.h"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 5,
+			"component" : "Unspecified",
+			"destination" : "lib/cmake/VulkanMemoryAllocator",
+			"exportName" : "VulkanMemoryAllocatorTargets",
+			"exportTargets" : 
+			[
+				{
+					"id" : "VulkanMemoryAllocator::@27d300c58d5abb4de11e",
+					"index" : 1
+				}
+			],
+			"paths" : 
+			[
+				"ext/VulkanMemoryAllocator/src/CMakeFiles/Export/lib/cmake/VulkanMemoryAllocator/VulkanMemoryAllocatorTargets.cmake"
+			],
+			"type" : "export"
+		},
+		{
+			"backtrace" : 6,
+			"component" : "Unspecified",
+			"destination" : "lib/cmake/VulkanMemoryAllocator",
+			"paths" : 
+			[
+				"cmake-build-debug/ext/VulkanMemoryAllocator/src/VulkanMemoryAllocatorConfig.cmake"
+			],
+			"type" : "file"
+		}
+	],
+	"paths" : 
+	{
+		"build" : "ext/VulkanMemoryAllocator/src",
+		"source" : "ext/VulkanMemoryAllocator/src"
+	}
+}

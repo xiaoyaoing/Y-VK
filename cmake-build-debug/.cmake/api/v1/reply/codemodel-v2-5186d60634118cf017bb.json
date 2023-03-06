@@ -1,0 +1,121 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-f5ebdc15457944623624.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.17"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"build" : "ext/VulkanMemoryAllocator",
+					"childIndexes" : 
+					[
+						2
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-ext.VulkanMemoryAllocator-Debug-ce8a61434ceda9fd6224.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.9"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "ext/VulkanMemoryAllocator"
+				},
+				{
+					"build" : "ext/VulkanMemoryAllocator/src",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-ext.VulkanMemoryAllocator.src-Debug-0a43d1fb9581e1f8767d.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.9"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 1,
+					"source" : "ext/VulkanMemoryAllocator/src",
+					"targetIndexes" : 
+					[
+						1
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "VulkanDemo",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						1,
+						2
+					],
+					"name" : "VulkanMemoryAllocator",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						1
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "VulkanDemo::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-VulkanDemo-Debug-c11d4617521c596e3f6c.json",
+					"name" : "VulkanDemo",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "VulkanMemoryAllocator::@27d300c58d5abb4de11e",
+					"jsonFile" : "target-VulkanMemoryAllocator-Debug-de2fad2bf4a804d946ae.json",
+					"name" : "VulkanMemoryAllocator",
+					"projectIndex" : 1
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/Users/yjp/nju/\u5927\u4e09\u4e0b/graphics/vulkan\u5b66\u4e60/vulkan/cmake-build-debug",
+		"source" : "/Users/yjp/nju/\u5927\u4e09\u4e0b/graphics/vulkan\u5b66\u4e60/vulkan"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 3
+	}
+}
