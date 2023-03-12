@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.5"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="viewport" content="width=deviceTTTT-width, initial-scale=1"/>
 <title>Vulkan Memory Allocator: Resource aliasing (overlap)</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
@@ -115,14 +115,14 @@ $(function() {
 <div class="line">img2CreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;</div>
 <div class="line"> </div>
 <div class="line">VkImage img1;</div>
-<div class="line">res = vkCreateImage(device, &amp;img1CreateInfo, <span class="keyword">nullptr</span>, &amp;img1);</div>
+<div class="line">res = vkCreateImage(deviceTTTT, &amp;img1CreateInfo, <span class="keyword">nullptr</span>, &amp;img1);</div>
 <div class="line">VkImage img2;</div>
-<div class="line">res = vkCreateImage(device, &amp;img2CreateInfo, <span class="keyword">nullptr</span>, &amp;img2);</div>
+<div class="line">res = vkCreateImage(deviceTTTT, &amp;img2CreateInfo, <span class="keyword">nullptr</span>, &amp;img2);</div>
 <div class="line"> </div>
 <div class="line">VkMemoryRequirements img1MemReq;</div>
-<div class="line">vkGetImageMemoryRequirements(device, img1, &amp;img1MemReq);</div>
+<div class="line">vkGetImageMemoryRequirements(deviceTTTT, img1, &amp;img1MemReq);</div>
 <div class="line">VkMemoryRequirements img2MemReq;</div>
-<div class="line">vkGetImageMemoryRequirements(device, img2, &amp;img2MemReq);</div>
+<div class="line">vkGetImageMemoryRequirements(deviceTTTT, img2, &amp;img2MemReq);</div>
 <div class="line"> </div>
 <div class="line">VkMemoryRequirements finalMemReq = {};</div>
 <div class="line">finalMemReq.size = std::max(img1MemReq.size, img2MemReq.size);</div>

@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.5"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="viewport" content="width=deviceTTTT-width, initial-scale=1"/>
 <title>Vulkan Memory Allocator: Memory allocation</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
@@ -247,10 +247,10 @@ Functions</h2></td></tr>
 <tr class="memdesc:ga088da83d8eaf3ce9056d9ea0b981d472"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helps to find memoryTypeIndex, given VkImageCreateInfo and <a class="el" href="struct_vma_allocation_create_info.html" title="Parameters of new VmaAllocation.">VmaAllocationCreateInfo</a>.  <a href="group__group__alloc.html#ga088da83d8eaf3ce9056d9ea0b981d472">More...</a><br /></td></tr>
 <tr class="separator:ga088da83d8eaf3ce9056d9ea0b981d472"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga5c8770ded7c59c8caac6de0c2cb00b50"><td class="memItemLeft" align="right" valign="top">VkResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__group__alloc.html#ga5c8770ded7c59c8caac6de0c2cb00b50">vmaCreatePool</a> (<a class="el" href="struct_vma_allocator.html">VmaAllocator</a> allocator, const <a class="el" href="struct_vma_pool_create_info.html">VmaPoolCreateInfo</a> *pCreateInfo, <a class="el" href="struct_vma_pool.html">VmaPool</a> *pPool)</td></tr>
-<tr class="memdesc:ga5c8770ded7c59c8caac6de0c2cb00b50"><td class="mdescLeft">&#160;</td><td class="mdescRight">Allocates Vulkan device memory and creates <a class="el" href="struct_vma_pool.html" title="Represents custom memory pool.">VmaPool</a> object.  <a href="group__group__alloc.html#ga5c8770ded7c59c8caac6de0c2cb00b50">More...</a><br /></td></tr>
+<tr class="memdesc:ga5c8770ded7c59c8caac6de0c2cb00b50"><td class="mdescLeft">&#160;</td><td class="mdescRight">Allocates Vulkan deviceTTTT memory and creates <a class="el" href="struct_vma_pool.html" title="Represents custom memory pool.">VmaPool</a> object.  <a href="group__group__alloc.html#ga5c8770ded7c59c8caac6de0c2cb00b50">More...</a><br /></td></tr>
 <tr class="separator:ga5c8770ded7c59c8caac6de0c2cb00b50"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga5485779c8f1948238fc4e92232fa65e1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__group__alloc.html#ga5485779c8f1948238fc4e92232fa65e1">vmaDestroyPool</a> (<a class="el" href="struct_vma_allocator.html">VmaAllocator</a> allocator, <a class="el" href="struct_vma_pool.html">VmaPool</a> pool)</td></tr>
-<tr class="memdesc:ga5485779c8f1948238fc4e92232fa65e1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroys <a class="el" href="struct_vma_pool.html" title="Represents custom memory pool.">VmaPool</a> object and frees Vulkan device memory.  <a href="group__group__alloc.html#ga5485779c8f1948238fc4e92232fa65e1">More...</a><br /></td></tr>
+<tr class="memdesc:ga5485779c8f1948238fc4e92232fa65e1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroys <a class="el" href="struct_vma_pool.html" title="Represents custom memory pool.">VmaPool</a> object and frees Vulkan deviceTTTT memory.  <a href="group__group__alloc.html#ga5485779c8f1948238fc4e92232fa65e1">More...</a><br /></td></tr>
 <tr class="separator:ga5485779c8f1948238fc4e92232fa65e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gad535935619c7a549bf837e1bb0068f89"><td class="memItemLeft" align="right" valign="top">VkResult&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__group__alloc.html#gad535935619c7a549bf837e1bb0068f89">vmaCheckPoolCorruption</a> (<a class="el" href="struct_vma_allocator.html">VmaAllocator</a> allocator, <a class="el" href="struct_vma_pool.html">VmaPool</a> pool)</td></tr>
 <tr class="memdesc:gad535935619c7a549bf837e1bb0068f89"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks magic number in margins around all allocations in given memory pool in search for corruptions.  <a href="group__group__alloc.html#gad535935619c7a549bf837e1bb0068f89">More...</a><br /></td></tr>
@@ -645,7 +645,7 @@ Functions</h2></td></tr>
 <tr><td class="fieldname"><a id="ggad9889c10c798b040d59c92f257cae597a2310568c62208af432724305fe29ccea" name="ggad9889c10c798b040d59c92f257cae597a2310568c62208af432724305fe29ccea"></a>VMA_ALLOCATION_CREATE_DONT_BIND_BIT&#160;</td><td class="fielddoc"><p >Create both buffer/image and allocation, but don't bind them together. It is useful when you want to bind yourself to do some more advanced binding, e.g. using some extensions. The flag is meaningful only with functions that bind by default: <a class="el" href="group__group__alloc.html#gac72ee55598617e8eecca384e746bab51" title="Creates a new VkBuffer, allocates and binds memory for it.">vmaCreateBuffer()</a>, <a class="el" href="group__group__alloc.html#ga02a94f25679275851a53e82eacbcfc73" title="Function similar to vmaCreateBuffer().">vmaCreateImage()</a>. Otherwise it is ignored.</p>
 <p >If you want to make sure the new buffer/image is not tied to the new memory allocation through <code>VkMemoryDedicatedAllocateInfoKHR</code> structure in case the allocation ends up in its own memory block, use also flag <a class="el" href="group__group__alloc.html#ggad9889c10c798b040d59c92f257cae597afb0ee060cd733aaa5e249704ff589ad6" title="Set this flag if the allocated memory will have aliasing resources.">VMA_ALLOCATION_CREATE_CAN_ALIAS_BIT</a>. </p>
 </td></tr>
-<tr><td class="fieldname"><a id="ggad9889c10c798b040d59c92f257cae597ab8b1764f3e9022368e440c057783b92d" name="ggad9889c10c798b040d59c92f257cae597ab8b1764f3e9022368e440c057783b92d"></a>VMA_ALLOCATION_CREATE_WITHIN_BUDGET_BIT&#160;</td><td class="fielddoc"><p >Create allocation only if additional device memory required for it, if any, won't exceed memory budget. Otherwise return <code>VK_ERROR_OUT_OF_DEVICE_MEMORY</code>. </p>
+<tr><td class="fieldname"><a id="ggad9889c10c798b040d59c92f257cae597ab8b1764f3e9022368e440c057783b92d" name="ggad9889c10c798b040d59c92f257cae597ab8b1764f3e9022368e440c057783b92d"></a>VMA_ALLOCATION_CREATE_WITHIN_BUDGET_BIT&#160;</td><td class="fielddoc"><p >Create allocation only if additional deviceTTTT memory required for it, if any, won't exceed memory budget. Otherwise return <code>VK_ERROR_OUT_OF_DEVICE_MEMORY</code>. </p>
 </td></tr>
 <tr><td class="fieldname"><a id="ggad9889c10c798b040d59c92f257cae597afb0ee060cd733aaa5e249704ff589ad6" name="ggad9889c10c798b040d59c92f257cae597afb0ee060cd733aaa5e249704ff589ad6"></a>VMA_ALLOCATION_CREATE_CAN_ALIAS_BIT&#160;</td><td class="fielddoc"><p >Set this flag if the allocated memory will have aliasing resources. </p>
 <p >Usage of this flag prevents supplying <code>VkMemoryDedicatedAllocateInfoKHR</code> when <a class="el" href="group__group__alloc.html#ggad9889c10c798b040d59c92f257cae597a3fc311d855c2ff53f1090ef5c722b38f" title="Set this flag if the allocation should have its own memory block.">VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT</a> is specified. Otherwise created dedicated memory will not be suitable for aliasing resources, resulting in Vulkan Validation Layer errors. </p>
@@ -769,7 +769,7 @@ Functions</h2></td></tr>
 <p >When using this flag, if you want to map the allocation (using <a class="el" href="group__group__alloc.html#gad5bd1243512d099706de88168992f069" title="Maps memory represented by given allocation and returns pointer to it.">vmaMapMemory()</a> or <a class="el" href="group__group__alloc.html#ggad9889c10c798b040d59c92f257cae597a11da372cc3a82931c5e5d6146cd9dd1f" title="Set this flag to use a memory that will be persistently mapped and retrieve pointer to it.">VMA_ALLOCATION_CREATE_MAPPED_BIT</a>), you must pass one of the flags: <a class="el" href="group__group__alloc.html#ggad9889c10c798b040d59c92f257cae597a9be224df3bfc1cfa06203aed689a30c5">VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT</a> or <a class="el" href="group__group__alloc.html#ggad9889c10c798b040d59c92f257cae597add61238d98e20917b9a06c617763f492">VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT</a> in <a class="el" href="struct_vma_allocation_create_info.html#add09658ac14fe290ace25470ddd6d41b" title="Use VmaAllocationCreateFlagBits enum.">VmaAllocationCreateInfo::flags</a>.</p>
 <p >It can be used only with functions that let the library know <code>VkBufferCreateInfo</code> or <code>VkImageCreateInfo</code>, e.g. <a class="el" href="group__group__alloc.html#gac72ee55598617e8eecca384e746bab51" title="Creates a new VkBuffer, allocates and binds memory for it.">vmaCreateBuffer()</a>, <a class="el" href="group__group__alloc.html#ga02a94f25679275851a53e82eacbcfc73" title="Function similar to vmaCreateBuffer().">vmaCreateImage()</a>, <a class="el" href="group__group__alloc.html#gae790ab9ffaf7667fb8f62523e6897888" title="Helps to find memoryTypeIndex, given VkBufferCreateInfo and VmaAllocationCreateInfo.">vmaFindMemoryTypeIndexForBufferInfo()</a>, <a class="el" href="group__group__alloc.html#ga088da83d8eaf3ce9056d9ea0b981d472" title="Helps to find memoryTypeIndex, given VkImageCreateInfo and VmaAllocationCreateInfo.">vmaFindMemoryTypeIndexForImageInfo()</a> and not with generic memory allocation functions. </p>
 </td></tr>
-<tr><td class="fieldname"><a id="ggaa5846affa1e9da3800e3e78fae2305ccae2adb696d6a73c18bb20c23666661327" name="ggaa5846affa1e9da3800e3e78fae2305ccae2adb696d6a73c18bb20c23666661327"></a>VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE&#160;</td><td class="fielddoc"><p >Selects best memory type automatically with preference for GPU (device) memory.</p>
+<tr><td class="fieldname"><a id="ggaa5846affa1e9da3800e3e78fae2305ccae2adb696d6a73c18bb20c23666661327" name="ggaa5846affa1e9da3800e3e78fae2305ccae2adb696d6a73c18bb20c23666661327"></a>VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE&#160;</td><td class="fielddoc"><p >Selects best memory type automatically with preference for GPU (deviceTTTT) memory.</p>
 <p >When using this flag, if you want to map the allocation (using <a class="el" href="group__group__alloc.html#gad5bd1243512d099706de88168992f069" title="Maps memory represented by given allocation and returns pointer to it.">vmaMapMemory()</a> or <a class="el" href="group__group__alloc.html#ggad9889c10c798b040d59c92f257cae597a11da372cc3a82931c5e5d6146cd9dd1f" title="Set this flag to use a memory that will be persistently mapped and retrieve pointer to it.">VMA_ALLOCATION_CREATE_MAPPED_BIT</a>), you must pass one of the flags: <a class="el" href="group__group__alloc.html#ggad9889c10c798b040d59c92f257cae597a9be224df3bfc1cfa06203aed689a30c5">VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT</a> or <a class="el" href="group__group__alloc.html#ggad9889c10c798b040d59c92f257cae597add61238d98e20917b9a06c617763f492">VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT</a> in <a class="el" href="struct_vma_allocation_create_info.html#add09658ac14fe290ace25470ddd6d41b" title="Use VmaAllocationCreateFlagBits enum.">VmaAllocationCreateInfo::flags</a>.</p>
 <p >It can be used only with functions that let the library know <code>VkBufferCreateInfo</code> or <code>VkImageCreateInfo</code>, e.g. <a class="el" href="group__group__alloc.html#gac72ee55598617e8eecca384e746bab51" title="Creates a new VkBuffer, allocates and binds memory for it.">vmaCreateBuffer()</a>, <a class="el" href="group__group__alloc.html#ga02a94f25679275851a53e82eacbcfc73" title="Function similar to vmaCreateBuffer().">vmaCreateImage()</a>, <a class="el" href="group__group__alloc.html#gae790ab9ffaf7667fb8f62523e6897888" title="Helps to find memoryTypeIndex, given VkBufferCreateInfo and VmaAllocationCreateInfo.">vmaFindMemoryTypeIndexForBufferInfo()</a>, <a class="el" href="group__group__alloc.html#ga088da83d8eaf3ce9056d9ea0b981d472" title="Helps to find memoryTypeIndex, given VkImageCreateInfo and VmaAllocationCreateInfo.">vmaFindMemoryTypeIndexForImageInfo()</a> and not with generic memory allocation functions. </p>
 </td></tr>
@@ -1878,7 +1878,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Allocates Vulkan device memory and creates <a class="el" href="struct_vma_pool.html" title="Represents custom memory pool.">VmaPool</a> object. </p>
+<p>Allocates Vulkan deviceTTTT memory and creates <a class="el" href="struct_vma_pool.html" title="Represents custom memory pool.">VmaPool</a> object. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir"></td><td class="paramname">allocator</td><td>Allocator object. </td></tr>
@@ -1924,7 +1924,7 @@ Functions</h2></td></tr>
 
 <p>Destroys Vulkan buffer and frees allocated memory. </p>
 <p >This is just a convenience function equivalent to:</p>
-<div class="fragment"><div class="line">vkDestroyBuffer(device, buffer, allocationCallbacks);</div>
+<div class="fragment"><div class="line">vkDestroyBuffer(deviceTTTT, buffer, allocationCallbacks);</div>
 <div class="line"><a class="code hl_function" href="group__group__alloc.html#ga5fea5518972ae9094b1526cbcb19b05f">vmaFreeMemory</a>(allocator, allocation);</div>
 <div class="ttc" id="agroup__group__alloc_html_ga5fea5518972ae9094b1526cbcb19b05f"><div class="ttname"><a href="group__group__alloc.html#ga5fea5518972ae9094b1526cbcb19b05f">vmaFreeMemory</a></div><div class="ttdeci">void vmaFreeMemory(VmaAllocator allocator, const VmaAllocation allocation)</div><div class="ttdoc">Frees memory previously allocated using vmaAllocateMemory(), vmaAllocateMemoryForBuffer(),...</div></div>
 </div><!-- fragment --><p >It is safe to pass null as buffer and/or allocation. </p>
@@ -1965,7 +1965,7 @@ Functions</h2></td></tr>
 
 <p>Destroys Vulkan image and frees allocated memory. </p>
 <p >This is just a convenience function equivalent to:</p>
-<div class="fragment"><div class="line">vkDestroyImage(device, image, allocationCallbacks);</div>
+<div class="fragment"><div class="line">vkDestroyImage(deviceTTTT, image, allocationCallbacks);</div>
 <div class="line"><a class="code hl_function" href="group__group__alloc.html#ga5fea5518972ae9094b1526cbcb19b05f">vmaFreeMemory</a>(allocator, allocation);</div>
 </div><!-- fragment --><p >It is safe to pass null as image and/or allocation. </p>
 
@@ -1997,7 +1997,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Destroys <a class="el" href="struct_vma_pool.html" title="Represents custom memory pool.">VmaPool</a> object and frees Vulkan device memory. </p>
+<p>Destroys <a class="el" href="struct_vma_pool.html" title="Represents custom memory pool.">VmaPool</a> object and frees Vulkan deviceTTTT memory. </p>
 
 </div>
 </div>
@@ -2143,7 +2143,7 @@ Functions</h2></td></tr>
 <li>Matches intended usage.</li>
 <li>Has as many flags from pAllocationCreateInfo-&gt;preferredFlags as possible.</li>
 </ul>
-<dl class="section return"><dt>Returns</dt><dd>Returns VK_ERROR_FEATURE_NOT_PRESENT if not found. Receiving such result from this function or any other allocating function probably means that your device doesn't support any memory type with requested features for the specific type of resource you want to use it for. Please check parameters of your resource, like image layout (OPTIMAL versus LINEAR) or mip level count. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>Returns VK_ERROR_FEATURE_NOT_PRESENT if not found. Receiving such result from this function or any other allocating function probably means that your deviceTTTT doesn't support any memory type with requested features for the specific type of resource you want to use it for. Please check parameters of your resource, like image layout (OPTIMAL versus LINEAR) or mip level count. </dd></dl>
 
 </div>
 </div>

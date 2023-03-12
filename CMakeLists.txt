@@ -8,10 +8,11 @@ set(CMAKE_CXX_STANDARD 17)
 include_directories(${PROJECT_SOURCE_DIR})
 
 add_executable(VulkanDemo vk.cpp VertexData.h Vulkan.h Buffer.cpp Buffer.h CommandBuffer.cpp CommandBuffer.h ForwardDeclation.h FrameBuffer.cpp FrameBuffer.h PipelineBase.cpp PipelineBase.h Device.cpp Device.h RenderPass.cpp RenderPass.h
-        Descriptor/DescriptorPool.cpp Descriptor/DescriptorSet.cpp Descriptor/DescriptorSet.h Descriptor/DescriptorLayout.cpp Descriptor/DescriptorLayout.h ext/stb_image/stb_image.c Image.cpp Image.h Command/CommandPool.cpp Queue.cpp Queue.h Sync/Fence.cpp)
+        Descriptor/DescriptorPool.cpp Descriptor/DescriptorSet.cpp Descriptor/DescriptorSet.h Descriptor/DescriptorLayout.cpp Descriptor/DescriptorLayout.h ext/stb_image/stb_image.c Images/Image.cpp Images/Image.h Command/CommandPool.cpp Queue.cpp Queue.h Sync/Fence.cpp Images/ImageView.cpp Images/ImageView.h Images/Sampler.cpp Images/Sampler.h
+        Utils/DebugUtils.cpp Window.cpp Window.h Instance.cpp Instance.h Application.cpp Application.h)
 
 # GLFW
-add_library(glfw SHARED IMPORTED)
+add_library(glfw SHARED IMPORTED Utils/DebugUtils.cpp Utils/DebugUtils.h)
 SET_TARGET_PROPERTIES(glfw PROPERTIES IMPORTED_LOCATION "${PROJECT_SOURCE_DIR}/ext/glfw/lib/libglfw.3.dylib" "${PROJECT_SOURCE_DIR}/ext/glfw/lib/libglfw.3.3.dylib.dylib"
         "${PROJECT_SOURCE_DIR}/ext/glfw/lib/libglfw.dylib")
 

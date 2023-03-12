@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.5"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="viewport" content="width=deviceTTTT-width, initial-scale=1"/>
 <title>Vulkan Memory Allocator: Memory mapping</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
@@ -101,7 +101,7 @@ Mapping functions</h1>
 <div class="ttc" id="agroup__group__alloc_html_ga9bc268595cb33f6ec4d519cfce81ff45"><div class="ttname"><a href="group__group__alloc.html#ga9bc268595cb33f6ec4d519cfce81ff45">vmaUnmapMemory</a></div><div class="ttdeci">void vmaUnmapMemory(VmaAllocator allocator, VmaAllocation allocation)</div><div class="ttdoc">Unmaps memory represented by given allocation, mapped previously using vmaMapMemory().</div></div>
 <div class="ttc" id="agroup__group__alloc_html_gad5bd1243512d099706de88168992f069"><div class="ttname"><a href="group__group__alloc.html#gad5bd1243512d099706de88168992f069">vmaMapMemory</a></div><div class="ttdeci">VkResult vmaMapMemory(VmaAllocator allocator, VmaAllocation allocation, void **ppData)</div><div class="ttdoc">Maps memory represented by given allocation and returns pointer to it.</div></div>
 </div><!-- fragment --><p >When mapping, you may see a warning from Vulkan validation layer similar to this one:</p>
-<p ><em>Mapping an image with layout VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL can result in undefined behavior if this memory is used by the device. Only GENERAL or PREINITIALIZED should be used.</em></p>
+<p ><em>Mapping an image with layout VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL can result in undefined behavior if this memory is used by the deviceTTTT. Only GENERAL or PREINITIALIZED should be used.</em></p>
 <p >It happens because the library maps entire <code>VkDeviceMemory</code> block, where different types of images and buffers may end up together, especially on GPUs with unified memory like Intel. You can safely ignore it if you are sure you access only memory of the intended object that you wanted to map.</p>
 <h1><a class="anchor" id="memory_mapping_persistently_mapped_memory"></a>
 Persistently mapped memory</h1>

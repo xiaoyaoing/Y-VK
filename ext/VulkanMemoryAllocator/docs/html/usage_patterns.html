@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.5"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="viewport" content="width=deviceTTTT-width, initial-scale=1"/>
 <title>Vulkan Memory Allocator: Recommended usage patterns</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
@@ -165,8 +165,8 @@ Readback</h1>
 Advanced data uploading</h1>
 <p >For resources that you frequently write on CPU via mapped pointer and frequently read on GPU e.g. as a uniform buffer (also called "dynamic"), multiple options are possible:</p>
 <ol type="1">
-<li>Easiest solution is to have one copy of the resource in <code>HOST_VISIBLE</code> memory, even if it means system RAM (not <code>DEVICE_LOCAL</code>) on systems with a discrete graphics card, and make the device reach out to that resource directly.<ul>
-<li>Reads performed by the device will then go through PCI Express bus. The performance of this access may be limited, but it may be fine depending on the size of this resource (whether it is small enough to quickly end up in GPU cache) and the sparsity of access.</li>
+<li>Easiest solution is to have one copy of the resource in <code>HOST_VISIBLE</code> memory, even if it means system RAM (not <code>DEVICE_LOCAL</code>) on systems with a discrete graphics card, and make the deviceTTTT reach out to that resource directly.<ul>
+<li>Reads performed by the deviceTTTT will then go through PCI Express bus. The performance of this access may be limited, but it may be fine depending on the size of this resource (whether it is small enough to quickly end up in GPU cache) and the sparsity of access.</li>
 </ul>
 </li>
 <li>On systems with unified memory (e.g. AMD APU or Intel integrated graphics, mobile chips), a memory type may be available that is both <code>HOST_VISIBLE</code> (available for mapping) and <code>DEVICE_LOCAL</code> (fast to access from the GPU). Then, it is likely the best choice for such type of resource.</li>
@@ -176,7 +176,7 @@ Advanced data uploading</h1>
 </li>
 <li>Finally, you may need or prefer to create a separate copy of the resource in <code>DEVICE_LOCAL</code> memory, a separate "staging" copy in <code>HOST_VISIBLE</code> memory and perform an explicit transfer command between them.</li>
 </ol>
-<p >Thankfully, VMA offers an aid to create and use such resources in the the way optimal for the current Vulkan device. To help the library make the best choice, use flag <a class="el" href="group__group__alloc.html#ggad9889c10c798b040d59c92f257cae597a9be224df3bfc1cfa06203aed689a30c5">VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT</a> together with <a class="el" href="group__group__alloc.html#ggad9889c10c798b040d59c92f257cae597a11337f96eacf34c1016c339eac165cad">VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT</a>. It will then prefer a memory type that is both <code>DEVICE_LOCAL</code> and <code>HOST_VISIBLE</code> (integrated memory or BAR), but if no such memory type is available or allocation from it fails (PC graphics cards have only 256 MB of BAR by default, unless ReBAR is supported and enabled in BIOS), it will fall back to <code>DEVICE_LOCAL</code> memory for fast GPU access. It is then up to you to detect that the allocation ended up in a memory type that is not <code>HOST_VISIBLE</code>, so you need to create another "staging" allocation and perform explicit transfers.</p>
+<p >Thankfully, VMA offers an aid to create and use such resources in the the way optimal for the current Vulkan deviceTTTT. To help the library make the best choice, use flag <a class="el" href="group__group__alloc.html#ggad9889c10c798b040d59c92f257cae597a9be224df3bfc1cfa06203aed689a30c5">VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT</a> together with <a class="el" href="group__group__alloc.html#ggad9889c10c798b040d59c92f257cae597a11337f96eacf34c1016c339eac165cad">VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT</a>. It will then prefer a memory type that is both <code>DEVICE_LOCAL</code> and <code>HOST_VISIBLE</code> (integrated memory or BAR), but if no such memory type is available or allocation from it fails (PC graphics cards have only 256 MB of BAR by default, unless ReBAR is supported and enabled in BIOS), it will fall back to <code>DEVICE_LOCAL</code> memory for fast GPU access. It is then up to you to detect that the allocation ended up in a memory type that is not <code>HOST_VISIBLE</code>, so you need to create another "staging" allocation and perform explicit transfers.</p>
 <div class="fragment"><div class="line">VkBufferCreateInfo bufCreateInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };</div>
 <div class="line">bufCreateInfo.size = 65536;</div>
 <div class="line">bufCreateInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;</div>
@@ -237,7 +237,7 @@ Advanced data uploading</h1>
 Other use cases</h1>
 <p >Here are some other, less obvious use cases and their recommended settings:</p>
 <ul>
-<li>An image that is used only as transfer source and destination, but it should stay on the device, as it is used to temporarily store a copy of some texture, e.g. from the current to the next frame, for temporal antialiasing or other temporal effects.<ul>
+<li>An image that is used only as transfer source and destination, but it should stay on the deviceTTTT, as it is used to temporarily store a copy of some texture, e.g. from the current to the next frame, for temporal antialiasing or other temporal effects.<ul>
 <li>Use <code>VkImageCreateInfo::usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT</code></li>
 <li>Use <a class="el" href="struct_vma_allocation_create_info.html#accb8b06b1f677d858cb9af20705fa910" title="Intended usage of memory.">VmaAllocationCreateInfo::usage</a> = <a class="el" href="group__group__alloc.html#ggaa5846affa1e9da3800e3e78fae2305cca27cde9026a84d34d525777baa41fce6e">VMA_MEMORY_USAGE_AUTO</a></li>
 </ul>
@@ -247,7 +247,7 @@ Other use cases</h1>
 <li>Use <a class="el" href="struct_vma_allocation_create_info.html#accb8b06b1f677d858cb9af20705fa910" title="Intended usage of memory.">VmaAllocationCreateInfo::usage</a> = <a class="el" href="group__group__alloc.html#ggaa5846affa1e9da3800e3e78fae2305cca9b422585242160b8ed3418310ee6664d">VMA_MEMORY_USAGE_AUTO_PREFER_HOST</a>, as VMA needs a hint here to differentiate from the previous case.</li>
 </ul>
 </li>
-<li>A buffer that you want to map and write from the CPU, directly read from the GPU (e.g. as a uniform or vertex buffer), but you have a clear preference to place it in device or host memory due to its large size.<ul>
+<li>A buffer that you want to map and write from the CPU, directly read from the GPU (e.g. as a uniform or vertex buffer), but you have a clear preference to place it in deviceTTTT or host memory due to its large size.<ul>
 <li>Use <code>VkBufferCreateInfo::usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT</code></li>
 <li>Use <a class="el" href="struct_vma_allocation_create_info.html#accb8b06b1f677d858cb9af20705fa910" title="Intended usage of memory.">VmaAllocationCreateInfo::usage</a> = <a class="el" href="group__group__alloc.html#ggaa5846affa1e9da3800e3e78fae2305ccae2adb696d6a73c18bb20c23666661327">VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE</a> or <a class="el" href="group__group__alloc.html#ggaa5846affa1e9da3800e3e78fae2305cca9b422585242160b8ed3418310ee6664d">VMA_MEMORY_USAGE_AUTO_PREFER_HOST</a></li>
 <li>Use <a class="el" href="struct_vma_allocation_create_info.html#add09658ac14fe290ace25470ddd6d41b" title="Use VmaAllocationCreateFlagBits enum.">VmaAllocationCreateInfo::flags</a> = <a class="el" href="group__group__alloc.html#ggad9889c10c798b040d59c92f257cae597a9be224df3bfc1cfa06203aed689a30c5">VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT</a> </li>

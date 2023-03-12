@@ -137,13 +137,13 @@ build CMakeFiles/VulkanDemo.dir/ext/stb_image/stb_image.c.o: C_COMPILER__VulkanD
   OBJECT_DIR = CMakeFiles/VulkanDemo.dir
   OBJECT_FILE_DIR = CMakeFiles/VulkanDemo.dir/ext/stb_image
 
-build CMakeFiles/VulkanDemo.dir/Image.cpp.o: CXX_COMPILER__VulkanDemo_Debug /Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/Image.cpp || cmake_object_order_depends_target_VulkanDemo
+build CMakeFiles/VulkanDemo.dir/Images/Image.cpp.o: CXX_COMPILER__VulkanDemo_Debug /Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/Images/Image.cpp || cmake_object_order_depends_target_VulkanDemo
   DEFINES = -DVMA_DEBUG_ALWAYS_DEDICATED_MEMORY=0 -DVMA_DEBUG_DONT_EXCEED_MAX_MEMORY_ALLOCATION_COUNT=0 -DVMA_DEBUG_GLOBAL_MUTEX=0 -DVMA_DEBUG_INITIALIZE_ALLOCATIONS=0 -DVMA_DYNAMIC_VULKAN_FUNCTIONS=0 -DVMA_RECORDING_ENABLED=0 -DVMA_STATIC_VULKAN_FUNCTIONS=1
-  DEP_FILE = CMakeFiles/VulkanDemo.dir/Image.cpp.o.d
+  DEP_FILE = CMakeFiles/VulkanDemo.dir/Images/Image.cpp.o.d
   FLAGS = -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk -std=gnu++17
   INCLUDES = -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/ext/glm -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/ext/VulkanMemoryAllocator -I/Users/yjp/VulkanSDK/1.3.231.1/macOS/include -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/ext/VulkanMemoryAllocator/include -isystem /usr/local/include
   OBJECT_DIR = CMakeFiles/VulkanDemo.dir
-  OBJECT_FILE_DIR = CMakeFiles/VulkanDemo.dir
+  OBJECT_FILE_DIR = CMakeFiles/VulkanDemo.dir/Images
 
 build CMakeFiles/VulkanDemo.dir/Command/CommandPool.cpp.o: CXX_COMPILER__VulkanDemo_Debug /Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/Command/CommandPool.cpp || cmake_object_order_depends_target_VulkanDemo
   DEFINES = -DVMA_DEBUG_ALWAYS_DEDICATED_MEMORY=0 -DVMA_DEBUG_DONT_EXCEED_MAX_MEMORY_ALLOCATION_COUNT=0 -DVMA_DEBUG_GLOBAL_MUTEX=0 -DVMA_DEBUG_INITIALIZE_ALLOCATIONS=0 -DVMA_DYNAMIC_VULKAN_FUNCTIONS=0 -DVMA_RECORDING_ENABLED=0 -DVMA_STATIC_VULKAN_FUNCTIONS=1
@@ -169,6 +169,54 @@ build CMakeFiles/VulkanDemo.dir/Sync/Fence.cpp.o: CXX_COMPILER__VulkanDemo_Debug
   OBJECT_DIR = CMakeFiles/VulkanDemo.dir
   OBJECT_FILE_DIR = CMakeFiles/VulkanDemo.dir/Sync
 
+build CMakeFiles/VulkanDemo.dir/Images/ImageView.cpp.o: CXX_COMPILER__VulkanDemo_Debug /Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/Images/ImageView.cpp || cmake_object_order_depends_target_VulkanDemo
+  DEFINES = -DVMA_DEBUG_ALWAYS_DEDICATED_MEMORY=0 -DVMA_DEBUG_DONT_EXCEED_MAX_MEMORY_ALLOCATION_COUNT=0 -DVMA_DEBUG_GLOBAL_MUTEX=0 -DVMA_DEBUG_INITIALIZE_ALLOCATIONS=0 -DVMA_DYNAMIC_VULKAN_FUNCTIONS=0 -DVMA_RECORDING_ENABLED=0 -DVMA_STATIC_VULKAN_FUNCTIONS=1
+  DEP_FILE = CMakeFiles/VulkanDemo.dir/Images/ImageView.cpp.o.d
+  FLAGS = -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk -std=gnu++17
+  INCLUDES = -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/ext/glm -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/ext/VulkanMemoryAllocator -I/Users/yjp/VulkanSDK/1.3.231.1/macOS/include -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/ext/VulkanMemoryAllocator/include -isystem /usr/local/include
+  OBJECT_DIR = CMakeFiles/VulkanDemo.dir
+  OBJECT_FILE_DIR = CMakeFiles/VulkanDemo.dir/Images
+
+build CMakeFiles/VulkanDemo.dir/Images/Sampler.cpp.o: CXX_COMPILER__VulkanDemo_Debug /Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/Images/Sampler.cpp || cmake_object_order_depends_target_VulkanDemo
+  DEFINES = -DVMA_DEBUG_ALWAYS_DEDICATED_MEMORY=0 -DVMA_DEBUG_DONT_EXCEED_MAX_MEMORY_ALLOCATION_COUNT=0 -DVMA_DEBUG_GLOBAL_MUTEX=0 -DVMA_DEBUG_INITIALIZE_ALLOCATIONS=0 -DVMA_DYNAMIC_VULKAN_FUNCTIONS=0 -DVMA_RECORDING_ENABLED=0 -DVMA_STATIC_VULKAN_FUNCTIONS=1
+  DEP_FILE = CMakeFiles/VulkanDemo.dir/Images/Sampler.cpp.o.d
+  FLAGS = -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk -std=gnu++17
+  INCLUDES = -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/ext/glm -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/ext/VulkanMemoryAllocator -I/Users/yjp/VulkanSDK/1.3.231.1/macOS/include -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/ext/VulkanMemoryAllocator/include -isystem /usr/local/include
+  OBJECT_DIR = CMakeFiles/VulkanDemo.dir
+  OBJECT_FILE_DIR = CMakeFiles/VulkanDemo.dir/Images
+
+build CMakeFiles/VulkanDemo.dir/Utils/DebugUtils.cpp.o: CXX_COMPILER__VulkanDemo_Debug /Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/Utils/DebugUtils.cpp || cmake_object_order_depends_target_VulkanDemo
+  DEFINES = -DVMA_DEBUG_ALWAYS_DEDICATED_MEMORY=0 -DVMA_DEBUG_DONT_EXCEED_MAX_MEMORY_ALLOCATION_COUNT=0 -DVMA_DEBUG_GLOBAL_MUTEX=0 -DVMA_DEBUG_INITIALIZE_ALLOCATIONS=0 -DVMA_DYNAMIC_VULKAN_FUNCTIONS=0 -DVMA_RECORDING_ENABLED=0 -DVMA_STATIC_VULKAN_FUNCTIONS=1
+  DEP_FILE = CMakeFiles/VulkanDemo.dir/Utils/DebugUtils.cpp.o.d
+  FLAGS = -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk -std=gnu++17
+  INCLUDES = -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/ext/glm -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/ext/VulkanMemoryAllocator -I/Users/yjp/VulkanSDK/1.3.231.1/macOS/include -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/ext/VulkanMemoryAllocator/include -isystem /usr/local/include
+  OBJECT_DIR = CMakeFiles/VulkanDemo.dir
+  OBJECT_FILE_DIR = CMakeFiles/VulkanDemo.dir/Utils
+
+build CMakeFiles/VulkanDemo.dir/Window.cpp.o: CXX_COMPILER__VulkanDemo_Debug /Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/Window.cpp || cmake_object_order_depends_target_VulkanDemo
+  DEFINES = -DVMA_DEBUG_ALWAYS_DEDICATED_MEMORY=0 -DVMA_DEBUG_DONT_EXCEED_MAX_MEMORY_ALLOCATION_COUNT=0 -DVMA_DEBUG_GLOBAL_MUTEX=0 -DVMA_DEBUG_INITIALIZE_ALLOCATIONS=0 -DVMA_DYNAMIC_VULKAN_FUNCTIONS=0 -DVMA_RECORDING_ENABLED=0 -DVMA_STATIC_VULKAN_FUNCTIONS=1
+  DEP_FILE = CMakeFiles/VulkanDemo.dir/Window.cpp.o.d
+  FLAGS = -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk -std=gnu++17
+  INCLUDES = -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/ext/glm -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/ext/VulkanMemoryAllocator -I/Users/yjp/VulkanSDK/1.3.231.1/macOS/include -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/ext/VulkanMemoryAllocator/include -isystem /usr/local/include
+  OBJECT_DIR = CMakeFiles/VulkanDemo.dir
+  OBJECT_FILE_DIR = CMakeFiles/VulkanDemo.dir
+
+build CMakeFiles/VulkanDemo.dir/Instance.cpp.o: CXX_COMPILER__VulkanDemo_Debug /Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/Instance.cpp || cmake_object_order_depends_target_VulkanDemo
+  DEFINES = -DVMA_DEBUG_ALWAYS_DEDICATED_MEMORY=0 -DVMA_DEBUG_DONT_EXCEED_MAX_MEMORY_ALLOCATION_COUNT=0 -DVMA_DEBUG_GLOBAL_MUTEX=0 -DVMA_DEBUG_INITIALIZE_ALLOCATIONS=0 -DVMA_DYNAMIC_VULKAN_FUNCTIONS=0 -DVMA_RECORDING_ENABLED=0 -DVMA_STATIC_VULKAN_FUNCTIONS=1
+  DEP_FILE = CMakeFiles/VulkanDemo.dir/Instance.cpp.o.d
+  FLAGS = -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk -std=gnu++17
+  INCLUDES = -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/ext/glm -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/ext/VulkanMemoryAllocator -I/Users/yjp/VulkanSDK/1.3.231.1/macOS/include -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/ext/VulkanMemoryAllocator/include -isystem /usr/local/include
+  OBJECT_DIR = CMakeFiles/VulkanDemo.dir
+  OBJECT_FILE_DIR = CMakeFiles/VulkanDemo.dir
+
+build CMakeFiles/VulkanDemo.dir/Application.cpp.o: CXX_COMPILER__VulkanDemo_Debug /Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/Application.cpp || cmake_object_order_depends_target_VulkanDemo
+  DEFINES = -DVMA_DEBUG_ALWAYS_DEDICATED_MEMORY=0 -DVMA_DEBUG_DONT_EXCEED_MAX_MEMORY_ALLOCATION_COUNT=0 -DVMA_DEBUG_GLOBAL_MUTEX=0 -DVMA_DEBUG_INITIALIZE_ALLOCATIONS=0 -DVMA_DYNAMIC_VULKAN_FUNCTIONS=0 -DVMA_RECORDING_ENABLED=0 -DVMA_STATIC_VULKAN_FUNCTIONS=1
+  DEP_FILE = CMakeFiles/VulkanDemo.dir/Application.cpp.o.d
+  FLAGS = -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk -std=gnu++17
+  INCLUDES = -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/ext/glm -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/ext/VulkanMemoryAllocator -I/Users/yjp/VulkanSDK/1.3.231.1/macOS/include -I/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/ext/VulkanMemoryAllocator/include -isystem /usr/local/include
+  OBJECT_DIR = CMakeFiles/VulkanDemo.dir
+  OBJECT_FILE_DIR = CMakeFiles/VulkanDemo.dir
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target VulkanDemo
@@ -177,7 +225,7 @@ build CMakeFiles/VulkanDemo.dir/Sync/Fence.cpp.o: CXX_COMPILER__VulkanDemo_Debug
 #############################################
 # Link the executable VulkanDemo
 
-build VulkanDemo: CXX_EXECUTABLE_LINKER__VulkanDemo_Debug CMakeFiles/VulkanDemo.dir/vk.cpp.o CMakeFiles/VulkanDemo.dir/Buffer.cpp.o CMakeFiles/VulkanDemo.dir/CommandBuffer.cpp.o CMakeFiles/VulkanDemo.dir/FrameBuffer.cpp.o CMakeFiles/VulkanDemo.dir/PipelineBase.cpp.o CMakeFiles/VulkanDemo.dir/Device.cpp.o CMakeFiles/VulkanDemo.dir/RenderPass.cpp.o CMakeFiles/VulkanDemo.dir/Descriptor/DescriptorPool.cpp.o CMakeFiles/VulkanDemo.dir/Descriptor/DescriptorSet.cpp.o CMakeFiles/VulkanDemo.dir/Descriptor/DescriptorLayout.cpp.o CMakeFiles/VulkanDemo.dir/ext/stb_image/stb_image.c.o CMakeFiles/VulkanDemo.dir/Image.cpp.o CMakeFiles/VulkanDemo.dir/Command/CommandPool.cpp.o CMakeFiles/VulkanDemo.dir/Queue.cpp.o CMakeFiles/VulkanDemo.dir/Sync/Fence.cpp.o | ../ext/glfw/lib/libglfw.3.dylib /usr/local/lib/libvulkan.dylib ext/VulkanMemoryAllocator/src/libVulkanMemoryAllocatord.a /usr/local/lib/libvulkan.dylib || ext/VulkanMemoryAllocator/src/libVulkanMemoryAllocatord.a
+build VulkanDemo: CXX_EXECUTABLE_LINKER__VulkanDemo_Debug CMakeFiles/VulkanDemo.dir/vk.cpp.o CMakeFiles/VulkanDemo.dir/Buffer.cpp.o CMakeFiles/VulkanDemo.dir/CommandBuffer.cpp.o CMakeFiles/VulkanDemo.dir/FrameBuffer.cpp.o CMakeFiles/VulkanDemo.dir/PipelineBase.cpp.o CMakeFiles/VulkanDemo.dir/Device.cpp.o CMakeFiles/VulkanDemo.dir/RenderPass.cpp.o CMakeFiles/VulkanDemo.dir/Descriptor/DescriptorPool.cpp.o CMakeFiles/VulkanDemo.dir/Descriptor/DescriptorSet.cpp.o CMakeFiles/VulkanDemo.dir/Descriptor/DescriptorLayout.cpp.o CMakeFiles/VulkanDemo.dir/ext/stb_image/stb_image.c.o CMakeFiles/VulkanDemo.dir/Images/Image.cpp.o CMakeFiles/VulkanDemo.dir/Command/CommandPool.cpp.o CMakeFiles/VulkanDemo.dir/Queue.cpp.o CMakeFiles/VulkanDemo.dir/Sync/Fence.cpp.o CMakeFiles/VulkanDemo.dir/Images/ImageView.cpp.o CMakeFiles/VulkanDemo.dir/Images/Sampler.cpp.o CMakeFiles/VulkanDemo.dir/Utils/DebugUtils.cpp.o CMakeFiles/VulkanDemo.dir/Window.cpp.o CMakeFiles/VulkanDemo.dir/Instance.cpp.o CMakeFiles/VulkanDemo.dir/Application.cpp.o | ../ext/glfw/lib/libglfw.3.dylib /usr/local/lib/libvulkan.dylib ext/VulkanMemoryAllocator/src/libVulkanMemoryAllocatord.a /usr/local/lib/libvulkan.dylib || ext/VulkanMemoryAllocator/src/libVulkanMemoryAllocatord.a
   FLAGS = -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk
   LINK_FLAGS = -L/usr/local/opt/opencv@2/lib
   LINK_LIBRARIES = -Wl,-rpath,/usr/local/lib  ../ext/glfw/lib/libglfw.3.dylib  /usr/local/lib/libvulkan.dylib  ext/VulkanMemoryAllocator/src/libVulkanMemoryAllocatord.a  /usr/local/lib/libvulkan.dylib

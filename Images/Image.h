@@ -11,7 +11,12 @@ public:
     inline VkImage getHandle() {
         return _image;
     };
-
+    inline  VkFormat getFormat(){
+        return _imageFormat;
+    }
+    inline  VkImageType getImageType(){
+        return _imageType;
+    }
     Image(VmaAllocator allocator, VmaMemoryUsage memoryUsage,const VkImageCreateInfo &createInfo);
     static inline VkImageCreateInfo getDefaultImageInfo() {
         VkImageCreateInfo imageInfo = {};

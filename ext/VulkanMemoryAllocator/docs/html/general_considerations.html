@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.5"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="viewport" content="width=deviceTTTT-width, initial-scale=1"/>
 <title>Vulkan Memory Allocator: General considerations</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
@@ -103,7 +103,7 @@ Validation layer warnings</h1>
 <li>It happens when VK_KHR_dedicated_allocation extension is enabled. <code>vkGetBufferMemoryRequirements2KHR</code> function is used instead, while validation layer seems to be unaware of it.</li>
 </ul>
 </li>
-<li><em>Mapping an image with layout VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL can result in undefined behavior if this memory is used by the device. Only GENERAL or PREINITIALIZED should be used.</em><ul>
+<li><em>Mapping an image with layout VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL can result in undefined behavior if this memory is used by the deviceTTTT. Only GENERAL or PREINITIALIZED should be used.</em><ul>
 <li>It happens when you map a buffer or image, because the library maps entire <code>VkDeviceMemory</code> block, where different types of images and buffers may end up together, especially on GPUs with unified memory like Intel.</li>
 </ul>
 </li>

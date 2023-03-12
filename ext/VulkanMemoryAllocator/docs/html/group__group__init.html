@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.5"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="viewport" content="width=deviceTTTT-width, initial-scale=1"/>
 <title>Vulkan Memory Allocator: Library initialization</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
@@ -152,7 +152,7 @@ Functions</h2></td></tr>
 <tr class="memdesc:gaa8d164061c88f22fb1fd3c8f3534bc1d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroys allocator object.  <a href="group__group__init.html#gaa8d164061c88f22fb1fd3c8f3534bc1d">More...</a><br /></td></tr>
 <tr class="separator:gaa8d164061c88f22fb1fd3c8f3534bc1d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gafa02231a791b37255720d566a52683e7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__group__init.html#gafa02231a791b37255720d566a52683e7">vmaGetAllocatorInfo</a> (<a class="el" href="struct_vma_allocator.html">VmaAllocator</a> allocator, <a class="el" href="struct_vma_allocator_info.html">VmaAllocatorInfo</a> *pAllocatorInfo)</td></tr>
-<tr class="memdesc:gafa02231a791b37255720d566a52683e7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns information about existing <a class="el" href="struct_vma_allocator.html" title="Represents main object of this library initialized.">VmaAllocator</a> object - handle to Vulkan device etc.  <a href="group__group__init.html#gafa02231a791b37255720d566a52683e7">More...</a><br /></td></tr>
+<tr class="memdesc:gafa02231a791b37255720d566a52683e7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns information about existing <a class="el" href="struct_vma_allocator.html" title="Represents main object of this library initialized.">VmaAllocator</a> object - handle to Vulkan deviceTTTT etc.  <a href="group__group__init.html#gafa02231a791b37255720d566a52683e7">More...</a><br /></td></tr>
 <tr class="separator:gafa02231a791b37255720d566a52683e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaecabf7b6e91ea87d0316fa0a9e014fe0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__group__init.html#gaecabf7b6e91ea87d0316fa0a9e014fe0">vmaGetPhysicalDeviceProperties</a> (<a class="el" href="struct_vma_allocator.html">VmaAllocator</a> allocator, const VkPhysicalDeviceProperties **ppPhysicalDeviceProperties)</td></tr>
 <tr class="separator:gaecabf7b6e91ea87d0316fa0a9e014fe0"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -320,10 +320,10 @@ Functions</h2></td></tr>
 <tr><td class="fieldname"><a id="gga4f87c9100d154a65a4ad495f7763cf7cace7da7cc6e71a625dfa763c55a597878" name="gga4f87c9100d154a65a4ad495f7763cf7cace7da7cc6e71a625dfa763c55a597878"></a>VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT&#160;</td><td class="fielddoc"><p >Enables usage of VK_KHR_dedicated_allocation extension. </p>
 <p >The flag works only if <a class="el" href="struct_vma_allocator_create_info.html#ae0ffc55139b54520a6bb704b29ffc285" title="Optional. The highest version of Vulkan that the application is designed to use.">VmaAllocatorCreateInfo::vulkanApiVersion</a> <code>== VK_API_VERSION_1_0</code>. When it is <code>VK_API_VERSION_1_1</code>, the flag is ignored because the extension has been promoted to Vulkan 1.1.</p>
 <p >Using this extension will automatically allocate dedicated blocks of memory for some buffers and images instead of suballocating place for them out of bigger memory blocks (as if you explicitly used <a class="el" href="group__group__alloc.html#ggad9889c10c798b040d59c92f257cae597a3fc311d855c2ff53f1090ef5c722b38f" title="Set this flag if the allocation should have its own memory block.">VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT</a> flag) when it is recommended by the driver. It may improve performance on some GPUs.</p>
-<p >You may set this flag only if you found out that following device extensions are supported, you enabled them while creating Vulkan device passed as <a class="el" href="struct_vma_allocator_create_info.html#ad924ddd77b04039c88d0c09b0ffcd500" title="Vulkan device.">VmaAllocatorCreateInfo::device</a>, and you want them to be used internally by this library:</p>
+<p >You may set this flag only if you found out that following deviceTTTT extensions are supported, you enabled them while creating Vulkan deviceTTTT passed as <a class="el" href="struct_vma_allocator_create_info.html#ad924ddd77b04039c88d0c09b0ffcd500" title="Vulkan deviceTTTT.">VmaAllocatorCreateInfo::deviceTTTT</a>, and you want them to be used internally by this library:</p>
 <ul>
-<li>VK_KHR_get_memory_requirements2 (device extension)</li>
-<li>VK_KHR_dedicated_allocation (device extension)</li>
+<li>VK_KHR_get_memory_requirements2 (deviceTTTT extension)</li>
+<li>VK_KHR_dedicated_allocation (deviceTTTT extension)</li>
 </ul>
 <p >When this flag is set, you can experience following warnings reported by Vulkan validation layer. You can ignore them.</p>
 <blockquote class="doxtable">
@@ -332,34 +332,34 @@ Functions</h2></td></tr>
 </td></tr>
 <tr><td class="fieldname"><a id="gga4f87c9100d154a65a4ad495f7763cf7ca8fb75bf07cd184ab903596295e863dee" name="gga4f87c9100d154a65a4ad495f7763cf7ca8fb75bf07cd184ab903596295e863dee"></a>VMA_ALLOCATOR_CREATE_KHR_BIND_MEMORY2_BIT&#160;</td><td class="fielddoc"><p >Enables usage of VK_KHR_bind_memory2 extension.</p>
 <p >The flag works only if <a class="el" href="struct_vma_allocator_create_info.html#ae0ffc55139b54520a6bb704b29ffc285" title="Optional. The highest version of Vulkan that the application is designed to use.">VmaAllocatorCreateInfo::vulkanApiVersion</a> <code>== VK_API_VERSION_1_0</code>. When it is <code>VK_API_VERSION_1_1</code>, the flag is ignored because the extension has been promoted to Vulkan 1.1.</p>
-<p >You may set this flag only if you found out that this device extension is supported, you enabled it while creating Vulkan device passed as <a class="el" href="struct_vma_allocator_create_info.html#ad924ddd77b04039c88d0c09b0ffcd500" title="Vulkan device.">VmaAllocatorCreateInfo::device</a>, and you want it to be used internally by this library.</p>
+<p >You may set this flag only if you found out that this deviceTTTT extension is supported, you enabled it while creating Vulkan deviceTTTT passed as <a class="el" href="struct_vma_allocator_create_info.html#ad924ddd77b04039c88d0c09b0ffcd500" title="Vulkan deviceTTTT.">VmaAllocatorCreateInfo::deviceTTTT</a>, and you want it to be used internally by this library.</p>
 <p >The extension provides functions <code>vkBindBufferMemory2KHR</code> and <code>vkBindImageMemory2KHR</code>, which allow to pass a chain of <code>pNext</code> structures while binding. This flag is required if you use <code>pNext</code> parameter in <a class="el" href="group__group__alloc.html#ga927c944f45e0f2941182abb6f608e64a" title="Binds buffer to allocation with additional parameters.">vmaBindBufferMemory2()</a> or <a class="el" href="group__group__alloc.html#gaa8251ee81b0045a443e35b8e8aa021bc" title="Binds image to allocation with additional parameters.">vmaBindImageMemory2()</a>. </p>
 </td></tr>
 <tr><td class="fieldname"><a id="gga4f87c9100d154a65a4ad495f7763cf7ca4d4687863f7bd4b418c6006dc04400b0" name="gga4f87c9100d154a65a4ad495f7763cf7ca4d4687863f7bd4b418c6006dc04400b0"></a>VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT&#160;</td><td class="fielddoc"><p >Enables usage of VK_EXT_memory_budget extension.</p>
-<p >You may set this flag only if you found out that this device extension is supported, you enabled it while creating Vulkan device passed as <a class="el" href="struct_vma_allocator_create_info.html#ad924ddd77b04039c88d0c09b0ffcd500" title="Vulkan device.">VmaAllocatorCreateInfo::device</a>, and you want it to be used internally by this library, along with another instance extension VK_KHR_get_physical_device_properties2, which is required by it (or Vulkan 1.1, where this extension is promoted).</p>
+<p >You may set this flag only if you found out that this deviceTTTT extension is supported, you enabled it while creating Vulkan deviceTTTT passed as <a class="el" href="struct_vma_allocator_create_info.html#ad924ddd77b04039c88d0c09b0ffcd500" title="Vulkan deviceTTTT.">VmaAllocatorCreateInfo::deviceTTTT</a>, and you want it to be used internally by this library, along with another instance extension VK_KHR_get_physical_device_properties2, which is required by it (or Vulkan 1.1, where this extension is promoted).</p>
 <p >The extension provides query for current memory usage and budget, which will probably be more accurate than an estimation used by the library otherwise. </p>
 </td></tr>
 <tr><td class="fieldname"><a id="gga4f87c9100d154a65a4ad495f7763cf7ca2acce4886d8078552efa38878413970f" name="gga4f87c9100d154a65a4ad495f7763cf7ca2acce4886d8078552efa38878413970f"></a>VMA_ALLOCATOR_CREATE_AMD_DEVICE_COHERENT_MEMORY_BIT&#160;</td><td class="fielddoc"><p >Enables usage of VK_AMD_device_coherent_memory extension.</p>
 <p >You may set this flag only if you:</p>
 <ul>
-<li>found out that this device extension is supported and enabled it while creating Vulkan device passed as <a class="el" href="struct_vma_allocator_create_info.html#ad924ddd77b04039c88d0c09b0ffcd500" title="Vulkan device.">VmaAllocatorCreateInfo::device</a>,</li>
-<li>checked that <code>VkPhysicalDeviceCoherentMemoryFeaturesAMD::deviceCoherentMemory</code> is true and set it while creating the Vulkan device,</li>
+<li>found out that this deviceTTTT extension is supported and enabled it while creating Vulkan deviceTTTT passed as <a class="el" href="struct_vma_allocator_create_info.html#ad924ddd77b04039c88d0c09b0ffcd500" title="Vulkan deviceTTTT.">VmaAllocatorCreateInfo::deviceTTTT</a>,</li>
+<li>checked that <code>VkPhysicalDeviceCoherentMemoryFeaturesAMD::deviceCoherentMemory</code> is true and set it while creating the Vulkan deviceTTTT,</li>
 <li>want it to be used internally by this library.</li>
 </ul>
-<p >The extension and accompanying device feature provide access to memory types with <code>VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD</code> and <code>VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD</code> flags. They are useful mostly for writing breadcrumb markers - a common method for debugging GPU crash/hang/TDR.</p>
+<p >The extension and accompanying deviceTTTT feature provide access to memory types with <code>VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD</code> and <code>VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD</code> flags. They are useful mostly for writing breadcrumb markers - a common method for debugging GPU crash/hang/TDR.</p>
 <p >When the extension is not enabled, such memory types are still enumerated, but their usage is illegal. To protect from this error, if you don't create the allocator with this flag, it will refuse to allocate any memory or create a custom pool in such memory type, returning <code>VK_ERROR_FEATURE_NOT_PRESENT</code>. </p>
 </td></tr>
-<tr><td class="fieldname"><a id="gga4f87c9100d154a65a4ad495f7763cf7ca5f1b28b0414319d1687e1f2b30ab0089" name="gga4f87c9100d154a65a4ad495f7763cf7ca5f1b28b0414319d1687e1f2b30ab0089"></a>VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT&#160;</td><td class="fielddoc"><p >Enables usage of "buffer device address" feature, which allows you to use function <code>vkGetBufferDeviceAddress*</code> to get raw GPU pointer to a buffer and pass it for usage inside a shader.</p>
+<tr><td class="fieldname"><a id="gga4f87c9100d154a65a4ad495f7763cf7ca5f1b28b0414319d1687e1f2b30ab0089" name="gga4f87c9100d154a65a4ad495f7763cf7ca5f1b28b0414319d1687e1f2b30ab0089"></a>VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT&#160;</td><td class="fielddoc"><p >Enables usage of "buffer deviceTTTT address" feature, which allows you to use function <code>vkGetBufferDeviceAddress*</code> to get raw GPU pointer to a buffer and pass it for usage inside a shader.</p>
 <p >You may set this flag only if you:</p>
 <ol type="1">
-<li>(For Vulkan version &lt; 1.2) Found as available and enabled device extension VK_KHR_buffer_device_address. This extension is promoted to core Vulkan 1.2.</li>
-<li>Found as available and enabled device feature <code>VkPhysicalDeviceBufferDeviceAddressFeatures::bufferDeviceAddress</code>.</li>
+<li>(For Vulkan version &lt; 1.2) Found as available and enabled deviceTTTT extension VK_KHR_buffer_device_address. This extension is promoted to core Vulkan 1.2.</li>
+<li>Found as available and enabled deviceTTTT feature <code>VkPhysicalDeviceBufferDeviceAddressFeatures::bufferDeviceAddress</code>.</li>
 </ol>
 <p >When this flag is set, you can create buffers with <code>VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT</code> using VMA. The library automatically adds <code>VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT</code> to allocated memory blocks wherever it might be needed.</p>
-<p >For more information, see documentation chapter <a class="el" href="enabling_buffer_device_address.html">Enabling buffer device address</a>. </p>
+<p >For more information, see documentation chapter <a class="el" href="enabling_buffer_device_address.html">Enabling buffer deviceTTTT address</a>. </p>
 </td></tr>
 <tr><td class="fieldname"><a id="gga4f87c9100d154a65a4ad495f7763cf7caffdd7a5169be3dbd7cbf6b3619e4f78a" name="gga4f87c9100d154a65a4ad495f7763cf7caffdd7a5169be3dbd7cbf6b3619e4f78a"></a>VMA_ALLOCATOR_CREATE_EXT_MEMORY_PRIORITY_BIT&#160;</td><td class="fielddoc"><p >Enables usage of VK_EXT_memory_priority extension in the library.</p>
-<p >You may set this flag only if you found available and enabled this device extension, along with <code>VkPhysicalDeviceMemoryPriorityFeaturesEXT::memoryPriority == VK_TRUE</code>, while creating Vulkan device passed as <a class="el" href="struct_vma_allocator_create_info.html#ad924ddd77b04039c88d0c09b0ffcd500" title="Vulkan device.">VmaAllocatorCreateInfo::device</a>.</p>
+<p >You may set this flag only if you found available and enabled this deviceTTTT extension, along with <code>VkPhysicalDeviceMemoryPriorityFeaturesEXT::memoryPriority == VK_TRUE</code>, while creating Vulkan deviceTTTT passed as <a class="el" href="struct_vma_allocator_create_info.html#ad924ddd77b04039c88d0c09b0ffcd500" title="Vulkan deviceTTTT.">VmaAllocatorCreateInfo::deviceTTTT</a>.</p>
 <p >When this flag is used, <a class="el" href="struct_vma_allocation_create_info.html#a983d39e1a2e63649d78a960aa2fdd0f7" title="A floating-point value between 0 and 1, indicating the priority of the allocation relative to other m...">VmaAllocationCreateInfo::priority</a> and <a class="el" href="struct_vma_pool_create_info.html#a16e686c688f6725f119ebf6e24ab5274" title="A floating-point value between 0 and 1, indicating the priority of the allocations in this pool relat...">VmaPoolCreateInfo::priority</a> are used to set priorities of allocated Vulkan memory. Without it, these variables are ignored.</p>
 <p >A priority must be a floating-point value between 0 and 1, indicating the priority of the allocation relative to other memory allocations. Larger values are higher priority. The granularity of the priorities is implementation-dependent. It is automatically passed to every call to <code>vkAllocateMemory</code> done by the library using structure <code>VkMemoryPriorityAllocateInfoEXT</code>. The value to be used for default priority is 0.5. For more details, see the documentation of the VK_EXT_memory_priority extension. </p>
 </td></tr>
@@ -445,7 +445,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Returns information about existing <a class="el" href="struct_vma_allocator.html" title="Represents main object of this library initialized.">VmaAllocator</a> object - handle to Vulkan device etc. </p>
+<p>Returns information about existing <a class="el" href="struct_vma_allocator.html" title="Represents main object of this library initialized.">VmaAllocator</a> object - handle to Vulkan deviceTTTT etc. </p>
 <p >It might be useful if you want to keep just the <a class="el" href="struct_vma_allocator.html" title="Represents main object of this library initialized.">VmaAllocator</a> handle and fetch other required handles to <code>VkPhysicalDevice</code>, <code>VkDevice</code> etc. every time using this function. </p>
 
 </div>

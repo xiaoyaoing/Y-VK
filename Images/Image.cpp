@@ -10,7 +10,7 @@ Image::Image(VmaAllocator allocator,VmaMemoryUsage memoryUsage, const VkImageCre
     allocationInfo.usage		 = memoryUsage;
     allocationInfo.requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    ASSERTEQ(vmaCreateImage(_allocator,
+    ASSERT(vmaCreateImage(_allocator,
                        &createInfo, &allocationInfo,
-                       &_image, &_allocation, nullptr) , VK_SUCCESS);
+                       &_image, &_allocation, nullptr) == VK_SUCCESS,"Create image");
 }

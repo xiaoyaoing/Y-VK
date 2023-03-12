@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.5"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="viewport" content="width=deviceTTTT-width, initial-scale=1"/>
 <title>Vulkan Memory Allocator: VmaAllocatorCreateInfo Struct Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
@@ -85,10 +85,10 @@ Public Attributes</h2></td></tr>
 <tr class="memdesc:a392ea2ecbaff93f91a7c49f735ad4346"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flags for created allocator. Use <a class="el" href="group__group__init.html#ga4f87c9100d154a65a4ad495f7763cf7c" title="Flags for created VmaAllocator.">VmaAllocatorCreateFlagBits</a> enum.  <a href="struct_vma_allocator_create_info.html#a392ea2ecbaff93f91a7c49f735ad4346">More...</a><br /></td></tr>
 <tr class="separator:a392ea2ecbaff93f91a7c49f735ad4346"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a08230f04ae6ccf8a78150a9e829a7156"><td class="memItemLeft" align="right" valign="top">VkPhysicalDevice&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct_vma_allocator_create_info.html#a08230f04ae6ccf8a78150a9e829a7156">physicalDevice</a></td></tr>
-<tr class="memdesc:a08230f04ae6ccf8a78150a9e829a7156"><td class="mdescLeft">&#160;</td><td class="mdescRight">Vulkan physical device.  <a href="struct_vma_allocator_create_info.html#a08230f04ae6ccf8a78150a9e829a7156">More...</a><br /></td></tr>
+<tr class="memdesc:a08230f04ae6ccf8a78150a9e829a7156"><td class="mdescLeft">&#160;</td><td class="mdescRight">Vulkan physical deviceTTTT.  <a href="struct_vma_allocator_create_info.html#a08230f04ae6ccf8a78150a9e829a7156">More...</a><br /></td></tr>
 <tr class="separator:a08230f04ae6ccf8a78150a9e829a7156"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad924ddd77b04039c88d0c09b0ffcd500"><td class="memItemLeft" align="right" valign="top">VkDevice&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct_vma_allocator_create_info.html#ad924ddd77b04039c88d0c09b0ffcd500">device</a></td></tr>
-<tr class="memdesc:ad924ddd77b04039c88d0c09b0ffcd500"><td class="mdescLeft">&#160;</td><td class="mdescRight">Vulkan device.  <a href="struct_vma_allocator_create_info.html#ad924ddd77b04039c88d0c09b0ffcd500">More...</a><br /></td></tr>
+<tr class="memitem:ad924ddd77b04039c88d0c09b0ffcd500"><td class="memItemLeft" align="right" valign="top">VkDevice&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct_vma_allocator_create_info.html#ad924ddd77b04039c88d0c09b0ffcd500">deviceTTTT</a></td></tr>
+<tr class="memdesc:ad924ddd77b04039c88d0c09b0ffcd500"><td class="mdescLeft">&#160;</td><td class="mdescRight">Vulkan deviceTTTT.  <a href="struct_vma_allocator_create_info.html#ad924ddd77b04039c88d0c09b0ffcd500">More...</a><br /></td></tr>
 <tr class="separator:ad924ddd77b04039c88d0c09b0ffcd500"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8e4714298e3121cdd8b214a1ae7a637a"><td class="memItemLeft" align="right" valign="top">VkDeviceSize&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct_vma_allocator_create_info.html#a8e4714298e3121cdd8b214a1ae7a637a">preferredLargeHeapBlockSize</a></td></tr>
 <tr class="memdesc:a8e4714298e3121cdd8b214a1ae7a637a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Preferred size of a single <code>VkDeviceMemory</code> block to be allocated from large heaps &gt; 1 GiB. Optional.  <a href="struct_vma_allocator_create_info.html#a8e4714298e3121cdd8b214a1ae7a637a">More...</a><br /></td></tr>
@@ -119,18 +119,18 @@ Public Attributes</h2></td></tr>
 <div class="textblock"><p >Description of a Allocator to be created. </p>
 </div><h2 class="groupheader">Member Data Documentation</h2>
 <a id="ad924ddd77b04039c88d0c09b0ffcd500" name="ad924ddd77b04039c88d0c09b0ffcd500"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad924ddd77b04039c88d0c09b0ffcd500">&#9670;&#160;</a></span>device</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ad924ddd77b04039c88d0c09b0ffcd500">&#9670;&#160;</a></span>deviceTTTT</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">VkDevice VmaAllocatorCreateInfo::device</td>
+          <td class="memname">VkDevice VmaAllocatorCreateInfo::deviceTTTT</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Vulkan device. </p>
+<p>Vulkan deviceTTTT. </p>
 <p >It must be valid throughout whole lifetime of created allocator. </p>
 
 </div>
@@ -222,7 +222,7 @@ Public Attributes</h2></td></tr>
 <li>If user tries to allocate more memory from that heap using this allocator, the allocation fails with <code>VK_ERROR_OUT_OF_DEVICE_MEMORY</code>.</li>
 <li>If the limit is smaller than heap size reported in <code>VkMemoryHeap::size</code>, the value of this limit will be reported instead when using <a class="el" href="group__group__init.html#gab88db292a17974f911182543fda52d19">vmaGetMemoryProperties()</a>.</li>
 </ul>
-<p >Warning! Using this feature may not be equivalent to installing a GPU with smaller amount of memory, because graphics driver doesn't necessary fail new allocations with <code>VK_ERROR_OUT_OF_DEVICE_MEMORY</code> result when memory capacity is exceeded. It may return success and just silently migrate some device memory blocks to system RAM. This driver behavior can also be controlled using VK_AMD_memory_overallocation_behavior extension. </p>
+<p >Warning! Using this feature may not be equivalent to installing a GPU with smaller amount of memory, because graphics driver doesn't necessary fail new allocations with <code>VK_ERROR_OUT_OF_DEVICE_MEMORY</code> result when memory capacity is exceeded. It may return success and just silently migrate some deviceTTTT memory blocks to system RAM. This driver behavior can also be controlled using VK_AMD_memory_overallocation_behavior extension. </p>
 
 </div>
 </div>
@@ -238,7 +238,7 @@ Public Attributes</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Vulkan physical device. </p>
+<p>Vulkan physical deviceTTTT. </p>
 <p >It must be valid throughout whole lifetime of created allocator. </p>
 
 </div>

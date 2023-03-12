@@ -11,7 +11,7 @@ public:
     }
     DescriptorPool(ptr<Device> device,const std::vector<uint32_t>& poolSizes);
      DescriptorPool(ptr<Device> device,
-                            const std::vector<uint32_t>& poolSizes,
-                            const uint32_t maxNumSets,
-                            VkDescriptorPoolCreateFlags flags);
+                    const std::vector<VkDescriptorPoolSize> &poolSizes,
+                    const uint32_t maxNumSets,
+                    VkDescriptorPoolCreateFlags flags);
 };

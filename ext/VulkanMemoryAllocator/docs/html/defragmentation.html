@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.5"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="viewport" content="width=deviceTTTT-width, initial-scale=1"/>
 <title>Vulkan Memory Allocator: Defragmentation</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
@@ -106,7 +106,7 @@ $(function() {
 <div class="line">        <span class="comment">// Recreate and bind this buffer/image at: pass.pMoves[i].dstMemory, pass.pMoves[i].dstOffset.</span></div>
 <div class="line">        VkImageCreateInfo imgCreateInfo = ...</div>
 <div class="line">        VkImage newImg;</div>
-<div class="line">        res = vkCreateImage(device, &amp;imgCreateInfo, <span class="keyword">nullptr</span>, &amp;newImg);</div>
+<div class="line">        res = vkCreateImage(deviceTTTT, &amp;imgCreateInfo, <span class="keyword">nullptr</span>, &amp;newImg);</div>
 <div class="line">        <span class="comment">// Check res...</span></div>
 <div class="line">        res = <a class="code hl_function" href="group__group__alloc.html#ga3d3ca45799923aa5d138e9e5f9eb2da5">vmaBindImageMemory</a>(allocator, pass.<a class="code hl_variable" href="struct_vma_defragmentation_pass_move_info.html#adfa7a4994afd9b940e7f1dfaf436a725">pMoves</a>[i].<a class="code hl_variable" href="struct_vma_defragmentation_move.html#ab65b106adf209acd7313296d1075300e">dstTmpAllocation</a>, newImg);</div>
 <div class="line">        <span class="comment">// Check res...</span></div>
@@ -122,7 +122,7 @@ $(function() {
 <div class="line">    <span class="keywordflow">for</span>(uint32_t i = 0; i &lt; pass.<a class="code hl_variable" href="struct_vma_defragmentation_pass_move_info.html#a1b3e18c23f9691f35baf183e615c4408">moveCount</a>; ++i)</div>
 <div class="line">    {</div>
 <div class="line">        <span class="comment">// ...</span></div>
-<div class="line">        vkDestroyImage(device, resData-&gt;img, <span class="keyword">nullptr</span>);</div>
+<div class="line">        vkDestroyImage(deviceTTTT, resData-&gt;img, <span class="keyword">nullptr</span>);</div>
 <div class="line">    }</div>
 <div class="line"> </div>
 <div class="line">    <span class="comment">// Update appropriate descriptors to point to the new places...</span></div>

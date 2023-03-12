@@ -30,7 +30,7 @@ You can also use typical options:
 
 ## Legend
 
-* ![Free space](README_files/Legend_Bkg.png "Free space") Light gray without border - a space in Vulkan device memory block unused by any allocation.
+* ![Free space](README_files/Legend_Bkg.png "Free space") Light gray without border - a space in Vulkan deviceTTTT memory block unused by any allocation.
 * ![Buffer 1](README_files/Legend_Buffer_1.png "Buffer 1") Buffer with usage containing INDIRECT_BUFFER, VERTEX_BUFFER, or INDEX_BUFFER (Vulkan).
 * ![Buffer 2](README_files/Legend_Buffer_2.png "Buffer 2") Buffer with usage containing STORAGE_BUFFER or STORAGE_TEXEL_BUFFER (Vulkan).
 * ![Buffer 3](README_files/Legend_Buffer_3.png "Buffer 3") Buffer with usage containing UNIFORM_BUFFER or UNIFORM_TEXEL_BUFFER (Vulkan).

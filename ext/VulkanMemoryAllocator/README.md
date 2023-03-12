@@ -39,7 +39,7 @@ This library can help game developers to manage memory allocations and resource 
 Additional features:
 
 - Well-documented - description of all functions and structures provided, along with chapters that contain general description and example code.
-- Thread-safety: Library is designed to be used in multithreaded code. Access to a single device memory block referred by different buffers and textures (binding, mapping) is synchronized internally. Memory mapping is reference-counted.
+- Thread-safety: Library is designed to be used in multithreaded code. Access to a single deviceTTTT memory block referred by different buffers and textures (binding, mapping) is synchronized internally. Memory mapping is reference-counted.
 - Configuration: Fill optional members of `VmaAllocatorCreateInfo` structure to provide custom CPU memory allocator, pointers to Vulkan functions and other parameters.
 - Customization and integration with custom engines: Predefine appropriate macros to provide your own implementation of all external facilities used by the library like assert, mutex, atomic.
 - Support for memory mapping, reference-counted internally. Support for persistently mapped memory: Just allocate with appropriate flag and access the pointer to already mapped memory.

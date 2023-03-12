@@ -15,18 +15,38 @@
 #include <vector>
 
 #define  RUN_TIME_ERROR(error) throw std::runtime_error(error);
-#define  ASSERT(value) if(!value) throw std::runtime_error("Error")
-#define  ASSERTEQ(a, b) ASSERT(a == b)
+#define  ASSERT(value, message) if(!value)throw std::runtime_error(message);
 #define  DATASIZE(vec) vec.size() * sizeof(vec[0])
+
+///todo add  to_string
+/// @brief Helper macro to test the result of Vulkan calls which can return an error.
+#define VK_CHECK(x)                                                 \
+	do                                                              \
+	{                                                               \
+		VkResult err = x;                                           \
+		if (err)                                                    \
+		{                                                           \
+			LOGE("Detected Vulkan error: {}", vkb::to_string(err)); \
+			abort();                                                \
+		}                                                           \
+	} while (0)
+
 
 template<typename T>
 using ptr = std::shared_ptr<T>;
+
+
+
+
+
+/////const pointer reference
+//template<typename T>
+//using constPtrR =
 
 //template<class T>
 //inline  uint32_t  getVectorDataSize(const std::vector<T> & vec){
 //    return vec.size() * sizeof(vec[0]);
 //}
-
 template<class T, class Handle>
 std::vector<Handle> getHandles(const std::vector<ptr<T>> &vec) {
     std::vector<Handle> handles;

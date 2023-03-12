@@ -18,4 +18,8 @@ public:
                       const uint32_t dstBinding,
                       const uint32_t descCount,
                       VkDescriptorType descType);
+
+    void
+    updateImage(const std::vector<VkDescriptorImageInfo> &imageInfos, const uint32_t dstBinding,
+                VkDescriptorType descType);
 };

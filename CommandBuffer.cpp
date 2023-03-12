@@ -1,6 +1,6 @@
 #include "CommandBuffer.h"
 #include "Buffer.h"
-#include "Image.h"
+#include "Images/Image.h"
 #include "Descriptor/DescriptorSet.h"
 
 void CommandBuffer::beginRecord(VkCommandBufferUsageFlags usage) {
@@ -23,9 +23,8 @@ void CommandBuffer::beginRenderPass(VkRenderPass renderPass, VkFramebuffer buffe
     renderPassInfo.renderArea.offset = {0, 0};
     renderPassInfo.renderArea.extent = extent2D;
 
-    VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-    renderPassInfo.clearValueCount = 1;
-    renderPassInfo.pClearValues = &clearColor;
+    renderPassInfo.clearValueCount = clearValues.size();
+    renderPassInfo.pClearValues = clearValues.data();
 
 
     vkCmdBeginRenderPass(_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
