@@ -8,6 +8,9 @@ public:
     inline VkDevice getHandle(){
         return _device;
     }
+    inline VkPhysicalDevice getPhysicalDevice(){
+        return _physicalDevice;
+    }
     Device(VkPhysicalDevice  physicalDevice,
             VkSurfaceKHR                           surface,
         std::unordered_map<const char *, bool> requested_extensions = {});

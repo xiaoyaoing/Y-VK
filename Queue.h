@@ -8,7 +8,9 @@ public:
     inline VkQueue getHandle() {
         return _queue;
     }
+    ~Queue(){
 
+    }
     Queue(const ptr<Device> & device,int familyIndex,int queueIndex,bool canPresent,const VkQueueFamilyProperties & prop);
     void submit(const std::vector<ptr<CommandBuffer>>& cmdBuffers,
                 ptr<Fence> fence);
