@@ -29,6 +29,7 @@
 #include "ext/stb_image/stb_image.h"
 #include "Images/ImageView.h"
 #include "Images/Sampler.h"
+#include "Mesh.h"
 
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
@@ -120,7 +121,9 @@ public:
         mainloop();
         cleanup();
     }
+    ~VKApp(){
 
+    }
 private:
     void
     populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo) {
@@ -257,50 +260,7 @@ private:
         auto surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
         auto presentMode = choosePresentMode(swapChainSupport.presentModes);
         auto extent = chooseSwapExtent(swapChainSupport.capabilities);
-
         uint32_t imageCount = 2;
-//
-//        if (swapChainSupport.capabilities.maxImageCount > 0 &&
-//            imageCount > swapChainSupport.capabilities.maxImageCount) {
-//            imageCount = swapChainSupport.capabilities.maxImageCount;
-//        }
-//
-//
-//        VkSwapchainCreateInfoKHR createInfo{};
-//        createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-//        createInfo.surface = surface;
-//        createInfo.minImageCount = imageCount;
-//        createInfo.imageFormat = surfaceFormat.format;
-//        createInfo.imageColorSpace = surfaceFormat.colorSpace;
-//        createInfo.imageExtent = extent;
-//        createInfo.imageArrayLayers = 1;
-//        createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-//
-//        QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
-//        uint32_t queueFamilyIndices[]{indices.graphicsFamily.value(), indices.presentFamily.value()};
-//
-//        if (indices.graphicsFamily != indices.presentFamily) {
-//            createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-//            createInfo.queueFamilyIndexCount = 2;
-//            createInfo.pQueueFamilyIndices = queueFamilyIndices;
-//        } else {
-//            createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-//            createInfo.queueFamilyIndexCount = 0;
-//            createInfo.pQueueFamilyIndices = nullptr;
-//        }
-//
-//        createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
-//        createInfo.presentMode = presentMode;
-//        createInfo.clipped = VK_TRUE;
-//        createInfo.oldSwapchain = VK_NULL_HANDLE;
-//
-//
-//        if (vkCreateSwapchainKHR(_device->getHandle(), &createInfo, nullptr, &swapChain) !=
-//            VK_SUCCESS)
-//            RUN_TIME_ERROR("Failed to create swapChain")
-//        swapCreateCount++;
-//        oldInfo = createInfo;
-       // uint32_t  imageCount;
         vkGetSwapchainImagesKHR(_device->getHandle(), _swapChain->getHandle(), &imageCount, nullptr);
         swapChainImages.resize(imageCount);
         vkGetSwapchainImagesKHR(_device->getHandle(), _swapChain->getHandle(), &imageCount, swapChainImages.data());
@@ -378,18 +338,18 @@ private:
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpass.colorAttachmentCount = 1;
         subpass.pColorAttachments = &colorAttachmentRef;
-        subpass.pDepthStencilAttachment = &depthAttachmentRef;
+       // subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
-        std::array<VkAttachmentDescription, 2> attachments = {colorAttachment,depthAttachment};
+        std::array<VkAttachmentDescription, 1> attachments = {colorAttachment};
 
 
         VkSubpassDependency dependency{};
         dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
         dependency.dstSubpass = 0;
-        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         dependency.srcAccessMask = 0;
-        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT ;
 
         VkRenderPassCreateInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -576,11 +536,7 @@ private:
     }
 
     void createFrameBuffers() {
-
-
         swapChainFrameBuffers.resize(swapChainImageViews.size());
-
-
         for (size_t i = 0; i < swapChainImages.size(); i++) {
             std::vector<VkImageView> attachments = {swapChainImageViews[i],_depthImageView->getHandle()};
             VkFramebufferCreateInfo framebufferInfo{};
@@ -604,33 +560,6 @@ private:
         commandPool = std::make_shared<CommandPool>(_device, graphicsQueue,
                                                     VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
-//        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
-//
-//        VkCommandPoolCreateInfo poolInfo{};
-//        poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-//        poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-//        poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
-//
-//
-//        if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) !=
-//            VK_SUCCESS) {
-//            throw std::runtime_error("failed to create command pool!");
-//        }
-    }
-
-    void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
-
-
-        VkBuffer vertexBuffers[] = {_vertexBuffers[0]->getHandle()};
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-
-        //  vkCmdDraw(commandBuffer, 3, 1, 0, 0);
-        if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
-            throw std::runtime_error("failed to record command buffer!");
-        }
-
-    }
 
     void createCommandBuffer() {
         commandBuffers.reserve(MAX_FRAMES_IN_FLIGHT);
@@ -673,13 +602,6 @@ private:
 
     }
 
-    void createVertexBuffers() {
-        _vertexBuffers.resize(1); // todo add more buffers
-        _vertexBuffers[0] = std::make_shared<Buffer>(
-                Buffer(allocator, DATASIZE(vertices), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                       VMA_MEMORY_USAGE_CPU_TO_GPU));
-        _vertexBuffers[0]->uploadData(vertices.data(), DATASIZE(vertices));
-    }
 
     void createAllocator() {
         VmaAllocatorCreateInfo allocatorInfo = {};
@@ -687,12 +609,6 @@ private:
         allocatorInfo.device = _device->getHandle();
         allocatorInfo.instance = _instance->getHandle();
         ASSERT(vmaCreateAllocator(&allocatorInfo, &allocator) == VK_SUCCESS, "create allocator");
-    }
-
-    void createIndiceBuffers() {
-        _indicesBuffer = std::make_shared<Buffer>(allocator, DATASIZE(indices), VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                                                  VMA_MEMORY_USAGE_CPU_TO_GPU);
-        _indicesBuffer->uploadData(indices.data(), DATASIZE(indices));
     }
 
     void createDescriptorSetLayout() {
@@ -716,13 +632,15 @@ private:
     }
 
     void updateUniformBuffer() {
+
         static auto startTime =
                 std::chrono::high_resolution_clock::now();
 
         auto currentTime = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration<float,
                 std::chrono::seconds::period>(currentTime - startTime).count();
-
+        //todo modify
+         time = 0;
         UniformBufferObject ubo{};
 
         ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.f),
@@ -774,7 +692,7 @@ private:
 
         _images.resize(1);
         int width, height, channels;
-        auto imagePath = parentPath + "resources/wood2.jpg";
+        auto imagePath = parentPath + "resources/Window.png";
         auto imageData = stbi_load(imagePath.c_str(), &width, &height, &channels, STBI_rgb_alpha);
         auto buffer = std::make_shared<Buffer>(allocator, 4 * width * height, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                                VMA_MEMORY_USAGE_CPU_TO_GPU);
@@ -820,6 +738,13 @@ private:
     void addInstanceExtension(const char *extension, bool optional){
         instanceExtensions[extension] = optional;
     }
+
+    void createMeshes() {
+        meshes.reserve(1);
+        meshes.push_back(std::make_shared<Mesh>("/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/resources/viking_room.obj"));
+        meshes[0]->createBuffer(allocator);
+    }
+
     void initVk() {
         //todo queue family index
       //  createInstance();
@@ -851,9 +776,11 @@ private:
         createFrameBuffers();
         createCommandPool();
 
-        createVertexBuffers();
-        createIndiceBuffers();
+     //   createVertexBuffers();
+    //    createIndiceBuffers();
         createUniformBuffers();
+        createMeshes();
+
         createImages();
         createImageViews();
 
@@ -889,14 +816,17 @@ private:
         commandBuffer->beginRenderPass(renderPass->getHandle(), swapChainFrameBuffers[curFrameCount]->getHandle(),
                                        clearValues, _swapChain->getExtent());
 
-        commandBuffer->bindVertexBuffer(_vertexBuffers, {0});
-        commandBuffer->bindIndicesBuffer(_indicesBuffer, 0);
+    //    commandBuffer->bindVertexBuffer(_vertexBuffers, {0});
+     //   commandBuffer->bindIndicesBuffer(_indicesBuffer, 0);
+        for(const auto & mesh : meshes)
+            mesh->bindOnly(commandBuffer->getHandle());
         commandBuffer->bindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0,
                                           {_descriptorSet[curFrameCount]}, {});
         commandBuffer->bindPipeline(graphicsPipeline->getHandle());
         //  commandBuffer->draw(4,1,0,0);
-        vkCmdDrawIndexed(commandBuffer->getHandle(), static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
-
+    //    vkCmdDrawIndexed(commandBuffer->getHandle(), static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+        for(const auto & mesh : meshes)
+            mesh->drawOnly(commandBuffer->getHandle());
         commandBuffer->endRecord();
         //     commandBuffer->endPass();
 
@@ -1073,6 +1003,8 @@ private:
     ptr<Image> _depthImage;
     ptr<ImageView> _depthImageView;
     ptr<Sampler> imageSampler;
+
+    std::vector<ptr<Mesh>> meshes;
 
     VmaAllocator allocator;
 

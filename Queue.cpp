@@ -6,7 +6,7 @@
 #include <CommandBuffer.h>
 #include <Sync/Fence.h>
 
-Queue::Queue(const ptr<Device> &device, int familyIndex, int queueIndex, bool canPresent,const VkQueueFamilyProperties & prop) : _device(device),
+Queue::Queue( Device * device, int familyIndex, int queueIndex, bool canPresent,const VkQueueFamilyProperties & prop) : _device(device),
                                                                                             _familyIndex(familyIndex),
                                                                                             _queueIndex(queueIndex),
                                                                                             canPresent(canPresent),

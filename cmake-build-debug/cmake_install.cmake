@@ -39,7 +39,7 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/cmake-build-debug/ext/VulkanMemoryAllocator/cmake_install.cmake")
+  include("/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/cmake-build-debug/ext/cmake_install.cmake")
 endif()
 
 if(CMAKE_INSTALL_COMPONENT)

@@ -49,7 +49,7 @@ Device::Device(VkPhysicalDevice  physicalDevice,VkSurfaceKHR surface,  std::unor
         vkGetPhysicalDeviceSurfaceSupportKHR(_physicalDevice, queueFamilyIndex, surface, &presentSupport);
         for(uint32_t i = 0 ;i<queueCreateInfos[queueFamilyIndex].queueCount;i++)
         {const VkQueueFamilyProperties & queueFamilyProp =queueFamilyProperties[queueFamilyIndex];
-            queues[queueFamilyIndex].emplace_back(std::make_shared<Queue>(ptr<Device>(this),queueFamilyIndex,i,presentSupport,queueFamilyProp));
+            queues[queueFamilyIndex].emplace_back(std::make_shared<Queue>(this,queueFamilyIndex,i,presentSupport,queueFamilyProp));
         }
     }
 

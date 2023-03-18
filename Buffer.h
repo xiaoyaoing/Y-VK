@@ -1,3 +1,4 @@
+#pragma once
 #include "Vulkan.h"
 class Buffer {
 
@@ -17,7 +18,9 @@ public:
 
     void uploadData		(const void* srcData, uint64_t size);
     void cleanup();
-    VkBuffer getHandle() const;
+    inline  VkBuffer getHandle() {
+        return _buffer;
+    }
     inline  VkDeviceSize  getSize(){
         return _allocatedSize;
     }

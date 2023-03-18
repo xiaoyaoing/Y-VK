@@ -11,7 +11,7 @@ public:
     ~Queue(){
 
     }
-    Queue(const ptr<Device> & device,int familyIndex,int queueIndex,bool canPresent,const VkQueueFamilyProperties & prop);
+    Queue(Device *  device,int familyIndex,int queueIndex,bool canPresent,const VkQueueFamilyProperties & prop);
     void submit(const std::vector<ptr<CommandBuffer>>& cmdBuffers,
                 ptr<Fence> fence);
     inline bool supportPresent(){return canPresent;}
@@ -21,6 +21,6 @@ protected:
     uint32_t _familyIndex,_queueIndex;
     bool canPresent;
     VkQueue  _queue;
-    ptr<Device> _device;
+    Device * _device;
     VkQueueFamilyProperties properties{};
 };

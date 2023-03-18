@@ -16,6 +16,7 @@ public:
         std::unordered_map<const char *, bool> requested_extensions = {});
     ptr<Queue> getQueueByFlag(VkQueueFlagBits requiredFlag,uint32_t queueIndex);
     ptr<Queue> getPresentQueue(uint32_t queueIndex);
+    ~Device() {}
 protected:
 
     VkPhysicalDevice _physicalDevice;

@@ -40,7 +40,3 @@ void Buffer::uploadData(const void *srcData, uint64_t size) {
     memcpy(dstData, srcData, static_cast<size_t>(size));
     vmaUnmapMemory(_allocator, _bufferAllocation);
 }
-
-VkBuffer Buffer::getHandle() const {
-    return _buffer;
-}

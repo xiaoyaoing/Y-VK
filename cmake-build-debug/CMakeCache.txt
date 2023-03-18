@@ -256,6 +256,15 @@ CMAKE_STRIP:FILEPATH=/Applications/Xcode.app/Contents/Developer/Toolchains/Xcode
 // Studio IDE projects all commands are done without /nologo.
 CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
 
+//Build OBJ Sticher Application
+TINYOBJLOADER_BUILD_OBJ_STICHER:BOOL=OFF
+
+//Build Example Loader Application
+TINYOBJLOADER_BUILD_TEST_LOADER:BOOL=OFF
+
+//Build library with double precision instead of single (float)
+TINYOBJLOADER_USE_DOUBLE:BOOL=OFF
+
 //Build VulkanMemoryAllocator sample application
 VMA_BUILD_SAMPLE:BOOL=OFF
 
@@ -314,6 +323,15 @@ Vulkan_INCLUDE_DIR:PATH=/usr/local/include
 
 //Path to a library.
 Vulkan_LIBRARY:FILEPATH=/usr/local/lib/libvulkan.dylib
+
+//Value Computed by CMake
+tinyobjloader_BINARY_DIR:STATIC=/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/cmake-build-debug/ext/tinyobjloader
+
+//Value Computed by CMake
+tinyobjloader_IS_TOP_LEVEL:STATIC=OFF
+
+//Value Computed by CMake
+tinyobjloader_SOURCE_DIR:STATIC=/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/ext/tinyobjloader
 
 
 ########################
@@ -440,7 +458,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_NM
 CMAKE_NM-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=3
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=5
 //ADVANCED property for variable: CMAKE_OBJCOPY
 CMAKE_OBJCOPY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_OBJDUMP
