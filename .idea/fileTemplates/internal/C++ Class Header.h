@@ -1,4 +1,4 @@
-\#pragma once
+#pragma once
 \#include <Vulkan.h>
 class ${NAME} {
 public:

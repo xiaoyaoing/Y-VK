@@ -1,4 +1,4 @@
-/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/cmake-build-debug/CMakeFiles/VulkanDemo.dir
+/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/cmake-build-debug/CMakeFiles/Engine.dir
 /Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/cmake-build-debug/CMakeFiles/edit_cache.dir
 /Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/cmake-build-debug/CMakeFiles/rebuild_cache.dir
 /Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/cmake-build-debug/CMakeFiles/list_install_components.dir
@@ -32,3 +32,10 @@
 /Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/cmake-build-debug/ext/VulkanMemoryAllocator/src/CMakeFiles/install.dir
 /Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/cmake-build-debug/ext/VulkanMemoryAllocator/src/CMakeFiles/install/local.dir
 /Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/cmake-build-debug/ext/VulkanMemoryAllocator/src/CMakeFiles/install/strip.dir
+/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/cmake-build-debug/samples/test/CMakeFiles/test.dir
+/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/cmake-build-debug/samples/test/CMakeFiles/edit_cache.dir
+/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/cmake-build-debug/samples/test/CMakeFiles/rebuild_cache.dir
+/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/cmake-build-debug/samples/test/CMakeFiles/list_install_components.dir
+/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/cmake-build-debug/samples/test/CMakeFiles/install.dir
+/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/cmake-build-debug/samples/test/CMakeFiles/install/local.dir
+/Users/yjp/nju/大三下/graphics/vulkan学习/vulkan/cmake-build-debug/samples/test/CMakeFiles/install/strip.dir
