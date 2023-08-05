@@ -1,0 +1,93 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="E:\code\VulkanFrameWorkLearn\build\CMakeFiles\a8560719d59b8100bae8294ee5a88117\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="E:\code\VulkanFrameWorkLearn\ext\CMakeLists.txt">
+      <Filter>Buildsystem Input Files\ext</Filter>
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\ext\glfw\CMake\glfw3.pc.in">
+      <Filter>Buildsystem Input Files\ext\glfw\CMake</Filter>
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\ext\glfw\CMake\glfw3Config.cmake.in">
+      <Filter>Buildsystem Input Files\ext\glfw\CMake</Filter>
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\ext\glfw\CMakeLists.txt">
+      <Filter>Buildsystem Input Files\ext\glfw</Filter>
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\ext\glfw\src\CMakeLists.txt">
+      <Filter>Buildsystem Input Files\ext\glfw\src</Filter>
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\ext\glm\CMakeLists.txt">
+      <Filter>Buildsystem Input Files\ext\glm</Filter>
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\ext\spdlog\CMakeLists.txt">
+      <Filter>Buildsystem Input Files\ext\spdlog</Filter>
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\ext\spdlog\cmake\ide.cmake">
+      <Filter>Buildsystem Input Files\ext\spdlog\cmake</Filter>
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\ext\spdlog\cmake\utils.cmake">
+      <Filter>Buildsystem Input Files\ext\spdlog\cmake</Filter>
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\ext\tinyobjloader\CMakeLists.txt">
+      <Filter>Buildsystem Input Files\ext\tinyobjloader</Filter>
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\ext\tinyobjloader\cmake_uninstall.cmake.in">
+      <Filter>Buildsystem Input Files\ext\tinyobjloader</Filter>
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\ext\tinyobjloader\tinyobjloader-config.cmake.in">
+      <Filter>Buildsystem Input Files\ext\tinyobjloader</Filter>
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\ext\tinyobjloader\tinyobjloader.pc.in">
+      <Filter>Buildsystem Input Files\ext\tinyobjloader</Filter>
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\framework\CMakeLists.txt">
+      <Filter>Buildsystem Input Files\framework</Filter>
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\samples\test\CMakeLists.txt">
+      <Filter>Buildsystem Input Files\samples\test</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{F7D7ED77-C897-3ED9-9AD0-6AA47781227C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{C5075D5E-F616-3DBA-AF44-C7E75F00EBA8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Buildsystem Input Files\ext">
+      <UniqueIdentifier>{CD961CB1-13FB-365D-80D1-ADDAB8C92F8F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Buildsystem Input Files\ext\glfw">
+      <UniqueIdentifier>{42C936AC-EE6A-3CED-8702-44FC351CEF0C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Buildsystem Input Files\ext\glfw\CMake">
+      <UniqueIdentifier>{BA43C395-A15F-3D40-84B1-BA1483692FA0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Buildsystem Input Files\ext\glfw\src">
+      <UniqueIdentifier>{25BD364C-258E-39D4-A638-E4755783EA8D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Buildsystem Input Files\ext\glm">
+      <UniqueIdentifier>{F4BF1236-CC73-338C-8A0A-5E7FB780F08E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Buildsystem Input Files\ext\spdlog">
+      <UniqueIdentifier>{81566DA0-38DF-3A3B-ADB9-09C7C7DCB114}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Buildsystem Input Files\ext\spdlog\cmake">
+      <UniqueIdentifier>{ED0F7B0A-E6A0-35BA-903C-433C26EEB8FA}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Buildsystem Input Files\ext\tinyobjloader">
+      <UniqueIdentifier>{B6D56430-BBE7-3334-BD4C-498858756C6F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Buildsystem Input Files\framework">
+      <UniqueIdentifier>{F6DDCCB9-9EEB-364B-A484-9668E72139C7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Buildsystem Input Files\samples\test">
+      <UniqueIdentifier>{44E2D70C-54BE-354C-BC20-6A786D409662}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

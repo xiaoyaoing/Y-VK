@@ -1,0 +1,208 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ResolveNugetPackages>false</ResolveNugetPackages>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{502128D9-D0FD-305F-B30E-3D4A5820E6D7}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.22000.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>ZERO_CHECK</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\code\VulkanFrameWorkLearn\build\CMakeFiles\a8560719d59b8100bae8294ee5a88117\generate.stamp.rule">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</BuildInParallel>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Checking Build System</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SE:/code/VulkanFrameWorkLearn -BE:/code/VulkanFrameWorkLearn/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file E:/code/VulkanFrameWorkLearn/build/VulkanDemo.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Program Files\CMake\share\cmake-3.27\Modules\BasicConfigVersion-SameMajorVersion.cmake.in;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeDependentOption.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakePackageConfigHelpers.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CheckCSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CheckLibraryExists.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindDoxygen.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindThreads.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindVulkan.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\GNUInstallDirs.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Internal\CheckSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Platform\WindowsPaths.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\WriteBasicConfigVersionFile.cmake;E:\code\VulkanFrameWorkLearn\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\build\CMakeFiles\3.27.0-rc4\CMakeCCompiler.cmake;E:\code\VulkanFrameWorkLearn\build\CMakeFiles\3.27.0-rc4\CMakeCXXCompiler.cmake;E:\code\VulkanFrameWorkLearn\build\CMakeFiles\3.27.0-rc4\CMakeRCCompiler.cmake;E:\code\VulkanFrameWorkLearn\build\CMakeFiles\3.27.0-rc4\CMakeSystem.cmake;E:\code\VulkanFrameWorkLearn\ext\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\ext\glfw\CMake\glfw3.pc.in;E:\code\VulkanFrameWorkLearn\ext\glfw\CMake\glfw3Config.cmake.in;E:\code\VulkanFrameWorkLearn\ext\glfw\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\ext\glfw\src\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\ext\glm\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\ext\spdlog\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\ext\spdlog\cmake\ide.cmake;E:\code\VulkanFrameWorkLearn\ext\spdlog\cmake\utils.cmake;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader\cmake_uninstall.cmake.in;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader\tinyobjloader-config.cmake.in;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader\tinyobjloader.pc.in;E:\code\VulkanFrameWorkLearn\framework\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\samples\test\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\code\VulkanFrameWorkLearn\build\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\ext\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\ext\tinyobjloader\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\ext\glfw\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\ext\glfw\src\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\ext\spdlog\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\ext\glm\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\framework\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\samples\test\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</BuildInParallel>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Checking Build System</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SE:/code/VulkanFrameWorkLearn -BE:/code/VulkanFrameWorkLearn/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file E:/code/VulkanFrameWorkLearn/build/VulkanDemo.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Program Files\CMake\share\cmake-3.27\Modules\BasicConfigVersion-SameMajorVersion.cmake.in;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeDependentOption.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakePackageConfigHelpers.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CheckCSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CheckLibraryExists.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindDoxygen.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindThreads.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindVulkan.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\GNUInstallDirs.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Internal\CheckSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Platform\WindowsPaths.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\WriteBasicConfigVersionFile.cmake;E:\code\VulkanFrameWorkLearn\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\build\CMakeFiles\3.27.0-rc4\CMakeCCompiler.cmake;E:\code\VulkanFrameWorkLearn\build\CMakeFiles\3.27.0-rc4\CMakeCXXCompiler.cmake;E:\code\VulkanFrameWorkLearn\build\CMakeFiles\3.27.0-rc4\CMakeRCCompiler.cmake;E:\code\VulkanFrameWorkLearn\build\CMakeFiles\3.27.0-rc4\CMakeSystem.cmake;E:\code\VulkanFrameWorkLearn\ext\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\ext\glfw\CMake\glfw3.pc.in;E:\code\VulkanFrameWorkLearn\ext\glfw\CMake\glfw3Config.cmake.in;E:\code\VulkanFrameWorkLearn\ext\glfw\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\ext\glfw\src\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\ext\glm\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\ext\spdlog\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\ext\spdlog\cmake\ide.cmake;E:\code\VulkanFrameWorkLearn\ext\spdlog\cmake\utils.cmake;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader\cmake_uninstall.cmake.in;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader\tinyobjloader-config.cmake.in;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader\tinyobjloader.pc.in;E:\code\VulkanFrameWorkLearn\framework\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\samples\test\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\code\VulkanFrameWorkLearn\build\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\ext\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\ext\tinyobjloader\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\ext\glfw\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\ext\glfw\src\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\ext\spdlog\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\ext\glm\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\framework\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\samples\test\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">true</BuildInParallel>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Checking Build System</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SE:/code/VulkanFrameWorkLearn -BE:/code/VulkanFrameWorkLearn/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file E:/code/VulkanFrameWorkLearn/build/VulkanDemo.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Program Files\CMake\share\cmake-3.27\Modules\BasicConfigVersion-SameMajorVersion.cmake.in;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeDependentOption.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakePackageConfigHelpers.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CheckCSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CheckLibraryExists.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindDoxygen.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindThreads.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindVulkan.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\GNUInstallDirs.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Internal\CheckSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Platform\WindowsPaths.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\WriteBasicConfigVersionFile.cmake;E:\code\VulkanFrameWorkLearn\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\build\CMakeFiles\3.27.0-rc4\CMakeCCompiler.cmake;E:\code\VulkanFrameWorkLearn\build\CMakeFiles\3.27.0-rc4\CMakeCXXCompiler.cmake;E:\code\VulkanFrameWorkLearn\build\CMakeFiles\3.27.0-rc4\CMakeRCCompiler.cmake;E:\code\VulkanFrameWorkLearn\build\CMakeFiles\3.27.0-rc4\CMakeSystem.cmake;E:\code\VulkanFrameWorkLearn\ext\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\ext\glfw\CMake\glfw3.pc.in;E:\code\VulkanFrameWorkLearn\ext\glfw\CMake\glfw3Config.cmake.in;E:\code\VulkanFrameWorkLearn\ext\glfw\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\ext\glfw\src\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\ext\glm\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\ext\spdlog\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\ext\spdlog\cmake\ide.cmake;E:\code\VulkanFrameWorkLearn\ext\spdlog\cmake\utils.cmake;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader\cmake_uninstall.cmake.in;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader\tinyobjloader-config.cmake.in;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader\tinyobjloader.pc.in;E:\code\VulkanFrameWorkLearn\framework\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\samples\test\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\code\VulkanFrameWorkLearn\build\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\ext\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\ext\tinyobjloader\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\ext\glfw\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\ext\glfw\src\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\ext\spdlog\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\ext\glm\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\framework\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\samples\test\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <BuildInParallel Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</BuildInParallel>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Checking Build System</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SE:/code/VulkanFrameWorkLearn -BE:/code/VulkanFrameWorkLearn/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file E:/code/VulkanFrameWorkLearn/build/VulkanDemo.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Program Files\CMake\share\cmake-3.27\Modules\BasicConfigVersion-SameMajorVersion.cmake.in;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeDependentOption.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakePackageConfigHelpers.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CheckCSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\CheckLibraryExists.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindDoxygen.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindThreads.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindVulkan.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\GNUInstallDirs.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Internal\CheckSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\Platform\WindowsPaths.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\WriteBasicConfigVersionFile.cmake;E:\code\VulkanFrameWorkLearn\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\build\CMakeFiles\3.27.0-rc4\CMakeCCompiler.cmake;E:\code\VulkanFrameWorkLearn\build\CMakeFiles\3.27.0-rc4\CMakeCXXCompiler.cmake;E:\code\VulkanFrameWorkLearn\build\CMakeFiles\3.27.0-rc4\CMakeRCCompiler.cmake;E:\code\VulkanFrameWorkLearn\build\CMakeFiles\3.27.0-rc4\CMakeSystem.cmake;E:\code\VulkanFrameWorkLearn\ext\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\ext\glfw\CMake\glfw3.pc.in;E:\code\VulkanFrameWorkLearn\ext\glfw\CMake\glfw3Config.cmake.in;E:\code\VulkanFrameWorkLearn\ext\glfw\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\ext\glfw\src\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\ext\glm\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\ext\spdlog\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\ext\spdlog\cmake\ide.cmake;E:\code\VulkanFrameWorkLearn\ext\spdlog\cmake\utils.cmake;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader\cmake_uninstall.cmake.in;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader\tinyobjloader-config.cmake.in;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader\tinyobjloader.pc.in;E:\code\VulkanFrameWorkLearn\framework\CMakeLists.txt;E:\code\VulkanFrameWorkLearn\samples\test\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\code\VulkanFrameWorkLearn\build\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\ext\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\ext\tinyobjloader\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\ext\glfw\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\ext\glfw\src\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\ext\spdlog\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\ext\glm\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\framework\CMakeFiles\generate.stamp;E:\code\VulkanFrameWorkLearn\build\samples\test\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="E:\code\VulkanFrameWorkLearn\ext\CMakeLists.txt">
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\ext\glfw\CMake\glfw3.pc.in">
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\ext\glfw\CMake\glfw3Config.cmake.in">
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\ext\glfw\CMakeLists.txt">
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\ext\glfw\src\CMakeLists.txt">
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\ext\glm\CMakeLists.txt">
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\ext\spdlog\CMakeLists.txt">
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\ext\spdlog\cmake\ide.cmake">
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\ext\spdlog\cmake\utils.cmake">
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\ext\tinyobjloader\CMakeLists.txt">
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\ext\tinyobjloader\cmake_uninstall.cmake.in">
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\ext\tinyobjloader\tinyobjloader-config.cmake.in">
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\ext\tinyobjloader\tinyobjloader.pc.in">
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\framework\CMakeLists.txt">
+    </None>
+    <None Include="E:\code\VulkanFrameWorkLearn\samples\test\CMakeLists.txt">
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

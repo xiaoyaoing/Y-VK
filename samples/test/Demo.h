@@ -1,8 +1,7 @@
 #pragma once
-
-#include <Engine/App/Application.h>
-
-class Demo : public Application{
+#include "App/Application.h"
+class Demo : public Application
+{
 public:
 private:
     void initVk() override;
@@ -16,6 +15,7 @@ protected:
     void createUniformBuffers();
     void createDescriptorSet();
     void updateUnifomBuffers();
+
 protected:
     DescriptorPool _descriptorPool;
     DescriptorLayout _descriptorLayout;

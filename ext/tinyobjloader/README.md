@@ -72,7 +72,7 @@ TinyObjLoader is successfully used in ...
 * liblava - A modern C++ and easy-to-use framework for the Vulkan API. [MIT]: https://github.com/liblava/liblava
 * rtxON - Simple Vulkan raytracing tutorials  https://github.com/iOrange/rtxON
 * metal-ray-tracer - Writing ray-tracer using Metal Performance Shaders https://github.com/sergeyreznik/metal-ray-tracer https://sergeyreznik.github.io/metal-ray-tracer/index.html
-* Supernova Engine - 2D and 3D projects with Lua or C++ in data oriented design: https://github.com/supernovaengine/supernova
+* Supernova Engine - 2D and 3D projects with Lua or C++ in data oriented design: https://github.com/supernovasupernova
 * AGE (Arc Game Engine) - An open-source engine for building 2D & 3D real-time rendering and interactive contents: https://github.com/MohitSethi99/ArcGameEngine
 * Your project here! (Letting us know via github issue is welcome!)
 

@@ -1,0 +1,361 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{EBA6099B-E16B-387C-8F20-D6EE5FF83B20}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.22000.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>framework</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\code\VulkanFrameWorkLearn\build\framework\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">framework.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">framework</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\code\VulkanFrameWorkLearn\build\framework\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">framework.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">framework</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\code\VulkanFrameWorkLearn\build\framework\MinSizeRel\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">framework.dir\MinSizeRel\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">framework</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\code\VulkanFrameWorkLearn\build\framework\RelWithDebInfo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">framework.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">framework</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\code\VulkanFrameWorkLearn\framework;E:\code\VulkanFrameWorkLearn\ext\spdlog\include;E:\code\VulkanFrameWorkLearn\ext\vma\src;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader;E:\code\VulkanFrameWorkLearn\ext\glfw\include;E:\code\VulkanFrameWorkLearn\ext\stb_image;E:\code\VulkanFrameWorkLearn\ext\glm\..\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/VulkanSDK/1.3.250.1/Include"</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;SPDLOG_COMPILED_LIB;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;SPDLOG_COMPILED_LIB;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\code\VulkanFrameWorkLearn\framework;E:\code\VulkanFrameWorkLearn\ext\spdlog\include;E:\code\VulkanFrameWorkLearn\ext\vma\src;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader;E:\code\VulkanFrameWorkLearn\ext\glfw\include;E:\code\VulkanFrameWorkLearn\ext\stb_image;E:\code\VulkanFrameWorkLearn\ext\glm\..\..;C:\VulkanSDK\1.3.250.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\code\VulkanFrameWorkLearn\framework;E:\code\VulkanFrameWorkLearn\ext\spdlog\include;E:\code\VulkanFrameWorkLearn\ext\vma\src;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader;E:\code\VulkanFrameWorkLearn\ext\glfw\include;E:\code\VulkanFrameWorkLearn\ext\stb_image;E:\code\VulkanFrameWorkLearn\ext\glm\..\..;C:\VulkanSDK\1.3.250.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\code\VulkanFrameWorkLearn\framework;E:\code\VulkanFrameWorkLearn\ext\spdlog\include;E:\code\VulkanFrameWorkLearn\ext\vma\src;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader;E:\code\VulkanFrameWorkLearn\ext\glfw\include;E:\code\VulkanFrameWorkLearn\ext\stb_image;E:\code\VulkanFrameWorkLearn\ext\glm\..\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/VulkanSDK/1.3.250.1/Include"</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;SPDLOG_COMPILED_LIB;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;SPDLOG_COMPILED_LIB;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\code\VulkanFrameWorkLearn\framework;E:\code\VulkanFrameWorkLearn\ext\spdlog\include;E:\code\VulkanFrameWorkLearn\ext\vma\src;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader;E:\code\VulkanFrameWorkLearn\ext\glfw\include;E:\code\VulkanFrameWorkLearn\ext\stb_image;E:\code\VulkanFrameWorkLearn\ext\glm\..\..;C:\VulkanSDK\1.3.250.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\code\VulkanFrameWorkLearn\framework;E:\code\VulkanFrameWorkLearn\ext\spdlog\include;E:\code\VulkanFrameWorkLearn\ext\vma\src;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader;E:\code\VulkanFrameWorkLearn\ext\glfw\include;E:\code\VulkanFrameWorkLearn\ext\stb_image;E:\code\VulkanFrameWorkLearn\ext\glm\..\..;C:\VulkanSDK\1.3.250.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\code\VulkanFrameWorkLearn\framework;E:\code\VulkanFrameWorkLearn\ext\spdlog\include;E:\code\VulkanFrameWorkLearn\ext\vma\src;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader;E:\code\VulkanFrameWorkLearn\ext\glfw\include;E:\code\VulkanFrameWorkLearn\ext\stb_image;E:\code\VulkanFrameWorkLearn\ext\glm\..\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/VulkanSDK/1.3.250.1/Include"</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <Optimization>MinSpace</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;SPDLOG_COMPILED_LIB;CMAKE_INTDIR="MinSizeRel"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;SPDLOG_COMPILED_LIB;CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\code\VulkanFrameWorkLearn\framework;E:\code\VulkanFrameWorkLearn\ext\spdlog\include;E:\code\VulkanFrameWorkLearn\ext\vma\src;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader;E:\code\VulkanFrameWorkLearn\ext\glfw\include;E:\code\VulkanFrameWorkLearn\ext\stb_image;E:\code\VulkanFrameWorkLearn\ext\glm\..\..;C:\VulkanSDK\1.3.250.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\code\VulkanFrameWorkLearn\framework;E:\code\VulkanFrameWorkLearn\ext\spdlog\include;E:\code\VulkanFrameWorkLearn\ext\vma\src;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader;E:\code\VulkanFrameWorkLearn\ext\glfw\include;E:\code\VulkanFrameWorkLearn\ext\stb_image;E:\code\VulkanFrameWorkLearn\ext\glm\..\..;C:\VulkanSDK\1.3.250.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\code\VulkanFrameWorkLearn\framework;E:\code\VulkanFrameWorkLearn\ext\spdlog\include;E:\code\VulkanFrameWorkLearn\ext\vma\src;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader;E:\code\VulkanFrameWorkLearn\ext\glfw\include;E:\code\VulkanFrameWorkLearn\ext\stb_image;E:\code\VulkanFrameWorkLearn\ext\glm\..\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/VulkanSDK/1.3.250.1/Include"</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;SPDLOG_COMPILED_LIB;CMAKE_INTDIR="RelWithDebInfo"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;SPDLOG_COMPILED_LIB;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\code\VulkanFrameWorkLearn\framework;E:\code\VulkanFrameWorkLearn\ext\spdlog\include;E:\code\VulkanFrameWorkLearn\ext\vma\src;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader;E:\code\VulkanFrameWorkLearn\ext\glfw\include;E:\code\VulkanFrameWorkLearn\ext\stb_image;E:\code\VulkanFrameWorkLearn\ext\glm\..\..;C:\VulkanSDK\1.3.250.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\code\VulkanFrameWorkLearn\framework;E:\code\VulkanFrameWorkLearn\ext\spdlog\include;E:\code\VulkanFrameWorkLearn\ext\vma\src;E:\code\VulkanFrameWorkLearn\ext\tinyobjloader;E:\code\VulkanFrameWorkLearn\ext\glfw\include;E:\code\VulkanFrameWorkLearn\ext\stb_image;E:\code\VulkanFrameWorkLearn\ext\glm\..\..;C:\VulkanSDK\1.3.250.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\code\VulkanFrameWorkLearn\framework\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule E:/code/VulkanFrameWorkLearn/framework/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SE:/code/VulkanFrameWorkLearn -BE:/code/VulkanFrameWorkLearn/build --check-stamp-file E:/code/VulkanFrameWorkLearn/build/framework/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Program Files\CMake\share\cmake-3.27\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindVulkan.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\code\VulkanFrameWorkLearn\build\framework\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule E:/code/VulkanFrameWorkLearn/framework/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SE:/code/VulkanFrameWorkLearn -BE:/code/VulkanFrameWorkLearn/build --check-stamp-file E:/code/VulkanFrameWorkLearn/build/framework/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Program Files\CMake\share\cmake-3.27\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindVulkan.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\code\VulkanFrameWorkLearn\build\framework\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule E:/code/VulkanFrameWorkLearn/framework/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SE:/code/VulkanFrameWorkLearn -BE:/code/VulkanFrameWorkLearn/build --check-stamp-file E:/code/VulkanFrameWorkLearn/build/framework/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Program Files\CMake\share\cmake-3.27\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindVulkan.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\code\VulkanFrameWorkLearn\build\framework\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule E:/code/VulkanFrameWorkLearn/framework/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SE:/code/VulkanFrameWorkLearn -BE:/code/VulkanFrameWorkLearn/build --check-stamp-file E:/code/VulkanFrameWorkLearn/build/framework/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Program Files\CMake\share\cmake-3.27\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.27\Modules\FindVulkan.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\code\VulkanFrameWorkLearn\build\framework\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\App\Application.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\App\Application.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Buffer.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Buffer.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Command\CommandPool.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Command\CommandPool.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\CommandBuffer.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\CommandBuffer.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Common\Log.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Common\Log.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Common\String.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Common\String.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Descriptor\DescriptorLayout.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Descriptor\DescriptorLayout.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Descriptor\DescriptorPool.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Descriptor\DescriptorPool.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Descriptor\DescriptorSet.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Descriptor\DescriptorSet.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Device.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Device.h" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\ForwardDeclation.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\FrameBuffer.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\FrameBuffer.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Images\Image.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Images\Image.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Images\ImageView.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Images\ImageView.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Images\Sampler.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Images\Sampler.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Instance.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Instance.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Mesh.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Mesh.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Pipeline.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Pipeline.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Queue.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Queue.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\RenderContext.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\RenderContext.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\RenderFrame.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\RenderFrame.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\RenderPass.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\RenderPass.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\RenderTarget.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\RenderTarget.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Subpass.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Subpass.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\SwapChain.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\SwapChain.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Sync\Fence.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Sync\Fence.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Utils\DebugUtils.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Utils\DebugUtils.h" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Utils\VkUtils.h" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\VertexData.h" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Vulkan.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Window.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Window.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\vk.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\ext\vma\src\vk_mem_alloc.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\ext\stb_image\stb_image.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="E:\code\VulkanFrameWorkLearn\build\ZERO_CHECK.vcxproj">
+      <Project>{502128D9-D0FD-305F-B30E-3D4A5820E6D7}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="E:\code\VulkanFrameWorkLearn\build\ext\glfw\src\glfw.vcxproj">
+      <Project>{6C968144-802B-3012-91C3-D421B5AFCB1A}</Project>
+      <Name>glfw</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\code\VulkanFrameWorkLearn\build\ext\spdlog\spdlog.vcxproj">
+      <Project>{0D5109B9-71FB-31AC-BE57-F42B49D4FB02}</Project>
+      <Name>spdlog</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\code\VulkanFrameWorkLearn\build\ext\tinyobjloader\tinyobjloader.vcxproj">
+      <Project>{F0796223-ACD9-36B1-87CB-15CC96835461}</Project>
+      <Name>tinyobjloader</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

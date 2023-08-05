@@ -10,33 +10,33 @@
 #include <vector>
 #include <optional>
 
-#include "Engine/Vulkan.h"
-#include "Engine/VertexData.h"
-#include "Engine/Buffer.h"
-#include "Engine/CommandBuffer.h"
-#include "Engine/Pipeline.h"
-#include "Engine/FrameBuffer.h"
-#include "Engine/RenderPass.h"
-#include "Engine/Device.h"
-#include <Engine/Images/Image.h>
-#include "Engine/Queue.h"
-#include "Engine/Window.h"
-#include <Engine/Command/CommandPool.h>
-#include "Engine/Instance.h"
-#include "Engine/SwapChain.h"
+#include "Vulkan.h"
+#include "VertexData.h"
+#include "Buffer.h"
+#include "CommandBuffer.h"
+#include "Pipeline.h"
+#include "FrameBuffer.h"
+#include "RenderPass.h"
+#include "Device.h"
+#include <Images/Image.h>
+#include "Queue.h"
+#include "Window.h"
+#include <Command/CommandPool.h>
+#include "Instance.h"
+#include "SwapChain.h"
 
 
 #include "ext/stb_image/stb_image.h"
-#include "Engine/Images/ImageView.h"
-#include "Engine/Images/Sampler.h"
-#include "Engine/Mesh.h"
+#include "Images/ImageView.h"
+#include "Images/Sampler.h"
+#include "Mesh.h"
 
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 
-#include <Engine/Descriptor/DescriptorPool.h>
-#include <Engine/Descriptor/DescriptorLayout.h>
-#include <Engine/Descriptor/DescriptorSet.h>
+#include <Descriptor/DescriptorPool.h>
+#include <Descriptor/DescriptorLayout.h>
+#include <Descriptor/DescriptorSet.h>
 
 #include <chrono>
 #include <thread>
@@ -547,7 +547,7 @@ private:
             if (vkCreateFramebuffer(_device->getHandle(), &framebufferInfo, nullptr, &_buffer) != VK_SUCCESS)
                 RUN_TIME_ERROR("Failed to create frameBuffer");
 
-            swapChainFrameBuffers[i] = std::make_shared<Framebuffer>(_buffer);
+            swapChainFrameBuffers[i] = std::make_shared<FrameBuffer>(_buffer);
         }
     }
 
@@ -952,7 +952,7 @@ private:
     VkSurfaceKHR surface;
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;
-    std::vector<ptr<Framebuffer>> swapChainFrameBuffers;
+    std::vector<ptr<FrameBuffer>> swapChainFrameBuffers;
 
     ptr<RenderPass> renderPass;
     VkPipelineLayout pipelineLayout;

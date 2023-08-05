@@ -1,0 +1,26 @@
+{
+    "files.associations": {
+        "stdexcept": "cpp",
+        "chrono": "cpp",
+        "array": "cpp",
+        "iterator": "cpp",
+        "list": "cpp",
+        "vector": "cpp",
+        "xhash": "cpp",
+        "xtree": "cpp",
+        "filesystem": "cpp",
+        "initializer_list": "cpp",
+        "regex": "cpp",
+        "xstring": "cpp",
+        "xutility": "cpp",
+        "map": "cpp",
+        "set": "cpp",
+        "istream": "cpp",
+        "memory": "cpp",
+        "type_traits": "cpp",
+        "xlocmes": "cpp",
+        "xlocmon": "cpp",
+        "xlocnum": "cpp",
+        "xloctime": "cpp"
+    }
+}
