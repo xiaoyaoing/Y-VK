@@ -1,17 +1,26 @@
 #pragma once
+
 #include "VertexData.h"
 #include "Buffer.h"
+
 class CommandBuffer;
+
 class Mesh {
 public:
-    Mesh(const char * path);
-    bool LoadData(const char * path);
+    Mesh(const char *path);
+
+    bool LoadData(const char *path);
+
     void createBuffer(VmaAllocator allocator);
-    void bindOnly(VkCommandBuffer );
-    void drawOnly(VkCommandBuffer );
-    void bindAndDraw(VkCommandBuffer );
+
+    void bindOnly(CommandBuffer &);
+
+    void drawOnly(CommandBuffer &);
+
+    void bindAndDraw(CommandBuffer &);
+
 protected:
     std::vector<Vertex> _vertexes;
     std::vector<uint32_t> _indices;
-    ptr<Buffer> _vertexBuffer,_indicesBuffer;
+    ptr<Buffer> _vertexBuffer, _indicesBuffer;
 };

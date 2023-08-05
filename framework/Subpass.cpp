@@ -3,7 +3,7 @@
 //
 
 #include "Subpass.h"
-
+#include <Mesh.h>
 
 void Subpass::updateRenderTargetAttachments(RenderTarget &renderTarget) {
 
@@ -14,5 +14,7 @@ void Subpass::draw(CommandBuffer &commandBuffer) {
 }
 
 void geomSubpass::draw(CommandBuffer &commandBuffer) {
-
+    for (auto mesh: meshes) {
+        mesh->drawOnly(commandBuffer);
+    }
 }
