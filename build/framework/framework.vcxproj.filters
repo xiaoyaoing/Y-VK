@@ -79,6 +79,9 @@
     <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Utils\DebugUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Vulkan.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

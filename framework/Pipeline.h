@@ -145,12 +145,15 @@ public:
              VkPipelineLayout pipelineLayout,
              VkRenderPass renderPass);
 
-    explicit Pipeline(const VkPipeline pipeline) : _pipeline(pipeline) {}
+
+    void prepare();
 
     void cleanup() {}
 
     void draw(CommandBuffer &commandBuffer, RenderTarget &renderTarget,
               VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE);
+
+    void addSubPass(std::unique_ptr<Subpass> &&subpass);
 
 protected:
     VkPipeline _pipeline;

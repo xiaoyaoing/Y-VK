@@ -10,9 +10,9 @@ void Application::initVk() {
     _instance = std::make_unique<Instance>(std::string("vulkanApp"), instanceExtensions, validationLayers);
     surface = _window->createSurface(*_instance);
     auto physicalDevice = createPhysicalDevice();
-    _device = std::make_shared<Device>(physicalDevice, surface);
-    _graphicsQueue = _device->getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0);
-    _presentQueue = _device->getPresentQueue(0);
+    device = std::make_unique<Device>(physicalDevice, surface);
+    // _graphicsQueue = device->getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0);
+    // _presentQueue = _device->getPresentQueue(0);
     createAllocator();
     createRenderContext();
     createCommandBuffer();
@@ -159,53 +159,48 @@ void Application::update() {
 
 void Application::draw(CommandBuffer &commandBuffer, RenderTarget &renderTarget) {
     auto &views = renderTarget.getViews();
-    assert(1 < views.size());
 
+    auto swapchain_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     {
-        ImageMemoryBarrier memoryBarrier;
-        // Image 0 is the swapchain
-        memoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        memoryBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        memoryBarrier.srcAccessMask = 0;
-        memoryBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        memoryBarrier.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        memoryBarrier.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        ImageMemoryBarrier memory_barrier{};
+        memory_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        memory_barrier.newLayout = swapchain_layout;
+        memory_barrier.srcAccessMask = 0;
+        memory_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        memory_barrier.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        memory_barrier.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
-        commandBuffer.imageMemoryBarrier(views[0], memoryBarrier);
+        for (auto &i: colorIdx) {
+            assert(i < views.size());
+            commandBuffer.imageMemoryBarrier(views[i]);
+            renderTarget.setLayout(i, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-        // Skip 1 as it is handled later as a depth-stencil attachment
-        for (size_t i = 2; i < views.size(); ++i) {
-            commandBuffer.imageMemoryBarrier(views[i], memoryBarrier);
         }
     }
-    drawRenderPasses(commandBuffer, renderTarget);
+
     {
-        ImageMemoryBarrier memoryBarrier{};
-        memoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        memoryBarrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        memoryBarrier.srcAccessMask = 0;
-        memoryBarrier.dstAccessMask =
+        ImageMemoryBarrier memory_barrier{};
+        memory_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        memory_barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        memory_barrier.srcAccessMask = 0;
+        memory_barrier.dstAccessMask =
                 VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-        memoryBarrier.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        memoryBarrier.dstStageMask =
+        memory_barrier.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        memory_barrier.dstStageMask =
                 VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
 
-        commandBuffer.imageMemoryBarrier(views[1], memoryBarrier);
+
+        for (auto &i: depthIdx) {
+            assert(i < views.size());
+            commandBuffer.imageMemoryBarrier(views[i], memory_barrier);
+            renderTarget.setLayout(i, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+        }
+
+        renderPipeline->draw(commandBuffer,renderTarget);
+        commandBuffer.endRenderPass();
+
+
     }
-
-    drawRenderPasses(commandBuffer, renderTarget);
-
-    {
-        ImageMemoryBarrier memoryBarrier{};
-        memoryBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        memoryBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-        memoryBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        memoryBarrier.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        memoryBarrier.dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-
-        commandBuffer.imageMemoryBarrier(views[0], memoryBarrier);
-    }
-}
 
 void Application::createRenderContext() {
     auto surface_priority_list = std::vector<VkSurfaceFormatKHR>{{VK_FORMAT_R8G8B8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR},
@@ -227,15 +222,15 @@ void Application::drawFrame() {
 }
 
 void Application::drawRenderPasses(CommandBuffer &buffer, RenderTarget &renderTarget) {
-    //set_viewport_and_scissor(command_buffer, render_target.get_extent());
+    // set_viewport_and_scissor(command_buffer, render_target.get_extent());
 
-    renderPipeline->draw()
+    renderPipeline->draw(buffer, renderTarget);
 
-    //todo handle GUI
-//    if (gui)
-//    {
-//        gui->draw(command_buffer);
-//    }
+    // todo handle GUI
+    //    if (gui)
+    //    {
+    //        gui->draw(command_buffer);
+    //    }
 
-    //command_buffer.end_render_pass();
+    // command_buffer.end_render_pass();
 }

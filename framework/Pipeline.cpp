@@ -67,10 +67,12 @@ Pipeline::Pipeline(const PipelineInfo &pipelineInfo, ptr<Device> device,
 }
 
 void Pipeline::draw(CommandBuffer &commandBuffer, RenderTarget &renderTarget, VkSubpassContents contents) {
-    auto &pass = subPasses[0];
+    std::unique_ptr<Subpass> &pass = subPasses[0];
     //todo handle multpasses
     pass->updateRenderTargetAttachments(renderTarget);
-    commandBuffer.beginRenderPass(renderTarget, renderPass, RenderContext::getGlobalRenderContext().getFrameBuffer(),
+    commandBuffer.beginRenderPass(renderTarget, *renderPass, RenderContext::getGlobalRenderContext().getFrameBuffer(),
                                   Default::clearValues(), contents);
-    pass->draw(<#initializer#>);
+    pass->draw(commandBuffer);
 }
+
+

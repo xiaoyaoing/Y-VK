@@ -8,7 +8,19 @@ class Surface;
 
 class Window;
 
-class FrameBuffer;
+class FrameBuffer
+
+struct SwapchainProperties {
+    VkSwapchainKHR old_swapchain;
+    uint32_t image_count{3};
+    VkExtent2D extent{};
+    VkSurfaceFormatKHR surface_format{};
+    uint32_t array_layers;
+    VkImageUsageFlags image_usage;
+    VkSurfaceTransformFlagBitsKHR pre_transform;
+    VkCompositeAlphaFlagBitsKHR composite_alpha;
+    VkPresentModeKHR present_mode;
+};
 
 class SwapChain {
 public:
@@ -26,6 +38,10 @@ public:
 
     inline VkExtent2D getExtent() {
         return _extent;
+    }
+
+    inline VkImageUsageFlags getUseage() {
+        return prop.image_usage;
     }
 
     SwapChain(Device &device, VkSurfaceKHR surface, Window &window);
@@ -50,6 +66,8 @@ public:
 
     inline FrameBuffer &getFrameBuffer(int idx);
 
+    const std::vector<VkImage> &getImages();
+
 protected:
     VkSwapchainKHR _swapChain;
     Device &_device;
@@ -58,6 +76,9 @@ protected:
     VkSurfaceFormatKHR _format;
     VkFormat _imageFormat;
     VkExtent2D _extent;
+
+    SwapchainProperties prop;
+    std::vector<VkImage> images;
 
 
 };

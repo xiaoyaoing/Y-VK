@@ -198,6 +198,10 @@
 	[
 		{
 			"backtrace" : 2,
+			"id" : "tinyobjloader::@cdc8e8d9a2991e5235d6"
+		},
+		{
+			"backtrace" : 2,
 			"id" : "spdlog::@b383f51c65f8ce30cec3"
 		},
 		{
@@ -207,10 +211,6 @@
 		{
 			"backtrace" : 8,
 			"id" : "framework::@217a96c3a62328a73ef4"
-		},
-		{
-			"backtrace" : 2,
-			"id" : "tinyobjloader::@cdc8e8d9a2991e5235d6"
 		},
 		{
 			"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df"

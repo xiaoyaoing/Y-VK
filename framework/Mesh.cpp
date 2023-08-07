@@ -47,13 +47,13 @@ void Mesh::createBuffer(VmaAllocator allocator) {
 void Mesh::bindOnly(CommandBuffer &commandBuffer) {
     const VkBuffer vertexBuffer[] = {_vertexBuffer->getHandle()};
     const VkDeviceSize vertexOffset[] = {0};
-    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffer, vertexOffset);
-    vkCmdBindIndexBuffer(commandBuffer, _indicesBuffer->getHandle(), 0, VK_INDEX_TYPE_UINT32);
+    vkCmdBindVertexBuffers(commandBuffer.getHandle(), 0, 1, vertexBuffer, vertexOffset);
+    vkCmdBindIndexBuffer(commandBuffer.getHandle(), _indicesBuffer->getHandle(), 0, VK_INDEX_TYPE_UINT32);
 
 }
 
 void Mesh::drawOnly(CommandBuffer &commandBuffer) {
-    vkCmdDrawIndexed(commandBuffer, _indices.size(), 1, 0, 0, 0);
+    vkCmdDrawIndexed(commandBuffer.getHandle(), _indices.size(), 1, 0, 0, 0);
 }
 
 void Mesh::bindAndDraw(CommandBuffer &commandBuffer) {

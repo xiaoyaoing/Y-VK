@@ -12,7 +12,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "framework/MinSizeRel/framework.lib"
+			"path" : "framework/RelWithDebInfo/framework.lib"
 		}
 	],
 	"backtrace" : 1,
@@ -66,7 +66,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "/DWIN32 /D_WINDOWS /GR /EHsc /O1 /Ob1 /DNDEBUG -std:c++17 -MD"
+					"fragment" : "/DWIN32 /D_WINDOWS /GR /EHsc /Zi /O2 /Ob1 /DNDEBUG -std:c++17 -MD"
 				}
 			],
 			"defines" : 
@@ -149,15 +149,16 @@
 				48,
 				50,
 				52,
-				57,
-				59
+				56,
+				58,
+				60
 			]
 		},
 		{
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "/DWIN32 /D_WINDOWS /O1 /Ob1 /DNDEBUG -MD"
+					"fragment" : "/DWIN32 /D_WINDOWS /Zi /O2 /Ob1 /DNDEBUG -MD"
 				}
 			],
 			"defines" : 
@@ -206,7 +207,7 @@
 			"language" : "C",
 			"sourceIndexes" : 
 			[
-				61
+				62
 			]
 		}
 	],
@@ -214,15 +215,15 @@
 	[
 		{
 			"backtrace" : 2,
+			"id" : "tinyobjloader::@cdc8e8d9a2991e5235d6"
+		},
+		{
+			"backtrace" : 2,
 			"id" : "spdlog::@b383f51c65f8ce30cec3"
 		},
 		{
 			"backtrace" : 2,
 			"id" : "glfw::@f6f7721c76705297a9b5"
-		},
-		{
-			"backtrace" : 2,
-			"id" : "tinyobjloader::@cdc8e8d9a2991e5235d6"
 		},
 		{
 			"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df"
@@ -268,9 +269,10 @@
 				48,
 				50,
 				52,
-				57,
-				59,
-				61
+				56,
+				58,
+				60,
+				62
 			]
 		},
 		{
@@ -306,9 +308,9 @@
 				53,
 				54,
 				55,
-				56,
-				58,
-				60
+				57,
+				59,
+				61
 			]
 		},
 		{
@@ -626,6 +628,12 @@
 			"backtrace" : 1,
 			"path" : "framework/VertexData.h",
 			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "framework/Vulkan.cpp",
+			"sourceGroupIndex" : 0
 		},
 		{
 			"backtrace" : 1,

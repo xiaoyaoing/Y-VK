@@ -15,6 +15,8 @@ void Subpass::draw(CommandBuffer &commandBuffer) {
 
 void geomSubpass::draw(CommandBuffer &commandBuffer) {
     for (auto mesh: meshes) {
+        mesh->bindOnly(commandBuffer);
         mesh->drawOnly(commandBuffer);
     }
+
 }

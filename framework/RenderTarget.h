@@ -28,8 +28,14 @@ class RenderTarget {
     std::vector<int> outAttachment = {0};
     VkExtent2D _extent;
 public:
-    RenderTarget(std::vector<Image> && images);
-    RenderTarget(std::vector<ImageView> &&  imageViews);
+    using CreateFunc = std::function<std::unique_ptr<RenderTarget>(Image &&)>;
+
+    static CreateFunc defaultRenderTargetCreateFunction;
+
+    RenderTarget(std::vector<Image> &&images);
+
+    RenderTarget(std::vector<ImageView> &&imageViews);
+
     const std::vector<int> &getInAttachment() const;
 
     void setInAttachment(const std::vector<int> &inAttachment);
@@ -41,5 +47,7 @@ public:
     const std::vector<Image> &getImages() const;
 
     const std::vector<ImageView> &getViews() const;
+
+    void setLayout(uint32_t &i, VkImageLayout layout);
 };
 

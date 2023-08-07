@@ -20,13 +20,12 @@
 
 #include <Common/Log.h>
 #include <Common/String.h>
+#include <Utils/DebugUtils.h>
 
 #define  RUN_TIME_ERROR(error) throw std::runtime_error(error);
 #define  ASSERT(value, message) if(!value)throw std::runtime_error(message);
-#define  VK_VERIFY_RESULT(VkFunction) {const VkResult scopedResult = VkFunction; \
-                                    if(scopedResult!=VK_SUCCESS)               \
-                                    throw std::runtime_error(string_format("VKResult=%d,Function=%s,File=%s,Line=%d", scopedResult, #VkFunction, __FILE__, __LINE__));\
-                                    }
+
+
 #define  DATA_SIZE(vec) (vec.size() * sizeof(vec[0]))
 
 typedef uint32_t uint32;
@@ -36,11 +35,10 @@ using ptr = std::shared_ptr<T>;
 
 
 template<class T, class Handle>
-std::vector<Handle> getHandles(const std::vector<ptr<T>> &vec) {
+std::vector<Handle> getHandles(const std::vector<T *> &vec) {
     std::vector<Handle> handles;
     handles.reserve(vec.size());
-    for (const auto &obj: vec)
-        handles.push_back(obj->getHandle());
+    std::transform(vec.begin(), vec.end(), handles.begin(), [](T *t) { return t->getHandle(); });
     return handles;
 }
 

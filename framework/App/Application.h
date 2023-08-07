@@ -138,6 +138,8 @@ protected:
     std::unique_ptr<Device> device{nullptr};
     VkSurfaceKHR surface{};
 
+    std::vector<uint32_t> colorIdx{};
+    std::vector<uint32_t> depthIdx{};
     // #ifdef NOEBUG
     //     const bool enableValidationLayers = false;
     // #else

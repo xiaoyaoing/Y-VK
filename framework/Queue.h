@@ -1,24 +1,37 @@
 #pragma once
+
 #include "Vulkan.h"
+
 class Device;
+
 class Fence;
+
 class CommandBuffer;
-class Queue
-{
+
+class Queue {
 public:
-    inline VkQueue getHandle()
-    {
+    inline VkQueue getHandle() {
         return _queue;
     }
-    ~Queue()
-    {
+
+    ~Queue() {
     }
+
     Queue(Device *device, int familyIndex, int queueIndex, bool canPresent, const VkQueueFamilyProperties &prop);
+
     void submit(const std::vector<ptr<CommandBuffer>> &cmdBuffers,
                 ptr<Fence> fence);
+
     inline bool supportPresent() const { return canPresent; }
+
     inline uint32_t getFamilyIndex() { return _familyIndex; }
+
     inline const VkQueueFamilyProperties &getProp() const { return properties; }
+
+
+    VkResult submit(const std::vector<VkSubmitInfo> &submit_infos, VkFence fence) const;
+
+    VkResult present(const VkPresentInfoKHR &presentInfo) const;
 
 protected:
     uint32_t _familyIndex, _queueIndex;

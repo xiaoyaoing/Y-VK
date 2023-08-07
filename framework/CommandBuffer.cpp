@@ -79,9 +79,31 @@ void CommandBuffer::imageMemoryBarrier(const ImageView &view, ImageMemoryBarrier
                          &vkBarrier);
 }
 
-void CommandBuffer::beginRenderPass(const RenderTarget &render_target, const RenderPass &render_pass,
+void CommandBuffer::beginRenderPass(const RenderTarget &render_target, std::unique_ptr<Subpass> &render_pass,
                                     const FrameBuffer &framebuffer, const std::vector<VkClearValue> &clear_values,
                                     VkSubpassContents contents) {
-    //todo
+    VkRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = renderPass;
+    renderPassInfo.framebuffer = buffer;
+    renderPassInfo.renderArea.offset = {0, 0};
+    renderPassInfo.renderArea.extent = extent2D;
+
+    renderPassInfo.clearValueCount = clearValues.size();
+    renderPassInfo.pClearValues = clearValues.data();
+
+
+    vkCmdBeginRenderPass(_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+}
+
+
+void CommandBuffer::beginRenderPass(const RenderTarget &render_target, RenderPass &render_pass,
+                                    const FrameBuffer &framebuffer, const std::vector<VkClearValue> &clear_values,
+                                    VkSubpassContents contents) {
+
+}
+
+void CommandBuffer::endRenderPass() {
+
 }
 

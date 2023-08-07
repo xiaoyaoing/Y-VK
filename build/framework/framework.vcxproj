@@ -328,6 +328,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Utils\DebugUtils.h" />
     <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Utils\VkUtils.h" />
     <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\VertexData.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Vulkan.cpp" />
     <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Vulkan.h" />
     <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Window.cpp" />
     <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Window.h" />

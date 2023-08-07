@@ -50,10 +50,13 @@ public:
 
     void submit(CommandBuffer &buffer);
 
-
     FrameBuffer &getFrameBuffer(uint32_t idx);
 
     FrameBuffer &getFrameBuffer();
+
+    VkSemaphore submit(const Queue &queue, const std::vector<CommandBuffer *> &commandBuffers, VkSemaphore waitSem,
+                       VkPipelineStageFlags waitPiplineStage);
+
 
 private:
     uint32_t activeFrameIndex;
@@ -74,7 +77,10 @@ private:
     std::vector<std::unique_ptr<RenderFrame>> frames;
     uint32_t active_frame_index{0};
     std::vector<std::unique_ptr<FrameBuffer>> frameBuffers;
+    VkExtent2D surfaceExtent;
 
+    //交换链图像信号 acquire-next
+    VkSemaphore imageAcquireSem;
 };
 
 RenderContext *g_context;
