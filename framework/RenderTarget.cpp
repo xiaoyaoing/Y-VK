@@ -43,3 +43,13 @@ const std::vector<ImageView> &RenderTarget::getViews() const {
 void RenderTarget::setLayout(uint32_t &i, VkImageLayout layout) {
 
 }
+
+VkExtent2D RenderTarget::getExtent() {
+    return _extent;
+}
+
+RenderTarget::CreateFunc RenderTarget::defaultRenderTargetCreateFunction = [](
+        Image &&) -> std::unique_ptr<RenderTarget> {
+    return std::make_unique<RenderTarget>();
+
+};

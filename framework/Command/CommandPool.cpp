@@ -6,17 +6,16 @@
 #include "Queue.h"
 #include "Device.h"
 
-CommandPool::CommandPool(ptr<Device> device, ptr<Queue> queue, VkCommandPoolCreateFlags flags):_device(device){
+CommandPool::CommandPool(ptr<Device> device, ptr<Queue> queue, VkCommandPoolCreateFlags flags) : _device(device) {
     VkCommandPoolCreateInfo info{};
     info.queueFamilyIndex = queue->getFamilyIndex();
     info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    info.flags  = flags;
+    info.flags = flags;
     info.pNext = nullptr;
-    ASSERT(vkCreateCommandPool(device->getHandle(),&info, nullptr,&_pool)==VK_SUCCESS,"Create commandPool");
+    ASSERT(vkCreateCommandPool(device->getHandle(), &info, nullptr, &_pool) == VK_SUCCESS, "Create commandPool");
 }
 
-VkCommandBuffer CommandPool::allocateCommandBuffer()
-{
+VkCommandBuffer CommandPool::allocateCommandBuffer() {
     VkCommandBuffer cmdBuffer;
     VkCommandBufferAllocateInfo cmdBufferAllocInfo = {};
     cmdBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -26,4 +25,27 @@ VkCommandBuffer CommandPool::allocateCommandBuffer()
     cmdBufferAllocInfo.commandPool = _pool;
     vkAllocateCommandBuffers(_device->getHandle(), &cmdBufferAllocInfo, &cmdBuffer);
     return cmdBuffer;
+}
+
+CommandPool::CommandPool(Device &device, uint32_t queueFamilyIndex, CommandBuffer::ResetMode resetMode) {
+
+    VkCommandPoolCreateFlags flags;
+    switch (resetMode) {
+        case CommandBuffer::ResetMode::ResetIndividually:
+        case CommandBuffer::ResetMode::AlwaysAllocate:
+            flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+            break;
+        case CommandBuffer::ResetMode::ResetPool:
+        default:
+            flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+            break;
+    }
+
+
+    VkCommandPoolCreateInfo info{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+    info.queueFamilyIndex = queueFamilyIndex;
+    info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    info.flags = flags;
+    info.pNext = nullptr;
+    VK_CHECK_RESULT(vkCreateCommandPool(device.getHandle(), &info, nullptr, &_pool));
 }

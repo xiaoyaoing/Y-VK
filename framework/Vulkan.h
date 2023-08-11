@@ -1,14 +1,14 @@
 /**
- * @file 
+ * @file
  * @author JunPing Yuan
- * @brief 
+ * @brief
  * @version 0.1
  * @date 2023/3/3
  *
  * @copyright Copyright (c) 2022
  *
  */
-#pragma  once
+#pragma once
 
 #include <vulkan/vulkan_core.h>
 #include <vk_mem_alloc.h>
@@ -21,17 +21,27 @@
 #include <Common/Log.h>
 #include <Common/String.h>
 #include <Utils/DebugUtils.h>
+#include <Utils/VkUtils.h>
 
-#define  RUN_TIME_ERROR(error) throw std::runtime_error(error);
-#define  ASSERT(value, message) if(!value)throw std::runtime_error(message);
+#define RUN_TIME_ERROR(error) throw std::runtime_error(error);
+#define ASSERT(value, message) \
+    if (!value)                \
+        throw std::runtime_error(message);
 
-
-#define  DATA_SIZE(vec) (vec.size() * sizeof(vec[0]))
+#define DATA_SIZE(vec) (vec.size() * sizeof(vec[0]))
 
 typedef uint32_t uint32;
 
 template<typename T>
 using ptr = std::shared_ptr<T>;
+
+template<class T, class Handle>
+std::vector<Handle> getHandles(const std::vector<T> &vec) {
+    std::vector<Handle> handles;
+    handles.reserve(vec.size());
+    std::transform(vec.begin(), vec.end(), handles.begin(), [](T *t) { return t.getHandle(); });
+    return handles;
+}
 
 
 template<class T, class Handle>
@@ -71,3 +81,10 @@ private:
 namespace Default {
     std::vector<VkClearValue> clearValues();
 }
+
+
+struct LoadStoreInfo {
+    VkAttachmentLoadOp load_op = VK_ATTACHMENT_LOAD_OP_CLEAR;
+
+    VkAttachmentStoreOp store_op = VK_ATTACHMENT_STORE_OP_STORE;
+};

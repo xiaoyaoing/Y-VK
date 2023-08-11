@@ -49,5 +49,7 @@ public:
     const std::vector<ImageView> &getViews() const;
 
     void setLayout(uint32_t &i, VkImageLayout layout);
+
+    VkExtent2D getExtent();
 };
 

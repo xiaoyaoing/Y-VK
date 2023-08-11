@@ -22,11 +22,13 @@ public:
     }
 
 public:
-    inline VkFormat getSwapChainFormat() { return swapchain->getImageFormat(); }
+    inline VkFormat getSwapChainFormat() const;
 
-    inline VkExtent2D getSwapChainExtent() { return swapchain->getExtent(); }
+    inline VkExtent2D getSwapChainExtent() const;
 
-    inline uint32_t getBackBufferCount() { return backBufferCount; }
+    inline uint32_t getSwapChainImageCount() const;
+
+    //  inline uint32_t getBackBufferCount() { return backBufferCount; }
 
     //    inline const std::vector<VkImage>& getBackBufferImages() const
     //    {
@@ -50,13 +52,14 @@ public:
 
     void submit(CommandBuffer &buffer);
 
+    void createFrameBuffers(RenderPass &renderpass);
+
     FrameBuffer &getFrameBuffer(uint32_t idx);
 
     FrameBuffer &getFrameBuffer();
 
     VkSemaphore submit(const Queue &queue, const std::vector<CommandBuffer *> &commandBuffers, VkSemaphore waitSem,
                        VkPipelineStageFlags waitPiplineStage);
-
 
 private:
     uint32_t activeFrameIndex;
@@ -79,8 +82,14 @@ private:
     std::vector<std::unique_ptr<FrameBuffer>> frameBuffers;
     VkExtent2D surfaceExtent;
 
-    //交换链图像信号 acquire-next
-    VkSemaphore imageAcquireSem;
+    // 交换链图像信号 acquire-next
+    //   VkSemaphore imageAcquireSem;
+
+
+    struct {
+        VkSemaphore presentFinishedSem;
+        VkSemaphore renderFinishedSem;
+    } semaphores;
 };
 
 RenderContext *g_context;

@@ -318,6 +318,10 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\RenderPass.h" />
     <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\RenderTarget.cpp" />
     <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\RenderTarget.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\ResourceCache.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\ResourceCache.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Shader.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Shader.h" />
     <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Subpass.cpp" />
     <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Subpass.h" />
     <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\SwapChain.cpp" />

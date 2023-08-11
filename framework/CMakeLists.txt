@@ -8,7 +8,7 @@ message("Project Files: ${HEADER_FILES}")
 # 接下来你可以使用source_group命令将这些文件分组，以在IDE中更好地组织项目结构
 #source_group("Project Files" FILES ${PROJECT_FILES})
 
-add_library(${target_name} STATIC ${PROJECT_FILES} Subpass.cpp Subpass.h Vulkan.cpp ResourceCache.cpp ResourceCache.h)
+add_library(${target_name} STATIC ${PROJECT_FILES} Subpass.cpp Subpass.h Vulkan.cpp ResourceCache.cpp ResourceCache.h ResoucreCache.cpp ResoucreCache.h ../PipelineLayout.cpp ../PipelineLayout.h)
 message(${target_name})
 find_package(Vulkan REQUIRED)
 target_link_libraries(${target_name} PUBLIC

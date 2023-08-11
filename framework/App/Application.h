@@ -80,6 +80,8 @@ protected:
 
     virtual void createDepthStencil();
 
+    virtual void createPipeline();
+
     void createRenderContext();
 
     virtual VkPhysicalDevice createPhysicalDevice();
@@ -133,13 +135,17 @@ protected:
     ptr<RenderPass> _renderPass;
 
 
-    std::unique_ptr<Pipeline> renderPipeline{nullptr};
+    std::unique_ptr<Pipeline> graphicsPipeline{nullptr};
+    std::unique_ptr<RenderPipeline> renderPipeline{nullptr};
     std::unique_ptr<RenderContext> renderContext{nullptr};
     std::unique_ptr<Device> device{nullptr};
     VkSurfaceKHR surface{};
 
     std::vector<uint32_t> colorIdx{};
     std::vector<uint32_t> depthIdx{};
+
+    VkPipelineLayout pipelineLayOut;
+    VkDescriptorSetLayout descriptorSetLayout;
     // #ifdef NOEBUG
     //     const bool enableValidationLayers = false;
     // #else

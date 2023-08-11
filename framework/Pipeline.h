@@ -43,12 +43,10 @@ struct PipelineInfo {
 
         for (uint32_t i = 0; i < 8; ++i) {
             blendAttachmentStates[i] = {};
-            blendAttachmentStates[i].colorWriteMask = (
-                    VK_COLOR_COMPONENT_R_BIT |
-                    VK_COLOR_COMPONENT_G_BIT |
-                    VK_COLOR_COMPONENT_B_BIT |
-                    VK_COLOR_COMPONENT_A_BIT
-            );
+            blendAttachmentStates[i].colorWriteMask = (VK_COLOR_COMPONENT_R_BIT |
+                                                       VK_COLOR_COMPONENT_G_BIT |
+                                                       VK_COLOR_COMPONENT_B_BIT |
+                                                       VK_COLOR_COMPONENT_A_BIT);
             blendAttachmentStates[i].blendEnable = VK_FALSE;
             blendAttachmentStates[i].srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
             blendAttachmentStates[i].dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
@@ -131,13 +129,13 @@ struct PipelineInfo {
             shaderStages.push_back(shaderStageCreateInfo);
         }
     }
-
 };
-
 
 class Pipeline {
 public:
     inline VkPipeline getHandle() { return _pipeline; }
+
+    explicit Pipeline(VkPipeline pipeline) : _pipeline(pipeline) {}
 
     Pipeline(const PipelineInfo &info, ptr<Device> device,
              const std::vector<VkVertexInputBindingDescription> &inputBindings,
@@ -145,20 +143,37 @@ public:
              VkPipelineLayout pipelineLayout,
              VkRenderPass renderPass);
 
-
-    void prepare();
-
     void cleanup() {}
 
-    void draw(CommandBuffer &commandBuffer, RenderTarget &renderTarget,
-              VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE);
-
-    void addSubPass(std::unique_ptr<Subpass> &&subpass);
 
 protected:
     VkPipeline _pipeline;
     ptr<Device> _device;
     VkPipelineLayout _layout{};
+
+};
+
+class RenderPipeline {
+
+public:
+    void draw(CommandBuffer &commandBuffer, RenderTarget &renderTarget,
+              VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE);
+
+    void addSubPass(std::unique_ptr<Subpass> &&subpass);
+
+    void createRenderPass(RenderTarget &target);
+
+    RenderPass &getRenderPass() const;
+
+private:
     std::vector<std::unique_ptr<Subpass>> subPasses{};
     std::unique_ptr<RenderPass> renderPass;
+
+/// Default to two load store
+    std::vector<LoadStoreInfo> load_store = std::vector<LoadStoreInfo>(2);
+
+/// Default to two clear values
+    std::vector<VkClearValue> clear_value = std::vector<VkClearValue>(2);
+
+
 };

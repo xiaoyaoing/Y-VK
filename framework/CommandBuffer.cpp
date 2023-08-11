@@ -2,6 +2,8 @@
 #include "Buffer.h"
 #include "Images/Image.h"
 #include "Descriptor/DescriptorSet.h"
+#include <RenderPass.h>
+#include <FrameBuffer.h>
 
 void CommandBuffer::beginRecord(VkCommandBufferUsageFlags usage) {
     VkCommandBufferBeginInfo beginInfo{};
@@ -100,7 +102,18 @@ void CommandBuffer::beginRenderPass(const RenderTarget &render_target, std::uniq
 void CommandBuffer::beginRenderPass(const RenderTarget &render_target, RenderPass &render_pass,
                                     const FrameBuffer &framebuffer, const std::vector<VkClearValue> &clear_values,
                                     VkSubpassContents contents) {
+    VkRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = render_pass;
+    renderPassInfo.framebuffer = framebuffer.;
+    renderPassInfo.renderArea.offset = {0, 0};
+    renderPassInfo.renderArea.extent = extent2D;
 
+    renderPassInfo.clearValueCount = clearValues.size();
+    renderPassInfo.pClearValues = clearValues.data();
+
+
+    vkCmdBeginRenderPass(_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 void CommandBuffer::endRenderPass() {

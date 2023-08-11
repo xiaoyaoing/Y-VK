@@ -2,10 +2,10 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "samples/test/Debug/test.exe"
+			"path" : "samples/test/Release/test.exe"
 		},
 		{
-			"path" : "samples/test/Debug/test.pdb"
+			"path" : "samples/test/Release/test.pdb"
 		}
 	],
 	"backtrace" : 1,
@@ -76,7 +76,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "/DWIN32 /D_WINDOWS /GR /EHsc /Zi /Ob0 /Od /RTC1 -std:c++17 -MDd"
+					"fragment" : "/DWIN32 /D_WINDOWS /GR /EHsc /O2 /Ob2 /DNDEBUG -std:c++17 -MD"
 				}
 			],
 			"defines" : 
@@ -141,7 +141,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "/DWIN32 /D_WINDOWS /Zi /Ob0 /Od /RTC1 -MDd"
+					"fragment" : "/DWIN32 /D_WINDOWS /O2 /Ob2 /DNDEBUG -MD"
 				}
 			],
 			"defines" : 
@@ -202,18 +202,18 @@
 		},
 		{
 			"backtrace" : 2,
-			"id" : "spdlog::@b383f51c65f8ce30cec3"
+			"id" : "glfw::@f6f7721c76705297a9b5"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "glfw::@f6f7721c76705297a9b5"
+			"id" : "spdlog::@b383f51c65f8ce30cec3"
+		},
+		{
+			"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df"
 		},
 		{
 			"backtrace" : 8,
 			"id" : "framework::@217a96c3a62328a73ef4"
-		},
-		{
-			"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df"
 		}
 	],
 	"id" : "test::@c7ea85acc62851e684bd",
@@ -222,21 +222,21 @@
 		"commandFragments" : 
 		[
 			{
-				"fragment" : "/DWIN32 /D_WINDOWS /GR /EHsc /Zi /Ob0 /Od /RTC1 -MDd",
+				"fragment" : "/DWIN32 /D_WINDOWS /GR /EHsc /O2 /Ob2 /DNDEBUG -MD",
 				"role" : "flags"
 			},
 			{
-				"fragment" : "/machine:x64 /debug /INCREMENTAL /subsystem:console",
+				"fragment" : "/machine:x64 /INCREMENTAL:NO /subsystem:console",
 				"role" : "flags"
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "..\\..\\framework\\Debug\\framework.lib",
+				"fragment" : "..\\..\\framework\\Release\\framework.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 4,
-				"fragment" : "..\\..\\ext\\spdlog\\Debug\\spdlogd.lib",
+				"fragment" : "..\\..\\ext\\spdlog\\Release\\spdlog.lib",
 				"role" : "libraries"
 			},
 			{
@@ -246,12 +246,12 @@
 			},
 			{
 				"backtrace" : 4,
-				"fragment" : "..\\..\\ext\\tinyobjloader\\Debug\\tinyobjloader.lib",
+				"fragment" : "..\\..\\ext\\tinyobjloader\\Release\\tinyobjloader.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 4,
-				"fragment" : "..\\..\\ext\\glfw\\src\\Debug\\glfw3.lib",
+				"fragment" : "..\\..\\ext\\glfw\\src\\Release\\glfw3.lib",
 				"role" : "libraries"
 			},
 			{

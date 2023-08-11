@@ -46,6 +46,14 @@ public:
           VkImageUsageFlags image_usage,
           VkSampleCountFlagBits sample_count = VK_SAMPLE_COUNT_1_BIT);
 
+
+    Image &operator=(const Image &) = delete;
+
+    Image &operator=(Image &&) = delete;
+
+    Image(const Image &) = delete;
+
+
     inline VkImage getHandle() {
         return _image;
     };

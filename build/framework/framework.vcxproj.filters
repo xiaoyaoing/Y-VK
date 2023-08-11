@@ -67,6 +67,12 @@
     <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\RenderTarget.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\ResourceCache.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Subpass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -160,6 +166,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\RenderTarget.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\ResourceCache.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Shader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Subpass.h">

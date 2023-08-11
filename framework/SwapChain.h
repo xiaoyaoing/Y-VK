@@ -8,7 +8,7 @@ class Surface;
 
 class Window;
 
-class FrameBuffer
+class FrameBuffer;
 
 struct SwapchainProperties {
     VkSwapchainKHR old_swapchain;
@@ -68,16 +68,27 @@ public:
 
     const std::vector<VkImage> &getImages();
 
+    uint32_t getImageCount() const;
+
 protected:
     VkSwapchainKHR _swapChain;
+
     Device &_device;
+
     VkSurfaceKHR _surface;
+
     Window &_window;
+
     VkSurfaceFormatKHR _format;
+
     VkFormat _imageFormat;
+
     VkExtent2D _extent;
 
+    uint32_t imageCount;
+
     SwapchainProperties prop;
+
     std::vector<VkImage> images;
 
 

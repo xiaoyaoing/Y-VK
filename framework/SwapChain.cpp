@@ -3,12 +3,12 @@
 #include "Queue.h"
 #include <utility>
 #include "Window.h"
-SwapChain::SwapChain(ptr<Device> device, VkSurfaceKHR surface, ptr<Window> window) {
+SwapChain::SwapChain(Device &  device, VkSurfaceKHR surface, Window &  window):_device(device),_window(window) {
     ASSERT(initialize(device, surface,window), "Failed to create swapchain");
 
 }
 
-bool SwapChain::initialize(ptr<Device> device, VkSurfaceKHR surface, ptr<Window> window) {
+bool SwapChain::initialize(Device &  device, VkSurfaceKHR surface, Window &  window) {
     _device = std::move(device),
    _surface = surface; _window = std::move(window);
     SwapChainSupportDetails swapChainSupport = querySwapChainSupport();
@@ -55,13 +55,18 @@ bool SwapChain::initialize(ptr<Device> device, VkSurfaceKHR surface, ptr<Window>
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
 
-    if(vkCreateSwapchainKHR(_device->getHandle(), &createInfo, nullptr, &_swapChain) !=VK_SUCCESS)
+    if(vkCreateSwapchainKHR(_device.getHandle(), &createInfo, nullptr, &_swapChain) !=VK_SUCCESS)
         return false;
     _format = surfaceFormat;
     _imageFormat = surfaceFormat.format;
     _extent = extent;
+
+    //create swapchain images
+    vkGetSwapchainImagesKHR(_device.getHandle(), _swapChain, &imageCount, nullptr);
+    images.resize(imageCount);
+    vkGetSwapchainImagesKHR(_device.getHandle(), _swapChain, &imageCount, images.data());
     return true;
-}
+
 
 SwapChain::SwapChainSupportDetails SwapChain::querySwapChainSupport() {
     auto physicalDevice = _device->getPhysicalDevice();
@@ -126,4 +131,7 @@ VkResult SwapChain::acquireNextImage(uint32 &idx, VkSemaphore semaphore, VkFence
     return vkAcquireNextImageKHR(device.get_handle(), handle, std::numeric_limits<uint64_t>::max(), image_acquired_semaphore, fence, &image_index);
 
 }
+    VkResult SwapChain::acquireNextImage(uint32 &idx, VkSemaphore semaphore, VkFence fence) {
+        return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+    }
 

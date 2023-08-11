@@ -1,6 +1,7 @@
 #include "Pipeline.h"
 #include "CommandBuffer.h"
 #include "RenderContext.h"
+#include "RenderPass.h"
 #include <Device.h>
 #include <Subpass.h>
 
@@ -41,7 +42,6 @@ Pipeline::Pipeline(const PipelineInfo &pipelineInfo, ptr<Device> device,
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
     pipelineInfo.fillShaderStages(shaderStages);
 
-
     VkGraphicsPipelineCreateInfo pipelineCreateInfo;
     pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineCreateInfo.layout = pipelineLayout;
@@ -61,18 +61,48 @@ Pipeline::Pipeline(const PipelineInfo &pipelineInfo, ptr<Device> device,
     if (pipelineInfo.tessellationState.patchControlPoints != 0) {
         pipelineCreateInfo.pTessellationState = &(pipelineInfo.tessellationState);
     }
-    //todo add pipeline cache
-    VK_VERIFY_RESULT(
+
+    // todo add pipeline cache
+    VK_CHECK_RESULT(
             vkCreateGraphicsPipelines(device->getHandle(), nullptr, 1, &pipelineCreateInfo, nullptr, &_pipeline));
 }
 
-void Pipeline::draw(CommandBuffer &commandBuffer, RenderTarget &renderTarget, VkSubpassContents contents) {
+void RenderPipeline::draw(CommandBuffer &commandBuffer, RenderTarget &renderTarget, VkSubpassContents contents) {
+    if (!renderPass) {
+        createRenderPass(renderTarget);
+    }
     std::unique_ptr<Subpass> &pass = subPasses[0];
-    //todo handle multpasses
+    // todo handle multpasses
     pass->updateRenderTargetAttachments(renderTarget);
     commandBuffer.beginRenderPass(renderTarget, *renderPass, RenderContext::getGlobalRenderContext().getFrameBuffer(),
                                   Default::clearValues(), contents);
     pass->draw(commandBuffer);
 }
 
+RenderPass &RenderPipeline::getRenderPass() const {
+    return *renderPass;
+}
 
+
+void RenderPipeline::addSubPass(std::unique_ptr<Subpass> &&subpass) {
+    subPasses.push_back(std::move(subpass));
+}
+
+void RenderPipeline::createRenderPass(RenderTarget &target) {
+    assert(subpasses.size() > 0 && "Cannot create a render pass without any subpass");
+
+    std::vector<SubpassInfo> subpassInfos(subPasses.size());
+    auto subpassInfoIt = subpassInfos.begin();
+    for (auto &subpass: subPasses) {
+        subpassInfoIt->inputAttachments = subpass->getInputAttachments();
+        subpassInfoIt->outputAttachments = subpass->getOutputAttachments();
+        subpassInfoIt->colorResolveAttachments = subpass->getColorResolveAttachments();
+        subpassInfoIt->disableDepthStencilAttachment = subpass->getDisableDepthStencilAttachment();
+        subpassInfoIt->depthStencilResolveMode = subpass->getDepthStencilResolveMode();
+        subpassInfoIt->depthStencilResolveAttachment = subpass->getDepthStencilResolveAttachment();
+        subpassInfoIt->debugName = subpass->getDebugName();
+
+        ++subpassInfoIt;
+    }
+
+}

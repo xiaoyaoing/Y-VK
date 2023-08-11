@@ -12,7 +12,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "framework/Debug/framework.lib"
+			"path" : "framework/Release/framework.lib"
 		}
 	],
 	"backtrace" : 1,
@@ -66,7 +66,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "/DWIN32 /D_WINDOWS /GR /EHsc /Zi /Ob0 /Od /RTC1 -std:c++17 -MDd"
+					"fragment" : "/DWIN32 /D_WINDOWS /GR /EHsc /O2 /Ob2 /DNDEBUG -std:c++17 -MD"
 				}
 			],
 			"defines" : 
@@ -149,16 +149,18 @@
 				48,
 				50,
 				52,
+				54,
 				56,
-				58,
-				60
+				60,
+				62,
+				64
 			]
 		},
 		{
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "/DWIN32 /D_WINDOWS /Zi /Ob0 /Od /RTC1 -MDd"
+					"fragment" : "/DWIN32 /D_WINDOWS /O2 /Ob2 /DNDEBUG -MD"
 				}
 			],
 			"defines" : 
@@ -207,7 +209,7 @@
 			"language" : "C",
 			"sourceIndexes" : 
 			[
-				62
+				66
 			]
 		}
 	],
@@ -219,11 +221,11 @@
 		},
 		{
 			"backtrace" : 2,
-			"id" : "spdlog::@b383f51c65f8ce30cec3"
+			"id" : "glfw::@f6f7721c76705297a9b5"
 		},
 		{
 			"backtrace" : 2,
-			"id" : "glfw::@f6f7721c76705297a9b5"
+			"id" : "spdlog::@b383f51c65f8ce30cec3"
 		},
 		{
 			"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df"
@@ -269,10 +271,12 @@
 				48,
 				50,
 				52,
+				54,
 				56,
-				58,
 				60,
-				62
+				62,
+				64,
+				66
 			]
 		},
 		{
@@ -306,11 +310,13 @@
 				49,
 				51,
 				53,
-				54,
 				55,
 				57,
+				58,
 				59,
-				61
+				61,
+				63,
+				65
 			]
 		},
 		{
@@ -573,6 +579,28 @@
 		{
 			"backtrace" : 1,
 			"path" : "framework/RenderTarget.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "framework/ResourceCache.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "framework/ResourceCache.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "framework/Shader.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "framework/Shader.h",
 			"sourceGroupIndex" : 1
 		},
 		{

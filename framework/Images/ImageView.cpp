@@ -66,7 +66,7 @@ ImageView::ImageView(Image &image, VkImageViewType view_type, VkFormat format, u
     imageViewInfo.subresourceRange.levelCount = n_mip_levels;
     imageViewInfo.subresourceRange.baseArrayLayer = 0;
     imageViewInfo.subresourceRange.layerCount = 1;
-    VK_VERIFY_RESULT(vkCreateImageView(_device->getHandle(), &imageViewInfo, nullptr, &_view));
+    VK_CHECK_RESULT(vkCreateImageView(_device->getHandle(), &imageViewInfo, nullptr, &_view));
     image.addView(this);
 }
 

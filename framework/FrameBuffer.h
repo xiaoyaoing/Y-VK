@@ -1,10 +1,16 @@
-#include "Vulkan.h"
+#include <Vulkan.h>
 
 class Device;
 
+class RenderTarget;
+
+class RenderPass;
+
 class FrameBuffer {
 public:
-    explicit FrameBuffer(VkFramebuffer framebuffer) : _framebuffer(framebuffer) {}
+    FrameBuffer(Device &deivce, RenderTarget &renderTarget, RenderPass &renderPass);
+
+//    explicit FrameBuffer(VkFramebuffer framebuffer) : _framebuffer(framebuffer) {}
 
     inline VkFramebuffer getHandle() { return _framebuffer; }
 
@@ -12,4 +18,6 @@ public:
 
 protected:
     VkFramebuffer _framebuffer;
+    Device &device;
+    VkExtent2D extent;
 };
