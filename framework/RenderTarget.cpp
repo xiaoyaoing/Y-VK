@@ -49,7 +49,14 @@ VkExtent2D RenderTarget::getExtent() {
 }
 
 RenderTarget::CreateFunc RenderTarget::defaultRenderTargetCreateFunction = [](
-        Image &&) -> std::unique_ptr<RenderTarget> {
+        Image &&swapChainImage) -> std::unique_ptr<RenderTarget> {
+    VkFormat depthFormat = VK_FORMAT_D32_SFLOAT;
+    Image depthImage(swapChainImage.getDevice(), swapChainImage.getExtent(), depthFormat,
+                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT,
+                     VMA_MEMORY_USAGE_GPU_ONLY);
+    std::vector<Image> images;
+    images.push_back(std::move(swapChainImage));
+    images.push_back(std::move(depthImage));
     return std::make_unique<RenderTarget>();
 
 };

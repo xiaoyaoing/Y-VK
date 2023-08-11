@@ -2,7 +2,7 @@
 #include "ImageView.h"
 
 class Image {
-    Device *device;
+    Device &device;
     VkImage image;
     VmaAllocation memory;
 
@@ -24,7 +24,9 @@ class Image {
 
     uint8_t *mapped_data{nullptr};
 
+    bool mapped;
 
+    std::vector<ImageView> views;
 public:
     Image(Device &device,
           const VkExtent3D &extent,
@@ -39,7 +41,7 @@ public:
           uint32_t num_queue_families = 0,
           const uint32_t *queue_families = nullptr);
 
-    Image(Device const &device,
+    Image(Device &device,
           VkImage handle,
           const VkExtent3D &extent,
           VkFormat format,
@@ -53,6 +55,8 @@ public:
 
     Image(const Image &) = delete;
 
+
+    Image(Image &&other);
 
     inline VkImage getHandle() {
         return _image;
@@ -94,4 +98,6 @@ public:
     }
 
     void addView(ImageView *pView);
+
+    Device &getDevice();
 };
