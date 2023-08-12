@@ -1,22 +1,13 @@
 #include "SwapChain.h"
 #include "Device.h"
-#include "Queue.h"
-#include <utility>
 #include "Window.h"
 SwapChain::SwapChain(Device &  device, VkSurfaceKHR surface, Window &  window):_device(device),_window(window) {
-    ASSERT(initialize(device, surface,window), "Failed to create swapchain");
-
-}
-
-bool SwapChain::initialize(Device &  device, VkSurfaceKHR surface, Window &  window) {
-    _device = std::move(device),
-   _surface = surface; _window = std::move(window);
     SwapChainSupportDetails swapChainSupport = querySwapChainSupport();
     auto surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
     auto presentMode = choosePresentMode(swapChainSupport.presentModes);
     auto extent = chooseSwapExtent(swapChainSupport.capabilities);
 
-    uint32_t imageCount = 2;
+
 
     if (swapChainSupport.capabilities.maxImageCount > 0 &&
         imageCount > swapChainSupport.capabilities.maxImageCount) {
@@ -36,8 +27,8 @@ bool SwapChain::initialize(Device &  device, VkSurfaceKHR surface, Window &  win
 
     //QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
     //  uint32_t queueFamilyIndices[]{indices.graphicsFamily.value(), indices.presentFamily.value()};
-    uint32_t graphicsFamily = _device->getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0)->getFamilyIndex();
-    uint32_t presentFamily = _device->getPresentQueue(0)->getFamilyIndex();
+    uint32_t graphicsFamily = _device.getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0).getFamilyIndex();
+    uint32_t presentFamily = _device.getPresentQueue(0).getFamilyIndex();
 
     if (graphicsFamily != presentFamily) {
         createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
@@ -54,22 +45,25 @@ bool SwapChain::initialize(Device &  device, VkSurfaceKHR surface, Window &  win
     createInfo.clipped = VK_TRUE;
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-
-    if(vkCreateSwapchainKHR(_device.getHandle(), &createInfo, nullptr, &_swapChain) !=VK_SUCCESS)
-        return false;
+    VK_CHECK_RESULT(vkCreateSwapchainKHR(_device.getHandle(), &createInfo, nullptr, &_swapChain));
     _format = surfaceFormat;
     _imageFormat = surfaceFormat.format;
     _extent = extent;
 
     //create swapchain images
-    vkGetSwapchainImagesKHR(_device.getHandle(), _swapChain, &imageCount, nullptr);
+    VK_CHECK_RESULT(vkGetSwapchainImagesKHR(_device.getHandle(), _swapChain, &imageCount, nullptr));
     images.resize(imageCount);
-    vkGetSwapchainImagesKHR(_device.getHandle(), _swapChain, &imageCount, images.data());
-    return true;
+    VK_CHECK_RESULT(vkGetSwapchainImagesKHR(_device.getHandle(), _swapChain, &imageCount, images.data()));
+
+}
+
+bool SwapChain::initialize(Device &  device, VkSurfaceKHR surface, Window &  window) {
+    return false;
+}
 
 
 SwapChain::SwapChainSupportDetails SwapChain::querySwapChainSupport() {
-    auto physicalDevice = _device->getPhysicalDevice();
+    auto physicalDevice = _device.getPhysicalDevice();
     SwapChainSupportDetails details;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, _surface, &details.capabilities);
 
@@ -106,7 +100,7 @@ VkExtent2D SwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilit
         return capabilities.currentExtent;
     } else {
         int width, height;
-        glfwGetFramebufferSize(_window->getHandle(), &width, &height);
+        glfwGetFramebufferSize(_window.getHandle(), &width, &height);
         VkExtent2D actualExtent = {
                 static_cast<uint32_t>(width),
                 static_cast<uint32_t>(height)};
@@ -128,10 +122,15 @@ VkPresentModeKHR SwapChain::choosePresentMode(const std::vector<VkPresentModeKHR
 }
 
 VkResult SwapChain::acquireNextImage(uint32 &idx, VkSemaphore semaphore, VkFence fence) {
-    return vkAcquireNextImageKHR(device.get_handle(), handle, std::numeric_limits<uint64_t>::max(), image_acquired_semaphore, fence, &image_index);
+    return vkAcquireNextImageKHR(_device.getHandle(),_swapChain, std::numeric_limits<uint64_t>::max(), semaphore, fence, &idx);
 
 }
-    VkResult SwapChain::acquireNextImage(uint32 &idx, VkSemaphore semaphore, VkFence fence) {
-        return VK_ERROR_OUT_OF_DEVICE_MEMORY;
-    }
 
+const std::vector<VkImage> &SwapChain::getImages()
+{
+    return images;
+}
+
+uint32_t SwapChain::getImageCount() const {
+    return imageCount;
+}

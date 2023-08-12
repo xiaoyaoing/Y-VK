@@ -20,4 +20,5 @@ public:
 protected:
     std::unique_ptr<RenderTarget> renderTarget;
     Device &device;
+    CommandBuffer *buffer;
 };

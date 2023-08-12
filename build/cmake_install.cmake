@@ -44,7 +44,7 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("E:/code/VulkanFrameWorkLearn/build/samples/test/cmake_install.cmake")
+  include("E:/code/VulkanFrameWorkLearn/build/samples/sample1/cmake_install.cmake")
 endif()
 
 if(CMAKE_INSTALL_COMPONENT)

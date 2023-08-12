@@ -181,13 +181,13 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <Project>{6C968144-802B-3012-91C3-D421B5AFCB1A}</Project>
       <Name>glfw</Name>
     </ProjectReference>
+    <ProjectReference Include="E:\code\VulkanFrameWorkLearn\build\samples\sample1\sample1.vcxproj">
+      <Project>{7B903D86-BFE4-3FBB-BF02-9AB5EC918709}</Project>
+      <Name>sample1</Name>
+    </ProjectReference>
     <ProjectReference Include="E:\code\VulkanFrameWorkLearn\build\ext\spdlog\spdlog.vcxproj">
       <Project>{0D5109B9-71FB-31AC-BE57-F42B49D4FB02}</Project>
       <Name>spdlog</Name>
-    </ProjectReference>
-    <ProjectReference Include="E:\code\VulkanFrameWorkLearn\build\samples\test\test.vcxproj">
-      <Project>{E16F0340-DE0C-3547-B6DD-29E58AEC977E}</Project>
-      <Name>test</Name>
     </ProjectReference>
     <ProjectReference Include="E:\code\VulkanFrameWorkLearn\build\ext\tinyobjloader\tinyobjloader.vcxproj">
       <Project>{F0796223-ACD9-36B1-87CB-15CC96835461}</Project>

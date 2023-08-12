@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Vulkan.h>
 #include <VertexData.h>
 #include <Buffer.h>
 #include <CommandBuffer.h>
@@ -24,7 +23,6 @@
 #include <Mesh.h>
 
 #include <stb_image.h>
-#include <vulkan/vulkan.h>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
@@ -33,40 +31,34 @@
 #include <vector>
 #include <optional>
 #include <chrono>
+#include "Scene.h"
+#include "vk_mem_alloc.h"
 
 class Application {
+
+    void initWindow(const char *name, int width, int height);
+
+    virtual void initGUI();
+
+
+    bool frameBufferResized{};
+
+public:
     Application(const char *name, int width, int height);
 
-    void run() {
-        initWindow();
-        initVk();
-        mainloop();
-        // cleanup();
-    };
-
-    virtual void initWindow(const char *name, int width, int height) {
-        glfwInit();
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-        _window = std::make_shared<Window>(glfwCreateWindow(width, height, name, nullptr, nullptr));
-        glfwSetFramebufferSizeCallback(_window->getHandle(), [](GLFWwindow *window, int width, int height) {
-            auto *app = reinterpret_cast<Application *>(glfwGetWindowUserPointer(window));
-            app->frameBufferResized = true;
-        });
-    }
+    void prepare();
 
     virtual void mainloop() {
-        while (!glfwWindowShouldClose(_window->getHandle())) {
+        while (!glfwWindowShouldClose(window->getHandle())) {
             glfwPollEvents();
             drawFrame();
         }
     }
 
-    bool frameBufferResized;
-
 protected:
+
     //* create functions
-    virtual std::unique_ptr<RenderTarget> createRenderTarget(Image &image) {}
+//    virtual std::unique_ptr<RenderTarget> createRenderTarget(Image &image) {}
 
     virtual void draw(CommandBuffer &commandBuffer, RenderTarget &renderTarget);
 
@@ -111,17 +103,16 @@ protected:
     void drawRenderPasses(CommandBuffer &buffer, RenderTarget &renderTarget);
 
 
-    virtual void updateScene() = 0;
+    virtual void updateScene();
 
-    virtual void updateGUI() = 0;
+    virtual void updateGUI();
 
 protected:
-    VmaAllocator _allocator;
+    VmaAllocator _allocator{};
     ptr<Instance> _instance;
     ptr<Queue> _graphicsQueue, _presentQueue;
 
     std::vector<VkFramebuffer> _frameBuffers;
-    ptr<Window> _window;
     ptr<RenderContext> _context;
 
     std::unordered_map<const char *, bool> deviceExtensions;
@@ -129,26 +120,35 @@ protected:
     std::vector<const char *> validationLayers;
 
     ptr<CommandPool> commandPool;
-    std::vector<ptr<CommandBuffer>> commandBuffers;
+    std::vector<std::unique_ptr<CommandBuffer>> commandBuffers;
     ptr<Image> _depthImage;
     ptr<ImageView> _depthImageView;
     ptr<RenderPass> _renderPass;
 
+    std::unique_ptr<Window> window{nullptr};
 
     std::unique_ptr<Pipeline> graphicsPipeline{nullptr};
+
     std::unique_ptr<RenderPipeline> renderPipeline{nullptr};
+
     std::unique_ptr<RenderContext> renderContext{nullptr};
+
     std::unique_ptr<Device> device{nullptr};
+
     VkSurfaceKHR surface{};
 
     std::vector<uint32_t> colorIdx{};
     std::vector<uint32_t> depthIdx{};
 
-    VkPipelineLayout pipelineLayOut;
-    VkDescriptorSetLayout descriptorSetLayout;
-    // #ifdef NOEBUG
-    //     const bool enableValidationLayers = false;
-    // #else
-    //     const bool enableValidationLayers = true;
-    // #endif
+    VkPipelineLayout pipelineLayOut{};
+    VkDescriptorSetLayout descriptorSetLayout{};
+
+    std::unique_ptr<Scene> scene;
+#ifdef NOEBUG
+    const bool enableValidationLayers = false;
+#else
+    const bool enableValidationLayers = true;
+#endif
+
+    void createRenderPipeline();
 };

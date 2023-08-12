@@ -2,10 +2,15 @@
 #include "Device.h"
 #include <Utils/DebugUtils.h>
 #include "Queue.h"
+
+#define VMA_IMPLEMENTATION
+#include <vk_mem_alloc.h>
+
 const std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
 const std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
-Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, std::unordered_map<const char *, bool> requiredExtensions)
+Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+               std::unordered_map<const char *, bool> requiredExtensions)
 {
     _physicalDevice = physicalDevice;
     uint32_t queueFamilyCount = 0;
@@ -41,7 +46,7 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, std::unord
     createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
-    ASSERT(vkCreateDevice(_physicalDevice, &createInfo, nullptr, &_device) == VK_SUCCESS, "Failed to create device");
+    VK_CHECK_RESULT(vkCreateDevice(_physicalDevice, &createInfo, nullptr, &_device));
 
     queues.resize(queueFamilyCount);
     for (uint32_t queueFamilyIndex = 0; queueFamilyIndex < queueFamilyCount; queueFamilyIndex++)
@@ -51,7 +56,8 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, std::unord
         for (uint32_t i = 0; i < queueCreateInfos[queueFamilyIndex].queueCount; i++)
         {
             const VkQueueFamilyProperties &queueFamilyProp = queueFamilyProperties[queueFamilyIndex];
-            queues[queueFamilyIndex].emplace_back(std::make_shared<Queue>(this, queueFamilyIndex, i, presentSupport, queueFamilyProp));
+            queues[queueFamilyIndex].emplace_back(
+                std::move(std::make_unique<Queue>(this, queueFamilyIndex, i, presentSupport, queueFamilyProp)));
         }
     }
 }
@@ -60,24 +66,31 @@ const Queue &Device::getQueueByFlag(VkQueueFlagBits requiredFlag, uint32_t queue
 {
     for (const auto &queueFamily : queues)
     {
-        const auto &prop = queueFamily[0].getProp();
+        const auto &prop = queueFamily[0]->getProp();
         auto queueFlag = prop.queueFlags;
         auto queueCount = prop.queueCount;
         if ((queueFlag & requiredFlag) && queueIndex < queueCount)
-            return queueFamily[queueIndex];
+            return *queueFamily[queueIndex];
     }
-    RUN_TIME_ERROR("Faild to find required queue");
+    RUN_TIME_ERROR("Failed to find required queue");
+    Queue *queue;
+    return *queue;
+    // return *(queues[0][0]);
 }
 
 const Queue &Device::getPresentQueue(uint32_t queueIndex)
 {
     for (const auto &queueFamily : queues)
     {
-        const auto &prop = queueFamily[0].getProp();
-        auto canPresent = queueFamily[0].supportPresent();
+        const auto &prop = queueFamily[0]->getProp();
+        auto canPresent = queueFamily[0]->supportPresent();
         auto queueCount = prop.queueCount;
         if (canPresent && queueIndex < queueCount)
-            return queueFamily[queueIndex];
+            return *queueFamily[queueIndex];
     }
-    RUN_TIME_ERROR("Faild to find present queue");
+    RUN_TIME_ERROR("Failed to find present queue");
+
+    Queue *queue;
+    return *queue;
+    // return *(queues[0][0]);
 }

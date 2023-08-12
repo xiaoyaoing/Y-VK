@@ -1,5 +1,5 @@
 //========================================================================
-// Clipboard test program
+// Clipboard sample1 program
 // Copyright (c) Camilla Löwy <elmindreda@glfw.org>
 //
 // This software is provided 'as-is', without any express or implied
@@ -23,13 +23,16 @@
 //
 //========================================================================
 //
-// This program is used to test the clipboard functionality.
+// This program is used to sample1 the clipboard functionality.
 //
 //========================================================================
 
 #define GLAD_GL_IMPLEMENTATION
+
 #include <glad/gl.h>
+
 #define GLFW_INCLUDE_NONE
+
 #include <GLFW/glfw3.h>
 
 #include <stdio.h>
@@ -38,36 +41,31 @@
 #include "getopt.h"
 
 #if defined(__APPLE__)
- #define MODIFIER GLFW_MOD_SUPER
+#define MODIFIER GLFW_MOD_SUPER
 #else
- #define MODIFIER GLFW_MOD_CONTROL
+#define MODIFIER GLFW_MOD_CONTROL
 #endif
 
-static void usage(void)
-{
+static void usage(void) {
     printf("Usage: clipboard [-h]\n");
 }
 
-static void error_callback(int error, const char* description)
-{
+static void error_callback(int error, const char *description) {
     fprintf(stderr, "Error: %s\n", description);
 }
 
-static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
+static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (action != GLFW_PRESS)
         return;
 
-    switch (key)
-    {
+    switch (key) {
         case GLFW_KEY_ESCAPE:
             glfwSetWindowShouldClose(window, GLFW_TRUE);
             break;
 
         case GLFW_KEY_V:
-            if (mods == MODIFIER)
-            {
-                const char* string;
+            if (mods == MODIFIER) {
+                const char *string;
 
                 string = glfwGetClipboardString(NULL);
                 if (string)
@@ -78,9 +76,8 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
             break;
 
         case GLFW_KEY_C:
-            if (mods == MODIFIER)
-            {
-                const char* string = "Hello GLFW World!";
+            if (mods == MODIFIER) {
+                const char *string = "Hello GLFW World!";
                 glfwSetClipboardString(NULL, string);
                 printf("Setting clipboard to \"%s\"\n", string);
             }
@@ -88,15 +85,12 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
     }
 }
 
-int main(int argc, char** argv)
-{
+int main(int argc, char **argv) {
     int ch;
-    GLFWwindow* window;
+    GLFWwindow *window;
 
-    while ((ch = getopt(argc, argv, "h")) != -1)
-    {
-        switch (ch)
-        {
+    while ((ch = getopt(argc, argv, "h")) != -1) {
+        switch (ch) {
             case 'h':
                 usage();
                 exit(EXIT_SUCCESS);
@@ -109,15 +103,13 @@ int main(int argc, char** argv)
 
     glfwSetErrorCallback(error_callback);
 
-    if (!glfwInit())
-    {
+    if (!glfwInit()) {
         fprintf(stderr, "Failed to initialize GLFW\n");
         exit(EXIT_FAILURE);
     }
 
     window = glfwCreateWindow(200, 200, "Clipboard Test", NULL, NULL);
-    if (!window)
-    {
+    if (!window) {
         glfwTerminate();
 
         fprintf(stderr, "Failed to open GLFW window\n");
@@ -132,8 +124,7 @@ int main(int argc, char** argv)
 
     glClearColor(0.5f, 0.5f, 0.5f, 0);
 
-    while (!glfwWindowShouldClose(window))
-    {
+    while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT);
 
         glfwSwapBuffers(window);

@@ -38,9 +38,9 @@ public:
                const std::vector<LoadStoreInfo> &load_store_infos,
                const std::vector<SubpassInfo> &subpasses);
 
-    RenderPass(const VkRenderPass pass) : _pass(pass) {
-
-    }
+//    RenderPass(const VkRenderPass pass) : _pass(pass) {
+//
+//    }
 
 
     ~RenderPass();

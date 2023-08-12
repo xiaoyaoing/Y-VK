@@ -41,4 +41,5 @@ VkPipelineShaderStageCreateInfo Shader::PipelineShaderStageCreateInfo()
     info.stage = VK_SHADER_STAGE_VERTEX_BIT;
     info.module = shader;
     info.pName = "main";
+    return info;
 }

@@ -23,7 +23,7 @@
 //
 //========================================================================
 //
-// This test prints monitor and video mode information or verifies video
+// This sample1 prints monitor and video mode information or verifies video
 // modes
 //
 //========================================================================

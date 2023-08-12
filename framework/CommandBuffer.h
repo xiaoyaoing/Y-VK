@@ -16,7 +16,9 @@ class RenderPass;
 
 class Subpass;
 
-class FrameBuffer class CommandBuffer {
+class FrameBuffer;
+
+class CommandBuffer {
 public:
     enum class ResetMode {
         ResetPool,
@@ -24,7 +26,7 @@ public:
         AlwaysAllocate,
     };
 
-    inline VkCommandBuffer getHandle() { return _buffer; }
+    inline VkCommandBuffer getHandle() const { return _buffer; }
 
     explicit CommandBuffer(VkCommandBuffer buffer) : _buffer(buffer) {}
 
@@ -33,11 +35,11 @@ public:
     void beginRenderPass(VkRenderPass renderPass, VkFramebuffer buffer,
                          const std::vector<VkClearValue> &clearValues, const VkExtent2D &extent2D);
 
-    void beginRenderPass(const RenderTarget &render_target,
-                         std::unique_ptr<Subpass> &render_pass,
-                         const FrameBuffer &framebuffer,
-                         const std::vector<VkClearValue> &clear_values,
-                         VkSubpassContents contents);
+//    void beginRenderPass(const RenderTarget &render_target,
+//                         std::unique_ptr<Subpass> &render_pass,
+//                         const FrameBuffer &framebuffer,
+//                         const std::vector<VkClearValue> &clear_values,
+//                         VkSubpassContents contents);
 
     void beginRenderPass(const RenderTarget &render_target,
                          RenderPass &render_pass,

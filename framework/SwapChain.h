@@ -85,11 +85,10 @@ protected:
 
     VkExtent2D _extent;
 
-    uint32_t imageCount;
 
     SwapchainProperties prop;
 
     std::vector<VkImage> images;
 
-
+    uint32_t imageCount{2};
 };

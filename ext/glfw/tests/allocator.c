@@ -1,5 +1,5 @@
 //========================================================================
-// Custom heap allocator test
+// Custom heap allocator sample1
 // Copyright (c) Camilla Löwy <elmindreda@glfw.org>
 //
 // This software is provided 'as-is', without any express or implied
@@ -24,8 +24,11 @@
 //========================================================================
 
 #define GLAD_GL_IMPLEMENTATION
+
 #include <glad/gl.h>
+
 #define GLFW_INCLUDE_NONE
+
 #include <GLFW/glfw3.h>
 
 #include <stdio.h>
@@ -33,23 +36,20 @@
 #include <assert.h>
 
 #define CALL(x) (function_name = #x, x)
-static const char* function_name = NULL;
+static const char *function_name = NULL;
 
-struct allocator_stats
-{
+struct allocator_stats {
     size_t total;
     size_t current;
     size_t maximum;
 };
 
-static void error_callback(int error, const char* description)
-{
+static void error_callback(int error, const char *description) {
     fprintf(stderr, "Error: %s\n", description);
 }
 
-static void* allocate(size_t size, void* user)
-{
-    struct allocator_stats* stats = user;
+static void *allocate(size_t size, void *user) {
+    struct allocator_stats *stats = user;
     assert(size > 0);
 
     stats->total += size;
@@ -60,18 +60,17 @@ static void* allocate(size_t size, void* user)
     printf("%s: allocate %zu bytes (current %zu maximum %zu total %zu)\n",
            function_name, size, stats->current, stats->maximum, stats->total);
 
-    size_t* real_block = malloc(size + sizeof(size_t));
+    size_t *real_block = malloc(size + sizeof(size_t));
     assert(real_block != NULL);
     *real_block = size;
     return real_block + 1;
 }
 
-static void deallocate(void* block, void* user)
-{
-    struct allocator_stats* stats = user;
+static void deallocate(void *block, void *user) {
+    struct allocator_stats *stats = user;
     assert(block != NULL);
 
-    size_t* real_block = (size_t*) block - 1;
+    size_t *real_block = (size_t *) block - 1;
     stats->current -= *real_block;
 
     printf("%s: deallocate %zu bytes (current %zu maximum %zu total %zu)\n",
@@ -80,13 +79,12 @@ static void deallocate(void* block, void* user)
     free(real_block);
 }
 
-static void* reallocate(void* block, size_t size, void* user)
-{
-    struct allocator_stats* stats = user;
+static void *reallocate(void *block, size_t size, void *user) {
+    struct allocator_stats *stats = user;
     assert(block != NULL);
     assert(size > 0);
 
-    size_t* real_block = (size_t*) block - 1;
+    size_t *real_block = (size_t *) block - 1;
     stats->total += size;
     stats->current += size - *real_block;
     if (stats->current > stats->maximum)
@@ -101,16 +99,15 @@ static void* reallocate(void* block, size_t size, void* user)
     return real_block + 1;
 }
 
-int main(void)
-{
+int main(void) {
     struct allocator_stats stats = {0};
     const GLFWallocator allocator =
-    {
-        .allocate = allocate,
-        .deallocate = deallocate,
-        .reallocate = reallocate,
-        .user = &stats
-    };
+            {
+                    .allocate = allocate,
+                    .deallocate = deallocate,
+                    .reallocate = reallocate,
+                    .user = &stats
+            };
 
     glfwSetErrorCallback(error_callback);
     glfwInitAllocator(&allocator);
@@ -118,9 +115,8 @@ int main(void)
     if (!CALL(glfwInit)())
         exit(EXIT_FAILURE);
 
-    GLFWwindow* window = CALL(glfwCreateWindow)(400, 400, "Custom allocator test", NULL, NULL);
-    if (!window)
-    {
+    GLFWwindow *window = CALL(glfwCreateWindow)(400, 400, "Custom allocator sample1", NULL, NULL);
+    if (!window) {
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
@@ -129,8 +125,7 @@ int main(void)
     gladLoadGL(glfwGetProcAddress);
     CALL(glfwSwapInterval)(1);
 
-    while (!CALL(glfwWindowShouldClose)(window))
-    {
+    while (!CALL(glfwWindowShouldClose)(window)) {
         glClear(GL_COLOR_BUFFER_BIT);
         CALL(glfwSwapBuffers)(window);
         CALL(glfwWaitEvents)();

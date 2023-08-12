@@ -38,7 +38,7 @@
 
 #ifdef _MSVC_LANG
 
-// Uncomment to test including `vulkan.h` on your own before including VMA.
+// Uncomment to sample1 including `vulkan.h` on your own before including VMA.
 //#include <vulkan/vulkan.h>
 
 /*

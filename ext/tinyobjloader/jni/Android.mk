@@ -1,4 +1,4 @@
-# A simple test for the minimal standard C++ library
+# A simple sample1 for the minimal standard C++ library
 #
 
 LOCAL_PATH := $(call my-dir)

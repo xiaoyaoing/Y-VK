@@ -24,7 +24,7 @@ public:
 
     inline bool supportPresent() const { return canPresent; }
 
-    inline uint32_t getFamilyIndex() { return _familyIndex; }
+    inline uint32_t getFamilyIndex() const { return _familyIndex; }
 
     inline const VkQueueFamilyProperties &getProp() const { return properties; }
 

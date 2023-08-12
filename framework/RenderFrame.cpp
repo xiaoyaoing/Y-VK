@@ -3,17 +3,21 @@
 //
 
 #include "RenderFrame.h"
+#include <RenderTarget.h>
 
 CommandBuffer &
 RenderFrame::requestCommandBuffer(const Queue &queue, CommandBuffer::ResetMode reset_mode, VkCommandBufferLevel level) {
-    return <#initializer#>;
+    //  return CommandBuffer();
+//    return <#initializer#>;
+    return *buffer;
 }
 
 RenderTarget &RenderFrame::getRenderTarget() {
-    return <#initializer#>;
+    return *renderTarget;
 }
 
-RenderFrame::RenderFrame(Device &device, std::unique_ptr<RenderTarget> &&renderTarget) {
+RenderFrame::RenderFrame(Device &device, std::unique_ptr<RenderTarget> &&renderTarget) : device(device), renderTarget(
+        std::move(renderTarget)) {
 
 }
 

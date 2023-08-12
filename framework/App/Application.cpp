@@ -3,28 +3,33 @@
 //
 #include "Application.h"
 #include "Instance.h"
+#include "Scene.h"
 #include <RenderTarget.h>
 #include <Shader.h>
+#include <Subpass.h>
 
 void Application::initVk() {
     getRequiredExtensions();
     _instance = std::make_unique<Instance>(std::string("vulkanApp"), instanceExtensions, validationLayers);
-    surface = _window->createSurface(*_instance);
+    surface = window->createSurface(*_instance);
 
-    // create init device
-    auto physicalDevice = createPhysicalDevice();
+    // create device
+    uint32_t physicalDeviceCount;
+    VkPhysicalDevice *physicalDevices;
+    vkEnumeratePhysicalDevices(_instance->getHandle(), &physicalDeviceCount, physicalDevices);
+    auto physicalDevice = physicalDevices[0];
     device = std::make_unique<Device>(physicalDevice, surface);
 
     createAllocator();
     createRenderContext();
-
     createCommandBuffer();
-    createRenderPass();
+    //createRenderPass();
+    createRenderPipeline();
     createPipeline();
-    createDepthStencil();
+    // createDepthStencil();
 
     renderContext->createFrameBuffers(renderPipeline->getRenderPass());
-    createFrameBuffers();
+    //  createFrameBuffers();
 }
 
 void Application::getRequiredExtensions() {
@@ -126,8 +131,8 @@ void Application::createPipeline() {
     // fragShaderStageInfo.pName = "main";
 
     // todo handle shader complie
-    auto vertexShader = Shader(*device, "spv");
-    auto fragShader = Shader(*device, "spv");
+    auto vertexShader = Shader(*device, "E:\\code\\VulkanFrameWorkLearn\\shaders\\vert.spv");
+    auto fragShader = Shader(*device, "E:\\code\\VulkanFrameWorkLearn\\shaders\\frag.spv");
 
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertexShader.PipelineShaderStageCreateInfo(),
                                                       fragShader.PipelineShaderStageCreateInfo()};
@@ -253,6 +258,14 @@ void Application::createPipeline() {
 
 }
 
+void Application::updateScene() {
+
+}
+
+void Application::updateGUI() {
+
+}
+
 void Application::createFrameBuffers() {
 
 //    // DestroyFrameBuffers();
@@ -297,7 +310,7 @@ void Application::createCommandBuffer() {
         throw std::runtime_error("failed to allocate command buffers!");
     }
     for (const auto &vkCommandBuffer: vkCommandBuffers)
-        commandBuffers.emplace_back(std::make_shared<CommandBuffer>(vkCommandBuffer));
+        commandBuffers.emplace_back(std::move(std::make_unique<CommandBuffer>(vkCommandBuffer)));
 }
 
 void Application::createRenderPass() {
@@ -350,18 +363,18 @@ void Application::createRenderPass() {
     std::vector<VkSubpassDescription> subpasses = {subpass};
     std::vector<VkSubpassDependency> dependencies = {dependency};
 
-    _renderPass = std::make_shared<RenderPass>(device, attachments, dependencies, subpasses);
+//    _renderPass = std::make_shared<RenderPass>(device, attachments, dependencies, subpasses);
 }
 
 void Application::createDepthStencil() {
-    auto depthImageInfo = Image::getDefaultImageInfo();
-    depthImageInfo.extent = VkExtent3D{_context->getSwapChainExtent().width, _context->getSwapChainExtent().height, 1};
-    depthImageInfo.format = VK_FORMAT_D32_SFLOAT;
-    depthImageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    depthImageInfo.imageType = VK_IMAGE_TYPE_2D;
-    depthImageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-    _depthImage = std::make_shared<Image>(_allocator, VMA_MEMORY_USAGE_GPU_ONLY, depthImageInfo);
-    _depthImageView = std::make_shared<ImageView>(device, _depthImage, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
+//    auto depthImageInfo = Image::getDefaultImageInfo();
+//    depthImageInfo.extent = VkExtent3D{_context->getSwapChainExtent().width, _context->getSwapChainExtent().height, 1};
+//    depthImageInfo.format = VK_FORMAT_D32_SFLOAT;
+//    depthImageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+//    depthImageInfo.imageType = VK_IMAGE_TYPE_2D;
+//    depthImageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+//    _depthImage = std::make_shared<Image>(_allocator, VMA_MEMORY_USAGE_GPU_ONLY, depthImageInfo);
+//    _depthImageView = std::make_shared<ImageView>(device, _depthImage, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
 }
 
 void Application::createAllocator() {
@@ -393,7 +406,7 @@ void Application::draw(CommandBuffer &commandBuffer, RenderTarget &renderTarget)
 
         for (auto &i: colorIdx) {
             assert(i < views.size());
-            commandBuffer.imageMemoryBarrier(views[i]);
+            commandBuffer.imageMemoryBarrier(views[i], memory_barrier);
             renderTarget.setLayout(i, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
         }
     }
@@ -423,13 +436,15 @@ void Application::draw(CommandBuffer &commandBuffer, RenderTarget &renderTarget)
 void Application::createRenderContext() {
     auto surface_priority_list = std::vector<VkSurfaceFormatKHR>{{VK_FORMAT_R8G8B8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR},
                                                                  {VK_FORMAT_B8G8R8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR}};
-    renderContext = std::make_unique<RenderContext>(*device, surface, *_window);
+    renderContext = std::make_unique<RenderContext>(*device, surface, *window);
 }
 
 void Application::drawFrame() {
     updateScene();
     updateGUI();
-    auto &commandBuffer = this->renderContext->begin();
+//    auto &commandBuffer = renderContext->begin();
+    renderContext->beginFrame();
+    auto &commandBuffer = *commandBuffers[renderContext->getActiveFrameIndex()];
     commandBuffer.beginRecord(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
     draw(commandBuffer, renderContext->getActiveRenderFrame().getRenderTarget());
     commandBuffer.endRecord();
@@ -437,15 +452,47 @@ void Application::drawFrame() {
 }
 
 void Application::drawRenderPasses(CommandBuffer &buffer, RenderTarget &renderTarget) {
-    // set_viewport_and_scissor(command_buffer, render_target.get_extent());
-
     renderPipeline->draw(buffer, renderTarget);
+}
 
-    // todo handle GUI
-    //    if (gui)
-    //    {
-    //        gui->draw(command_buffer);
-    //    }
+void Application::initWindow(const char *name, int width, int height) {
+    glfwInit();
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+    window = std::make_unique<Window>(glfwCreateWindow(width, height, name, nullptr, nullptr));
+    glfwSetFramebufferSizeCallback(window->getHandle(), [](GLFWwindow *window, int width, int height) {
+        auto *app = reinterpret_cast<Application *>(glfwGetWindowUserPointer(window));
+        app->frameBufferResized = true;
+    });
+}
 
-    // command_buffer.end_render_pass();
+void Application::initGUI() {
+
+}
+
+void Application::createCommandPool() {
+
+}
+
+VkPhysicalDevice Application::createPhysicalDevice() {
+    return nullptr;
+}
+
+void Application::prepare() {
+    initGUI();
+    initVk();
+}
+
+Application::Application(const char *name, int width, int height) {
+    initWindow(name, width, height);
+}
+
+void Application::createRenderPipeline() {
+    scene = std::make_unique<Scene>(*device);
+    renderPipeline = std::make_unique<RenderPipeline>(*device);
+    renderPipeline->addSubPass(std::make_unique<GeomSubpass>(*scene));
+    std::vector<LoadStoreInfo> infos;
+    infos.emplace_back(LoadStoreInfo{VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE});
+    infos.emplace_back(LoadStoreInfo{VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE});
+    renderPipeline->createRenderPass(renderContext->getRenderFrame(0).getRenderTarget(), infos);
 }

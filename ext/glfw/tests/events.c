@@ -23,7 +23,7 @@
 //
 //========================================================================
 //
-// This test hooks every available callback and outputs their arguments
+// This sample1 hooks every available callback and outputs their arguments
 //
 // Log messages go to stdout, error messages to stderr
 //

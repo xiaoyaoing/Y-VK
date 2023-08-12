@@ -320,7 +320,7 @@ publish, and distribute this file as you see fit.
 // code.)
 //
 // On x86, SSE2 will automatically be used when available based on a run-time
-// test; if not, the generic C versions are used as a fall-back. On ARM targets,
+// sample1; if not, the generic C versions are used as a fall-back. On ARM targets,
 // the typical path is to have separate builds for NEON and non-NEON devices
 // (at least this is true for iOS and Android). Therefore, the NEON support is
 // toggled by a build flag: define STBI_NEON to get NEON loops.

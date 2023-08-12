@@ -1,5 +1,5 @@
 //========================================================================
-// Gamma correction test program
+// Gamma correction sample1 program
 // Copyright (c) Camilla Löwy <elmindreda@glfw.org>
 //
 // This software is provided 'as-is', without any express or implied
@@ -23,14 +23,17 @@
 //
 //========================================================================
 //
-// This program is used to test the gamma correction functionality for
+// This program is used to sample1 the gamma correction functionality for
 // both full screen and windowed mode windows
 //
 //========================================================================
 
 #define GLAD_GL_IMPLEMENTATION
+
 #include <glad/gl.h>
+
 #define GLFW_INCLUDE_NONE
+
 #include <GLFW/glfw3.h>
 
 #define NK_IMPLEMENTATION
@@ -41,40 +44,36 @@
 #define NK_INCLUDE_VERTEX_BUFFER_OUTPUT
 #define NK_INCLUDE_STANDARD_VARARGS
 #define NK_BUTTON_TRIGGER_ON_RELEASE
+
 #include <nuklear.h>
 
 #define NK_GLFW_GL2_IMPLEMENTATION
+
 #include <nuklear_glfw_gl2.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-static void error_callback(int error, const char* description)
-{
+static void error_callback(int error, const char *description) {
     fprintf(stderr, "Error: %s\n", description);
 }
 
-static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
+static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE)
         glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
-static void chart_ramp_array(struct nk_context* nk,
+static void chart_ramp_array(struct nk_context *nk,
                              struct nk_color color,
-                             int count, unsigned short int* values)
-{
+                             int count, unsigned short int *values) {
     if (nk_chart_begin_colored(nk, NK_CHART_LINES,
                                color, nk_rgb(255, 255, 255),
-                               count, 0, 65535))
-    {
+                               count, 0, 65535)) {
         int i;
-        for (i = 0;  i < count;  i++)
-        {
+        for (i = 0; i < count; i++) {
             char buffer[1024];
-            if (nk_chart_push(nk, values[i]))
-            {
+            if (nk_chart_push(nk, values[i])) {
                 snprintf(buffer, sizeof(buffer), "#%u: %u (%0.5f) ",
                          i, values[i], values[i] / 65535.f);
                 nk_tooltip(nk, buffer);
@@ -85,13 +84,12 @@ static void chart_ramp_array(struct nk_context* nk,
     }
 }
 
-int main(int argc, char** argv)
-{
-    GLFWmonitor* monitor = NULL;
-    GLFWwindow* window;
+int main(int argc, char **argv) {
+    GLFWmonitor *monitor = NULL;
+    GLFWwindow *window;
     GLFWgammaramp orig_ramp;
-    struct nk_context* nk;
-    struct nk_font_atlas* atlas;
+    struct nk_context *nk;
+    struct nk_font_atlas *atlas;
     float gamma_value = 1.f;
 
     glfwSetErrorCallback(error_callback);
@@ -105,16 +103,14 @@ int main(int argc, char** argv)
     glfwWindowHint(GLFW_WIN32_KEYBOARD_MENU, GLFW_TRUE);
 
     window = glfwCreateWindow(800, 400, "Gamma Test", NULL, NULL);
-    if (!window)
-    {
+    if (!window) {
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
 
     {
-        const GLFWgammaramp* ramp = glfwGetGammaRamp(monitor);
-        if (!ramp)
-        {
+        const GLFWgammaramp *ramp = glfwGetGammaRamp(monitor);
+        if (!ramp) {
             glfwTerminate();
             exit(EXIT_FAILURE);
         }
@@ -139,8 +135,7 @@ int main(int argc, char** argv)
 
     glfwSetKeyCallback(window, key_callback);
 
-    while (!glfwWindowShouldClose(window))
-    {
+    while (!glfwWindowShouldClose(window)) {
         int width, height;
         struct nk_rect area;
 
@@ -150,9 +145,8 @@ int main(int argc, char** argv)
 
         glClear(GL_COLOR_BUFFER_BIT);
         nk_glfw3_new_frame();
-        if (nk_begin(nk, "", area, 0))
-        {
-            const GLFWgammaramp* ramp;
+        if (nk_begin(nk, "", area, 0)) {
+            const GLFWgammaramp *ramp;
 
             nk_layout_row_dynamic(nk, 30, 3);
             if (nk_slider_float(nk, 0.1f, &gamma_value, 5.f, 0.1f))

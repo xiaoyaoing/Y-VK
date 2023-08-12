@@ -8,7 +8,8 @@
 
 class RenderTarget;
 
-class Mesh;
+
+class Scene;
 
 class Subpass {
 public:
@@ -60,18 +61,20 @@ private:
 /// Default to no depth stencil resolve attachment
     uint32_t depthStencilResolveAttachment{VK_ATTACHMENT_UNUSED};
 
-    bool disableDepthStencilAttachment;
+    bool disableDepthStencilAttachment{false};
 
 
 };
 
 
-class geomSubpass : public Subpass {
+class GeomSubpass : public Subpass {
 public:
     virtual void draw(CommandBuffer &commandBuffer) override;
 
+    GeomSubpass(Scene &scene);
+
 private:
-    std::vector<Mesh *> meshes;
+    Scene &scene;
 };
 
 

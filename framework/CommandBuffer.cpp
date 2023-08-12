@@ -4,6 +4,8 @@
 #include "Descriptor/DescriptorSet.h"
 #include <RenderPass.h>
 #include <FrameBuffer.h>
+#include <RenderTarget.h>
+#include <algorithm>
 
 void CommandBuffer::beginRecord(VkCommandBufferUsageFlags usage) {
     VkCommandBufferBeginInfo beginInfo{};
@@ -34,7 +36,9 @@ void CommandBuffer::beginRenderPass(VkRenderPass renderPass, VkFramebuffer buffe
 }
 
 void CommandBuffer::bindVertexBuffer(std::vector<ptr<Buffer>> &buffers, const std::vector<VkDeviceSize> &offsets) {
-    auto bufferHandles = getHandles<Buffer, VkBuffer>(buffers);
+    std::vector<VkBuffer> bufferHandles(buffers.size());
+    std::transform(buffers.begin(), buffers.end(), bufferHandles.begin(),
+                   [](ptr<Buffer> &buffer) { return buffer->getHandle(); });
 
     vkCmdBindVertexBuffers(_buffer, 0, static_cast<uint32_t>(bufferHandles.size()), bufferHandles.data(),
                            offsets.data());
@@ -48,9 +52,9 @@ void CommandBuffer::bindIndicesBuffer(const ptr<Buffer> &buffer, VkDeviceSize of
 void CommandBuffer::bindDescriptorSets(VkPipelineBindPoint bindPoint, VkPipelineLayout layout, uint32_t firstSet,
                                        const std::vector<ptr<DescriptorSet>> &descriptorSets,
                                        const std::vector<uint32_t> &dynamicOffsets) {
-    auto vkDescriptorSets = getHandles<DescriptorSet, VkDescriptorSet>(descriptorSets);
-    vkCmdBindDescriptorSets(_buffer, bindPoint, layout, firstSet, vkDescriptorSets.size(), vkDescriptorSets.data(),
-                            dynamicOffsets.size(), dynamicOffsets.data());
+//    auto vkDescriptorSets = getHandles<DescriptorSet, VkDescriptorSet>(descriptorSets);
+//    vkCmdBindDescriptorSets(_buffer, bindPoint, layout, firstSet, vkDescriptorSets.size(), vkDescriptorSets.data(),
+//                            dynamicOffsets.size(), dynamicOffsets.data());
 }
 
 void
@@ -81,22 +85,22 @@ void CommandBuffer::imageMemoryBarrier(const ImageView &view, ImageMemoryBarrier
                          &vkBarrier);
 }
 
-void CommandBuffer::beginRenderPass(const RenderTarget &render_target, std::unique_ptr<Subpass> &render_pass,
-                                    const FrameBuffer &framebuffer, const std::vector<VkClearValue> &clear_values,
-                                    VkSubpassContents contents) {
-    VkRenderPassBeginInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = renderPass;
-    renderPassInfo.framebuffer = buffer;
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = extent2D;
-
-    renderPassInfo.clearValueCount = clearValues.size();
-    renderPassInfo.pClearValues = clearValues.data();
-
-
-    vkCmdBeginRenderPass(_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-}
+//void CommandBuffer::beginRenderPass(const RenderTarget &render_target, std::unique_ptr<Subpass> &render_pass,
+//                                    const FrameBuffer &framebuffer, const std::vector<VkClearValue> &clear_values,
+//                                    VkSubpassContents contents) {
+////    VkRenderPassBeginInfo renderPassInfo{};
+////    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+////    renderPassInfo.renderPass = renderPass;
+////    renderPassInfo.framebuffer = buffer;
+////    renderPassInfo.renderArea.offset = {0, 0};
+////    renderPassInfo.renderArea.extent = extent2D;
+////
+////    renderPassInfo.clearValueCount = clearValues.size();
+////    renderPassInfo.pClearValues = clearValues.data();
+////
+////
+////    vkCmdBeginRenderPass(_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+//}
 
 
 void CommandBuffer::beginRenderPass(const RenderTarget &render_target, RenderPass &render_pass,
@@ -104,13 +108,13 @@ void CommandBuffer::beginRenderPass(const RenderTarget &render_target, RenderPas
                                     VkSubpassContents contents) {
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = render_pass;
-    renderPassInfo.framebuffer = framebuffer.;
+    renderPassInfo.renderPass = render_pass.getHandle();
+    renderPassInfo.framebuffer = framebuffer.getHandle();
     renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = extent2D;
+    renderPassInfo.renderArea.extent = render_target.getExtent();
 
-    renderPassInfo.clearValueCount = clearValues.size();
-    renderPassInfo.pClearValues = clearValues.data();
+    renderPassInfo.clearValueCount = clear_values.size();
+    renderPassInfo.pClearValues = clear_values.data();
 
 
     vkCmdBeginRenderPass(_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);

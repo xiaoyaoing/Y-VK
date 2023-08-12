@@ -48,8 +48,8 @@
     <None Include="E:\code\VulkanFrameWorkLearn\framework\CMakeLists.txt">
       <Filter>Buildsystem Input Files\framework</Filter>
     </None>
-    <None Include="E:\code\VulkanFrameWorkLearn\samples\test\CMakeLists.txt">
-      <Filter>Buildsystem Input Files\samples\test</Filter>
+    <None Include="E:\code\VulkanFrameWorkLearn\samples\sample1\CMakeLists.txt">
+      <Filter>Buildsystem Input Files\samples\sample1</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -86,8 +86,8 @@
     <Filter Include="Buildsystem Input Files\framework">
       <UniqueIdentifier>{F6DDCCB9-9EEB-364B-A484-9668E72139C7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Buildsystem Input Files\samples\test">
-      <UniqueIdentifier>{44E2D70C-54BE-354C-BC20-6A786D409662}</UniqueIdentifier>
+    <Filter Include="Buildsystem Input Files\samples\sample1">
+      <UniqueIdentifier>{975E95CB-18BE-3757-B84D-33690C515FF4}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

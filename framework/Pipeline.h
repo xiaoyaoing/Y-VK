@@ -1,6 +1,7 @@
 #include "Vulkan.h"
 #include <RenderTarget.h>
 #include <CommandBuffer.h>
+#include <Subpass.h>
 
 class Device;
 
@@ -156,12 +157,14 @@ protected:
 class RenderPipeline {
 
 public:
+    explicit RenderPipeline(Device &device);
+
     void draw(CommandBuffer &commandBuffer, RenderTarget &renderTarget,
               VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE);
 
     void addSubPass(std::unique_ptr<Subpass> &&subpass);
 
-    void createRenderPass(RenderTarget &target);
+    void createRenderPass(RenderTarget &target, std::vector<LoadStoreInfo> &loadStoreOps);
 
     RenderPass &getRenderPass() const;
 
@@ -175,5 +178,5 @@ private:
 /// Default to two clear values
     std::vector<VkClearValue> clear_value = std::vector<VkClearValue>(2);
 
-
+    Device &device;
 };

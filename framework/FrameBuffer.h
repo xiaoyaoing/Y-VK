@@ -12,7 +12,7 @@ public:
 
 //    explicit FrameBuffer(VkFramebuffer framebuffer) : _framebuffer(framebuffer) {}
 
-    inline VkFramebuffer getHandle() { return _framebuffer; }
+    inline VkFramebuffer getHandle() const { return _framebuffer; }
 
     void cleanup() {}
 

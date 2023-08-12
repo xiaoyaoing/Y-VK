@@ -16,7 +16,12 @@ Queue::Queue(Device *device, int familyIndex, int queueIndex, bool canPresent, c
 }
 
 void Queue::submit(const std::vector<ptr<CommandBuffer>> &cmdBuffers, ptr<Fence> fence) {
-    auto vkCmdBuffers = getHandles<CommandBuffer, VkCommandBuffer>(cmdBuffers);
+//    auto vkCmdBuffers = getHandles<CommandBuffer, VkCommandBuffer>(cmdBuffers);
+    std::vector<VkCommandBuffer> vkCmdBuffers(cmdBuffers.size());
+    std::transform(cmdBuffers.begin(), cmdBuffers.end(), vkCmdBuffers.begin(),
+                   [](const ptr<CommandBuffer> &buffer) -> VkCommandBuffer {
+                       return buffer->getHandle();
+                   });
     VkSubmitInfo submitInfo{};
     submitInfo.pCommandBuffers = vkCmdBuffers.data();
     submitInfo.commandBufferCount = vkCmdBuffers.size();

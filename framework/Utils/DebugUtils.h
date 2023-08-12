@@ -1,5 +1,8 @@
-#include "Vulkan.h"
 #include <iostream>
+#include <vulkan/vulkan_core.h>
+
+#pragma once
+
 
 #define VK_CHECK_RESULT(f)                                                                                \
 {                                                                                                        \

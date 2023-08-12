@@ -1,6 +1,8 @@
 #include "Vulkan.h"
 #include "ImageView.h"
 
+#pragma once
+
 class Image {
     Device &device;
     VkImage image;
@@ -59,15 +61,15 @@ public:
     Image(Image &&other);
 
     inline VkImage getHandle() {
-        return _image;
+        return image;
     };
 
     inline VkFormat getFormat() {
-        return _format;
+        return format;
     }
 
     inline VkImageType getImageType() {
-        return _imageType;
+        return type;
     }
 
     inline VkSampleCountFlagBits getSampleCount() {
@@ -75,11 +77,11 @@ public:
     };
 
     inline VkImageUsageFlags getUseFlags() {
-        return _useFlags;
+        return usage;
     };
 
     inline const VkExtent3D &getExtent() {
-        return _extent;
+        return extent;
     }
 
     Image(VmaAllocator allocator, VmaMemoryUsage memoryUsage, const VkImageCreateInfo &createInfo);

@@ -11,13 +11,16 @@
 //========================================================================
 
 #define GLAD_GL_IMPLEMENTATION
+
 #include <glad/gl.h>
+
 #define GLFW_INCLUDE_NONE
+
 #include <GLFW/glfw3.h>
 
 #if defined(_MSC_VER)
- // Make MS math.h define M_PI
- #define _USE_MATH_DEFINES
+// Make MS math.h define M_PI
+#define _USE_MATH_DEFINES
 #endif
 
 #include <math.h>
@@ -57,40 +60,37 @@ static int do_redraw = 1;
 #define TORUS_MAJOR_RES 32
 #define TORUS_MINOR_RES 32
 
-static void drawTorus(void)
-{
+static void drawTorus(void) {
     static GLuint torus_list = 0;
-    int    i, j, k;
+    int i, j, k;
     double s, t, x, y, z, nx, ny, nz, scale, twopi;
 
-    if (!torus_list)
-    {
+    if (!torus_list) {
         // Start recording displaylist
         torus_list = glGenLists(1);
         glNewList(torus_list, GL_COMPILE_AND_EXECUTE);
 
         // Draw torus
         twopi = 2.0 * M_PI;
-        for (i = 0;  i < TORUS_MINOR_RES;  i++)
-        {
+        for (i = 0; i < TORUS_MINOR_RES; i++) {
             glBegin(GL_QUAD_STRIP);
-            for (j = 0;  j <= TORUS_MAJOR_RES;  j++)
-            {
-                for (k = 1;  k >= 0;  k--)
-                {
+            for (j = 0; j <= TORUS_MAJOR_RES; j++) {
+                for (k = 1; k >= 0; k--) {
                     s = (i + k) % TORUS_MINOR_RES + 0.5;
                     t = j % TORUS_MAJOR_RES;
 
                     // Calculate point on surface
-                    x = (TORUS_MAJOR + TORUS_MINOR * cos(s * twopi / TORUS_MINOR_RES)) * cos(t * twopi / TORUS_MAJOR_RES);
+                    x = (TORUS_MAJOR + TORUS_MINOR * cos(s * twopi / TORUS_MINOR_RES)) *
+                        cos(t * twopi / TORUS_MAJOR_RES);
                     y = TORUS_MINOR * sin(s * twopi / TORUS_MINOR_RES);
-                    z = (TORUS_MAJOR + TORUS_MINOR * cos(s * twopi / TORUS_MINOR_RES)) * sin(t * twopi / TORUS_MAJOR_RES);
+                    z = (TORUS_MAJOR + TORUS_MINOR * cos(s * twopi / TORUS_MINOR_RES)) *
+                        sin(t * twopi / TORUS_MAJOR_RES);
 
                     // Calculate surface normal
                     nx = x - TORUS_MAJOR * cos(t * twopi / TORUS_MAJOR_RES);
                     ny = y;
                     nz = z - TORUS_MAJOR * sin(t * twopi / TORUS_MAJOR_RES);
-                    scale = 1.0 / sqrt(nx*nx + ny*ny + nz*nz);
+                    scale = 1.0 / sqrt(nx * nx + ny * ny + nz * nz);
                     nx *= scale;
                     ny *= scale;
                     nz *= scale;
@@ -105,9 +105,7 @@ static void drawTorus(void)
 
         // Stop recording displaylist
         glEndList();
-    }
-    else
-    {
+    } else {
         // Playback displaylist
         glCallList(torus_list);
     }
@@ -118,11 +116,10 @@ static void drawTorus(void)
 // Draw the scene (a rotating torus)
 //========================================================================
 
-static void drawScene(void)
-{
-    const GLfloat model_diffuse[4]  = {1.0f, 0.8f, 0.8f, 1.0f};
+static void drawScene(void) {
+    const GLfloat model_diffuse[4] = {1.0f, 0.8f, 0.8f, 1.0f};
     const GLfloat model_specular[4] = {0.6f, 0.6f, 0.6f, 1.0f};
-    const GLfloat model_shininess   = 20.0f;
+    const GLfloat model_shininess = 20.0f;
 
     glPushMatrix();
 
@@ -150,8 +147,7 @@ static void drawScene(void)
 // Draw a 2D grid (used for orthogonal views)
 //========================================================================
 
-static void drawGrid(float scale, int steps)
-{
+static void drawGrid(float scale, int steps) {
     int i;
     float x, y;
     mat4x4 view;
@@ -164,12 +160,12 @@ static void drawGrid(float scale, int steps)
 
     // Setup modelview matrix (flat XY view)
     {
-        vec3 eye = { 0.f, 0.f, 1.f };
-        vec3 center = { 0.f, 0.f, 0.f };
-        vec3 up = { 0.f, 1.f, 0.f };
+        vec3 eye = {0.f, 0.f, 1.f};
+        vec3 center = {0.f, 0.f, 0.f};
+        vec3 up = {0.f, 1.f, 0.f};
         mat4x4_look_at(view, eye, center, up);
     }
-    glLoadMatrixf((const GLfloat*) view);
+    glLoadMatrixf((const GLfloat *) view);
 
     // We don't want to update the Z-buffer
     glDepthMask(GL_FALSE);
@@ -182,8 +178,7 @@ static void drawGrid(float scale, int steps)
     // Horizontal lines
     x = scale * 0.5f * (float) (steps - 1);
     y = -scale * 0.5f * (float) (steps - 1);
-    for (i = 0;  i < steps;  i++)
-    {
+    for (i = 0; i < steps; i++) {
         glVertex3f(-x, y, 0.0f);
         glVertex3f(x, y, 0.0f);
         y += scale;
@@ -192,8 +187,7 @@ static void drawGrid(float scale, int steps)
     // Vertical lines
     x = -scale * 0.5f * (float) (steps - 1);
     y = scale * 0.5f * (float) (steps - 1);
-    for (i = 0;  i < steps;  i++)
-    {
+    for (i = 0; i < steps; i++) {
         glVertex3f(x, -y, 0.0f);
         glVertex3f(x, y, 0.0f);
         x += scale;
@@ -212,12 +206,11 @@ static void drawGrid(float scale, int steps)
 // Draw all views
 //========================================================================
 
-static void drawAllViews(void)
-{
+static void drawAllViews(void) {
     const GLfloat light_position[4] = {0.0f, 8.0f, 8.0f, 1.0f};
-    const GLfloat light_diffuse[4]  = {1.0f, 1.0f, 1.0f, 1.0f};
+    const GLfloat light_diffuse[4] = {1.0f, 1.0f, 1.0f, 1.0f};
     const GLfloat light_specular[4] = {1.0f, 1.0f, 1.0f, 1.0f};
-    const GLfloat light_ambient[4]  = {0.2f, 0.2f, 0.3f, 1.0f};
+    const GLfloat light_ambient[4] = {0.2f, 0.2f, 0.3f, 1.0f};
     float aspect;
     mat4x4 view, projection;
 
@@ -231,10 +224,10 @@ static void drawAllViews(void)
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // Enable scissor test
+    // Enable scissor sample1
     glEnable(GL_SCISSOR_TEST);
 
-    // Enable depth test
+    // Enable depth sample1
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
 
@@ -258,12 +251,12 @@ static void drawAllViews(void)
     glScissor(0, height / 2, width / 2, height / 2);
     glMatrixMode(GL_MODELVIEW);
     {
-        vec3 eye = { 0.f, 10.f, 1e-3f };
-        vec3 center = { 0.f, 0.f, 0.f };
-        vec3 up = { 0.f, 1.f, 0.f };
-        mat4x4_look_at( view, eye, center, up );
+        vec3 eye = {0.f, 10.f, 1e-3f};
+        vec3 center = {0.f, 0.f, 0.f};
+        vec3 up = {0.f, 1.f, 0.f};
+        mat4x4_look_at(view, eye, center, up);
     }
-    glLoadMatrixf((const GLfloat*) view);
+    glLoadMatrixf((const GLfloat *) view);
     drawGrid(0.5, 12);
     drawScene();
 
@@ -272,12 +265,12 @@ static void drawAllViews(void)
     glScissor(0, 0, width / 2, height / 2);
     glMatrixMode(GL_MODELVIEW);
     {
-        vec3 eye = { 0.f, 0.f, 10.f };
-        vec3 center = { 0.f, 0.f, 0.f };
-        vec3 up = { 0.f, 1.f, 0.f };
-        mat4x4_look_at( view, eye, center, up );
+        vec3 eye = {0.f, 0.f, 10.f};
+        vec3 center = {0.f, 0.f, 0.f};
+        vec3 up = {0.f, 1.f, 0.f};
+        mat4x4_look_at(view, eye, center, up);
     }
-    glLoadMatrixf((const GLfloat*) view);
+    glLoadMatrixf((const GLfloat *) view);
     drawGrid(0.5, 12);
     drawScene();
 
@@ -286,12 +279,12 @@ static void drawAllViews(void)
     glScissor(width / 2, 0, width / 2, height / 2);
     glMatrixMode(GL_MODELVIEW);
     {
-        vec3 eye = { 10.f, 0.f, 0.f };
-        vec3 center = { 0.f, 0.f, 0.f };
-        vec3 up = { 0.f, 1.f, 0.f };
-        mat4x4_look_at( view, eye, center, up );
+        vec3 eye = {10.f, 0.f, 0.f};
+        vec3 center = {0.f, 0.f, 0.f};
+        vec3 up = {0.f, 1.f, 0.f};
+        mat4x4_look_at(view, eye, center, up);
     }
-    glLoadMatrixf((const GLfloat*) view);
+    glLoadMatrixf((const GLfloat *) view);
     drawGrid(0.5, 12);
     drawScene();
 
@@ -315,19 +308,19 @@ static void drawAllViews(void)
                        65.f * (float) M_PI / 180.f,
                        aspect,
                        1.f, 50.f);
-    glLoadMatrixf((const GLfloat*) projection);
+    glLoadMatrixf((const GLfloat *) projection);
 
     // Upper right view (PERSPECTIVE VIEW)
     glViewport(width / 2, height / 2, width / 2, height / 2);
     glScissor(width / 2, height / 2, width / 2, height / 2);
     glMatrixMode(GL_MODELVIEW);
     {
-        vec3 eye = { 3.f, 1.5f, 3.f };
-        vec3 center = { 0.f, 0.f, 0.f };
-        vec3 up = { 0.f, 1.f, 0.f };
-        mat4x4_look_at( view, eye, center, up );
+        vec3 eye = {3.f, 1.5f, 3.f};
+        vec3 center = {0.f, 0.f, 0.f};
+        vec3 up = {0.f, 1.f, 0.f};
+        mat4x4_look_at(view, eye, center, up);
     }
-    glLoadMatrixf((const GLfloat*) view);
+    glLoadMatrixf((const GLfloat *) view);
 
     // Configure and enable light source 1
     glLightfv(GL_LIGHT1, GL_POSITION, light_position);
@@ -346,15 +339,14 @@ static void drawAllViews(void)
     // Disable face culling
     glDisable(GL_CULL_FACE);
 
-    // Disable depth test
+    // Disable depth sample1
     glDisable(GL_DEPTH_TEST);
 
-    // Disable scissor test
+    // Disable scissor sample1
     glDisable(GL_SCISSOR_TEST);
 
     // Draw a border around the active view
-    if (active_view > 0 && active_view != 2)
-    {
+    if (active_view > 0 && active_view != 2) {
         glViewport(0, 0, width, height);
 
         glMatrixMode(GL_PROJECTION);
@@ -363,7 +355,7 @@ static void drawAllViews(void)
 
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
-        glTranslatef((GLfloat) ((active_view - 1) & 1), (GLfloat) (1 - (active_view - 1) / 2), 0.0f);
+        glTranslatef((GLfloat)((active_view - 1) & 1), (GLfloat)(1 - (active_view - 1) / 2), 0.0f);
 
         glColor3f(1.0f, 1.0f, 0.6f);
 
@@ -382,9 +374,8 @@ static void drawAllViews(void)
 // Framebuffer size callback function
 //========================================================================
 
-static void framebufferSizeFun(GLFWwindow* window, int w, int h)
-{
-    width  = w;
+static void framebufferSizeFun(GLFWwindow *window, int w, int h) {
+    width = w;
     height = h > 0 ? h : 1;
     do_redraw = 1;
 }
@@ -394,8 +385,7 @@ static void framebufferSizeFun(GLFWwindow* window, int w, int h)
 // Window refresh callback function
 //========================================================================
 
-static void windowRefreshFun(GLFWwindow* window)
-{
+static void windowRefreshFun(GLFWwindow *window) {
     drawAllViews();
     glfwSwapBuffers(window);
     do_redraw = 0;
@@ -406,8 +396,7 @@ static void windowRefreshFun(GLFWwindow* window)
 // Mouse position callback function
 //========================================================================
 
-static void cursorPosFun(GLFWwindow* window, double x, double y)
-{
+static void cursorPosFun(GLFWwindow *window, double x, double y) {
     int wnd_width, wnd_height, fb_width, fb_height;
     double scale;
 
@@ -420,8 +409,7 @@ static void cursorPosFun(GLFWwindow* window, double x, double y)
     y *= scale;
 
     // Depending on which view was selected, rotate around different axes
-    switch (active_view)
-    {
+    switch (active_view) {
         case 1:
             rot_x += (int) (y - ypos);
             rot_z += (int) (x - xpos);
@@ -452,19 +440,15 @@ static void cursorPosFun(GLFWwindow* window, double x, double y)
 // Mouse button callback function
 //========================================================================
 
-static void mouseButtonFun(GLFWwindow* window, int button, int action, int mods)
-{
-    if ((button == GLFW_MOUSE_BUTTON_LEFT) && action == GLFW_PRESS)
-    {
+static void mouseButtonFun(GLFWwindow *window, int button, int action, int mods) {
+    if ((button == GLFW_MOUSE_BUTTON_LEFT) && action == GLFW_PRESS) {
         // Detect which of the four views was clicked
         active_view = 1;
         if (xpos >= width / 2)
             active_view += 1;
         if (ypos >= height / 2)
             active_view += 2;
-    }
-    else if (button == GLFW_MOUSE_BUTTON_LEFT)
-    {
+    } else if (button == GLFW_MOUSE_BUTTON_LEFT) {
         // Deselect any previously selected view
         active_view = 0;
     }
@@ -472,8 +456,7 @@ static void mouseButtonFun(GLFWwindow* window, int button, int action, int mods)
     do_redraw = 1;
 }
 
-static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
+static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
@@ -483,13 +466,11 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 // main
 //========================================================================
 
-int main(void)
-{
-    GLFWwindow* window;
+int main(void) {
+    GLFWwindow *window;
 
     // Initialise GLFW
-    if (!glfwInit())
-    {
+    if (!glfwInit()) {
         fprintf(stderr, "Failed to initialize GLFW\n");
         exit(EXIT_FAILURE);
     }
@@ -498,8 +479,7 @@ int main(void)
 
     // Open OpenGL window
     window = glfwCreateWindow(500, 500, "Split view demo", NULL, NULL);
-    if (!window)
-    {
+    if (!window) {
         fprintf(stderr, "Failed to open GLFW window\n");
 
         glfwTerminate();
@@ -525,8 +505,7 @@ int main(void)
     framebufferSizeFun(window, width, height);
 
     // Main loop
-    for (;;)
-    {
+    for (;;) {
         // Only redraw if we need to
         if (do_redraw)
             windowRefreshFun(window);

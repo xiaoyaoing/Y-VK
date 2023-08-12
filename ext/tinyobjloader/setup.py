@@ -1,9 +1,9 @@
 # Adapted from https://github.com/pybind/python_example/blob/master/setup.py
 import sys
 
-#from pybind11 import get_cmake_dir
+# from pybind11 import get_cmake_dir
 # Available at setup time due to pyproject.toml
-from pybind11.setup_helpers import Pybind11Extension#, build_ext
+from pybind11.setup_helpers import Pybind11Extension  # , build_ext
 from setuptools import setup
 
 __version__ = "2.0.0rc10"
@@ -22,11 +22,11 @@ with open("README.md", "r", encoding="utf8") as fh:
 
 ext_modules = [
     Pybind11Extension("tinyobjloader",
-        sorted(["python/bindings.cc", "python/tiny_obj_loader.cc"]),
-        # Example: passing in the version to the compiled code
-        define_macros = [('VERSION_INFO', __version__)],
-        cxx_std=11,
-        ),
+                      sorted(["python/bindings.cc", "python/tiny_obj_loader.cc"]),
+                      # Example: passing in the version to the compiled code
+                      define_macros=[('VERSION_INFO', __version__)],
+                      cxx_std=11,
+                      ),
 ]
 
 setup(
@@ -55,7 +55,7 @@ setup(
         "Programming Language :: Python :: 3",
     ],
     ext_modules=ext_modules,
-    extras_require={"test": "pytest"},
+    extras_require={"sample1": "pytest"},
     # Currently, build_ext only provides an optional "highest supported C++
     # level" feature, but in the future it may provide more features.
     # cmdclass={"build_ext": build_ext},

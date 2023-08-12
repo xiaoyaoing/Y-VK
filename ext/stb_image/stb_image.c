@@ -298,7 +298,7 @@ static void stbi__rewind(stbi__context *s)
 {
    // conceptually rewind SHOULD rewind to the beginning of the stream,
    // but we just rewind to the beginning of the initial buffer, because
-   // we only use it after doing 'test', which only ever looks at at most 92 bytes
+   // we only use it after doing 'sample1', which only ever looks at at most 92 bytes
    s->img_buffer = s->img_buffer_original;
    s->img_buffer_end = s->img_buffer_original_end;
 }
@@ -443,7 +443,7 @@ static unsigned char *stbi__load_main(stbi__context *s, int *x, int *y, int *com
    #endif
 
    #ifndef STBI_NO_TGA
-   // test tga last because it's a crappy test!
+   // sample1 tga last because it's a crappy sample1!
    if (stbi__tga_test(s))
       return stbi__tga_load(s,x,y,comp,req_comp);
    #endif
@@ -1103,8 +1103,8 @@ stbi_inline static int stbi__jpeg_huff_decode(stbi__jpeg *j, stbi__huffman *h)
       return h->values[k];
    }
 
-   // naive test is to shift the code_buffer down so k bits are
-   // valid, then test against maxcode. To speed this up, we've
+   // naive sample1 is to shift the code_buffer down so k bits are
+   // valid, then sample1 against maxcode. To speed this up, we've
    // preshifted maxcode left so that it has (16-k) 0s at the
    // end; in other words, regardless of the number of bits, it
    // wants to be compared against something shifted to have 16;
@@ -1393,7 +1393,7 @@ static int stbi__jpeg_decode_block_prog_ac(stbi__jpeg *j, short data[64], stbi__
 // take a -128..127 value and stbi__clamp it and convert to 0..255
 stbi_inline static stbi_uc stbi__clamp(int x)
 {
-   // trick to use a single test to catch both cases
+   // trick to use a single sample1 to catch both cases
    if ((unsigned int) x > 255) {
       if (x < 0) return 0;
       if (x > 255) return 255;
@@ -4491,12 +4491,12 @@ static int stbi__tga_info(stbi__context *s, int *x, int *y, int *comp)
     tga_w = stbi__get16le(s);
     if( tga_w < 1 ) {
         stbi__rewind(s);
-        return 0;   // test width
+        return 0;   // sample1 width
     }
     tga_h = stbi__get16le(s);
     if( tga_h < 1 ) {
         stbi__rewind(s);
-        return 0;   // test height
+        return 0;   // sample1 height
     }
     tga_bits_per_pixel = stbi__get8(s); // bits per pixel
     stbi__get8(s); // ignore alpha bits
@@ -4539,8 +4539,8 @@ static int stbi__tga_test(stbi__context *s)
       if ( (sz != 2) && (sz != 3) && (sz != 10) && (sz != 11) ) goto errorEnd; // only RGB or grey allowed, +/- RLE
       stbi__skip(s,9); // skip colormap specification and image x/y origin
    }
-   if ( stbi__get16le(s) < 1 ) goto errorEnd;      //   test width
-   if ( stbi__get16le(s) < 1 ) goto errorEnd;      //   test height
+   if ( stbi__get16le(s) < 1 ) goto errorEnd;      //   sample1 width
+   if ( stbi__get16le(s) < 1 ) goto errorEnd;      //   sample1 height
    sz = stbi__get8(s);   //   bits per pixel
    if ( (tga_color_type == 1) && (sz != 8) && (sz != 16) ) goto errorEnd; // for colormapped images, bpp is size of an index
    if ( (sz != 8) && (sz != 15) && (sz != 16) && (sz != 24) && (sz != 32) ) goto errorEnd;
@@ -4568,7 +4568,7 @@ void stbi__tga_read_rgb16(stbi__context *s, stbi_uc* out)
 
    // some people claim that the most significant bit might be used for alpha
    // (possibly if an alpha-bit is set in the "image descriptor byte")
-   // but that only made 16bit test images completely translucent..
+   // but that only made 16bit sample1 images completely translucent..
    // so let's treat all 15 and 16bit TGAs as RGB with no alpha.
 }
 
@@ -6020,7 +6020,7 @@ static int stbi__info_main(stbi__context *s, int *x, int *y, int *comp)
    if (stbi__hdr_info(s, x, y, comp))  return 1;
    #endif
 
-   // test tga last because it's a crappy test!
+   // sample1 tga last because it's a crappy sample1!
    #ifndef STBI_NO_TGA
    if (stbi__tga_info(s, x, y, comp))
        return 1;
@@ -6124,7 +6124,7 @@ STBIDEF int stbi_info_from_callbacks(stbi_io_callbacks const *c, void *user, int
               fix gcc struct-initialization warning
       1.39  (2014-06-15)
               fix to TGA optimization when req_comp != number of components in TGA;
-              fix to GIF loading because BMP wasn't rewinding (whoops, no GIFs in my test suite)
+              fix to GIF loading because BMP wasn't rewinding (whoops, no GIFs in my sample1 suite)
               add support for BMP version 5 (more ignored fields)
       1.38  (2014-06-06)
               suppress MSVC warnings on integer casts truncating values
@@ -6150,7 +6150,7 @@ STBIDEF int stbi_info_from_callbacks(stbi_io_callbacks const *c, void *user, int
               a few more leak fixes, bug in PNG handling (SpartanJ)
       1.30  (2011-06-11)
               added ability to load files via callbacks to accomidate custom input streams (Ben Wenger)
-              removed deprecated format-specific test/load functions
+              removed deprecated format-specific sample1/load functions
               removed support for installable file formats (stbi_loader) -- would have been broken for IO callbacks anyway
               error cases in bmp and tga give messages and don't leak (Raymond Barbiero, grisha)
               fix inefficiency in decoding 32-bit BMP (David Woo)
@@ -6223,7 +6223,7 @@ STBIDEF int stbi_info_from_callbacks(stbi_io_callbacks const *c, void *user, int
       0.53    fix bug in png 3->4; speedup png decoding
       0.52    png handles req_comp=3,4 directly; minor cleanup; jpeg comments
       0.51    obey req_comp requests, 1-component jpegs return as 1-component,
-              on 'test' only check type, not whether we support this variant
+              on 'sample1' only check type, not whether we support this variant
       0.50  (2006-11-19)
               first released version
 */

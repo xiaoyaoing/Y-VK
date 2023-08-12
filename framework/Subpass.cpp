@@ -3,10 +3,13 @@
 //
 
 #include "Subpass.h"
-#include <Mesh.h>
+
+#include <RenderTarget.h>
+#include <Scene.h>
 
 void Subpass::updateRenderTargetAttachments(RenderTarget &renderTarget) {
-
+    renderTarget.setInAttachment(inputAttachments);
+    renderTarget.setOutAttachment(outputAttachments);
 }
 
 void Subpass::draw(CommandBuffer &commandBuffer) {
@@ -61,7 +64,7 @@ void Subpass::setDepthStencilResolveAttachment(uint32_t depthStencilResolveAttac
     Subpass::depthStencilResolveAttachment = depthStencilResolveAttachment;
 }
 
-bool Subpass::isDisableDepthStencilAttachment() const {
+bool Subpass::getDisableDepthStencilAttachment() const {
     return disableDepthStencilAttachment;
 }
 
@@ -69,10 +72,13 @@ void Subpass::setDisableDepthStencilAttachment(bool disableDepthStencilAttachmen
     Subpass::disableDepthStencilAttachment = disableDepthStencilAttachment;
 }
 
-void geomSubpass::draw(CommandBuffer &commandBuffer) {
-    for (auto mesh: meshes) {
+void GeomSubpass::draw(CommandBuffer &commandBuffer) {
+    for (auto &mesh: scene.meshes) {
         mesh->bindOnly(commandBuffer);
         mesh->drawOnly(commandBuffer);
     }
+}
+
+GeomSubpass::GeomSubpass(Scene &scene) : scene(scene) {
 
 }

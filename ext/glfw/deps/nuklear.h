@@ -10711,7 +10711,7 @@ nk_rp__skyline_find_best_pos(struct nk_rp_context *c, int width, int height)
     while (node->x + width <= c->width) {
         int y,waste;
         y = nk_rp__skyline_find_min_y(c, node, node->x, width, &waste);
-        /* actually just want to test BL */
+        /* actually just want to sample1 BL */
         if (c->heuristic == NK_RP_HEURISTIC_Skyline_BL_sortHeight) {
             /* bottom left */
             if (y < best_y) {

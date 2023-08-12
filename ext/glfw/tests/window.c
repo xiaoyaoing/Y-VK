@@ -1,5 +1,5 @@
 //========================================================================
-// Window properties test
+// Window properties sample1
 // Copyright (c) Camilla Löwy <elmindreda@glfw.org>
 //
 // This software is provided 'as-is', without any express or implied
@@ -24,8 +24,11 @@
 //========================================================================
 
 #define GLAD_GL_IMPLEMENTATION
+
 #include <glad/gl.h>
+
 #define GLFW_INCLUDE_NONE
+
 #include <GLFW/glfw3.h>
 
 #include <stdarg.h>
@@ -38,9 +41,11 @@
 #define NK_INCLUDE_VERTEX_BUFFER_OUTPUT
 #define NK_INCLUDE_STANDARD_VARARGS
 #define NK_BUTTON_TRIGGER_ON_RELEASE
+
 #include <nuklear.h>
 
 #define NK_GLFW_GL2_IMPLEMENTATION
+
 #include <nuklear_glfw_gl2.h>
 
 #include <stdbool.h>
@@ -48,8 +53,7 @@
 #include <stdlib.h>
 #include <limits.h>
 
-int main(int argc, char** argv)
-{
+int main(int argc, char **argv) {
     int windowed_x, windowed_y, windowed_width, windowed_height;
     int last_xpos = INT_MIN, last_ypos = INT_MIN;
     int last_width = INT_MIN, last_height = INT_MIN;
@@ -71,9 +75,8 @@ int main(int argc, char** argv)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 
-    GLFWwindow* window = glfwCreateWindow(600, 600, "Window Features", NULL, NULL);
-    if (!window)
-    {
+    GLFWwindow *window = glfwCreateWindow(600, 600, "Window Features", NULL, NULL);
+    if (!window) {
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
@@ -103,14 +106,13 @@ int main(int argc, char** argv)
     sprintf(max_width_buffer, "%i", max_width);
     sprintf(max_height_buffer, "%i", max_height);
 
-    struct nk_context* nk = nk_glfw3_init(window, NK_GLFW3_INSTALL_CALLBACKS);
+    struct nk_context *nk = nk_glfw3_init(window, NK_GLFW3_INSTALL_CALLBACKS);
 
-    struct nk_font_atlas* atlas;
+    struct nk_font_atlas *atlas;
     nk_glfw3_font_stash_begin(&atlas);
     nk_glfw3_font_stash_end();
 
-    while (!(may_close && glfwWindowShouldClose(window)))
-    {
+    while (!(may_close && glfwWindowShouldClose(window))) {
         int width, height;
 
         glfwGetWindowSize(window, &width, &height);
@@ -119,22 +121,17 @@ int main(int argc, char** argv)
         nk_window_set_bounds(nk, "main", area);
 
         nk_glfw3_new_frame();
-        if (nk_begin(nk, "main", area, 0))
-        {
+        if (nk_begin(nk, "main", area, 0)) {
             nk_layout_row_dynamic(nk, 30, 5);
 
-            if (nk_button_label(nk, "Toggle Fullscreen"))
-            {
-                if (glfwGetWindowMonitor(window))
-                {
+            if (nk_button_label(nk, "Toggle Fullscreen")) {
+                if (glfwGetWindowMonitor(window)) {
                     glfwSetWindowMonitor(window, NULL,
                                          windowed_x, windowed_y,
                                          windowed_width, windowed_height, 0);
-                }
-                else
-                {
-                    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-                    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+                } else {
+                    GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+                    const GLFWvidmode *mode = glfwGetVideoMode(monitor);
                     glfwGetWindowPos(window, &windowed_x, &windowed_y);
                     glfwGetWindowSize(window, &windowed_width, &windowed_height);
                     glfwSetWindowMonitor(window, monitor,
@@ -149,8 +146,7 @@ int main(int argc, char** argv)
                 glfwIconifyWindow(window);
             if (nk_button_label(nk, "Restore"))
                 glfwRestoreWindow(window);
-            if (nk_button_label(nk, "Hide (briefly)"))
-            {
+            if (nk_button_label(nk, "Hide (briefly)")) {
                 glfwHideWindow(window);
 
                 const double time = glfwGetTime() + 3.0;
@@ -162,8 +158,7 @@ int main(int argc, char** argv)
 
             nk_layout_row_dynamic(nk, 30, 1);
 
-            if (glfwGetWindowAttrib(window, GLFW_MOUSE_PASSTHROUGH))
-            {
+            if (glfwGetWindowAttrib(window, GLFW_MOUSE_PASSTHROUGH)) {
                 nk_label(nk, "Press H to disable mouse passthrough", NK_TEXT_CENTERED);
 
                 if (glfwGetKey(window, GLFW_KEY_H))
@@ -177,8 +172,7 @@ int main(int argc, char** argv)
                                    NK_EDIT_SIG_ENTER |
                                    NK_EDIT_GOTO_END_ON_ACTIVATE;
 
-            if (position_supported)
-            {
+            if (position_supported) {
                 int xpos, ypos;
                 glfwGetWindowPos(window, &xpos, &ypos);
 
@@ -188,29 +182,24 @@ int main(int argc, char** argv)
                 events = nk_edit_string_zero_terminated(nk, flags, xpos_buffer,
                                                         sizeof(xpos_buffer),
                                                         nk_filter_decimal);
-                if (events & NK_EDIT_COMMITED)
-                {
+                if (events & NK_EDIT_COMMITED) {
                     xpos = atoi(xpos_buffer);
                     glfwSetWindowPos(window, xpos, ypos);
-                }
-                else if (xpos != last_xpos || (events & NK_EDIT_DEACTIVATED))
+                } else if (xpos != last_xpos || (events & NK_EDIT_DEACTIVATED))
                     sprintf(xpos_buffer, "%i", xpos);
 
                 events = nk_edit_string_zero_terminated(nk, flags, ypos_buffer,
                                                         sizeof(ypos_buffer),
                                                         nk_filter_decimal);
-                if (events & NK_EDIT_COMMITED)
-                {
+                if (events & NK_EDIT_COMMITED) {
                     ypos = atoi(ypos_buffer);
                     glfwSetWindowPos(window, xpos, ypos);
-                }
-                else if (ypos != last_ypos || (events & NK_EDIT_DEACTIVATED))
+                } else if (ypos != last_ypos || (events & NK_EDIT_DEACTIVATED))
                     sprintf(ypos_buffer, "%i", ypos);
 
                 last_xpos = xpos;
                 last_ypos = ypos;
-            }
-            else
+            } else
                 nk_label(nk, "Position not supported", NK_TEXT_LEFT);
 
             nk_layout_row_dynamic(nk, 30, 3);
@@ -219,23 +208,19 @@ int main(int argc, char** argv)
             events = nk_edit_string_zero_terminated(nk, flags, width_buffer,
                                                     sizeof(width_buffer),
                                                     nk_filter_decimal);
-            if (events & NK_EDIT_COMMITED)
-            {
+            if (events & NK_EDIT_COMMITED) {
                 width = atoi(width_buffer);
                 glfwSetWindowSize(window, width, height);
-            }
-            else if (width != last_width || (events & NK_EDIT_DEACTIVATED))
+            } else if (width != last_width || (events & NK_EDIT_DEACTIVATED))
                 sprintf(width_buffer, "%i", width);
 
             events = nk_edit_string_zero_terminated(nk, flags, height_buffer,
                                                     sizeof(height_buffer),
                                                     nk_filter_decimal);
-            if (events & NK_EDIT_COMMITED)
-            {
+            if (events & NK_EDIT_COMMITED) {
                 height = atoi(height_buffer);
                 glfwSetWindowSize(window, width, height);
-            }
-            else if (height != last_height || (events & NK_EDIT_DEACTIVATED))
+            } else if (height != last_height || (events & NK_EDIT_DEACTIVATED))
                 sprintf(height_buffer, "%i", height);
 
             last_width = width;
@@ -248,27 +233,22 @@ int main(int argc, char** argv)
             events = nk_edit_string_zero_terminated(nk, flags, numer_buffer,
                                                     sizeof(numer_buffer),
                                                     nk_filter_decimal);
-            if (events & NK_EDIT_COMMITED)
-            {
+            if (events & NK_EDIT_COMMITED) {
                 aspect_numer = abs(atoi(numer_buffer));
                 update_ratio_limit = true;
-            }
-            else if (events & NK_EDIT_DEACTIVATED)
+            } else if (events & NK_EDIT_DEACTIVATED)
                 sprintf(numer_buffer, "%i", aspect_numer);
 
             events = nk_edit_string_zero_terminated(nk, flags, denom_buffer,
                                                     sizeof(denom_buffer),
                                                     nk_filter_decimal);
-            if (events & NK_EDIT_COMMITED)
-            {
+            if (events & NK_EDIT_COMMITED) {
                 aspect_denom = abs(atoi(denom_buffer));
                 update_ratio_limit = true;
-            }
-            else if (events & NK_EDIT_DEACTIVATED)
+            } else if (events & NK_EDIT_DEACTIVATED)
                 sprintf(denom_buffer, "%i", aspect_denom);
 
-            if (update_ratio_limit)
-            {
+            if (update_ratio_limit) {
                 if (limit_aspect_ratio)
                     glfwSetWindowAspectRatio(window, aspect_numer, aspect_denom);
                 else
@@ -283,23 +263,19 @@ int main(int argc, char** argv)
             events = nk_edit_string_zero_terminated(nk, flags, min_width_buffer,
                                                     sizeof(min_width_buffer),
                                                     nk_filter_decimal);
-            if (events & NK_EDIT_COMMITED)
-            {
+            if (events & NK_EDIT_COMMITED) {
                 min_width = abs(atoi(min_width_buffer));
                 update_size_limit = true;
-            }
-            else if (events & NK_EDIT_DEACTIVATED)
+            } else if (events & NK_EDIT_DEACTIVATED)
                 sprintf(min_width_buffer, "%i", min_width);
 
             events = nk_edit_string_zero_terminated(nk, flags, min_height_buffer,
                                                     sizeof(min_height_buffer),
                                                     nk_filter_decimal);
-            if (events & NK_EDIT_COMMITED)
-            {
+            if (events & NK_EDIT_COMMITED) {
                 min_height = abs(atoi(min_height_buffer));
                 update_size_limit = true;
-            }
-            else if (events & NK_EDIT_DEACTIVATED)
+            } else if (events & NK_EDIT_DEACTIVATED)
                 sprintf(min_height_buffer, "%i", min_height);
 
             if (nk_checkbox_label(nk, "Maximum Size", &limit_max_size))
@@ -308,27 +284,22 @@ int main(int argc, char** argv)
             events = nk_edit_string_zero_terminated(nk, flags, max_width_buffer,
                                                     sizeof(max_width_buffer),
                                                     nk_filter_decimal);
-            if (events & NK_EDIT_COMMITED)
-            {
+            if (events & NK_EDIT_COMMITED) {
                 max_width = abs(atoi(max_width_buffer));
                 update_size_limit = true;
-            }
-            else if (events & NK_EDIT_DEACTIVATED)
+            } else if (events & NK_EDIT_DEACTIVATED)
                 sprintf(max_width_buffer, "%i", max_width);
 
             events = nk_edit_string_zero_terminated(nk, flags, max_height_buffer,
                                                     sizeof(max_height_buffer),
                                                     nk_filter_decimal);
-            if (events & NK_EDIT_COMMITED)
-            {
+            if (events & NK_EDIT_COMMITED) {
                 max_height = abs(atoi(max_height_buffer));
                 update_size_limit = true;
-            }
-            else if (events & NK_EDIT_DEACTIVATED)
+            } else if (events & NK_EDIT_DEACTIVATED)
                 sprintf(max_height_buffer, "%i", max_height);
 
-            if (update_size_limit)
-            {
+            if (update_size_limit) {
                 glfwSetWindowSizeLimits(window,
                                         limit_min_size ? min_width : GLFW_DONT_CARE,
                                         limit_min_size ? min_height : GLFW_DONT_CARE,

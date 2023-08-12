@@ -3507,7 +3507,7 @@ static void ManuallyTestLinearAllocator()
     VmaStats origStats;
     vmaCalculateStats(g_hAllocator, &origStats);
 
-    wprintf(L"Manually test linear allocator\n");
+    wprintf(L"Manually sample1 linear allocator\n");
 
     RandomNumberGenerator rand{645332};
 
@@ -3671,7 +3671,7 @@ static void BenchmarkAlgorithmsCase(FILE* file,
         VkDeviceSize totalSize = 0;
         while(totalSize < poolCreateInfo.blockSize / 3)
         {
-            // This test intentionally allows sizes that are aligned to 4 or 16 bytes.
+            // This sample1 intentionally allows sizes that are aligned to 4 or 16 bytes.
             // This is theoretically allowed and already uncovered one bug.
             memReq.size = bufSizeMin + rand.Generate() % (bufSizeMax - bufSizeMin);
             res = vmaAllocateMemory(g_hAllocator, &memReq, &allocCreateInfo, &alloc, nullptr);
@@ -4336,7 +4336,7 @@ static void TestPool_Benchmark(
         memoryTypeBits = bufferMemoryTypeBits & imageMemoryTypeBits;
         if(memoryTypeBits == 0)
         {
-            PrintWarning(L"Cannot test buffers + images in the same memory pool on this GPU.");
+            PrintWarning(L"Cannot sample1 buffers + images in the same memory pool on this GPU.");
             return;
         }
     }
@@ -6047,7 +6047,7 @@ static void PerformPoolTests(FILE* file)
 
 static void BasicTestBuddyAllocator()
 {
-    wprintf(L"Basic test buddy allocator\n");
+    wprintf(L"Basic sample1 buddy allocator\n");
 
     RandomNumberGenerator rand{76543};
 
@@ -6062,7 +6062,7 @@ static void BasicTestBuddyAllocator()
     VkResult res = vmaFindMemoryTypeIndexForBufferInfo(g_hAllocator, &sampleBufCreateInfo, &sampleAllocCreateInfo, &poolCreateInfo.memoryTypeIndex);
     TEST(res == VK_SUCCESS);
 
-    // Deliberately adding 1023 to test usable size smaller than memory block size.
+    // Deliberately adding 1023 to sample1 usable size smaller than memory block size.
     poolCreateInfo.blockSize = 1024 * 1024 + 1023;
     poolCreateInfo.flags = VMA_POOL_CREATE_BUDDY_ALGORITHM_BIT;
     //poolCreateInfo.minBlockCount = poolCreateInfo.maxBlockCount = 1;
@@ -6152,7 +6152,7 @@ static void BasicTestBuddyAllocator()
 
 static void BasicTestAllocatePages()
 {
-    wprintf(L"Basic test allocate pages\n");
+    wprintf(L"Basic sample1 allocate pages\n");
 
     RandomNumberGenerator rand{765461};
 
@@ -6206,7 +6206,7 @@ static void BasicTestAllocatePages()
     std::fill(allocInfo.begin(), allocInfo.end(), VmaAllocationInfo{});
 
     // Try to make 100 allocations of 100 KB. This call should fail due to not enough memory.
-    // Also test optional allocationInfo = null.
+    // Also sample1 optional allocationInfo = null.
     memReq.size = 100 * 1024;
     res = vmaAllocateMemoryPages(g_hAllocator, &memReq, &allocCreateInfo, allocCount, alloc.data(), nullptr);
     TEST(res != VK_SUCCESS);

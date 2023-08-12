@@ -12,7 +12,7 @@ CommandPool::CommandPool(ptr<Device> device, ptr<Queue> queue, VkCommandPoolCrea
     info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     info.flags = flags;
     info.pNext = nullptr;
-    ASSERT(vkCreateCommandPool(device->getHandle(), &info, nullptr, &_pool) == VK_SUCCESS, "Create commandPool");
+    VK_CHECK_RESULT(vkCreateCommandPool(device->getHandle(), &info, nullptr, &_pool));
 }
 
 VkCommandBuffer CommandPool::allocateCommandBuffer() {

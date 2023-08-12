@@ -1,15 +1,19 @@
-#pragma once
 #include "Vulkan.h"
 #include "Instance.h"
 #include <GLFW/glfw3.h>
-//struct GLFWwindow;
+
+#pragma once
+
 class Window {
 public:
-    inline GLFWwindow * getHandle() {
-        return _window; ;
+    inline GLFWwindow *getHandle() {
+        return _window;;
     }
-    VkSurfaceKHR createSurface(Instance  & instance);
-    Window(GLFWwindow * window);
+
+    VkSurfaceKHR createSurface(Instance &instance);
+
+    Window(GLFWwindow *window);
+
 protected:
-    GLFWwindow * _window;
+    GLFWwindow *_window;
 };

@@ -6,10 +6,12 @@ set(target_name framework)
 message("Project Files: ${HEADER_FILES}")
 
 # 接下来你可以使用source_group命令将这些文件分组，以在IDE中更好地组织项目结构
-#source_group("Project Files" FILES ${PROJECT_FILES})
-
-add_library(${target_name} STATIC ${PROJECT_FILES} Subpass.cpp Subpass.h Vulkan.cpp ResourceCache.cpp ResourceCache.h ResoucreCache.cpp ResoucreCache.h ../PipelineLayout.cpp ../PipelineLayout.h)
+# source_group("Project Files" FILES ${PROJECT_FILES})
+add_library(${target_name} STATIC ${PROJECT_FILES} Subpass.cpp Subpass.h Vulkan.cpp ResourceCache.cpp ResourceCache.h ResoucreCache.cpp ResoucreCache.h ../PipelineLayout.cpp ../PipelineLayout.h Scene.cpp Scene.h Utils/VkUtils.cpp)
 message(${target_name})
+message(STATUS "Vulkan library: ${Vulkan_LIBRARY}")
+
+# link_libraries(${Vulkan_LIBRARY}/vulkan-1.lib)
 find_package(Vulkan REQUIRED)
 target_link_libraries(${target_name} PUBLIC
         spdlog
@@ -22,8 +24,7 @@ target_link_libraries(${target_name} PUBLIC
 
 message(STATUS ${Vulkan_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})
 
-include_directories(${Vulkan_INCLUDE_DIRS})
-include_directories("C:\\VulkanSDK\\1.3.250.1\\Include")
+# include_directories(${Vulkan_INCLUDE_DIRS})
 
 # 设置头文件搜索路径
 target_include_directories(${target_name} PUBLIC ${PROJECT_SOURCE_DIR}/framework "C:\\VulkanSDK\\1.3.250.1\\Include")

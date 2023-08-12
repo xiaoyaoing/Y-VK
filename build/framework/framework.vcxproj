@@ -318,8 +318,12 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\RenderPass.h" />
     <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\RenderTarget.cpp" />
     <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\RenderTarget.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\ResoucreCache.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\ResoucreCache.h" />
     <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\ResourceCache.cpp" />
     <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\ResourceCache.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Scene.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Scene.h" />
     <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Shader.cpp" />
     <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Shader.h" />
     <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Subpass.cpp" />
@@ -330,6 +334,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Sync\Fence.h" />
     <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Utils\DebugUtils.cpp" />
     <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Utils\DebugUtils.h" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Utils\VkUtils.cpp" />
     <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Utils\VkUtils.h" />
     <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\VertexData.h" />
     <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Vulkan.cpp" />
@@ -337,6 +342,8 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Window.cpp" />
     <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Window.h" />
     <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\vk.cpp" />
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\PipelineLayout.cpp" />
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\PipelineLayout.h" />
     <ClInclude Include="E:\code\VulkanFrameWorkLearn\ext\vma\src\vk_mem_alloc.h" />
     <ClCompile Include="E:\code\VulkanFrameWorkLearn\ext\stb_image\stb_image.c" />
   </ItemGroup>

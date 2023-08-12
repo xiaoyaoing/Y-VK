@@ -17,5 +17,5 @@ E:/code/VulkanFrameWorkLearn/build/ext/spdlog/CMakeFiles/ALL_BUILD.dir
 E:/code/VulkanFrameWorkLearn/build/ext/glm/CMakeFiles/INSTALL.dir
 E:/code/VulkanFrameWorkLearn/build/framework/CMakeFiles/framework.dir
 E:/code/VulkanFrameWorkLearn/build/framework/CMakeFiles/INSTALL.dir
-E:/code/VulkanFrameWorkLearn/build/samples/test/CMakeFiles/test.dir
-E:/code/VulkanFrameWorkLearn/build/samples/test/CMakeFiles/INSTALL.dir
+E:/code/VulkanFrameWorkLearn/build/samples/sample1/CMakeFiles/sample1.dir
+E:/code/VulkanFrameWorkLearn/build/samples/sample1/CMakeFiles/INSTALL.dir

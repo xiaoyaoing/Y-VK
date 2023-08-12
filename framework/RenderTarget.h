@@ -24,8 +24,8 @@ class RenderTarget {
     std::vector<Image> _images;
     std::vector<ImageView> _views;
     std::vector<Attachment> _attachments;
-    std::vector<int> inAttachment = {};
-    std::vector<int> outAttachment = {0};
+    std::vector<uint32_t> inAttachment = {};
+    std::vector<uint32_t> outAttachment = {0};
     VkExtent2D _extent;
 public:
     using CreateFunc = std::function<std::unique_ptr<RenderTarget>(Image &&)>;
@@ -36,13 +36,13 @@ public:
 
     RenderTarget(std::vector<ImageView> &&imageViews);
 
-    const std::vector<int> &getInAttachment() const;
+    const std::vector<uint32_t> &getInAttachment() const;
 
-    void setInAttachment(const std::vector<int> &inAttachment);
+    void setInAttachment(const std::vector<uint32_t> &inAttachment);
 
-    const std::vector<int> &getOutAttachment() const;
+    const std::vector<uint32_t> &getOutAttachment() const;
 
-    void setOutAttachment(const std::vector<int> &outAttachment);
+    void setOutAttachment(const std::vector<uint32_t> &outAttachment);
 
     const std::vector<Image> &getImages() const;
 
@@ -50,6 +50,10 @@ public:
 
     void setLayout(uint32_t &i, VkImageLayout layout);
 
-    VkExtent2D getExtent();
+    VkExtent2D getExtent() const;
+
+    const std::vector<Attachment> &getAttachments() const;
+
+    void setAttachments(const std::vector<Attachment> &attachments);
 };
 

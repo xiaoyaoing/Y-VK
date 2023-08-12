@@ -63,7 +63,8 @@ void RenderContext::waitFrame() {
 }
 
 RenderFrame &RenderContext::getActiveRenderFrame() {
-    assert(activeFrameIndex < _frames.size());
+    assert(frameActive);
+    assert(activeFrameIndex < frames.size());
     return *frames[activeFrameIndex];
 }
 
@@ -113,7 +114,13 @@ FrameBuffer &RenderContext::getFrameBuffer() {
 VkSemaphore
 RenderContext::submit(const Queue &queue, const std::vector<CommandBuffer *> &commandBuffers, VkSemaphore /*waitSem*/,
                       VkPipelineStageFlags waitPiplineStage) {
-    std::vector<VkCommandBuffer> cmdBufferHandles = getHandles<CommandBuffer, VkCommandBuffer>(commandBuffers);
+    std::vector<VkCommandBuffer> cmdBufferHandles(commandBuffers.size(), VK_NULL_HANDLE);
+
+    std::transform(commandBuffers.begin(), commandBuffers.end(), cmdBufferHandles.begin(),
+                   [](const CommandBuffer *buffer) -> VkCommandBuffer {
+                       return buffer->getHandle();
+                   });
+
 
     RenderFrame &frame = getActiveRenderFrame();
     VkSubmitInfo submitInfo{VK_STRUCTURE_TYPE_SUBMIT_INFO};
@@ -170,4 +177,12 @@ void RenderContext::createFrameBuffers(RenderPass &renderPass) {
     for (auto &renderFrame: frames) {
         frameBuffers.emplace_back(std::make_unique<FrameBuffer>(device, renderFrame->getRenderTarget(), renderPass));
     }
+}
+
+uint32_t RenderContext::getSwapChainImageCount() const {
+    return swapchain->getImageCount();
+}
+
+RenderFrame &RenderContext::getRenderFrame(int idx) {
+    return *frames[idx];
 }

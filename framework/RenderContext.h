@@ -17,16 +17,18 @@ struct RenderContext {
 public:
     RenderContext(Device &device, VkSurfaceKHR surface, Window &window);
 
-    static RenderContext &getGlobalRenderContext() {
-        return Singleton<RenderContext>::getInstance();
-    }
+    static RenderContext *g_context;
+
+    // static RenderContext &getGlobalRenderContext() {
+    //     return Singleton<RenderContext>::getInstance();
+    // }
 
 public:
-    inline VkFormat getSwapChainFormat() const;
+    VkFormat getSwapChainFormat() const;
 
-    inline VkExtent2D getSwapChainExtent() const;
+    VkExtent2D getSwapChainExtent() const;
 
-    inline uint32_t getSwapChainImageCount() const;
+    uint32_t getSwapChainImageCount() const;
 
     //  inline uint32_t getBackBufferCount() { return backBufferCount; }
 
@@ -47,6 +49,8 @@ public:
     void waitFrame();
 
     RenderFrame &getActiveRenderFrame();
+
+    RenderFrame &getRenderFrame(int idx);
 
     uint32_t getActiveFrameIndex() const;
 
@@ -85,11 +89,11 @@ private:
     // 交换链图像信号 acquire-next
     //   VkSemaphore imageAcquireSem;
 
-
     struct {
         VkSemaphore presentFinishedSem;
         VkSemaphore renderFinishedSem;
     } semaphores;
 };
 
-RenderContext *g_context;
+
+RenderContext *RenderContext::g_context = nullptr;

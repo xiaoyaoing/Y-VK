@@ -4,19 +4,19 @@
 
 #include "RenderTarget.h"
 
-const std::vector<int> &RenderTarget::getInAttachment() const {
+const std::vector<uint32_t> &RenderTarget::getInAttachment() const {
     return inAttachment;
 }
 
-void RenderTarget::setInAttachment(const std::vector<int> &inAttachment) {
+void RenderTarget::setInAttachment(const std::vector<uint32_t> &inAttachment) {
     RenderTarget::inAttachment = inAttachment;
 }
 
-const std::vector<int> &RenderTarget::getOutAttachment() const {
+const std::vector<uint32_t> &RenderTarget::getOutAttachment() const {
     return outAttachment;
 }
 
-void RenderTarget::setOutAttachment(const std::vector<int> &outAttachment) {
+void RenderTarget::setOutAttachment(const std::vector<uint32_t> &outAttachment) {
     RenderTarget::outAttachment = outAttachment;
 }
 
@@ -24,7 +24,7 @@ RenderTarget::RenderTarget(std::vector<Image> &&images) : _images(std::move(imag
     _extent = VkExtent2D{_images.back().getExtent().width, _images.back().getExtent().height};
     for (auto &image: _images) {
         _views.emplace_back(image, VK_IMAGE_VIEW_TYPE_2D);
-        _attachments.emplace_back(Attachment{image.getFormat(), image.getSampleCount(), image.getUseFlags()});
+        _attachments.emplace_back(image.getFormat(), image.getSampleCount(), image.getUseFlags());
     }
 }
 
@@ -44,7 +44,7 @@ void RenderTarget::setLayout(uint32_t &i, VkImageLayout layout) {
 
 }
 
-VkExtent2D RenderTarget::getExtent() {
+VkExtent2D RenderTarget::getExtent() const {
     return _extent;
 }
 
@@ -57,6 +57,14 @@ RenderTarget::CreateFunc RenderTarget::defaultRenderTargetCreateFunction = [](
     std::vector<Image> images;
     images.push_back(std::move(swapChainImage));
     images.push_back(std::move(depthImage));
-    return std::make_unique<RenderTarget>();
+    return std::make_unique<RenderTarget>(std::move(images));
 
 };
+
+const std::vector<Attachment> &RenderTarget::getAttachments() const {
+    return _attachments;
+}
+
+void RenderTarget::setAttachments(const std::vector<Attachment> &attachments) {
+    _attachments = attachments;
+}

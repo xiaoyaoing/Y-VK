@@ -67,7 +67,13 @@
     <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\RenderTarget.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\ResoucreCache.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\ResourceCache.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Shader.cpp">
@@ -85,6 +91,9 @@
     <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Utils\DebugUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Utils\VkUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\Vulkan.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -92,6 +101,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="E:\code\VulkanFrameWorkLearn\framework\vk.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\code\VulkanFrameWorkLearn\PipelineLayout.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="E:\code\VulkanFrameWorkLearn\ext\stb_image\stb_image.c">
@@ -168,7 +180,13 @@
     <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\RenderTarget.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\ResoucreCache.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\ResourceCache.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Scene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Shader.h">
@@ -196,6 +214,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="E:\code\VulkanFrameWorkLearn\framework\Window.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\code\VulkanFrameWorkLearn\PipelineLayout.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="E:\code\VulkanFrameWorkLearn\ext\vma\src\vk_mem_alloc.h">

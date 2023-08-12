@@ -10,7 +10,7 @@ variables:
   CIBW_ARCHS_MACOS: x86_64 universal2 arm64
   #CIBW_BEFORE_BUILD_MACOS: "pip install -U pip setuptools"
   #CIBW_BEFORE_BUILD_LINUX: "pip install -U pip setuptools"
-  #CIBW_TEST_COMMAND: TODO "python -c \"import tinyobjloader; tinyobjloader.test()\""
+  #CIBW_TEST_COMMAND: TODO "python -c \"import tinyobjloader; tinyobjloader.sample1()\""
   CIBW_BUILD_VERBOSITY: "2"
   #CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
   #CIBW_MANYLINUX_I686_IMAGE: manylinux2014
@@ -41,7 +41,7 @@ jobs:
   # Ubuntu16.04 seems now deprecated(as of 2021/12/01),
   # so use `ubuntu-latest`
   - job: linux
-    pool: {vmImage: "ubuntu-latest"}
+    pool: { vmImage: "ubuntu-latest" }
     steps:
       - task: UsePythonVersion@0
       - bash: |
@@ -74,7 +74,7 @@ jobs:
           artifactName: tinyobjDeployLinux
 
   - job: macos
-    pool: {vmImage: 'macOS-latest'}
+    pool: { vmImage: 'macOS-latest' }
     variables:
       # Support C++11: https://github.com/joerick/cibuildwheel/pull/156
       MACOSX_DEPLOYMENT_TARGET: 10.9
@@ -94,7 +94,7 @@ jobs:
           artifactName: tinyobjDeployMacOS
 
   - job: windows
-    pool: {vmImage: 'windows-latest'}
+    pool: { vmImage: 'windows-latest' }
     steps:
       - task: UsePythonVersion@0
       - bash: |
@@ -112,7 +112,7 @@ jobs:
 
   - job: deployPyPI
     # Based on vispy: https://github.com/vispy/vispy/blob/master/azure-pipelines.yml
-    pool: {vmImage: 'ubuntu-latest'}
+    pool: { vmImage: 'ubuntu-latest' }
     condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
     dependsOn:
       - linux
