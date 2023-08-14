@@ -2,10 +2,10 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "samples/sample1/Debug/sample1.exe"
+			"path" : "samples/sample1/RelWithDebInfo/sample1.exe"
 		},
 		{
-			"path" : "samples/sample1/Debug/sample1.pdb"
+			"path" : "samples/sample1/RelWithDebInfo/sample1.pdb"
 		}
 	],
 	"backtrace" : 1,
@@ -76,7 +76,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "/DWIN32 /D_WINDOWS /GR /EHsc /Zi /Ob0 /Od /RTC1 -std:c++17 -MDd"
+					"fragment" : "/DWIN32 /D_WINDOWS /GR /EHsc /Zi /O2 /Ob1 /DNDEBUG -std:c++17 -MD"
 				}
 			],
 			"defines" : 
@@ -140,7 +140,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "/DWIN32 /D_WINDOWS /Zi /Ob0 /Od /RTC1 -MDd"
+					"fragment" : "/DWIN32 /D_WINDOWS /Zi /O2 /Ob1 /DNDEBUG -MD"
 				}
 			],
 			"defines" : 
@@ -197,15 +197,15 @@
 	[
 		{
 			"backtrace" : 2,
-			"id" : "tinyobjloader::@cdc8e8d9a2991e5235d6"
-		},
-		{
-			"backtrace" : 2,
 			"id" : "spdlog::@b383f51c65f8ce30cec3"
 		},
 		{
 			"backtrace" : 2,
 			"id" : "glfw::@f6f7721c76705297a9b5"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "tinyobjloader::@cdc8e8d9a2991e5235d6"
 		},
 		{
 			"backtrace" : 8,
@@ -221,7 +221,7 @@
 		"commandFragments" : 
 		[
 			{
-				"fragment" : "/DWIN32 /D_WINDOWS /GR /EHsc /Zi /Ob0 /Od /RTC1 -MDd",
+				"fragment" : "/DWIN32 /D_WINDOWS /GR /EHsc /Zi /O2 /Ob1 /DNDEBUG -MD",
 				"role" : "flags"
 			},
 			{
@@ -230,12 +230,12 @@
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "..\\..\\framework\\Debug\\framework.lib",
+				"fragment" : "..\\..\\framework\\RelWithDebInfo\\framework.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 4,
-				"fragment" : "..\\..\\ext\\spdlog\\Debug\\spdlogd.lib",
+				"fragment" : "..\\..\\ext\\spdlog\\RelWithDebInfo\\spdlog.lib",
 				"role" : "libraries"
 			},
 			{
@@ -245,12 +245,12 @@
 			},
 			{
 				"backtrace" : 4,
-				"fragment" : "..\\..\\ext\\tinyobjloader\\Debug\\tinyobjloader.lib",
+				"fragment" : "..\\..\\ext\\tinyobjloader\\RelWithDebInfo\\tinyobjloader.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 4,
-				"fragment" : "..\\..\\ext\\glfw\\src\\Debug\\glfw3.lib",
+				"fragment" : "..\\..\\ext\\glfw\\src\\RelWithDebInfo\\glfw3.lib",
 				"role" : "libraries"
 			},
 			{

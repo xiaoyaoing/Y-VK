@@ -104,7 +104,10 @@ Image::Image(Device &device, const VkExtent3D &extent, VkFormat format, VkImageU
 }
 
 Image::Image(Device &device, VkImage handle, const VkExtent3D &extent, VkFormat format,
-             VkImageUsageFlags image_usage, VkSampleCountFlagBits sample_count) : device(device) {
+             VkImageUsageFlags image_usage, VkSampleCountFlagBits sample_count) : device(device), extent(extent),
+                                                                                  format(format), image(handle),
+                                                                                  usage(image_usage),
+                                                                                  sample_count(sample_count) {
 
 }
 

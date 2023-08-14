@@ -1,6 +1,8 @@
 //
 // Created by 打工人 on 2023/3/19.
 //
+#pragma  once
+
 #include "Vulkan.h"
 #include "Images/ImageView.h"
 #include "RenderFrame.h"
@@ -96,4 +98,3 @@ private:
 };
 
 
-RenderContext *RenderContext::g_context = nullptr;

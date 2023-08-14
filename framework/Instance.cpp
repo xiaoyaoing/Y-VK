@@ -2,20 +2,45 @@
 // Created by 打工人 on 2023/3/11.
 //
 
+#include <vulkan/vulkan.h>
+
+
 #include "Instance.h"
 #include "Utils/DebugUtils.h"
 
-bool checkLayers(const std::vector<const char *> & require,const std::vector<VkLayerProperties>& available){
-    for(const auto & requireLayer:require){
+bool enableExtension(const char *requiredExtName,
+                     const std::vector<VkExtensionProperties> &availableExts,
+                     std::vector<const char *> &enabledExtensions) {
+    for (auto &availExtIt: availableExts) {
+        if (strcmp(availExtIt.extensionName, requiredExtName) == 0) {
+            auto it = std::find_if(enabledExtensions.begin(), enabledExtensions.end(),
+                                   [requiredExtName](const char *enabledExtName) {
+                                       return strcmp(enabledExtName, requiredExtName) == 0;
+                                   });
+            if (it != enabledExtensions.end()) {
+                // Extension is already enabled
+            } else {
+                LOGI("Extension {} found, enabling it", requiredExtName);
+                enabledExtensions.emplace_back(requiredExtName);
+            }
+            return true;
+        }
+    }
+
+    LOGI("Extension {} not found", requiredExtName);
+    return false;
+}
+
+bool checkLayers(const std::vector<const char *> &require, const std::vector<VkLayerProperties> &available) {
+    for (const auto &requireLayer: require) {
         bool found = false;
-        for(const auto & availableLayer : available){
-            if(strcmp(requireLayer,availableLayer.layerName) == 0 )
-            {
+        for (const auto &availableLayer: available) {
+            if (strcmp(requireLayer, availableLayer.layerName) == 0) {
                 found = true;
                 break;
             }
         }
-        if(!found)
+        if (!found)
             return false;
     }
     return true;
@@ -33,42 +58,38 @@ Instance::Instance(const std::string &application_name,
     appInfo.apiVersion = VK_API_VERSION_1_0;
 
     //todo check extension support
-    std::vector<const char *> extensions;
-    auto availableExtensions = getAvailableExtensions();
-    for(const auto & requiredExtension : required_extensions)
-    {
-        bool found = false;
-        for(const auto & availExt : availableExtensions){
-            if(availExt == requiredExtension.first)
-            {
-                found = true;
-                break;
+    uint32_t extensionCount;
+    std::vector<VkExtensionProperties> props;
+    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+    props.resize(extensionCount);
+    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, props.data());
+
+
+    for (const auto &requiredExtension: required_extensions) {
+        if (!enableExtension(requiredExtension.first, props, enabledExtensions)) {
+            if (requiredExtension.second) {
+                LOGE("Required instance extension {} not available, cannot run", requiredExtension.first);
+                RUN_TIME_ERROR("Instance extension error")
+            } else {
+                LOGW("Optional instance extension {} not available, some features may be disabled",
+                     requiredExtension.first);
             }
         }
-       if(!found){
-           if(requiredExtension.second){
-               LOGE("Required instance extension {} not available, cannot run", requiredExtension.first);
-               RUN_TIME_ERROR("Instance extension error")
-           }
-           else {
-               LOGW("Optional instance extension {} not available, some features may be disabled", requiredExtension.first);
-           }
-       }
     }
     VkInstanceCreateInfo instanceInfo;
     instanceInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     instanceInfo.pApplicationInfo = &appInfo;
-    instanceInfo.enabledExtensionCount = 4;
-    instanceInfo.ppEnabledExtensionNames = availableExtensions.data();
+    instanceInfo.enabledExtensionCount = enabledExtensions.size();
+    instanceInfo.ppEnabledExtensionNames = enabledExtensions.data();
     instanceInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 
-    if(enableValidationLayers){
+    if (enableValidationLayers) {
         uint32_t layerCount;
         vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
         std::vector<VkLayerProperties> availableLayers(layerCount);
         vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
-        if(!checkLayers(required_validation_layers, availableLayers))
+        if (!checkLayers(required_validation_layers, availableLayers))
             RUN_TIME_ERROR("Required layers are missing")
         else {
             instanceInfo.enabledLayerCount = required_validation_layers.size();
@@ -78,16 +99,15 @@ Instance::Instance(const std::string &application_name,
             fillDebugMessengerInfo(debugMessengerCreateInfo);
             instanceInfo.pNext = &debugMessengerCreateInfo;
         }
-    }
-    else {
+    } else {
         instanceInfo.enabledLayerCount = 0;
     }
-    auto res = vkCreateInstance(&instanceInfo,nullptr,&_instance);
-    ASSERT(vkCreateInstance(&instanceInfo,nullptr,&_instance)==VK_SUCCESS,"Failed to create instance");
+    VK_CHECK_RESULT(vkCreateInstance(&instanceInfo, nullptr, &_instance));
 
     VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo{};
     fillDebugMessengerInfo(debugMessengerCreateInfo);
-    
+
+    LOGI("Instance Created");
     // vkCreateDebugUtilsMessengerEXT(_instance,&debugMessengerCreateInfo, nullptr,&_debugMessenger);
 }
 
@@ -103,13 +123,14 @@ void Instance::fillDebugMessengerInfo(VkDebugUtilsMessengerCreateInfoEXT &debugU
     debugUtilsMessengerInfo.pfnUserCallback = DebugUtils::debugCallback;
 }
 
-std::vector<const char *> Instance::getAvailableExtensions() {
-    uint32_t extensionCount = 0;
-    std::vector<VkExtensionProperties> props;
-    vkEnumerateInstanceExtensionProperties(nullptr,&extensionCount,nullptr);
-    props.resize(extensionCount);
-    vkEnumerateInstanceExtensionProperties(nullptr,&extensionCount,props.data());
-    std::vector<const char *> extensionNames(extensionCount);
-    std::transform(props.begin(),props.end(),extensionNames.begin(),[](const VkExtensionProperties & prop){ return prop.extensionName;});
-    return extensionNames;
-}
+//std::vector<const std::string> Instance::getAvailableExtensions() {
+//    uint32_t extensionCount = 0;
+//    std::vector<VkExtensionProperties> props;
+//    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+//    props.resize(extensionCount);
+//    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, props.data());
+//    std::vector<std::string> extensionNames(extensionCount);
+//    std::transform(props.begin(), props.end(), extensionNames.begin(),
+//                   [](const VkExtensionProperties &prop) { return prop.extensionName; });
+//    return extensionNames;
+//}

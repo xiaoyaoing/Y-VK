@@ -1,7 +1,7 @@
 #include "SwapChain.h"
 #include "Device.h"
 #include "Window.h"
-SwapChain::SwapChain(Device &  device, VkSurfaceKHR surface, Window &  window):_device(device),_window(window) {
+SwapChain::SwapChain(Device &  device, VkSurfaceKHR surface, Window &  window):_device(device),_window(window),_surface(surface) {
     SwapChainSupportDetails swapChainSupport = querySwapChainSupport();
     auto surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
     auto presentMode = choosePresentMode(swapChainSupport.presentModes);

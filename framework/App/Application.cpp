@@ -14,11 +14,19 @@ void Application::initVk() {
     surface = window->createSurface(*_instance);
 
     // create device
-    uint32_t physicalDeviceCount;
-    VkPhysicalDevice *physicalDevices;
-    vkEnumeratePhysicalDevices(_instance->getHandle(), &physicalDeviceCount, physicalDevices);
-    auto physicalDevice = physicalDevices[0];
-    device = std::make_unique<Device>(physicalDevice, surface);
+    uint32_t physical_device_count{0};
+    VK_CHECK_RESULT(vkEnumeratePhysicalDevices(_instance->getHandle(), &physical_device_count, nullptr));
+
+    if (physical_device_count < 1) {
+        throw std::runtime_error("Couldn't find a physical device that supports Vulkan.");
+    }
+
+    std::vector<VkPhysicalDevice> physical_devices;
+    physical_devices.resize(physical_device_count);
+    VK_CHECK_RESULT(
+            vkEnumeratePhysicalDevices(_instance->getHandle(), &physical_device_count, physical_devices.data()));
+
+    device = std::make_unique<Device>(physical_devices[0], surface);
 
     createAllocator();
     createRenderContext();
@@ -213,7 +221,11 @@ void Application::createPipeline() {
     pipelineLayoutCreateInfo.setLayoutCount = 0;
     pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
     pipelineLayoutCreateInfo.setLayoutCount = 1;
-    VkDescriptorSetLayout pSetLayouts[] = {descriptorSetLayout};
+    descriptorLayout = std::make_unique<DescriptorLayout>(*device);
+//        _descriptorLayout->addBinding(VK_SHADER_STAGE_VERTEX_BIT, 0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0);
+//        _descriptorLayout->addBinding(VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0);
+    descriptorLayout->createLayout(0);
+    VkDescriptorSetLayout pSetLayouts[] = {descriptorLayout->getHandle()};
     pipelineLayoutCreateInfo.pSetLayouts = pSetLayouts;
     if (vkCreatePipelineLayout(device->getHandle(), &pipelineLayoutCreateInfo, nullptr, &pipelineLayOut) !=
         VK_SUCCESS)
@@ -250,10 +262,8 @@ void Application::createPipeline() {
     pipelineInfo.basePipelineIndex = -1;
 
     VkPipeline pipeline;
-    if (vkCreateGraphicsPipelines(device->getHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) !=
-        VK_SUCCESS) {
-        throw std::runtime_error("failed to create graphics pipeline!");
-    }
+    VK_CHECK_RESULT(
+            vkCreateGraphicsPipelines(device->getHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline));
     graphicsPipeline = std::make_unique<Pipeline>(pipeline);
 
 }
@@ -294,10 +304,11 @@ void Application::createFrameBuffers() {
 }
 
 void Application::createCommandBuffer() {
-    commandPool = std::make_unique<CommandPool>(*device, _graphicsQueue->getFamilyIndex(),
+    commandPool = std::make_unique<CommandPool>(*device,
+                                                device->getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0).getFamilyIndex(),
                                                 CommandBuffer::ResetMode::AlwaysAllocate);
 
-    commandBuffers.reserve(_context->getSwapChainImageCount());
+    commandBuffers.reserve(renderContext->getSwapChainImageCount());
     VkCommandBufferAllocateInfo allocateInfo{};
     allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocateInfo.commandPool = commandPool->getHandle();
@@ -315,7 +326,7 @@ void Application::createCommandBuffer() {
 
 void Application::createRenderPass() {
     VkAttachmentDescription colorAttachment{};
-    colorAttachment.format = _context->getSwapChainFormat();
+    colorAttachment.format = renderContext->getSwapChainFormat();
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 
     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -388,7 +399,7 @@ void Application::createAllocator() {
 }
 
 void Application::update() {
-    auto commandBuffer = _context->begin();
+    auto commandBuffer = renderContext->begin();
 }
 
 void Application::draw(CommandBuffer &commandBuffer, RenderTarget &renderTarget) {
@@ -437,6 +448,7 @@ void Application::createRenderContext() {
     auto surface_priority_list = std::vector<VkSurfaceFormatKHR>{{VK_FORMAT_R8G8B8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR},
                                                                  {VK_FORMAT_B8G8R8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR}};
     renderContext = std::make_unique<RenderContext>(*device, surface, *window);
+    RenderContext::g_context = renderContext.get();
 }
 
 void Application::drawFrame() {

@@ -12,7 +12,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "framework/RelWithDebInfo/framework.lib"
+			"path" : "framework/MinSizeRel/framework.lib"
 		}
 	],
 	"backtrace" : 1,
@@ -59,7 +59,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "/DWIN32 /D_WINDOWS /GR /EHsc /Zi /O2 /Ob1 /DNDEBUG -std:c++17 -MD"
+					"fragment" : "/DWIN32 /D_WINDOWS /GR /EHsc /O1 /Ob1 /DNDEBUG -std:c++17 -MD"
 				}
 			],
 			"defines" : 
@@ -157,7 +157,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "/DWIN32 /D_WINDOWS /Zi /O2 /Ob1 /DNDEBUG -MD"
+					"fragment" : "/DWIN32 /D_WINDOWS /O1 /Ob1 /DNDEBUG -MD"
 				}
 			],
 			"defines" : 
@@ -214,15 +214,15 @@
 	[
 		{
 			"backtrace" : 2,
-			"id" : "tinyobjloader::@cdc8e8d9a2991e5235d6"
-		},
-		{
-			"backtrace" : 2,
 			"id" : "spdlog::@b383f51c65f8ce30cec3"
 		},
 		{
 			"backtrace" : 2,
 			"id" : "glfw::@f6f7721c76705297a9b5"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "tinyobjloader::@cdc8e8d9a2991e5235d6"
 		},
 		{
 			"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df"

@@ -10,6 +10,8 @@
 #include <RenderTarget.h>
 #include <FrameBuffer.h>
 
+RenderContext *RenderContext::g_context = nullptr;
+
 RenderContext::RenderContext(Device &device, VkSurfaceKHR surface, Window &window) : device(device) {
     swapchain = std::make_unique<SwapChain>(device, surface, window);
     if (swapchain) {

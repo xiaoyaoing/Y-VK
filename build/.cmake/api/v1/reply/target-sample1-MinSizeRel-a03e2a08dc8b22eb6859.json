@@ -2,10 +2,10 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "samples/sample1/Release/sample1.exe"
+			"path" : "samples/sample1/MinSizeRel/sample1.exe"
 		},
 		{
-			"path" : "samples/sample1/Release/sample1.pdb"
+			"path" : "samples/sample1/MinSizeRel/sample1.pdb"
 		}
 	],
 	"backtrace" : 1,
@@ -76,7 +76,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "/DWIN32 /D_WINDOWS /GR /EHsc /O2 /Ob2 /DNDEBUG -std:c++17 -MD"
+					"fragment" : "/DWIN32 /D_WINDOWS /GR /EHsc /O1 /Ob1 /DNDEBUG -std:c++17 -MD"
 				}
 			],
 			"defines" : 
@@ -140,7 +140,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "/DWIN32 /D_WINDOWS /O2 /Ob2 /DNDEBUG -MD"
+					"fragment" : "/DWIN32 /D_WINDOWS /O1 /Ob1 /DNDEBUG -MD"
 				}
 			],
 			"defines" : 
@@ -197,15 +197,15 @@
 	[
 		{
 			"backtrace" : 2,
-			"id" : "tinyobjloader::@cdc8e8d9a2991e5235d6"
-		},
-		{
-			"backtrace" : 2,
 			"id" : "spdlog::@b383f51c65f8ce30cec3"
 		},
 		{
 			"backtrace" : 2,
 			"id" : "glfw::@f6f7721c76705297a9b5"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "tinyobjloader::@cdc8e8d9a2991e5235d6"
 		},
 		{
 			"backtrace" : 8,
@@ -221,7 +221,7 @@
 		"commandFragments" : 
 		[
 			{
-				"fragment" : "/DWIN32 /D_WINDOWS /GR /EHsc /O2 /Ob2 /DNDEBUG -MD",
+				"fragment" : "/DWIN32 /D_WINDOWS /GR /EHsc /O1 /Ob1 /DNDEBUG -MD",
 				"role" : "flags"
 			},
 			{
@@ -230,12 +230,12 @@
 			},
 			{
 				"backtrace" : 2,
-				"fragment" : "..\\..\\framework\\Release\\framework.lib",
+				"fragment" : "..\\..\\framework\\MinSizeRel\\framework.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 4,
-				"fragment" : "..\\..\\ext\\spdlog\\Release\\spdlog.lib",
+				"fragment" : "..\\..\\ext\\spdlog\\MinSizeRel\\spdlog.lib",
 				"role" : "libraries"
 			},
 			{
@@ -245,12 +245,12 @@
 			},
 			{
 				"backtrace" : 4,
-				"fragment" : "..\\..\\ext\\tinyobjloader\\Release\\tinyobjloader.lib",
+				"fragment" : "..\\..\\ext\\tinyobjloader\\MinSizeRel\\tinyobjloader.lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 4,
-				"fragment" : "..\\..\\ext\\glfw\\src\\Release\\glfw3.lib",
+				"fragment" : "..\\..\\ext\\glfw\\src\\MinSizeRel\\glfw3.lib",
 				"role" : "libraries"
 			},
 			{

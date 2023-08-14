@@ -71,7 +71,7 @@ void CommandBuffer::imageMemoryBarrier(const ImageView &view, ImageMemoryBarrier
     vkBarrier.newLayout = barrier.newLayout;
     vkBarrier.srcAccessMask = barrier.srcAccessMask;
     vkBarrier.dstAccessMask = barrier.dstAccessMask;
-    vkBarrier.image = view.getImage()->getHandle();
+    vkBarrier.image = view.getImage().getHandle();
     vkBarrier.srcQueueFamilyIndex = barrier.oldQueueFamily;
     vkBarrier.dstQueueFamilyIndex = barrier.newQueueFamily;
 

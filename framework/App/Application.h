@@ -113,11 +113,10 @@ protected:
     ptr<Queue> _graphicsQueue, _presentQueue;
 
     std::vector<VkFramebuffer> _frameBuffers;
-    ptr<RenderContext> _context;
 
     std::unordered_map<const char *, bool> deviceExtensions;
     std::unordered_map<const char *, bool> instanceExtensions;
-    std::vector<const char *> validationLayers;
+    std::vector<const char *> validationLayers{"VK_LAYER_KHRONOS_validation"};
 
     ptr<CommandPool> commandPool;
     std::vector<std::unique_ptr<CommandBuffer>> commandBuffers;
@@ -141,7 +140,9 @@ protected:
     std::vector<uint32_t> depthIdx{};
 
     VkPipelineLayout pipelineLayOut{};
-    VkDescriptorSetLayout descriptorSetLayout{};
+//    VkDescriptorSetLayout descriptorSetLayout{};
+    std::unique_ptr<DescriptorLayout> descriptorLayout;
+
 
     std::unique_ptr<Scene> scene;
 #ifdef NOEBUG
