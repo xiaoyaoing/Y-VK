@@ -4,14 +4,14 @@
 #include "Queue.h"
 
 #define VMA_IMPLEMENTATION
+
 #include <vk_mem_alloc.h>
 
 const std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
 const std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
 Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-               std::unordered_map<const char *, bool> requiredExtensions)
-{
+               std::unordered_map<const char *, bool> requiredExtensions) {
     _physicalDevice = physicalDevice;
     uint32_t queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(_physicalDevice, &queueFamilyCount, nullptr);
@@ -23,16 +23,17 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     queueCreateInfos.reserve(queueFamilyCount);
+    std::vector<std::vector<float>> queuePrioritys(queueFamilyCount);
+
     // todo support queuePriority
-    for (uint32_t queueFamilyIndex = 0; queueFamilyIndex < queueFamilyCount; queueFamilyIndex++)
-    {
+    for (uint32_t queueFamilyIndex = 0; queueFamilyIndex < queueFamilyCount; queueFamilyIndex++) {
         const auto &queueProp = queueFamilyProperties[queueFamilyIndex];
-        std::vector<float> queuePriority(queueProp.queueCount, 0.5f);
         VkDeviceQueueCreateInfo queueCreateInfo{};
         queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queueCreateInfo.queueFamilyIndex = queueFamilyIndex;
         queueCreateInfo.queueCount = queueProp.queueCount;
-        queueCreateInfo.pQueuePriorities = queuePriority.data();
+        queuePrioritys[queueFamilyIndex].resize(queueProp.queueCount, 0.5);
+        queueCreateInfo.pQueuePriorities = queuePrioritys[queueFamilyIndex].data();
         queueCreateInfos.push_back(queueCreateInfo);
     }
 
@@ -49,23 +50,19 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
     VK_CHECK_RESULT(vkCreateDevice(_physicalDevice, &createInfo, nullptr, &_device));
 
     queues.resize(queueFamilyCount);
-    for (uint32_t queueFamilyIndex = 0; queueFamilyIndex < queueFamilyCount; queueFamilyIndex++)
-    {
+    for (uint32_t queueFamilyIndex = 0; queueFamilyIndex < queueFamilyCount; queueFamilyIndex++) {
         VkBool32 presentSupport = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(_physicalDevice, queueFamilyIndex, surface, &presentSupport);
-        for (uint32_t i = 0; i < queueCreateInfos[queueFamilyIndex].queueCount; i++)
-        {
+        for (uint32_t i = 0; i < queueCreateInfos[queueFamilyIndex].queueCount; i++) {
             const VkQueueFamilyProperties &queueFamilyProp = queueFamilyProperties[queueFamilyIndex];
             queues[queueFamilyIndex].emplace_back(
-                std::move(std::make_unique<Queue>(this, queueFamilyIndex, i, presentSupport, queueFamilyProp)));
+                    std::move(std::make_unique<Queue>(this, queueFamilyIndex, i, presentSupport, queueFamilyProp)));
         }
     }
 }
 
-const Queue &Device::getQueueByFlag(VkQueueFlagBits requiredFlag, uint32_t queueIndex)
-{
-    for (const auto &queueFamily : queues)
-    {
+const Queue &Device::getQueueByFlag(VkQueueFlagBits requiredFlag, uint32_t queueIndex) {
+    for (const auto &queueFamily: queues) {
         const auto &prop = queueFamily[0]->getProp();
         auto queueFlag = prop.queueFlags;
         auto queueCount = prop.queueCount;
@@ -78,10 +75,8 @@ const Queue &Device::getQueueByFlag(VkQueueFlagBits requiredFlag, uint32_t queue
     // return *(queues[0][0]);
 }
 
-const Queue &Device::getPresentQueue(uint32_t queueIndex)
-{
-    for (const auto &queueFamily : queues)
-    {
+const Queue &Device::getPresentQueue(uint32_t queueIndex) {
+    for (const auto &queueFamily: queues) {
         const auto &prop = queueFamily[0]->getProp();
         auto canPresent = queueFamily[0]->supportPresent();
         auto queueCount = prop.queueCount;

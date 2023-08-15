@@ -23,7 +23,7 @@ VkCommandBuffer CommandPool::allocateCommandBuffer() {
     cmdBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     cmdBufferAllocInfo.commandBufferCount = 1;
     cmdBufferAllocInfo.commandPool = _pool;
-    vkAllocateCommandBuffers(_device->getHandle(), &cmdBufferAllocInfo, &cmdBuffer);
+    VK_CHECK_RESULT(vkAllocateCommandBuffers(_device->getHandle(), &cmdBufferAllocInfo, &cmdBuffer));
     return cmdBuffer;
 }
 

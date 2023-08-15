@@ -29,7 +29,7 @@ RenderContext::RenderContext(Device &device, VkSurfaceKHR surface, Window &windo
         }
     }
 
-    VkSemaphoreCreateInfo semaphoreCreateInfo{};
+    VkSemaphoreCreateInfo semaphoreCreateInfo{VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
     VK_CHECK_RESULT(
             vkCreateSemaphore(device.getHandle(), &semaphoreCreateInfo, nullptr, &semaphores.renderFinishedSem));
     VK_CHECK_RESULT(

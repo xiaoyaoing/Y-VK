@@ -48,4 +48,6 @@ public:
 protected:
     VkRenderPass _pass;
     Device &device;
+
+    void setAttachmentLayouts(std::vector<VkSubpassDescription> vector1, const std::vector<Attachment> &vector2);
 };
