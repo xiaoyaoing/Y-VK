@@ -20,6 +20,7 @@ target_link_libraries(${target_name} PUBLIC
         glfw
         stb_image
         glm
+        imgui
         Vulkan::Vulkan)
 
 message(STATUS ${Vulkan_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})
