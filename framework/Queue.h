@@ -29,7 +29,7 @@ public:
     inline const VkQueueFamilyProperties &getProp() const { return properties; }
 
 
-    VkResult submit(const std::vector<VkSubmitInfo> &submit_infos, VkFence fence) const;
+    void submit(const std::vector<VkSubmitInfo> &submit_infos, VkFence fence) const;
 
     VkResult present(const VkPresentInfoKHR &presentInfo) const;
 

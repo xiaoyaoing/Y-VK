@@ -52,10 +52,10 @@ CommandBuffer &RenderContext::begin() {
 }
 
 void RenderContext::beginFrame() {
-    assert(active_frame_index < frames.size());
-    auto &prev_frame = *frames[active_frame_index];
+    assert(activeFrameIndex < frames.size());
+    auto &prev_frame = *frames[activeFrameIndex];
     if (swapchain) {
-        VK_CHECK_RESULT(swapchain->acquireNextImage(active_frame_index, semaphores.presentFinishedSem, VK_NULL_HANDLE));
+        VK_CHECK_RESULT(swapchain->acquireNextImage(activeFrameIndex, semaphores.presentFinishedSem, VK_NULL_HANDLE));
     }
     frameActive = true;
     getActiveRenderFrame().reset();
@@ -91,10 +91,49 @@ void RenderContext::prepare() {
 }
 
 uint32_t RenderContext::getActiveFrameIndex() const {
-    return 0;
+    return activeFrameIndex;
 }
 
-void RenderContext::submit(CommandBuffer &buffer) {
+void RenderContext::submit(CommandBuffer &buffer, VkFence fence) {
+    std::vector<VkCommandBuffer> cmdBufferHandles{buffer.getHandle()};
+
+
+    auto queue = device.getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0);
+
+    RenderFrame &frame = getActiveRenderFrame();
+    VkSubmitInfo submitInfo{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = &semaphores.presentFinishedSem;
+    submitInfo.pWaitDstStageMask = waitStages;
+
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = &semaphores.renderFinishedSem;
+
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = cmdBufferHandles.data();
+
+    queue.submit({submitInfo}, fence);
+
+    if (swapchain) {
+        VkSwapchainKHR vk_swapchain = swapchain->getHandle();
+
+        VkPresentInfoKHR present_info{VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
+
+        present_info.waitSemaphoreCount = 1;
+        present_info.pWaitSemaphores = &semaphores.renderFinishedSem;
+        present_info.swapchainCount = 1;
+        present_info.pSwapchains = &vk_swapchain;
+        present_info.pImageIndices = &activeFrameIndex;
+
+
+        VK_CHECK_RESULT(queue.present(present_info));
+        LOGE("Presented")
+
+        frameActive = false;
+
+    }
 }
 
 VkFormat RenderContext::getSwapChainFormat() const {
@@ -110,7 +149,7 @@ FrameBuffer &RenderContext::getFrameBuffer(uint32_t idx) {
 }
 
 FrameBuffer &RenderContext::getFrameBuffer() {
-    return getFrameBuffer(this->active_frame_index);
+    return getFrameBuffer(this->activeFrameIndex);
 }
 
 VkSemaphore
@@ -145,7 +184,7 @@ RenderContext::submit(const Queue &queue, const std::vector<CommandBuffer *> &co
         present_info.pWaitSemaphores = &semaphores.renderFinishedSem;
         present_info.swapchainCount = 1;
         present_info.pSwapchains = &vk_swapchain;
-        present_info.pImageIndices = &active_frame_index;
+        present_info.pImageIndices = &activeFrameIndex;
 
         //        VkDisplayPresentInfoKHR disp_present_info{};
         //        if (device.is_extension_supported(VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME) &&

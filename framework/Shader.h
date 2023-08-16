@@ -3,12 +3,14 @@
 #pragma once
 
 class Device;
-class Shader
-{
+
+class Shader {
 public:
     Shader(Device &device, const std::string &path);
+
     ~Shader();
-    VkPipelineShaderStageCreateInfo PipelineShaderStageCreateInfo();
+
+    VkPipelineShaderStageCreateInfo PipelineShaderStageCreateInfo(VkShaderStageFlagBits shaderStage);
 
 private:
     VkShaderModule shader;

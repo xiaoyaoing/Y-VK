@@ -166,6 +166,8 @@ public:
 
     void createRenderPass(RenderTarget &target, std::vector<LoadStoreInfo> &loadStoreOps);
 
+    void createRenderPass(VkRenderPass pass);
+
     RenderPass &getRenderPass() const;
 
 private:

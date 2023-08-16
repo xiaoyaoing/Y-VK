@@ -66,7 +66,7 @@ CommandBuffer::copyBufferToImage(ptr<Buffer> src, ptr<Image> dst, const std::vec
 }
 
 void CommandBuffer::imageMemoryBarrier(const ImageView &view, ImageMemoryBarrier barrier) {
-    VkImageMemoryBarrier vkBarrier{};
+    VkImageMemoryBarrier vkBarrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
     vkBarrier.oldLayout = barrier.oldLayout;
     vkBarrier.newLayout = barrier.newLayout;
     vkBarrier.srcAccessMask = barrier.srcAccessMask;
@@ -121,6 +121,6 @@ void CommandBuffer::beginRenderPass(const RenderTarget &render_target, RenderPas
 }
 
 void CommandBuffer::endRenderPass() {
-
+    vkCmdEndRenderPass(_buffer);
 }
 

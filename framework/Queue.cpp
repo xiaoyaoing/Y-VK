@@ -30,9 +30,9 @@ void Queue::submit(const std::vector<ptr<CommandBuffer>> &cmdBuffers, ptr<Fence>
     vkQueueSubmit(_queue, 1, &submitInfo, fence == nullptr ? VK_NULL_HANDLE : fence->getHandle());
 }
 
-VkResult Queue::submit(const std::vector<VkSubmitInfo> &submit_infos, VkFence fence) const {
+void Queue::submit(const std::vector<VkSubmitInfo> &submit_infos, VkFence fence) const {
 
-    return vkQueueSubmit(_queue, uint32_t(submit_infos.size()), submit_infos.data(), fence);
+    VK_CHECK_RESULT(vkQueueSubmit(_queue, uint32_t(submit_infos.size()), submit_infos.data(), fence));
 
 }
 

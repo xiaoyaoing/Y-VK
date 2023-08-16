@@ -30,14 +30,21 @@ void Application::initVk() {
 
     createAllocator();
     createRenderContext();
-    createCommandBuffer();
-    //createRenderPass();
     createRenderPipeline();
+
+    createRenderPass();
+
+    createCommandBuffer();
     createPipeline();
     // createDepthStencil();
 
     renderContext->createFrameBuffers(renderPipeline->getRenderPass());
     //  createFrameBuffers();
+
+    VkFenceCreateInfo fenceInfo{};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+    VK_CHECK_RESULT(vkCreateFence(device->getHandle(), &fenceInfo, nullptr, &fence));
 }
 
 void Application::getRequiredExtensions() {
@@ -142,8 +149,9 @@ void Application::createPipeline() {
     auto vertexShader = Shader(*device, "E:\\code\\VulkanFrameWorkLearn\\shaders\\vert.spv");
     auto fragShader = Shader(*device, "E:\\code\\VulkanFrameWorkLearn\\shaders\\frag.spv");
 
-    VkPipelineShaderStageCreateInfo shaderStages[] = {vertexShader.PipelineShaderStageCreateInfo(),
-                                                      fragShader.PipelineShaderStageCreateInfo()};
+    VkPipelineShaderStageCreateInfo shaderStages[] = {
+            vertexShader.PipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT),
+            fragShader.PipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT)};
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType =
@@ -308,14 +316,14 @@ void Application::createCommandBuffer() {
                                                 device->getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0).getFamilyIndex(),
                                                 CommandBuffer::ResetMode::AlwaysAllocate);
 
-    commandBuffers.reserve(renderContext->getSwapChainImageCount());
+    auto frameCount = renderContext->getSwapChainImageCount();
+    commandBuffers.reserve(frameCount);
     VkCommandBufferAllocateInfo allocateInfo{};
     allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocateInfo.commandPool = commandPool->getHandle();
     allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocateInfo.commandBufferCount = commandBuffers.size();
-
-    std::vector<VkCommandBuffer> vkCommandBuffers(commandBuffers.size());
+    allocateInfo.commandBufferCount = frameCount;
+    std::vector<VkCommandBuffer> vkCommandBuffers(frameCount);
 
     if (vkAllocateCommandBuffers(device->getHandle(), &allocateInfo, vkCommandBuffers.data()) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate command buffers!");
@@ -358,23 +366,56 @@ void Application::createRenderPass() {
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorAttachmentRef;
-    subpass.pDepthStencilAttachment = &depthAttachmentRef;
+    //  subpass.pDepthStencilAttachment = &depthAttachmentRef;
+    subpass.inputAttachmentCount = 0;
+    subpass.pInputAttachments = nullptr;
+    subpass.preserveAttachmentCount = 0;
+    subpass.pPreserveAttachments = nullptr;
+    subpass.pResolveAttachments = nullptr;
 
-    VkSubpassDependency dependency{};
-    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-    dependency.dstSubpass = 0;
-    dependency.srcStageMask =
-            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT & VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    dependency.srcAccessMask = 0;
-    dependency.dstStageMask =
-            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT & VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT & VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    std::array<VkSubpassDependency, 2> dependencies;
+
+
+    dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependencies[0].dstSubpass = 0;
+    dependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+    dependencies[0].dstStageMask =
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+            VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+    dependencies[1].srcSubpass = 0;
+    dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+    dependencies[1].srcStageMask =
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+            VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+    dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                                    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    dependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
     std::vector<VkAttachmentDescription> attachments = {colorAttachment, depthAttachment};
     std::vector<VkSubpassDescription> subpasses = {subpass};
-    std::vector<VkSubpassDependency> dependencies = {dependency};
 
-//    _renderPass = std::make_shared<RenderPass>(device, attachments, dependencies, subpasses);
+    VkRenderPassCreateInfo render_pass_create_info = {};
+    render_pass_create_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    render_pass_create_info.attachmentCount = static_cast<uint32_t>(attachments.size());
+    render_pass_create_info.pAttachments = attachments.data();
+    render_pass_create_info.subpassCount = 1;
+    render_pass_create_info.pSubpasses = &subpass;
+    render_pass_create_info.dependencyCount = static_cast<uint32_t>(dependencies.size());
+    render_pass_create_info.pDependencies = dependencies.data();
+
+    VkRenderPass vkRenderPass;
+    VK_CHECK_RESULT(vkCreateRenderPass(device->getHandle(), &render_pass_create_info, nullptr, &vkRenderPass));
+
+    renderPipeline->createRenderPass(vkRenderPass);
 }
 
 void Application::createDepthStencil() {
@@ -405,43 +446,58 @@ void Application::update() {
 void Application::draw(CommandBuffer &commandBuffer, RenderTarget &renderTarget) {
     auto &views = renderTarget.getViews();
 
-    auto swapchain_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    {
-        ImageMemoryBarrier memory_barrier{};
-        memory_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        memory_barrier.newLayout = swapchain_layout;
-        memory_barrier.srcAccessMask = 0;
-        memory_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        memory_barrier.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        memory_barrier.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+//    auto swapchain_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+//    {
+//        ImageMemoryBarrier memory_barrier{};
+//        memory_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+//        memory_barrier.newLayout = swapchain_layout;
+//        memory_barrier.srcAccessMask = 0;
+//        memory_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+//        memory_barrier.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+//        memory_barrier.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+//
+//        for (auto &i: colorIdx) {
+//            assert(i < views.size());
+//            commandBuffer.imageMemoryBarrier(views[i], memory_barrier);
+//            renderTarget.setLayout(i, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+//        }
+//    }
+//
+//    {
+//        ImageMemoryBarrier memory_barrier{};
+//        memory_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+//        memory_barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+//        memory_barrier.srcAccessMask = 0;
+//        memory_barrier.dstAccessMask =
+//                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+//        memory_barrier.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+//        memory_barrier.dstStageMask =
+//                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+//
+//        for (auto &i: depthIdx) {
+//            assert(i < views.size());
+//            commandBuffer.imageMemoryBarrier(views[i], memory_barrier);
+//            renderTarget.setLayout(i, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+//        }
+//
+//    }
 
-        for (auto &i: colorIdx) {
-            assert(i < views.size());
-            commandBuffer.imageMemoryBarrier(views[i], memory_barrier);
-            renderTarget.setLayout(i, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-        }
-    }
 
-    {
-        ImageMemoryBarrier memory_barrier{};
-        memory_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        memory_barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        memory_barrier.srcAccessMask = 0;
-        memory_barrier.dstAccessMask =
-                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-        memory_barrier.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        memory_barrier.dstStageMask =
-                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    renderPipeline->draw(commandBuffer, renderTarget);
+    commandBuffer.endRenderPass();
 
-        for (auto &i: depthIdx) {
-            assert(i < views.size());
-            commandBuffer.imageMemoryBarrier(views[i], memory_barrier);
-            renderTarget.setLayout(i, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-        }
+//    {
+//        ImageMemoryBarrier memory_barrier{};
+//        memory_barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+//        memory_barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+//        memory_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+//        memory_barrier.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+//        memory_barrier.dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+//
+//        commandBuffer.imageMemoryBarrier(views[0], memory_barrier);
+//    }
 
-        renderPipeline->draw(commandBuffer, renderTarget);
-        commandBuffer.endRenderPass();
-    }
+
 }
 
 void Application::createRenderContext() {
@@ -452,15 +508,19 @@ void Application::createRenderContext() {
 }
 
 void Application::drawFrame() {
+    vkWaitForFences(device->getHandle(), 1, &fence, VK_TRUE, UINT64_MAX);
+    vkResetFences(device->getHandle(), 1, &fence);
+
     updateScene();
     updateGUI();
 //    auto &commandBuffer = renderContext->begin();
     renderContext->beginFrame();
     auto &commandBuffer = *commandBuffers[renderContext->getActiveFrameIndex()];
     commandBuffer.beginRecord(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    commandBuffer.bindPipeline(graphicsPipeline->getHandle());
     draw(commandBuffer, renderContext->getActiveRenderFrame().getRenderTarget());
     commandBuffer.endRecord();
-    renderContext->submit(commandBuffer);
+    renderContext->submit(commandBuffer, fence);
 }
 
 void Application::drawRenderPasses(CommandBuffer &buffer, RenderTarget &renderTarget) {
@@ -506,5 +566,5 @@ void Application::createRenderPipeline() {
     std::vector<LoadStoreInfo> infos;
     infos.emplace_back(LoadStoreInfo{VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE});
     infos.emplace_back(LoadStoreInfo{VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE});
-    renderPipeline->createRenderPass(renderContext->getRenderFrame(0).getRenderTarget(), infos);
+    //   renderPipeline->createRenderPass(renderContext->getRenderFrame(0).getRenderTarget(), infos);
 }

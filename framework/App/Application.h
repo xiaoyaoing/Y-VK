@@ -98,7 +98,7 @@ protected:
     virtual void initVk();
 
 
-    void drawFrame();
+    virtual void drawFrame();
 
     void drawRenderPasses(CommandBuffer &buffer, RenderTarget &renderTarget);
 
@@ -134,6 +134,8 @@ protected:
 
     std::unique_ptr<Device> device{nullptr};
 
+//    std::unique_ptr<RenderPass> renderPass;
+
     VkSurfaceKHR surface{};
 
     std::vector<uint32_t> colorIdx{};
@@ -145,6 +147,8 @@ protected:
 
 
     std::unique_ptr<Scene> scene;
+
+    VkFence fence{VK_NULL_HANDLE};
 #ifdef NOEBUG
     const bool enableValidationLayers = false;
 #else

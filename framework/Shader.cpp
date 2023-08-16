@@ -32,9 +32,9 @@ Shader::Shader(Device &device, const std::string &path) {
 Shader::~Shader() {
 }
 
-VkPipelineShaderStageCreateInfo Shader::PipelineShaderStageCreateInfo() {
+VkPipelineShaderStageCreateInfo Shader::PipelineShaderStageCreateInfo(VkShaderStageFlagBits shaderStage) {
     VkPipelineShaderStageCreateInfo info{VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO};
-    info.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    info.stage = shaderStage;
     info.module = shader;
     info.pName = "main";
     return info;

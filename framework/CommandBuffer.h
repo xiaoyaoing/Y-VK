@@ -73,7 +73,7 @@ public:
     }
 
     inline void endRecord() {
-        vkEndCommandBuffer(_buffer);
+        VK_CHECK_RESULT(vkEndCommandBuffer(_buffer));
     }
 
     inline void endPass() {

@@ -56,7 +56,7 @@ public:
 
     uint32_t getActiveFrameIndex() const;
 
-    void submit(CommandBuffer &buffer);
+    void submit(CommandBuffer &buffer, VkFence fence = VK_NULL_HANDLE);
 
     void createFrameBuffers(RenderPass &renderpass);
 
@@ -68,7 +68,7 @@ public:
                        VkPipelineStageFlags waitPiplineStage);
 
 private:
-    uint32_t activeFrameIndex;
+    uint32_t activeFrameIndex{0};
     bool frameActive = false;
     VkSemaphore acquiredSem;
     bool prepared{false};
@@ -84,7 +84,6 @@ private:
     std::unique_ptr<SwapChain> swapchain;
 
     std::vector<std::unique_ptr<RenderFrame>> frames;
-    uint32_t active_frame_index{0};
     std::vector<std::unique_ptr<FrameBuffer>> frameBuffers;
     VkExtent2D surfaceExtent;
 

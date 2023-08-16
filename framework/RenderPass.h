@@ -33,6 +33,8 @@ public:
 //               const std::vector<VkSubpassDependency>& subpassDependencies,
 //               const std::vector<VkSubpassDescription>& subpassDesc);
 
+    RenderPass(Device &device, VkRenderPass pass) : _pass(pass), device(device) {}
+
     RenderPass(Device &device,
                const std::vector<Attachment> &attachments,
                const std::vector<LoadStoreInfo> &load_store_infos,
@@ -49,5 +51,4 @@ protected:
     VkRenderPass _pass;
     Device &device;
 
-    void setAttachmentLayouts(std::vector<VkSubpassDescription> vector1, const std::vector<Attachment> &vector2);
 };

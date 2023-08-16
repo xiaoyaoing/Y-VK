@@ -283,7 +283,8 @@ RenderPass::RenderPass(Device &device, const std::vector<Attachment> &attachment
             subpassDescriptions.push_back(subpassDescription);
         }
     }
-    setAttachmentLayouts(subpassDescriptions, attachments);
+    setAttachmentLayouts(subpassDescriptions, attachmentDescriptions);
+
     auto subpassDependencies = getSubpassDependency(subpass_count);
 
     VkRenderPassCreateInfo renderPassInfo{};
