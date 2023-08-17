@@ -1,8 +1,8 @@
 #include "DescriptorPool.h"
 #include "Device.h"
 
-DescriptorPool::DescriptorPool(ptr<Device> device, const std::vector<VkDescriptorPoolSize> &poolSizes, const uint32_t maxNumSets,
-                               VkDescriptorPoolCreateFlags flags) {
+DescriptorPool::DescriptorPool(Device &device, const std::vector<VkDescriptorPoolSize> &poolSizes,
+                               const uint32_t maxNumSets) {
 
 
     VkDescriptorPoolCreateInfo poolInfo{};
@@ -10,5 +10,6 @@ DescriptorPool::DescriptorPool(ptr<Device> device, const std::vector<VkDescripto
     poolInfo.poolSizeCount = poolSizes.size();
     poolInfo.pPoolSizes = poolSizes.data();
     poolInfo.maxSets = static_cast<uint32_t>(maxNumSets);
-    ASSERT(vkCreateDescriptorPool(device->getHandle(), &poolInfo, nullptr, &pool)==VK_SUCCESS,"create descriptor pool")
+    VK_CHECK_RESULT(vkCreateDescriptorPool(device.getHandle(), &poolInfo, nullptr, &pool));
+
 }

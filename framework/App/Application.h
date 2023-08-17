@@ -46,7 +46,7 @@ class Application {
 public:
     Application(const char *name, int width, int height);
 
-    void prepare();
+    virtual void prepare();
 
     virtual void mainloop() {
         while (!glfwWindowShouldClose(window->getHandle())) {
@@ -72,7 +72,6 @@ protected:
 
     virtual void createDepthStencil();
 
-    virtual void createPipeline();
 
     void createRenderContext();
 
@@ -82,7 +81,7 @@ protected:
 
     virtual void update();
 
-    void present(uint32_t bufferIndex);
+    virtual void bindUniformBuffers(CommandBuffer &commandBuffer) {}
 
     //*
     virtual void getRequiredExtensions();

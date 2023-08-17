@@ -1,15 +1,22 @@
 #include "Buffer.h"
+#include <Device.h>
 
-Buffer::Buffer(VmaAllocator allocator, uint64_t bufferSize, VkBufferUsageFlags bufferUsage,
-               VmaMemoryUsage memoryUsage) {
-    if(!initialize(allocator,bufferSize,bufferUsage,memoryUsage)){
-        std::runtime_error("error");
-    }
+
+void Buffer::cleanup() {
+    vmaDestroyBuffer(_allocator, _buffer, _bufferAllocation);
 }
 
-bool Buffer::initialize(VmaAllocator allocator, uint64_t bufferSize, VkBufferUsageFlags bufferUsage, VmaMemoryUsage memoryUsage)
-{
-    _allocator = allocator;
+void Buffer::uploadData(const void *srcData, uint64_t size) {
+    assert(srcData != nullptr); // snowapril : source data must not be invalid
+    void *dstData{nullptr};
+    vmaMapMemory(_allocator, _bufferAllocation, &dstData);
+    memcpy(dstData, srcData, static_cast<size_t>(size));
+    vmaUnmapMemory(_allocator, _bufferAllocation);
+}
+
+Buffer::Buffer(Device &device, uint64_t bufferSize, VkBufferUsageFlags bufferUsage, VmaMemoryUsage memoryUsage)
+        : device(device) {
+    _allocator = device.getMemoryAllocator();
     _allocatedSize = bufferSize;
 
     VkBufferCreateInfo bufferInfo = {};
@@ -22,21 +29,6 @@ bool Buffer::initialize(VmaAllocator allocator, uint64_t bufferSize, VkBufferUsa
     VmaAllocationCreateInfo bufferAllocInfo = {};
     bufferAllocInfo.usage = memoryUsage;
 
-    if (vmaCreateBuffer(_allocator, &bufferInfo, &bufferAllocInfo, &_buffer, &_bufferAllocation, nullptr) != VK_SUCCESS)
-    {
-        return false;
-    }
-    return true;
-}
+    VK_CHECK_RESULT(vmaCreateBuffer(_allocator, &bufferInfo, &bufferAllocInfo, &_buffer, &_bufferAllocation, nullptr))
 
-void Buffer::cleanup() {
-    vmaDestroyBuffer(_allocator,_buffer,_bufferAllocation);
-}
-
-void Buffer::uploadData(const void *srcData, uint64_t size) {
-    assert(srcData != nullptr); // snowapril : source data must not be invalid
-    void* dstData{ nullptr };
-    vmaMapMemory(_allocator, _bufferAllocation, &dstData);
-    memcpy(dstData, srcData, static_cast<size_t>(size));
-    vmaUnmapMemory(_allocator, _bufferAllocation);
 }

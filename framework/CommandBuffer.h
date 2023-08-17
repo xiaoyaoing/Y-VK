@@ -48,7 +48,7 @@ public:
                          VkSubpassContents contents);
 
     void bindDescriptorSets(VkPipelineBindPoint bindPoint, VkPipelineLayout layout, uint32_t firstSet,
-                            const std::vector<ptr<DescriptorSet>> &descriptorSets,
+                            const std::vector<DescriptorSet *> &descriptorSets,
                             const std::vector<uint32_t> &dynamicOffsets);
 
     void bindVertexBuffer(std::vector<ptr<Buffer>> &buffers, const std::vector<VkDeviceSize> &offsets);

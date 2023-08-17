@@ -35,11 +35,11 @@ bool Mesh::LoadData(const char *path) {
     return true;
 }
 
-void Mesh::createBuffer(VmaAllocator allocator) {
-    _vertexBuffer = std::make_shared<Buffer>(allocator, DATA_SIZE(_vertexes), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+void Mesh::createBuffer(Device &device) {
+    _vertexBuffer = std::make_shared<Buffer>(device, DATA_SIZE(_vertexes), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                                              VMA_MEMORY_USAGE_CPU_TO_GPU);
     _vertexBuffer->uploadData(_vertexes.data(), DATA_SIZE(_vertexes));
-    _indicesBuffer = std::make_shared<Buffer>(allocator, DATA_SIZE(_indices), VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+    _indicesBuffer = std::make_shared<Buffer>(device, DATA_SIZE(_indices), VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                                               VMA_MEMORY_USAGE_CPU_TO_GPU);
     _indicesBuffer->uploadData(_indices.data(), DATA_SIZE(_indices));
 }

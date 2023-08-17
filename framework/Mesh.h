@@ -11,7 +11,7 @@ public:
 
     bool LoadData(const char *path);
 
-    void createBuffer(VmaAllocator allocator);
+    void createBuffer(Device &device);
 
     void bindOnly(CommandBuffer &);
 

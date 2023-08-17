@@ -8,5 +8,5 @@
 
 Scene::Scene(Device &device) {
     meshes.push_back(std::make_unique<Mesh>("E:\\code\\VulkanTutorial\\resources\\viking_room.obj"));
-    meshes[0]->createBuffer(device.getMemoryAllocator());
+    meshes[0]->createBuffer(device);
 }

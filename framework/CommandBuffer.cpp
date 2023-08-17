@@ -50,11 +50,13 @@ void CommandBuffer::bindIndicesBuffer(const ptr<Buffer> &buffer, VkDeviceSize of
 }
 
 void CommandBuffer::bindDescriptorSets(VkPipelineBindPoint bindPoint, VkPipelineLayout layout, uint32_t firstSet,
-                                       const std::vector<ptr<DescriptorSet>> &descriptorSets,
+                                       const std::vector<DescriptorSet *> &descriptorSets,
                                        const std::vector<uint32_t> &dynamicOffsets) {
-//    auto vkDescriptorSets = getHandles<DescriptorSet, VkDescriptorSet>(descriptorSets);
-//    vkCmdBindDescriptorSets(_buffer, bindPoint, layout, firstSet, vkDescriptorSets.size(), vkDescriptorSets.data(),
-//                            dynamicOffsets.size(), dynamicOffsets.data());
+    std::vector<VkDescriptorSet> vkDescriptorSets(descriptorSets.size(), VK_NULL_HANDLE);
+    std::transform(descriptorSets.begin(), descriptorSets.end(), vkDescriptorSets.begin(),
+                   [](DescriptorSet *descriptorSet) { return descriptorSet->getHandle(); });
+    vkCmdBindDescriptorSets(_buffer, bindPoint, layout, firstSet, vkDescriptorSets.size(), vkDescriptorSets.data(),
+                            dynamicOffsets.size(), dynamicOffsets.data());
 }
 
 void

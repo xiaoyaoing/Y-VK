@@ -129,7 +129,7 @@ void RenderContext::submit(CommandBuffer &buffer, VkFence fence) {
 
 
         VK_CHECK_RESULT(queue.present(present_info));
-        LOGE("Presented")
+        // LOGE("Presented")
 
         frameActive = false;
 

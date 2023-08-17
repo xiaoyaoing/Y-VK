@@ -1,20 +1,27 @@
 #include "Vulkan.h"
+
 class Device;
+
 class DescriptorPool;
+
 class DescriptorLayout;
+
 class Buffer;
-class DescriptorSet{
-    VkDescriptorSet  _descriptorSet;
-    ptr<Device> _device;
+
+class DescriptorSet {
+    VkDescriptorSet _descriptorSet;
+    Device &_device;
 public:
-    VkDescriptorSet getHandle(){
+    VkDescriptorSet getHandle() {
         return _descriptorSet;
     }
-    DescriptorSet(const ptr<Device>& device,
-                  const ptr<DescriptorPool>& descriptorPool,
-                  const ptr<DescriptorLayout>& descriptorSetLayout,
+
+    DescriptorSet(Device &device,
+                  DescriptorPool &descriptorPool,
+                  DescriptorLayout &descriptorSetLayout,
                   const uint32_t descSetCount);
-    void updateBuffer(const std::vector<ptr<Buffer>>& buffers,
+
+    void updateBuffer(const std::vector<Buffer *> &buffers,
                       const uint32_t dstBinding,
                       const uint32_t descCount,
                       VkDescriptorType descType);
