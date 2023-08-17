@@ -1,0 +1,6 @@
+[submodule "ext/glslang"]
+	path = ext/glslang
+	url = https://github.com/KhronosGroup/glslang
+[submodule "ext/spirv-cross"]
+	path = ext/spirv-cross
+	url = https://github.com/KhronosGroup/SPIRV-Cross
