@@ -8,7 +8,6 @@
 #include <vk_mem_alloc.h>
 
 const std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
-const std::vector<const char *> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
 Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                std::unordered_map<const char *, bool> requiredExtensions) {
@@ -37,6 +36,54 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
         queueCreateInfos.push_back(queueCreateInfo);
     }
 
+    uint32_t device_extension_count;
+    VK_CHECK_RESULT(vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &device_extension_count, nullptr));
+    deviceExtensions = std::vector<VkExtensionProperties>(device_extension_count);
+    VK_CHECK_RESULT(vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &device_extension_count,
+                                                         deviceExtensions.data()));
+
+    // Display supported extensions
+    if (deviceExtensions.size() > 0) {
+        LOGI("Device supports the following extensions:");
+        for (auto &extension: deviceExtensions) {
+            LOGI("  \t{}", extension.extensionName);
+        }
+    }
+
+    std::vector<const char *> unsupported_extensions{};
+    for (auto &extension: requiredExtensions) {
+        if (isExtensionSupported(extension.first)) {
+            enabled_extensions.emplace_back(extension.first);
+        } else {
+            unsupported_extensions.emplace_back(extension.first);
+        }
+    }
+
+    if (enabled_extensions.size() > 0) {
+        LOGI("Device supports the following requested extensions:");
+        for (auto &extension: enabled_extensions) {
+            LOGI("  \t{}", extension);
+        }
+    }
+
+    if (unsupported_extensions.size() > 0) {
+        auto error = false;
+        for (auto &extension: unsupported_extensions) {
+            auto extension_is_optional = requiredExtensions[extension];
+            if (extension_is_optional) {
+                LOGW("Optional device extension {} not available, some features may be disabled", extension);
+            } else {
+                LOGE("Required device extension {} not available, cannot run", extension);
+                error = true;
+            }
+        }
+
+        if (error) {
+            std::runtime_error("Required extension missed");
+        }
+    }
+
+
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     // pointers to the queue creation info and device features structs
@@ -44,8 +91,8 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
     createInfo.queueCreateInfoCount = queueCreateInfos.size();
     createInfo.pEnabledFeatures = &features;
     // enable the device extensions todo checkExtension supported
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
-    createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(enabled_extensions.size());
+    createInfo.ppEnabledExtensionNames = enabled_extensions.data();
 
     VK_CHECK_RESULT(vkCreateDevice(_physicalDevice, &createInfo, nullptr, &_device));
 
@@ -60,6 +107,7 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
         }
     }
 }
+
 
 const Queue &Device::getQueueByFlag(VkQueueFlagBits requiredFlag, uint32_t queueIndex) {
     for (const auto &queueFamily: queues) {
@@ -88,4 +136,11 @@ const Queue &Device::getPresentQueue(uint32_t queueIndex) {
     Queue *queue;
     return *queue;
     // return *(queues[0][0]);
+}
+
+bool Device::isExtensionSupported(const std::string &extensionName) {
+    return std::find_if(deviceExtensions.begin(), deviceExtensions.end(),
+                        [extensionName](auto &device_extension) {
+                            return std::strcmp(device_extension.extensionName, extensionName.c_str()) == 0;
+                        }) != deviceExtensions.end();
 }

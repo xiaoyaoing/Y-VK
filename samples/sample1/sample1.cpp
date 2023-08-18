@@ -16,6 +16,10 @@ void sample1::createDescriptorSet() {
     descriptorSet = std::make_unique<DescriptorSet>(*device, *descriptorPool, *descriptorLayout, 1);
     descriptorSet->updateBuffer({uniform_buffers.scene.get()}, 0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 
+    VkDescriptorImageInfo imageInfo{};
+    imageInfo.sampler =
+
+    //descriptorSet->updateImage();
 }
 
 void sample1::createDescriptorPool() {
@@ -213,6 +217,7 @@ void sample1::prepare() {
 void sample1::createDescriptorSetLayout() {
     descriptorLayout = std::make_unique<DescriptorLayout>(*device);
     descriptorLayout->addBinding(VK_SHADER_STAGE_VERTEX_BIT, 0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0);
+    descriptorLayout->addBinding(VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 0);
     descriptorLayout->createLayout(0);
 }
 

@@ -6,9 +6,12 @@
 
 #pragma once
 
+class Texture;
 
 namespace VulkanInitializers {
     VkDescriptorPoolSize DescriptorPoolSize(VkDescriptorType type, uint32_t descriptorCount);
+
+    VkDescriptorImageInfo DescriptorImageInfo(Texture &texture);
 };
 
 

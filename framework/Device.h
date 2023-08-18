@@ -42,4 +42,10 @@ protected:
     VkPhysicalDevice _physicalDevice;
     VkDevice _device;
     std::vector<std::vector<std::unique_ptr<Queue>>> queues{};
+
+    std::vector<VkExtensionProperties> deviceExtensions{};
+
+    std::vector<const char *> enabled_extensions{};
+
+    bool isExtensionSupported(const std::string &extensionName);
 };

@@ -34,6 +34,8 @@
 #include "Scene.h"
 #include "vk_mem_alloc.h"
 
+#include "API_VK.h"
+
 class Application {
 
     void initWindow(const char *name, int width, int height);
@@ -84,7 +86,7 @@ protected:
     virtual void bindUniformBuffers(CommandBuffer &commandBuffer) {}
 
     //*
-    virtual void getRequiredExtensions();
+    virtual void getRequiredInstanceExtensions();
 
     inline void addDeviceExtension(const char *extension, bool optional = true) {
         deviceExtensions[extension] = optional;
@@ -155,4 +157,6 @@ protected:
 #endif
 
     void createRenderPipeline();
+
+    Texture loadTexture();
 };

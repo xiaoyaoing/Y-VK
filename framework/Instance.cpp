@@ -64,7 +64,9 @@ Instance::Instance(const std::string &application_name,
     props.resize(extensionCount);
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, props.data());
 
-
+    std::cout << "Available extension: ";
+    for (auto &prop: props)
+        LOGI(prop.extensionName);
     for (const auto &requiredExtension: required_extensions) {
         if (!enableExtension(requiredExtension.first, props, enabledExtensions)) {
             if (requiredExtension.second) {

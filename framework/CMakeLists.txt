@@ -7,7 +7,7 @@ message("Project Files: ${HEADER_FILES}")
 
 # 接下来你可以使用source_group命令将这些文件分组，以在IDE中更好地组织项目结构
 # source_group("Project Files" FILES ${PROJECT_FILES})
-add_library(${target_name} STATIC ${PROJECT_FILES} Subpass.cpp Subpass.h Vulkan.cpp ResourceCache.cpp ResourceCache.h ResoucreCache.cpp ResoucreCache.h ../PipelineLayout.cpp ../PipelineLayout.h Scene.cpp Scene.h Utils/VkUtils.cpp App/ApiAPP.cpp App/ApiAPP.h FIleUtils.cpp FIleUtils.h GlslCompiler.cpp GlslCompiler.h Common/VulkanInitializers.cpp Common/VulkanInitializers.h)
+add_library(${target_name} STATIC ${PROJECT_FILES} Subpass.cpp Subpass.h Vulkan.cpp ResourceCache.cpp ResourceCache.h ResoucreCache.cpp ResoucreCache.h ../PipelineLayout.cpp ../PipelineLayout.h Scene.cpp Scene.h Utils/VkUtils.cpp App/ApiAPP.cpp App/ApiAPP.h FIleUtils.cpp FIleUtils.h GlslCompiler.cpp GlslCompiler.h Common/VulkanInitializers.cpp Common/VulkanInitializers.h Texture.cpp Texture.h API_VK.cpp API_VK.h Scene/Image.cpp Scene/Image.h)
 message(${target_name})
 message(STATUS "Vulkan library: ${Vulkan_LIBRARY}")
 

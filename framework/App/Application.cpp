@@ -7,9 +7,10 @@
 #include <RenderTarget.h>
 #include <Shader.h>
 #include <Subpass.h>
+#include <API_VK.h>
 
 void Application::initVk() {
-    getRequiredExtensions();
+    getRequiredInstanceExtensions();
     _instance = std::make_unique<Instance>(std::string("vulkanApp"), instanceExtensions, validationLayers);
     surface = window->createSurface(*_instance);
 
@@ -29,7 +30,8 @@ void Application::initVk() {
     VK_CHECK_RESULT(
             vkEnumeratePhysicalDevices(_instance->getHandle(), &physical_device_count, physical_devices.data()));
 
-    device = std::make_unique<Device>(physical_devices[0], surface);
+    addDeviceExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    device = std::make_unique<Device>(physical_devices[0], surface, deviceExtensions);
 
     createAllocator();
 
@@ -51,7 +53,7 @@ void Application::initVk() {
     VK_CHECK_RESULT(vkCreateFence(device->getHandle(), &fenceInfo, nullptr, &fence));
 }
 
-void Application::getRequiredExtensions() {
+void Application::getRequiredInstanceExtensions() {
     uint32_t glfwExtensionsCount = 0;
     const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionsCount);
     for (uint32_t i = 0; i < glfwExtensionsCount; i++) {
@@ -59,7 +61,7 @@ void Application::getRequiredExtensions() {
     }
     if (enableValidationLayers)
         addInstanceExtension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    addInstanceExtension(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+    //  addInstanceExtension(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 }
 
 //void Application::createPipeline() {
@@ -421,3 +423,10 @@ void Application::createRenderPipeline() {
     infos.emplace_back(LoadStoreInfo{VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE});
     infos.emplace_back(LoadStoreInfo{VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE});
 }
+
+
+Texture Application::loadTexture() {
+    Texture texture{};
+    //  texture.image = sg::Image()
+}
+
