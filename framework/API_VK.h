@@ -5,9 +5,10 @@
 #pragma once
 
 #include "Vulkan.h"
-#include "Scene/Image.h"
+#include "Scene/SgImage.h"
+#include "Images/Sampler.h"
 
 struct Texture {
-    std::unique_ptr<sg::Image> image;
-    VkSampler sampler;
+    std::unique_ptr<sg::SgImage> image;
+    std::unique_ptr<Sampler> sampler;
 };

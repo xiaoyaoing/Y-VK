@@ -3,8 +3,9 @@
 //
 
 #include "sample1.h"
-#include "Common/VulkanInitializers.h"
 #include "Shader.h"
+#include "Common/VulkanInitializers.h"
+#include "FIleUtils.h"
 
 void sample1::prepareUniformBuffers() {
     uniform_buffers.scene = std::make_unique<Buffer>(*device, sizeof(ubo_vs), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -16,69 +17,36 @@ void sample1::createDescriptorSet() {
     descriptorSet = std::make_unique<DescriptorSet>(*device, *descriptorPool, *descriptorLayout, 1);
     descriptorSet->updateBuffer({uniform_buffers.scene.get()}, 0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 
-    VkDescriptorImageInfo imageInfo{};
-    imageInfo.sampler =
+    textures.texture1 = loadTexture(FileUtils::getResourcePath() + "Window.png");
 
-    //descriptorSet->updateImage();
+    auto imageDescriptorInfo = VkCommon::DescriptorImageInfo(textures.texture1);
+
+    descriptorSet->updateImage({imageDescriptorInfo}, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 }
 
 void sample1::createDescriptorPool() {
 
     std::vector<VkDescriptorPoolSize> poolSizes = {
-            VulkanInitializers::DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2)};
+            VkCommon::DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2),
+            VkCommon::DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2)
+    };
 
     descriptorPool = std::make_unique<DescriptorPool>(*device, poolSizes, 2);
 
-//    std::vector<VkDescriptorPoolSize> pool_sizes =
-//            {
-//                    vkb::initializers::descriptor_pool_size(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2),
-//                    vkb::initializers::descriptor_pool_size(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2),
-//            };
-//
-//    VkDescriptorPoolCreateInfo descriptor_pool_create_info =
-//            vkb::initializers::descriptor_pool_create_info(
-//                    vkb::to_u32(pool_sizes.size()),
-//                    pool_sizes.data(),
-//                    2);
-//
-//    VK_CHECK(
-//            vkCreateDescriptorPool(get_device().get_handle(), &descriptor_pool_create_info, nullptr, &descriptor_pool));
+
 }
 
 void sample1::updateUniformBuffers() {
-//    ubo_vs.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f),
-//                          glm::vec3(0.0f, 0.0f, 1.0f));
-//    ubo_vs.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f,
-//                                                                     0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-//    ubo_vs.proj = = glm::perspective(glm::radians(45.0f),
-//                                     swapChainExtent.width / (float) swapChainExtent.height, 0.1f,
-//                                     10.0f);;
+
 }
 
 void sample1::createGraphicsPipeline() {
 
-    // auto vertShaderCode = readFile(parentPath + "shaders/vert.spv");
-    // auto fragShaderCode = readFile(parentPath + "shaders/frag.spv");
-
-    // auto vertShaderModule = createShaderModule(vertShaderCode);
-    // auto fragShaderModule = createShaderModule(fragShaderCode);
-
-    // VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
-    // vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    // vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    // vertShaderStageInfo.module = vertShaderModule;
-    // vertShaderStageInfo.pName = "main";
-
-    // VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
-    // fragShaderStageInfo.sType =
-    //     VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    // fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    // fragShaderStageInfo.module = fragShaderModule;
-    // fragShaderStageInfo.pName = "main";
 
     // todo handle shader complie
-    auto vertexShader = Shader(*device, "E:\\code\\VulkanFrameWorkLearn\\shaders\\vert.spv");
-    auto fragShader = Shader(*device, "E:\\code\\VulkanFrameWorkLearn\\shaders\\frag.spv");
+    auto vertexShader = Shader(*device, FileUtils::getShaderPath() + "vert.spv");
+    auto fragShader = Shader(*device, FileUtils::getShaderPath() + "frag.spv");
+
 
     VkPipelineShaderStageCreateInfo shaderStages[] = {
             vertexShader.PipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT),
@@ -123,7 +91,7 @@ void sample1::createGraphicsPipeline() {
     rasterizer.rasterizerDiscardEnable = VK_FALSE;
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizer.lineWidth = 1.0f;
-    rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+    rasterizer.cullMode = VK_CULL_MODE_NONE;
     rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizer.depthBiasEnable = VK_FALSE;
     rasterizer.depthBiasConstantFactor = 0.0f;
@@ -217,7 +185,7 @@ void sample1::prepare() {
 void sample1::createDescriptorSetLayout() {
     descriptorLayout = std::make_unique<DescriptorLayout>(*device);
     descriptorLayout->addBinding(VK_SHADER_STAGE_VERTEX_BIT, 0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0);
-    descriptorLayout->addBinding(VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 0);
+    descriptorLayout->addBinding(VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0);
     descriptorLayout->createLayout(0);
 }
 

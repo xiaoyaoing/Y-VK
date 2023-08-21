@@ -60,3 +60,8 @@ void Mesh::bindAndDraw(CommandBuffer &commandBuffer) {
     bindOnly(commandBuffer);
     drawOnly(commandBuffer);
 }
+
+Mesh::Mesh(const std::vector<Vertex> &vertexs, const std::vector<uint32> indices) : _vertexes(vertexs),
+                                                                                    _indices(indices) {
+
+}

@@ -1,16 +1,12 @@
 //
 // Created by pc on 2023/8/19.
 //
+#include <Scene/SgImage.h>
 
-#ifndef VULKANDEMO_STBIMAGE_H
-#define VULKANDEMO_STBIMAGE_H
+namespace sg {
+    class StbImage : public SgImage {
+    public:
+        StbImage(const std::string &path);
+    };
+}
 
-
-
-class StbImage {
-
-};
-
-
-
-#endif //VULKANDEMO_STBIMAGE_H

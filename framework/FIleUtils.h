@@ -10,6 +10,10 @@
 namespace FileUtils {
     std::string getFileExt(const std::string &filepath);
 
+    std::string getResourcePath();
+
+    std::string getShaderPath();
+
     std::vector<uint8_t> readShaderBinary(const std::string filename);
 }
 

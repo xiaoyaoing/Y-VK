@@ -37,6 +37,9 @@ ImageView::ImageView(Image &image, VkImageViewType view_type, VkFormat format, u
     if (format == VK_FORMAT_UNDEFINED) {
         _format = format = image.getFormat();
     }
+    //
+
+
 //    //todo config this
 //    _subResourceRange.
 //            baseMipLevel = mip_level;
@@ -58,6 +61,14 @@ ImageView::ImageView(Image &image, VkImageViewType view_type, VkFormat format, u
 //    }
 
     VkImageViewCreateInfo imageViewInfo{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
+
+    imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageViewInfo.subresourceRange.baseMipLevel = 0;
+    imageViewInfo.subresourceRange.levelCount = 1;
+    imageViewInfo.subresourceRange.baseArrayLayer = 0;
+    imageViewInfo.subresourceRange.layerCount = 1;
+    imageViewInfo.pNext = nullptr;
+
     imageViewInfo.image = image.getHandle();
     imageViewInfo.viewType = view_type;
     imageViewInfo.

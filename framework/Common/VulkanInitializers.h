@@ -8,10 +8,13 @@
 
 class Texture;
 
-namespace VulkanInitializers {
+namespace VkCommon {
     VkDescriptorPoolSize DescriptorPoolSize(VkDescriptorType type, uint32_t descriptorCount);
 
     VkDescriptorImageInfo DescriptorImageInfo(Texture &texture);
+     void setImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageLayout oldLayout,
+                        VkImageLayout newLayout) ;
+
 };
 
 

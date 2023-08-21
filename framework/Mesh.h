@@ -9,6 +9,8 @@ class Mesh {
 public:
     Mesh(const char *path);
 
+    Mesh(const std::vector<Vertex> &vertexs, const std::vector<uint32> indices);
+
     bool LoadData(const char *path);
 
     void createBuffer(Device &device);

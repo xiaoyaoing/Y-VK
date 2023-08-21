@@ -13,15 +13,15 @@ public:
         return _pool;
     }
 
-    CommandPool(ptr<Device> device, ptr<Queue> queue, VkCommandPoolCreateFlags flgas);
+//    CommandPool(ptr<Device> device, ptr<Queue> queue, VkCommandPoolCreateFlags flgas);
 
     CommandPool(Device &device, uint32_t queueFamilyIndex,
                 CommandBuffer::ResetMode resetMode = CommandBuffer::ResetMode::ResetPool);
 
-    VkCommandBuffer allocateCommandBuffer();
+    CommandBuffer allocateCommandBuffer(VkCommandBufferLevel level, bool begin = false) const;
 
 protected:
     VkCommandPool _pool;
-    ptr<Device> _device;
+    Device &_device;
 
 };

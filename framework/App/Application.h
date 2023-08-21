@@ -110,7 +110,7 @@ protected:
 
 protected:
     VmaAllocator _allocator{};
-    ptr<Instance> _instance;
+    std::unique_ptr<Instance> _instance;
     ptr<Queue> _graphicsQueue, _presentQueue;
 
     std::vector<VkFramebuffer> _frameBuffers;
@@ -119,12 +119,12 @@ protected:
     std::unordered_map<const char *, bool> instanceExtensions;
     std::vector<const char *> validationLayers{"VK_LAYER_KHRONOS_validation"};
 
-    ptr<CommandPool> commandPool;
+    std::unique_ptr<CommandPool> commandPool;
     std::vector<std::unique_ptr<CommandBuffer>> commandBuffers;
-    ptr<Image> _depthImage;
-    ptr<ImageView> _depthImageView;
-    ptr<RenderPass> _renderPass;
-
+//    ptr<Image> _depthImage;
+//    ptr<ImageView> _depthImageView;
+//    ptr<RenderPass> _renderPass;
+//
     std::unique_ptr<Window> window{nullptr};
 
     std::unique_ptr<Pipeline> graphicsPipeline{nullptr};
@@ -158,5 +158,5 @@ protected:
 
     void createRenderPipeline();
 
-    Texture loadTexture();
+    Texture loadTexture(const std::string &path);
 };

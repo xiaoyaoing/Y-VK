@@ -83,6 +83,9 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
         }
     }
 
+    enabled_extensions.push_back("VK_KHR_get_memory_requirements2");
+    enabled_extensions.push_back("VK_KHR_dedicated_allocation");
+
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

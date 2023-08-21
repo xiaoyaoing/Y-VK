@@ -5,18 +5,38 @@
 
 #include "Vulkan.h"
 
-namespace sg {
-    class Image {
-    public:
-        static std::unique_ptr<Image> load(const std::string &path);
+#include "Images/ImageView.h"
+#include "Images/Image.h"
 
-        void createVkImage();
+namespace sg
+{
+    class SgImage
+    {
+    public:
+        static std::unique_ptr<SgImage> load(const std::string &path);
+
+        void createVkImage(Device &device);
+
+        std::vector<uint8_t> &getData();
+
+        uint64_t getBufferSize() const;
+
+        VkExtent3D getExtent() const;
+
+        Image &getVkImage();
+
+        ImageView &getVkImageView();
 
     protected:
-        VkImage vkImage;
-        VkImageView vkImageView;
-    };
+        std::unique_ptr<Image> vkImage;
 
-    std::vector<uint8_t> data;
+        std::unique_ptr<ImageView> vkImageView;
+
+        std::vector<uint8_t> data;
+
+        VkFormat format;
+
+        VkExtent3D extent3D;
+    };
 
 }

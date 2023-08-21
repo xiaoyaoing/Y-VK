@@ -39,4 +39,22 @@ namespace FileUtils {
     std::string getFileExt(const std::string &filepath) {
         return filepath.substr(filepath.find('.') + 1);
     }
+
+    std::string getResourcePath() {
+#ifdef VK_RESOURCES_DIR
+        return VK_RESOURCES_DIR;
+#else
+        return "./../resources";
+#endif
+    }
+
+    std::string getShaderPath() {
+#ifdef VK_SHADERS_DIR
+        return VK_SHADERS_DIR;
+#else
+        return "./../shaders";
+#endif
+
+    }
+
 }

@@ -60,9 +60,9 @@ void CommandBuffer::bindDescriptorSets(VkPipelineBindPoint bindPoint, VkPipeline
 }
 
 void
-CommandBuffer::copyBufferToImage(ptr<Buffer> src, ptr<Image> dst, const std::vector<VkBufferImageCopy> &copyRegions) {
+CommandBuffer::copyBufferToImage(Buffer &src, Image &dst, const std::vector<VkBufferImageCopy> &copyRegions) {
     vkCmdCopyBufferToImage(_buffer,
-                           src->getHandle(), dst->getHandle(),
+                           src.getHandle(), dst.getHandle(),
                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                            static_cast<uint32_t>(copyRegions.size()), copyRegions.data());
 }
@@ -124,5 +124,8 @@ void CommandBuffer::beginRenderPass(const RenderTarget &render_target, RenderPas
 
 void CommandBuffer::endRenderPass() {
     vkCmdEndRenderPass(_buffer);
+}
+
+CommandBuffer::~CommandBuffer() {
 }
 

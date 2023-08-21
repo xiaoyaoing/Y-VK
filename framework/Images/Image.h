@@ -4,31 +4,7 @@
 #pragma once
 
 class Image {
-    Device &device;
-    VkImage image;
-    VmaAllocation memory;
 
-    VkExtent3D extent{};
-
-    VkImageType type{};
-
-    VkFormat format{};
-
-    VkImageUsageFlags usage{};
-
-    VkSampleCountFlagBits sample_count{};
-
-    VkImageTiling tiling{};
-
-    VkImageSubresource subresource{};
-
-    uint32_t array_layer_count{0};
-
-    uint8_t *mapped_data{nullptr};
-
-    bool mapped;
-
-    std::vector<ImageView> views;
 public:
     Image(Device &device,
           const VkExtent3D &extent,
@@ -102,4 +78,31 @@ public:
     void addView(ImageView *pView);
 
     Device &getDevice();
+
+protected:
+    Device &device;
+    VkImage image;
+    VmaAllocation memory;
+
+    VkExtent3D extent{};
+
+    VkImageType type{};
+
+    VkFormat format{};
+
+    VkImageUsageFlags usage{};
+
+    VkSampleCountFlagBits sample_count{};
+
+    VkImageTiling tiling{};
+
+    VkImageSubresource subresource{};
+
+    uint32_t array_layer_count{0};
+
+    uint8_t *mapped_data{nullptr};
+
+    bool mapped;
+
+    std::vector<ImageView> views;
 };

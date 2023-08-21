@@ -26,6 +26,10 @@ protected:
         std::unique_ptr<Buffer> scene;
     } uniform_buffers;
 
+    struct {
+        Texture texture1;
+    } textures;
+
 
     std::unique_ptr<DescriptorSet> descriptorSet{nullptr};
     std::unique_ptr<DescriptorPool> descriptorPool{nullptr};

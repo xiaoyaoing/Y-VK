@@ -26,7 +26,7 @@ public:
         AlwaysAllocate,
     };
 
-    inline VkCommandBuffer getHandle() const { return _buffer; }
+    VkCommandBuffer getHandle() const { return _buffer; }
 
     explicit CommandBuffer(VkCommandBuffer buffer) : _buffer(buffer) {}
 
@@ -55,7 +55,7 @@ public:
 
     void bindIndicesBuffer(const ptr<Buffer> &buffer, VkDeviceSize offset);
 
-    void copyBufferToImage(ptr<Buffer>, ptr<Image>, const std::vector<VkBufferImageCopy> &copyRegions);
+    void copyBufferToImage(Buffer &, Image &, const std::vector<VkBufferImageCopy> &copyRegions);
 
     //    void bindDescriptor
     inline void bindPipeline(const VkPipeline &pipeline) {
@@ -83,6 +83,8 @@ public:
     void imageMemoryBarrier(const ImageView &view, ImageMemoryBarrier barrier);
 
     void endRenderPass();
+
+    ~CommandBuffer();
 
 protected:
     VkCommandBuffer _buffer;
