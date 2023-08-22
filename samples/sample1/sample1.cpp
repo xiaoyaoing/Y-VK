@@ -28,25 +28,29 @@ void sample1::createDescriptorPool() {
 
     std::vector<VkDescriptorPoolSize> poolSizes = {
             VkCommon::DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2),
-            VkCommon::DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2)
-    };
+            VkCommon::DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2)};
 
     descriptorPool = std::make_unique<DescriptorPool>(*device, poolSizes, 2);
-
-
 }
 
 void sample1::updateUniformBuffers() {
+    static auto startTime = std::chrono::high_resolution_clock::now();
 
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+    ubo_vs.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo_vs.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo_vs.proj = glm::perspective(glm::radians(45.0f), 1.f, 0.1f, 10.0f);
+    ubo_vs.proj[1][1] *= -1;
+    // ubo_vs.model = glm::mat4::Ide
+    uniform_buffers.scene->uploadData(&ubo_vs, sizeof(ubo_vs));
 }
 
 void sample1::createGraphicsPipeline() {
 
-
     // todo handle shader complie
     auto vertexShader = Shader(*device, FileUtils::getShaderPath() + "vert.spv");
     auto fragShader = Shader(*device, FileUtils::getShaderPath() + "frag.spv");
-
 
     VkPipelineShaderStageCreateInfo shaderStages[] = {
             vertexShader.PipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT),
@@ -72,6 +76,8 @@ void sample1::createGraphicsPipeline() {
     viewport.y = 0.0f;
     viewport.width = (float) renderContext->getSwapChainExtent().width;
     viewport.height = (float) renderContext->getSwapChainExtent().height;
+    viewport.minDepth = 0;
+    viewport.maxDepth = 1.0;
 
     VkRect2D scissor{};
     scissor.offset = {0, 0};
@@ -145,6 +151,15 @@ void sample1::createGraphicsPipeline() {
     depthStencil.minDepthBounds = 0.0;
     depthStencil.maxDepthBounds = 1.0;
 
+    std::vector<VkDynamicState> dynamicStateEnables;
+    dynamicStateEnables.push_back(VK_DYNAMIC_STATE_VIEWPORT);
+    dynamicStateEnables.push_back(VK_DYNAMIC_STATE_SCISSOR);
+
+    VkPipelineDynamicStateCreateInfo dynamicState{};
+    dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamicState.dynamicStateCount = 2;
+    dynamicState.pDynamicStates = dynamicStateEnables.data();
+
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineInfo.stageCount = 2;
@@ -180,7 +195,10 @@ void sample1::prepare() {
     createDescriptorSet();
 
     createGraphicsPipeline();
+
+    buildCommandBuffers();
 }
+
 
 void sample1::createDescriptorSetLayout() {
     descriptorLayout = std::make_unique<DescriptorLayout>(*device);
@@ -190,20 +208,21 @@ void sample1::createDescriptorSetLayout() {
 }
 
 sample1::sample1(const char *name, int width, int height) : Application(name, width, height) {
-
 }
 
 void sample1::bindUniformBuffers(CommandBuffer &commandBuffer) {
     commandBuffer.bindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayOut, 0, {descriptorSet.get()},
                                      {});
+}
 
-    static auto startTime = std::chrono::high_resolution_clock::now();
-
-    auto currentTime = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-    ubo_vs.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo_vs.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo_vs.proj = glm::perspective(glm::radians(45.0f), 1.f, 0.1f, 10.0f);
-    ubo_vs.proj[1][1] *= -1;
-    uniform_buffers.scene->uploadData(&ubo_vs, sizeof(ubo_vs));
+void sample1::buildCommandBuffers() {
+    for (int i = commandBuffers.size() - 1; i >= 0; i--) {
+        auto &commandBuffer = *commandBuffers[i];
+        commandBuffer.beginRecord(0);
+        commandBuffer.bindPipeline(graphicsPipeline->getHandle());
+        renderContext->setActiveFrameIdx(i);
+        bindUniformBuffers(commandBuffer);
+        draw(commandBuffer, renderContext->getRenderFrame(i));
+        commandBuffer.endRecord();
+    }
 }

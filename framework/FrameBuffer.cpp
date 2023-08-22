@@ -4,12 +4,14 @@
 #include <Device.h>
 
 FrameBuffer::FrameBuffer(Device &deivce, RenderTarget &renderTarget, RenderPass &renderPass) : device(deivce),
-                                                                                               extent(renderTarget.getExtent()) {
+                                                                                               extent(renderTarget.getExtent())
+{
     VkFramebufferCreateInfo createInfo{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
     auto &views = renderTarget.getViews();
     std::vector<VkImageView> attchments(views.size(), VK_NULL_HANDLE);
     std::transform(views.begin(), views.end(), attchments.begin(),
-                   [](const ImageView &view) -> VkImageView { return view.getHandle(); });
+                   [](const ImageView &view) -> VkImageView
+                   { return view.getHandle(); });
     createInfo.layers = 1;
     createInfo.renderPass = renderPass.getHandle();
     createInfo.attachmentCount = attchments.size();

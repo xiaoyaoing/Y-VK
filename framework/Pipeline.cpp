@@ -34,7 +34,7 @@ Pipeline::Pipeline(const PipelineInfo &pipelineInfo, ptr<Device> device,
     dynamicStateEnables.push_back(VK_DYNAMIC_STATE_VIEWPORT);
     dynamicStateEnables.push_back(VK_DYNAMIC_STATE_SCISSOR);
 
-    VkPipelineDynamicStateCreateInfo dynamicState;
+    VkPipelineDynamicStateCreateInfo dynamicState{};
     dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamicState.dynamicStateCount = 2;
     dynamicState.pDynamicStates = dynamicStateEnables.data();
@@ -67,12 +67,13 @@ Pipeline::Pipeline(const PipelineInfo &pipelineInfo, ptr<Device> device,
             vkCreateGraphicsPipelines(device->getHandle(), nullptr, 1, &pipelineCreateInfo, nullptr, &_pipeline));
 }
 
-void RenderPipeline::draw(CommandBuffer &commandBuffer, RenderTarget &renderTarget, VkSubpassContents contents) {
+void RenderPipeline::draw(CommandBuffer &commandBuffer, RenderFrame &renderFrame, VkSubpassContents contents) {
 
     std::unique_ptr<Subpass> &pass = subPasses[0];
     // todo handle multpasses
-    pass->updateRenderTargetAttachments(renderTarget);
-    commandBuffer.beginRenderPass(renderTarget, *renderPass, RenderContext::g_context->getFrameBuffer(),
+    pass->updateRenderTargetAttachments(renderFrame.getRenderTarget());
+    commandBuffer.beginRenderPass(renderFrame.getRenderTarget(), *renderPass,
+                                  RenderContext::g_context->getFrameBuffer(),
                                   Default::clearValues(), contents);
     pass->draw(commandBuffer);
 }

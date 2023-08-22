@@ -42,7 +42,6 @@ class Application {
 
     virtual void initGUI();
 
-
     bool frameBufferResized{};
 
 public:
@@ -58,11 +57,10 @@ public:
     }
 
 protected:
-
     //* create functions
-//    virtual std::unique_ptr<RenderTarget> createRenderTarget(Image &image) {}
+    //    virtual std::unique_ptr<RenderTarget> createRenderTarget(Image &image) {}
 
-    virtual void draw(CommandBuffer &commandBuffer, RenderTarget &renderTarget);
+    virtual void draw(CommandBuffer &commandBuffer, RenderFrame &renderFrame);
 
     virtual void createCommandBuffer();
 
@@ -73,7 +71,6 @@ protected:
     virtual void createRenderPass();
 
     virtual void createDepthStencil();
-
 
     void createRenderContext();
 
@@ -98,11 +95,9 @@ protected:
 
     virtual void initVk();
 
-
     virtual void drawFrame();
 
     void drawRenderPasses(CommandBuffer &buffer, RenderTarget &renderTarget);
-
 
     virtual void updateScene();
 
@@ -121,10 +116,10 @@ protected:
 
     std::unique_ptr<CommandPool> commandPool;
     std::vector<std::unique_ptr<CommandBuffer>> commandBuffers;
-//    ptr<Image> _depthImage;
-//    ptr<ImageView> _depthImageView;
-//    ptr<RenderPass> _renderPass;
-//
+    //    ptr<Image> _depthImage;
+    //    ptr<ImageView> _depthImageView;
+    //    ptr<RenderPass> _renderPass;
+    //
     std::unique_ptr<Window> window{nullptr};
 
     std::unique_ptr<Pipeline> graphicsPipeline{nullptr};
@@ -135,7 +130,7 @@ protected:
 
     std::unique_ptr<Device> device{nullptr};
 
-//    std::unique_ptr<RenderPass> renderPass;
+    //    std::unique_ptr<RenderPass> renderPass;
 
     VkSurfaceKHR surface{};
 
@@ -143,9 +138,8 @@ protected:
     std::vector<uint32_t> depthIdx{};
 
     VkPipelineLayout pipelineLayOut{};
-//    VkDescriptorSetLayout descriptorSetLayout{};
+    //    VkDescriptorSetLayout descriptorSetLayout{};
     std::unique_ptr<DescriptorLayout> descriptorLayout;
-
 
     std::unique_ptr<Scene> scene;
 

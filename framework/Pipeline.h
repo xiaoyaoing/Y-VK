@@ -1,4 +1,5 @@
 #include "Vulkan.h"
+#include "RenderFrame.h"
 #include <RenderTarget.h>
 #include <CommandBuffer.h>
 #include <Subpass.h>
@@ -159,7 +160,7 @@ class RenderPipeline {
 public:
     explicit RenderPipeline(Device &device);
 
-    void draw(CommandBuffer &commandBuffer, RenderTarget &renderTarget,
+    void draw(CommandBuffer &commandBuffer, RenderFrame &renderFrame,
               VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE);
 
     void addSubPass(std::unique_ptr<Subpass> &&subpass);

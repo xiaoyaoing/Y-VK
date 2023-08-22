@@ -8,6 +8,11 @@
 sg::StbImage::StbImage(const std::string &path) {
     int w, h, comp;
     auto rawData = stbi_load(path.c_str(), &w, &h, &comp, 4);
+    comp = 4;
+//    data = std::vector<uint8_t>(w * h * 4);
+//    for (int i = 0; i < w * h * 4; i++) {
+//        data[i] = rawData[i % (3 * w * h)];
+//    }
     data = {rawData, rawData + w * h * comp};
     stbi_image_free(rawData);
 

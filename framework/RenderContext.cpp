@@ -227,3 +227,7 @@ uint32_t RenderContext::getSwapChainImageCount() const {
 RenderFrame &RenderContext::getRenderFrame(int idx) {
     return *frames[idx];
 }
+
+void RenderContext::setActiveFrameIdx(int idx) {
+    activeFrameIndex = idx;
+}

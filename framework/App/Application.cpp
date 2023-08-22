@@ -32,6 +32,11 @@ void Application::initVk() {
             vkEnumeratePhysicalDevices(_instance->getHandle(), &physical_device_count, physical_devices.data()));
 
     addDeviceExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+
+    VkPhysicalDeviceProperties deviceProperties;
+    vkGetPhysicalDeviceProperties(physical_devices[0], &deviceProperties);
+    LOGI("Device Name: {}", deviceProperties.deviceName)
+
     device = std::make_unique<Device>(physical_devices[0], surface, deviceExtensions);
 
     createAllocator();
@@ -41,11 +46,13 @@ void Application::initVk() {
 
     createRenderPass();
 
-    createCommandBuffer();
     // createPipeline();
     //  createDepthStencil();
 
     renderContext->createFrameBuffers(renderPipeline->getRenderPass());
+
+    createCommandBuffer();
+
     //  createFrameBuffers();
 
     VkFenceCreateInfo fenceInfo{};
@@ -184,6 +191,16 @@ void Application::createCommandBuffer() {
     }
     for (const auto &vkCommandBuffer: vkCommandBuffers)
         commandBuffers.emplace_back(std::move(std::make_unique<CommandBuffer>(vkCommandBuffer)));
+
+    // for (int i = 0; i < commandBuffers.size(); i++)
+    // {
+    //     auto &commandBuffer = *commandBuffers[i];
+    //     commandBuffer.beginRecord(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    //     commandBuffer.bindPipeline(graphicsPipeline->getHandle());
+    //     bindUniformBuffers(commandBuffer);
+    //     draw(commandBuffer, renderContext->getRenderFrame(i).getRenderTarget());
+    //     commandBuffer.endRecord();
+    // }
 }
 
 void Application::createRenderPass() {
@@ -214,13 +231,13 @@ void Application::createRenderPass() {
 
     VkAttachmentReference depthAttachmentRef{};
     depthAttachmentRef.attachment = 1;
-    depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     VkSubpassDescription subpass{};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorAttachmentRef;
-    //  subpass.pDepthStencilAttachment = &depthAttachmentRef;
+    subpass.pDepthStencilAttachment = &depthAttachmentRef;
     subpass.inputAttachmentCount = 0;
     subpass.pInputAttachments = nullptr;
     subpass.preserveAttachmentCount = 0;
@@ -296,47 +313,11 @@ void Application::update() {
     auto commandBuffer = renderContext->begin();
 }
 
-void Application::draw(CommandBuffer &commandBuffer, RenderTarget &renderTarget) {
+void Application::draw(CommandBuffer &commandBuffer, RenderFrame &renderFrame) {
+    auto &renderTarget = renderFrame.getRenderTarget();
     auto &views = renderTarget.getViews();
-
-    //    auto swapchain_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    //    {
-    //        ImageMemoryBarrier memory_barrier{};
-    //        memory_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    //        memory_barrier.newLayout = swapchain_layout;
-    //        memory_barrier.srcAccessMask = 0;
-    //        memory_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    //        memory_barrier.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    //        memory_barrier.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    //
-    //        for (auto &i: colorIdx) {
-    //            assert(i < views.size());
-    //            commandBuffer.imageMemoryBarrier(views[i], memory_barrier);
-    //            renderTarget.setLayout(i, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    //        }
-    //    }
-    //
-    //    {
-    //        ImageMemoryBarrier memory_barrier{};
-    //        memory_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    //        memory_barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    //        memory_barrier.srcAccessMask = 0;
-    //        memory_barrier.dstAccessMask =
-    //                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    //        memory_barrier.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    //        memory_barrier.dstStageMask =
-    //                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-    //
-    //        for (auto &i: depthIdx) {
-    //            assert(i < views.size());
-    //            commandBuffer.imageMemoryBarrier(views[i], memory_barrier);
-    //            renderTarget.setLayout(i, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-    //        }
-    //
-    //    }
-
     bindUniformBuffers(commandBuffer);
-    renderPipeline->draw(commandBuffer, renderTarget);
+    renderPipeline->draw(commandBuffer, renderFrame);
     commandBuffer.endRenderPass();
 
     //    {
@@ -364,18 +345,18 @@ void Application::drawFrame() {
 
     updateScene();
     updateGUI();
-    //    auto &commandBuffer = renderContext->begin();
+    // auto &commandBuffer = renderContext->begin();
     renderContext->beginFrame();
     auto &commandBuffer = *commandBuffers[renderContext->getActiveFrameIndex()];
-    commandBuffer.beginRecord(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-    commandBuffer.bindPipeline(graphicsPipeline->getHandle());
-    draw(commandBuffer, renderContext->getActiveRenderFrame().getRenderTarget());
-    commandBuffer.endRecord();
+    // commandBuffer.beginRecord(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    // commandBuffer.bindPipeline(graphicsPipeline->getHandle());
+    // draw(commandBuffer, renderContext->getActiveRenderFrame().getRenderTarget());
+    // commandBuffer.endRecord();
     renderContext->submit(commandBuffer, fence);
 }
 
 void Application::drawRenderPasses(CommandBuffer &buffer, RenderTarget &renderTarget) {
-    renderPipeline->draw(buffer, renderTarget);
+//    renderPipeline->draw(buffer, renderTarget);
 }
 
 void Application::initWindow(const char *name, int width, int height) {
@@ -422,7 +403,7 @@ Texture Application::loadTexture(const std::string &path) {
     texture.image = sg::SgImage::load(path);
     texture.image->createVkImage(*device);
 
-    Buffer imageBuffer = Buffer(*device, texture.image->getBufferSize() / 3 * 4,
+    Buffer imageBuffer = Buffer(*device, texture.image->getBufferSize(),
                                 VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                 VMA_MEMORY_USAGE_CPU_ONLY);
     imageBuffer.uploadData(static_cast<void *>(texture.image->getData().data()), texture.image->getBufferSize());

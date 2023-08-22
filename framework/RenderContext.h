@@ -24,8 +24,6 @@ public:
     // static RenderContext &getGlobalRenderContext() {
     //     return Singleton<RenderContext>::getInstance();
     // }
-
-public:
     VkFormat getSwapChainFormat() const;
 
     VkExtent2D getSwapChainExtent() const;
@@ -67,11 +65,14 @@ public:
     VkSemaphore submit(const Queue &queue, const std::vector<CommandBuffer *> &commandBuffers, VkSemaphore waitSem,
                        VkPipelineStageFlags waitPiplineStage);
 
+    void setActiveFrameIdx(int idx);
+
 private:
-    uint32_t activeFrameIndex{0};
     bool frameActive = false;
     VkSemaphore acquiredSem;
     bool prepared{false};
+    uint32_t activeFrameIndex{0};
+
 
     VkInstance instance;
     std::vector<const char *> instanceLayers;

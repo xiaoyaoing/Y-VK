@@ -10,5 +10,7 @@ layout(location = 1) in vec2 uv;
 layout(location = 0) out vec4 outColor;
 void main() {
     outColor = texture(texSampler, uv);
-    outColor = vec4(uv.x, uv.y, 0, 1);
+    //gl_FragDepth = 0.5;
+  //  gl_FragCoord.z = 0.5;
+   // outColor = vec4(0,  gl_FragDepth, 0, 1);
 }
