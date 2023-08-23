@@ -9,6 +9,8 @@
 #include <Shader.h>
 #include <Subpass.h>
 #include <API_VK.h>
+#include <Camera.h>
+
 
 void Application::initVk() {
     getRequiredInstanceExtensions();
@@ -72,73 +74,6 @@ void Application::getRequiredInstanceExtensions() {
     //  addInstanceExtension(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 }
 
-// void Application::createPipeline() {
-//     VkAttachmentDescription colorAttachment{};
-//     colorAttachment.format = renderContext->getSwapChainFormat();
-//     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-//
-//     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-//     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-//     colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-//     colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-//     colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-//     colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-//     //
-//     VkAttachmentDescription depthAttachment{};
-//     depthAttachment.format = findSupportedFormat(
-//             {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
-//             VK_IMAGE_TILING_OPTIMAL,
-//             VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
-//     depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-//     depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-//     depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-//     depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-//     depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-//     depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-//     depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-//
-//     VkAttachmentReference colorAttachmentRef{};
-//     colorAttachmentRef.attachment = 0;
-//     colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-//
-//     VkAttachmentReference depthAttachmentRef{};
-//     depthAttachmentRef.attachment = 1;
-//     depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-//
-//     VkSubpassDescription subpass{};
-//     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-//     subpass.colorAttachmentCount = 1;
-//     subpass.pColorAttachments = &colorAttachmentRef;
-//     subpass.pDepthStencilAttachment = &depthAttachmentRef;
-//
-//     std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
-//
-//     VkSubpassDependency dependency{};
-//     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-//     dependency.dstSubpass = 0;
-//     dependency.srcStageMask =
-//             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT & VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-//     dependency.srcAccessMask = 0;
-//     dependency.dstStageMask =
-//             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT & VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-//     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT & VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-//
-//     VkRenderPassCreateInfo renderPassInfo{};
-//     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-//     renderPassInfo.attachmentCount = attachments.size();
-//     renderPassInfo.pAttachments = attachments.data();
-//     renderPassInfo.subpassCount = 1;
-//     renderPassInfo.pSubpasses = &subpass;
-//     renderPassInfo.dependencyCount = 1;
-//     renderPassInfo.pDependencies = &dependency;
-//     VkRenderPass _pass;
-//     auto result = vkCreateRenderPass(device->getHandle(), &renderPassInfo, nullptr, &_pass);
-//     if (result != VK_SUCCESS) {
-//         RUN_TIME_ERROR("Failed to create render pass")
-//     }
-//     renderPass = std::make_shared<RenderPass>(_pass);
-// }
-
 void Application::updateScene() {
 }
 
@@ -146,30 +81,6 @@ void Application::updateGUI() {
 }
 
 void Application::createFrameBuffers() {
-
-    //    // DestroyFrameBuffers();
-    //    uint32_t width = _context->getSwapChainExtent().width;
-    //    uint32_t height = _context->getSwapChainExtent().height;
-    //
-    //    VkImageView attachments[2];
-    //    attachments[1] = _depthImageView->getHandle();
-    //
-    //    VkFramebufferCreateInfo frameBufferCreateInfo;
-    //    frameBufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    //    frameBufferCreateInfo.renderPass = _renderPass->getHandle();
-    //    frameBufferCreateInfo.attachmentCount = 2;
-    //    frameBufferCreateInfo.pAttachments = attachments;
-    //    frameBufferCreateInfo.width = width;
-    //    frameBufferCreateInfo.height = height;
-    //    frameBufferCreateInfo.layers = 1;
-    //
-    //    const std::vector<VkImageView> &backBufferViews = _context->getBackBufferViews();
-    //
-    //    _frameBuffers.resize(backBufferViews.size());
-    //    for (uint32_t i = 0; i < _frameBuffers.size(); ++i) {
-    //        attachments[0] = backBufferViews[i];
-    //        VK_CHECK_RESULT(vkCreateFramebuffer(device->getHandle(), &frameBufferCreateInfo, nullptr, &_frameBuffers[i]));
-    //    }
 }
 
 void Application::createCommandBuffer() {
@@ -191,16 +102,6 @@ void Application::createCommandBuffer() {
     }
     for (const auto &vkCommandBuffer: vkCommandBuffers)
         commandBuffers.emplace_back(std::move(std::make_unique<CommandBuffer>(vkCommandBuffer)));
-
-    // for (int i = 0; i < commandBuffers.size(); i++)
-    // {
-    //     auto &commandBuffer = *commandBuffers[i];
-    //     commandBuffer.beginRecord(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-    //     commandBuffer.bindPipeline(graphicsPipeline->getHandle());
-    //     bindUniformBuffers(commandBuffer);
-    //     draw(commandBuffer, renderContext->getRenderFrame(i).getRenderTarget());
-    //     commandBuffer.endRecord();
-    // }
 }
 
 void Application::createRenderPass() {
@@ -310,8 +211,28 @@ void Application::createAllocator() {
 }
 
 void Application::update() {
-    auto commandBuffer = renderContext->begin();
+    auto tStart = std::chrono::high_resolution_clock::now();
+
+    updateScene();
+    updateGUI();
+
+    drawFrame();
+
+    auto tEnd = std::chrono::high_resolution_clock::now();
+
+    auto tDiff = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
+
+    camera->update(tDiff / 1000.f);
 }
+
+// HWND Application::setupWindow(HINSTANCE hinstance, WNDPROC wndproc)
+// {
+//     return HWND();
+// }
+
+// void Application::handleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+// {
+// }
 
 void Application::draw(CommandBuffer &commandBuffer, RenderFrame &renderFrame) {
     auto &renderTarget = renderFrame.getRenderTarget();
@@ -342,32 +263,24 @@ void Application::createRenderContext() {
 void Application::drawFrame() {
     vkWaitForFences(device->getHandle(), 1, &fence, VK_TRUE, UINT64_MAX);
     vkResetFences(device->getHandle(), 1, &fence);
-
-    updateScene();
-    updateGUI();
-    // auto &commandBuffer = renderContext->begin();
     renderContext->beginFrame();
     auto &commandBuffer = *commandBuffers[renderContext->getActiveFrameIndex()];
-    // commandBuffer.beginRecord(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-    // commandBuffer.bindPipeline(graphicsPipeline->getHandle());
-    // draw(commandBuffer, renderContext->getActiveRenderFrame().getRenderTarget());
-    // commandBuffer.endRecord();
     renderContext->submit(commandBuffer, fence);
 }
 
 void Application::drawRenderPasses(CommandBuffer &buffer, RenderTarget &renderTarget) {
-//    renderPipeline->draw(buffer, renderTarget);
+    //    renderPipeline->draw(buffer, renderTarget);
 }
 
 void Application::initWindow(const char *name, int width, int height) {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-    window = std::make_unique<Window>(glfwCreateWindow(width, height, name, nullptr, nullptr));
-    glfwSetFramebufferSizeCallback(window->getHandle(), [](GLFWwindow *window, int width, int height) {
-        auto *app = reinterpret_cast<Application *>(glfwGetWindowUserPointer(window));
-        app->frameBufferResized = true;
-    });
+    window = std::make_unique<Window>(Window::WindowProp{"title"}, this);
+//    glfwSetFramebufferSizeCallback(window->getHandle(), [](GLFWwindow *window, int width, int height) {
+//        auto *app = reinterpret_cast<Application *>(glfwGetWindowUserPointer(window));
+//        app->frameBufferResized = true;
+//    });
 }
 
 void Application::initGUI() {
@@ -444,3 +357,65 @@ Texture Application::loadTexture(const std::string &path) {
 
     return texture;
 }
+
+void Application::inputEvent(const InputEvent &inputEvent) {
+    auto source = inputEvent.getSource();
+
+    if (source == EventSource::KeyBoard) {
+        const auto &keyEvent = static_cast<const KeyInputEvent &>(inputEvent);
+        auto action = keyEvent.getAction();
+        auto code = keyEvent.getCode();
+
+        switch (action) {
+
+            case KeyAction::Down:
+                switch (code) {
+                    case KeyCode::W:
+                        camera->keys.up = true;
+                        break;
+                    case KeyCode::S:
+                        camera->keys.down = true;
+                        break;
+                    case KeyCode::A:
+                        camera->keys.left = true;
+                        break;
+                    case KeyCode::D:
+                        camera->keys.right = true;
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case KeyAction::Up:
+                switch (code) {
+                    case KeyCode::W:
+                        camera->keys.up = false;
+                        break;
+                    case KeyCode::S:
+                        camera->keys.down = false;
+                        break;
+                    case KeyCode::A:
+                        camera->keys.left = false;
+                        break;
+                    case KeyCode::D:
+                        camera->keys.right = false;
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case KeyAction::Repeat:
+                break;
+            case KeyAction::Unknown:
+                break;
+        }
+    }
+}
+
+void Application::mainloop() {
+    while (!glfwWindowShouldClose(window->getHandle())) {
+        glfwPollEvents();
+        update();
+    }
+}
+

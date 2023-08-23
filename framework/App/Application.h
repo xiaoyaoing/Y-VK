@@ -21,20 +21,30 @@
 #include <Images/ImageView.h>
 #include <Images/Sampler.h>
 #include <Mesh.h>
+#include <Scene.h>
+#include <API_VK.h>
+#include <Camera.h>
+#include <InputEvent.h>
 
 #include <stb_image.h>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <spdlog/spdlog.h>
+#include <vk_mem_alloc.h>
+
 
 #include <vector>
 #include <optional>
 #include <chrono>
-#include "Scene.h"
-#include "vk_mem_alloc.h"
 
-#include "API_VK.h"
+
+
+// #ifdef _WIN32
+// #include <minwindef.h>
+// #include <WinUser.h>
+// #include <windef.h>
+// #endif
 
 class Application {
 
@@ -49,14 +59,16 @@ public:
 
     virtual void prepare();
 
-    virtual void mainloop() {
-        while (!glfwWindowShouldClose(window->getHandle())) {
-            glfwPollEvents();
-            drawFrame();
-        }
-    }
+    void inputEvent(const InputEvent &inputEvent);
+
+
+    void mainloop();
 
 protected:
+    // #ifdef _WIN32
+    //     HWND setupWindow(HINSTANCE hinstance, WNDPROC wndproc);
+    //     void handleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+    // #endif()
     //* create functions
     //    virtual std::unique_ptr<RenderTarget> createRenderTarget(Image &image) {}
 
@@ -142,6 +154,8 @@ protected:
     std::unique_ptr<DescriptorLayout> descriptorLayout;
 
     std::unique_ptr<Scene> scene;
+
+    std::unique_ptr<Camera> camera;
 
     VkFence fence{VK_NULL_HANDLE};
 #ifdef NOEBUG

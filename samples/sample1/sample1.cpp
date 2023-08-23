@@ -7,13 +7,14 @@
 #include "Common/VulkanInitializers.h"
 #include "FIleUtils.h"
 
-void sample1::prepareUniformBuffers() {
+
+void Example::prepareUniformBuffers() {
     uniform_buffers.scene = std::make_unique<Buffer>(*device, sizeof(ubo_vs), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                                      VMA_MEMORY_USAGE_CPU_TO_GPU);
     uniform_buffers.scene->uploadData(&ubo_vs, sizeof(ubo_vs));
 }
 
-void sample1::createDescriptorSet() {
+void Example::createDescriptorSet() {
     descriptorSet = std::make_unique<DescriptorSet>(*device, *descriptorPool, *descriptorLayout, 1);
     descriptorSet->updateBuffer({uniform_buffers.scene.get()}, 0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 
@@ -24,7 +25,7 @@ void sample1::createDescriptorSet() {
     descriptorSet->updateImage({imageDescriptorInfo}, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 }
 
-void sample1::createDescriptorPool() {
+void Example::createDescriptorPool() {
 
     std::vector<VkDescriptorPoolSize> poolSizes = {
             VkCommon::DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2),
@@ -33,7 +34,7 @@ void sample1::createDescriptorPool() {
     descriptorPool = std::make_unique<DescriptorPool>(*device, poolSizes, 2);
 }
 
-void sample1::updateUniformBuffers() {
+void Example::updateUniformBuffers() {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
     auto currentTime = std::chrono::high_resolution_clock::now();
@@ -42,11 +43,14 @@ void sample1::updateUniformBuffers() {
     ubo_vs.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo_vs.proj = glm::perspective(glm::radians(45.0f), 1.f, 0.1f, 10.0f);
     ubo_vs.proj[1][1] *= -1;
+
+    ubo_vs.view = camera->matrices.view;
+    ubo_vs.proj = camera->matrices.perspective;
     // ubo_vs.model = glm::mat4::Ide
     uniform_buffers.scene->uploadData(&ubo_vs, sizeof(ubo_vs));
 }
 
-void sample1::createGraphicsPipeline() {
+void Example::createGraphicsPipeline() {
 
     // todo handle shader complie
     auto vertexShader = Shader(*device, FileUtils::getShaderPath() + "vert.spv");
@@ -186,7 +190,7 @@ void sample1::createGraphicsPipeline() {
     graphicsPipeline = std::make_unique<Pipeline>(pipeline);
 }
 
-void sample1::prepare() {
+void Example::prepare() {
     Application::prepare();
 
     prepareUniformBuffers();
@@ -199,23 +203,27 @@ void sample1::prepare() {
     buildCommandBuffers();
 }
 
-
-void sample1::createDescriptorSetLayout() {
+void Example::createDescriptorSetLayout() {
     descriptorLayout = std::make_unique<DescriptorLayout>(*device);
     descriptorLayout->addBinding(VK_SHADER_STAGE_VERTEX_BIT, 0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0);
     descriptorLayout->addBinding(VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0);
     descriptorLayout->createLayout(0);
 }
 
-sample1::sample1(const char *name, int width, int height) : Application(name, width, height) {
+Example::Example() : Application("Drawing Triangle", 1024, 1024) {
+    camera = std::make_unique<Camera>();
+    camera->flipY = true;
+    camera->setPerspective(45.f, 1.f, 0.1f, 10.0f);
+    camera->setRotation(glm::vec3(0));
+    camera->setTranslation(glm::vec3(0.f, 0.f, -2.f));
 }
 
-void sample1::bindUniformBuffers(CommandBuffer &commandBuffer) {
+void Example::bindUniformBuffers(CommandBuffer &commandBuffer) {
     commandBuffer.bindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayOut, 0, {descriptorSet.get()},
                                      {});
 }
 
-void sample1::buildCommandBuffers() {
+void Example::buildCommandBuffers() {
     for (int i = commandBuffers.size() - 1; i >= 0; i--) {
         auto &commandBuffer = *commandBuffers[i];
         commandBuffer.beginRecord(0);
@@ -226,3 +234,28 @@ void sample1::buildCommandBuffers() {
         commandBuffer.endRecord();
     }
 }
+
+int main() {
+    Example *example = new Example();
+    example->prepare();
+    example->mainloop();
+    return 0;
+}
+
+// Example *example{nullptr};
+// LRESULT __stdcall WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+// {
+//     if (example)
+//     {
+//         example->handleMessages(hWnd, uMsg, wParam, lParam);
+//     }
+//     return (DefWindowProcA(hWnd, uMsg, wParam, lParam));
+// }
+// int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int)
+// {
+//     example = new Example();
+//     example->prepare();
+//     example->mainloop();
+//     delete example();
+//     return 0;
+// }

@@ -5,12 +5,12 @@
 
 #include "App/Application.h"
 
-class sample1 : public Application {
+class Example : public Application {
 
 public:
     void prepare() override;
 
-    sample1(const char *name, int width, int height);
+    Example();
 
 protected:
     struct UBOVS {
@@ -50,4 +50,5 @@ protected:
     void updateScene() override {
         updateUniformBuffers();
     }
+
 };

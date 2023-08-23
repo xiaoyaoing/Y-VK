@@ -1,58 +1,52 @@
 
-//Created by pc on 2023/8/12.
+// Created by pc on 2023/8/12.
 
 #include "sample1.h"
-#include <direct.h>
 
-int main() {
-    sample1 app("Drawing A triangle", 1024, 1024);
-    app.prepare();
-    app.mainloop();
-}
 //
-//#define GLFW_INCLUDE_VULKAN
+// #define GLFW_INCLUDE_VULKAN
 //
-//#include <GLFW/glfw3.h>
+// #include <GLFW/glfw3.h>
 //
-//#define GLM_FORCE_RADIANS
+// #define GLM_FORCE_RADIANS
 //
-//#include <glm/glm.hpp>
-//#include <glm/gtc/matrix_transform.hpp>
+// #include <glm/glm.hpp>
+// #include <glm/gtc/matrix_transform.hpp>
 //
-//#include <iostream>
-//#include <fstream>
-//#include <stdexcept>
-//#include <algorithm>
-//#include <chrono>
-//#include <vector>
-//#include <cstring>
-//#include <cstdlib>
-//#include <cstdint>
-//#include <limits>
-//#include <array>
-//#include <optional>
-//#include <set>
+// #include <iostream>
+// #include <fstream>
+// #include <stdexcept>
+// #include <algorithm>
+// #include <chrono>
+// #include <vector>
+// #include <cstring>
+// #include <cstdlib>
+// #include <cstdint>
+// #include <limits>
+// #include <array>
+// #include <optional>
+// #include <set>
 //
-//const uint32_t WIDTH = 800;
-//const uint32_t HEIGHT = 600;
+// const uint32_t WIDTH = 800;
+// const uint32_t HEIGHT = 600;
 //
-//const int MAX_FRAMES_IN_FLIGHT = 2;
+// const int MAX_FRAMES_IN_FLIGHT = 2;
 //
-//const std::vector<const char *> validationLayers = {
+// const std::vector<const char *> validationLayers = {
 //        "VK_LAYER_KHRONOS_validation"
 //};
 //
-//const std::vector<const char *> deviceExtensions = {
+// const std::vector<const char *> deviceExtensions = {
 //        VK_KHR_SWAPCHAIN_EXTENSION_NAME
 //};
 //
-//#ifdef NDEBUG
-//const bool enableValidationLayers = false;
-//#else
-//const bool enableValidationLayers = true;
-//#endif
+// #ifdef NDEBUG
+// const bool enableValidationLayers = false;
+// #else
+// const bool enableValidationLayers = true;
+// #endif
 //
-//VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
+// VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
 //                                      const VkAllocationCallbacks *pAllocator,
 //                                      VkDebugUtilsMessengerEXT *pDebugMessenger) {
 //    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
@@ -63,7 +57,7 @@ int main() {
 //    }
 //}
 //
-//void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
+// void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
 //                                   const VkAllocationCallbacks *pAllocator) {
 //    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance,
 //                                                                            "vkDestroyDebugUtilsMessengerEXT");
@@ -72,7 +66,7 @@ int main() {
 //    }
 //}
 //
-//struct QueueFamilyIndices {
+// struct QueueFamilyIndices {
 //    std::optional<uint32_t> graphicsFamily;
 //    std::optional<uint32_t> presentFamily;
 //
@@ -81,13 +75,13 @@ int main() {
 //    }
 //};
 //
-//struct SwapChainSupportDetails {
+// struct SwapChainSupportDetails {
 //    VkSurfaceCapabilitiesKHR capabilities;
 //    std::vector<VkSurfaceFormatKHR> formats;
 //    std::vector<VkPresentModeKHR> presentModes;
 //};
 //
-//struct Vertex {
+// struct Vertex {
 //    glm::vec2 pos;
 //    glm::vec3 color;
 //
@@ -117,25 +111,25 @@ int main() {
 //    }
 //};
 //
-//struct UniformBufferObject {
+// struct UniformBufferObject {
 //    alignas(16) glm::mat4 model;
 //    alignas(16) glm::mat4 view;
 //    alignas(16) glm::mat4 proj;
 //};
 //
-//const std::vector<Vertex> vertices = {
+// const std::vector<Vertex> vertices = {
 //        {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
 //        {{0.5f,  -0.5f}, {0.0f, 1.0f, 0.0f}},
 //        {{0.5f,  0.5f},  {0.0f, 0.0f, 1.0f}},
 //        {{-0.5f, 0.5f},  {1.0f, 1.0f, 1.0f}}
 //};
 //
-//const std::vector<uint16_t> indices = {
+// const std::vector<uint16_t> indices = {
 //        0, 1, 2, 2, 3, 0
 //};
 //
-//class HelloTriangleApplication {
-//public:
+// class HelloTriangleApplication {
+// public:
 //    void run() {
 //        initWindow();
 //        initVulkan();
@@ -143,7 +137,7 @@ int main() {
 //        cleanup();
 //    }
 //
-//private:
+// private:
 //    GLFWwindow *window;
 //
 //    VkInstance instance;
@@ -1299,7 +1293,7 @@ int main() {
 //    }
 //};
 //
-//int main() {
+// int main() {
 //    HelloTriangleApplication app;
 //
 //    try {
