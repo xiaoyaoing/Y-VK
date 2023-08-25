@@ -25,6 +25,7 @@
 #include <API_VK.h>
 #include <Camera.h>
 #include <InputEvent.h>
+#include <Gui.h>
 
 #include <stb_image.h>
 #include <glm/ext/matrix_clip_space.hpp>
@@ -33,12 +34,9 @@
 #include <spdlog/spdlog.h>
 #include <vk_mem_alloc.h>
 
-
 #include <vector>
 #include <optional>
 #include <chrono>
-
-
 
 // #ifdef _WIN32
 // #include <minwindef.h>
@@ -61,8 +59,9 @@ public:
 
     void inputEvent(const InputEvent &inputEvent);
 
-
     void mainloop();
+
+    Texture loadTexture(const std::string &path);
 
 protected:
     // #ifdef _WIN32
@@ -115,6 +114,8 @@ protected:
 
     virtual void updateGUI();
 
+    virtual void buildCommandBuffers() = 0;
+
 protected:
     VmaAllocator _allocator{};
     std::unique_ptr<Instance> _instance;
@@ -157,6 +158,11 @@ protected:
 
     std::unique_ptr<Camera> camera;
 
+    std::unique_ptr<Gui> gui;
+
+    VkPipelineCache pipelineCache{VK_NULL_HANDLE};
+
+
     VkFence fence{VK_NULL_HANDLE};
 #ifdef NOEBUG
     const bool enableValidationLayers = false;
@@ -166,5 +172,4 @@ protected:
 
     void createRenderPipeline();
 
-    Texture loadTexture(const std::string &path);
 };

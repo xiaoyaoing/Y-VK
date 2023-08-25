@@ -7,6 +7,7 @@
 #include "Images/ImageView.h"
 #include "Device.h"
 #include "Scene/Images/StbImage.h"
+#include "Scene/Images/TtfImage.h"
 #include <FIleUtils.h>
 
 namespace sg {
@@ -14,6 +15,8 @@ namespace sg {
         auto ext = FileUtils::getFileExt(path);
         if (ext == "jpg" || ext == "png") {
             return std::make_unique<StbImage>(path);
+        } else if (ext == "ttf") {
+            return std::make_unique<TtfImage>(path);
         }
         return std::unique_ptr<SgImage>();
     }

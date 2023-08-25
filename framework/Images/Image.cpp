@@ -64,7 +64,6 @@ Image::Image(Device &device, const VkExtent3D &extent, VkFormat format, VkImageU
         usage{image_usage},
         array_layer_count{array_layers},
         tiling{tiling} {
-    auto t = &device;
 
     assert(mip_levels > 0 && "Image should have at least one level");
     assert(array_layers > 0 && "Image should have at least one layer");

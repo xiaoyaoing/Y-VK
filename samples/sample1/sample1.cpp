@@ -20,7 +20,7 @@ void Example::createDescriptorSet() {
 
     textures.texture1 = loadTexture(FileUtils::getResourcePath() + "Window.png");
 
-    auto imageDescriptorInfo = VkCommon::DescriptorImageInfo(textures.texture1);
+    auto imageDescriptorInfo = vkCommon::initializers::descriptorImageInfo(textures.texture1);
 
     descriptorSet->updateImage({imageDescriptorInfo}, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 }
@@ -28,8 +28,8 @@ void Example::createDescriptorSet() {
 void Example::createDescriptorPool() {
 
     std::vector<VkDescriptorPoolSize> poolSizes = {
-            VkCommon::DescriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2),
-            VkCommon::DescriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2)};
+            vkCommon::initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2),
+            vkCommon::initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2)};
 
     descriptorPool = std::make_unique<DescriptorPool>(*device, poolSizes, 2);
 }

@@ -12,13 +12,14 @@ class Buffer {
     VmaAllocation _bufferAllocation{nullptr};
     Device &device;
 
-
 public:
+
+    ~Buffer();
 
     explicit Buffer(Device &device, uint64_t bufferSize, VkBufferUsageFlags bufferUsage,
                     VmaMemoryUsage memoryUsage);
 
-    void uploadData(const void *srcData, uint64_t size);
+    void uploadData(const void *srcData, uint64_t size, uint64_t offset = 0);
 
     void cleanup();
 

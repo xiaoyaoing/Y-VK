@@ -33,6 +33,8 @@ public:
 
     VkResult present(const VkPresentInfoKHR &presentInfo) const;
 
+    void wait();
+
 protected:
     uint32_t _familyIndex, _queueIndex;
     bool canPresent;

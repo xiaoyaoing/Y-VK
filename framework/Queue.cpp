@@ -41,4 +41,8 @@ VkResult Queue::present(const VkPresentInfoKHR &presentInfo) const {
     return vkQueuePresentKHR(_queue, &presentInfo);
 }
 
+void Queue::wait() {
+    vkQueueWaitIdle(_queue);
+}
+
 

@@ -45,7 +45,7 @@ protected:
 
     void bindUniformBuffers(CommandBuffer &commandBuffer) override;
 
-    void buildCommandBuffers();
+    void buildCommandBuffers() override;
 
     void updateScene() override {
         updateUniformBuffers();

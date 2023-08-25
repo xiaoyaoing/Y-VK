@@ -5,6 +5,7 @@
 #include "Instance.h"
 #include "Scene.h"
 #include "Common/VulkanInitializers.h"
+#include "Gui.h"
 #include <RenderTarget.h>
 #include <Shader.h>
 #include <Subpass.h>
@@ -42,7 +43,7 @@ void Application::initVk() {
     device = std::make_unique<Device>(physical_devices[0], surface, deviceExtensions);
 
     createAllocator();
-
+    //createPipelineCache();
     createRenderContext();
     createRenderPipeline();
 
@@ -78,6 +79,40 @@ void Application::updateScene() {
 }
 
 void Application::updateGUI() {
+    ImGuiIO &io = ImGui::GetIO();
+
+    io.DisplaySize = ImVec2((float) 1024, (float) 1024);
+    io.DeltaTime = 0;
+//
+//    io.MousePos = ImVec2(mousePos.x, mousePos.y);
+//    io.MouseDown[0] = mouseButtons.left && UIOverlay.visible;
+//    io.MouseDown[1] = mouseButtons.right && UIOverlay.visible;
+//    io.MouseDown[2] = mouseButtons.middle && UIOverlay.visible;
+
+    ImGui::NewFrame();
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
+//    ImGui::SetNextWindowPos(ImVec2(10 * UIOverlay.scale, 10 * UIOverlay.scale));
+//    ImGui::SetNextWindowSize(ImVec2(0, 0), ImGuiSetCond_FirstUseEver);
+    ImGui::Begin("Vulkan Example", nullptr,
+                 ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+//    ImGui::TextUnformatted(title.c_str());
+//    ImGui::TextUnformatted(deviceProperties.deviceName);
+//    ImGui::Text("%.2f ms/frame (%.1d fps)", (1000.0f / lastFPS), lastFPS);
+
+
+//    ImGui::PushItemWidth(110.0f * UIOverlay.scale);
+//    OnUpdateUIOverlay(&UIOverlay);
+//    ImGui::PopItemWidth();
+
+    ImGui::End();
+    ImGui::PopStyleVar();
+    ImGui::Render();
+
+    if (gui->update() || gui->updated) {
+        buildCommandBuffers();
+        gui->updated = false;
+    }
 }
 
 void Application::createFrameBuffers() {
@@ -239,6 +274,7 @@ void Application::draw(CommandBuffer &commandBuffer, RenderFrame &renderFrame) {
     auto &views = renderTarget.getViews();
     bindUniformBuffers(commandBuffer);
     renderPipeline->draw(commandBuffer, renderFrame);
+    gui->draw(commandBuffer.getHandle());
     commandBuffer.endRenderPass();
 
     //    {
@@ -284,6 +320,9 @@ void Application::initWindow(const char *name, int width, int height) {
 }
 
 void Application::initGUI() {
+    gui = std::make_unique<Gui>(*device);
+    gui->prepare(pipelineCache, renderPipeline->getRenderPass().getHandle());
+    gui->prepareResoucrces(this);
 }
 
 void Application::createCommandPool() {
@@ -294,8 +333,8 @@ VkPhysicalDevice Application::createPhysicalDevice() {
 }
 
 void Application::prepare() {
-    initGUI();
     initVk();
+    initGUI();
 }
 
 Application::Application(const char *name, int width, int height) {
@@ -334,10 +373,10 @@ Texture Application::loadTexture(const std::string &path) {
 
     auto commandBuffer = commandPool->allocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
-    VkCommon::setImageLayout(commandBuffer.getHandle(), texture.image->getVkImage().getHandle(),
+    vkCommon::setImageLayout(commandBuffer.getHandle(), texture.image->getVkImage().getHandle(),
                              VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     commandBuffer.copyBufferToImage(imageBuffer, texture.image->getVkImage(), {imageCopy});
-    VkCommon::setImageLayout(commandBuffer.getHandle(), texture.image->getVkImage().getHandle(),
+    vkCommon::setImageLayout(commandBuffer.getHandle(), texture.image->getVkImage().getHandle(),
                              VK_FORMAT_R8G8B8A8_SRGB,
                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
@@ -352,9 +391,8 @@ Texture Application::loadTexture(const std::string &path) {
 
     submitInfo.pCommandBuffers = &vkCmdBuffer;
     queue.submit({submitInfo}, VK_NULL_HANDLE);
-
     texture.sampler = std::make_unique<Sampler>(*device, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, 1);
-
+    queue.wait();
     return texture;
 }
 

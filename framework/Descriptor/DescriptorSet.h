@@ -1,5 +1,7 @@
 #include "Vulkan.h"
 
+#pragma once
+
 class Device;
 
 class DescriptorPool;
