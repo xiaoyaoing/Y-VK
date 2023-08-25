@@ -41,9 +41,9 @@ void Gui::prepare(const VkPipelineCache pipelineCache, const VkRenderPass render
     descriptorLayout->createLayout(0);
 
 
-    Shader vertexShader(device, FileUtils::getShaderPath() + "gui.vert.spv"), fragShader(device,
-                                                                                         FileUtils::getShaderPath() +
-                                                                                         "gui.frag.spv");
+    Shader vertexShader(device, FileUtils::getShaderPath() + "gui.vert"), fragShader(device,
+                                                                                     FileUtils::getShaderPath() +
+                                                                                     "gui.frag");
     shaders = {vertexShader.PipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT),
                fragShader.PipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT)};
 
@@ -156,7 +156,7 @@ bool Gui::update() {
     // Note: Alignment is done inside buffer creation
     VkDeviceSize vertexBufferSize = imDrawData->TotalVtxCount * sizeof(ImDrawVert);
     VkDeviceSize indexBufferSize = imDrawData->TotalIdxCount * sizeof(ImDrawIdx);
-    
+
     if ((vertexBufferSize == 0) || (indexBufferSize == 0)) {
         return false;
     }

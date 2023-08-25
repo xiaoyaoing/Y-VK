@@ -21,8 +21,15 @@ target_link_libraries(${target_name} PUBLIC
         stb_image
         glm
         imgui
+
         glslang
         glslang-default-resource-limits
+        SPIRV
+        spirv-cross-core
+        spirv-cross-cpp
+        spirv-cross-glsl
+        spirv-cross-reflect
+        
         Vulkan::Vulkan)
 
 message(STATUS ${Vulkan_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})

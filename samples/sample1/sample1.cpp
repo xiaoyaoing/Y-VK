@@ -53,8 +53,8 @@ void Example::updateUniformBuffers() {
 void Example::createGraphicsPipeline() {
 
     // todo handle shader complie
-    auto vertexShader = Shader(*device, FileUtils::getShaderPath() + "vert.spv");
-    auto fragShader = Shader(*device, FileUtils::getShaderPath() + "frag.spv");
+    auto vertexShader = Shader(*device, FileUtils::getShaderPath() + "base.vert");
+    auto fragShader = Shader(*device, FileUtils::getShaderPath() + "base.frag");
 
     VkPipelineShaderStageCreateInfo shaderStages[] = {
             vertexShader.PipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT),
