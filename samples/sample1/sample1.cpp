@@ -235,6 +235,12 @@ void Example::buildCommandBuffers() {
     }
 }
 
+void Example::onUpdateGUI() {
+    gui->text("Hello");
+    gui->text("Hello IMGUI");
+    gui->text("Hello imgui");
+}
+
 int main() {
     Example *example = new Example();
     example->prepare();

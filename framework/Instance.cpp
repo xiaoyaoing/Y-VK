@@ -78,12 +78,14 @@ Instance::Instance(const std::string &application_name,
             }
         }
     }
-    VkInstanceCreateInfo instanceInfo;
+    VkInstanceCreateInfo instanceInfo{};
     instanceInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     instanceInfo.pApplicationInfo = &appInfo;
     instanceInfo.enabledExtensionCount = enabledExtensions.size();
     instanceInfo.ppEnabledExtensionNames = enabledExtensions.data();
     instanceInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+    instanceInfo.enabledLayerCount = 0;
+    instanceInfo.pNext = nullptr;
 
     if (enableValidationLayers) {
         uint32_t layerCount;
@@ -91,24 +93,24 @@ Instance::Instance(const std::string &application_name,
         std::vector<VkLayerProperties> availableLayers(layerCount);
         vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
+        VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo{
+                VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT};
+        fillDebugMessengerInfo(debugMessengerCreateInfo);
         if (!checkLayers(required_validation_layers, availableLayers))
             RUN_TIME_ERROR("Required layers are missing")
         else {
             instanceInfo.enabledLayerCount = required_validation_layers.size();
             instanceInfo.ppEnabledLayerNames = required_validation_layers.data();
-
-            VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo{};
-            fillDebugMessengerInfo(debugMessengerCreateInfo);
             instanceInfo.pNext = &debugMessengerCreateInfo;
         }
     } else {
         instanceInfo.enabledLayerCount = 0;
     }
+
+
     VK_CHECK_RESULT(vkCreateInstance(&instanceInfo, nullptr, &_instance));
-
-    VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo{};
-    fillDebugMessengerInfo(debugMessengerCreateInfo);
-
+//    while (true);
+//    exit(-1);
     LOGI("Instance Created");
     // vkCreateDebugUtilsMessengerEXT(_instance,&debugMessengerCreateInfo, nullptr,&_debugMessenger);
 }

@@ -17,7 +17,7 @@ public:
 
 protected:
 //    std::vector<std::string> getAvailableExtensions();
-    std::vector<const char *> enabledExtensions;
+    std::vector<const char *> enabledExtensions{};
 
     VkInstance _instance;
     VkDebugUtilsMessengerEXT _debugMessenger;

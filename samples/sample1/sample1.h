@@ -51,4 +51,6 @@ protected:
         updateUniformBuffers();
     }
 
+    void onUpdateGUI() override;
+
 };

@@ -72,7 +72,7 @@ void Application::getRequiredInstanceExtensions() {
     }
     if (enableValidationLayers)
         addInstanceExtension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    //  addInstanceExtension(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+    addInstanceExtension(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 }
 
 void Application::updateScene() {
@@ -104,7 +104,7 @@ void Application::updateGUI() {
 //    ImGui::PushItemWidth(110.0f * UIOverlay.scale);
 //    OnUpdateUIOverlay(&UIOverlay);
 //    ImGui::PopItemWidth();
-
+    onUpdateGUI();
     ImGui::End();
     ImGui::PopStyleVar();
     ImGui::Render();
@@ -274,7 +274,13 @@ void Application::draw(CommandBuffer &commandBuffer, RenderFrame &renderFrame) {
     auto &views = renderTarget.getViews();
     bindUniformBuffers(commandBuffer);
     renderPipeline->draw(commandBuffer, renderFrame);
+
+    const VkViewport viewport = vkCommon::initializers::viewport((float) width, (float) height, 0.0f, 1.0f);
+    const VkRect2D scissor = vkCommon::initializers::rect2D(width, height, 0, 0);
+    vkCmdSetViewport(commandBuffer.getHandle(), 0, 1, &viewport);
+    vkCmdSetScissor(commandBuffer.getHandle(), 0, 1, &scissor);
     gui->draw(commandBuffer.getHandle());
+
     commandBuffer.endRenderPass();
 
     //    {
@@ -337,7 +343,7 @@ void Application::prepare() {
     initGUI();
 }
 
-Application::Application(const char *name, int width, int height) {
+Application::Application(const char *name, int width, int height) : width(width), height(height) {
     initWindow(name, width, height);
 }
 
@@ -448,6 +454,91 @@ void Application::inputEvent(const InputEvent &inputEvent) {
                 break;
         }
     }
+    if (source == EventSource::Mouse) {
+        const auto &mouseEvent = static_cast<const MouseButtonInputEvent &>(inputEvent);
+        handleMouseMove(mouseEvent.getPosX(), mouseEvent.getPosY());
+        auto action = mouseEvent.getAction();
+        auto button = mouseEvent.getButton();
+        switch (action) {
+            case MouseAction::Down:
+                switch (button) {
+                    case MouseButton::Left:
+                        mouseButtons.left = true;
+                        break;
+                    case MouseButton::Right:
+                        mouseButtons.right = true;
+                        break;
+                    case MouseButton::Middle:
+                        mouseButtons.middle = true;
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case MouseAction::Up:
+                switch (button) {
+                    case MouseButton::Left:
+                        mouseButtons.left = false;
+                        break;
+                    case MouseButton::Right:
+                        mouseButtons.right = false;
+                        break;
+                    case MouseButton::Middle:
+                        mouseButtons.middle = false;
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case MouseAction::Move:
+                break;
+            case MouseAction::Unknown:
+                break;
+        }
+    } else if (source == EventSource::TouchScreen) {
+        const auto &touchEvent = static_cast<const TouchInputEvent &>(inputEvent);
+
+        if (touchEvent.getAction() == TouchAction::Down) {
+            //   touchDown = true;
+            touchPos.x = static_cast<int32_t>(touchEvent.getPosX());
+            touchPos.y = static_cast<int32_t>(touchEvent.getPosY());
+            mousePos.x = touchEvent.getPosX();
+            mousePos.y = touchEvent.getPosY();
+            mouseButtons.left = true;
+        } else if (touchEvent.getAction() == TouchAction::Up) {
+            touchPos.x = static_cast<int32_t>(touchEvent.getPosX());
+            touchPos.y = static_cast<int32_t>(touchEvent.getPosY());
+            //   touchTimer = 0.0;
+            //   touchDown = false;
+            camera->keys.up = false;
+            mouseButtons.left = false;
+        } else if (touchEvent.getAction() == TouchAction::Move) {
+            bool handled = false;
+            if (gui) {
+                ImGuiIO &io = ImGui::GetIO();
+                handled = io.WantCaptureMouse;
+            }
+            if (!handled) {
+                int32_t eventX = static_cast<int32_t>(touchEvent.getPosX());
+                int32_t eventY = static_cast<int32_t>(touchEvent.getPosY());
+
+                float deltaX = static_cast<float>(touchPos.y - eventY) * rotationSpeed * 0.5f;
+                float deltaY = static_cast<float>(touchPos.x - eventX) * rotationSpeed * 0.5f;
+
+                camera->rotate(glm::vec3(deltaX, 0.0f, 0.0f));
+                camera->rotate(glm::vec3(0.0f, -deltaY, 0.0f));
+
+                rotation.x += deltaX;
+                rotation.y -= deltaY;
+
+                // viewChanged();
+
+                touchPos.x = eventX;
+                touchPos.y = eventY;
+            }
+        }
+    }
+
 }
 
 void Application::mainloop() {
@@ -455,5 +546,40 @@ void Application::mainloop() {
         glfwPollEvents();
         update();
     }
+}
+
+void Application::handleMouseMove(float x, float y) {
+    bool handled = false;
+    float dx = static_cast<int32_t>(mousePos.x) - x;
+    float dy = static_cast<int32_t>(mousePos.y) - y;
+    onMouseMove();
+
+
+    if (mouseButtons.left) {
+        rotation.x += dy * 1.25f * rotationSpeed;
+        rotation.y -= dx * 1.25f * rotationSpeed;
+        camera->rotate(glm::vec3(dy * camera->rotationSpeed, -dx * camera->rotationSpeed, 0.0f));
+        viewUpdated = true;
+    }
+    if (mouseButtons.right) {
+        //   zoom += dy * .005f * zoom_speed;
+        camera->translate(glm::vec3(-0.0f, 0.0f, dy * .005f));
+        viewUpdated = true;
+    }
+    if (mouseButtons.middle) {
+        //   camera_pos.x -= dx * 0.01f;
+        //     camera_pos.y -= dy * 0.01f;
+        camera->translate(glm::vec3(-dx * 0.01f, -dy * 0.01f, 0.0f));
+        viewUpdated = true;
+    }
+    mousePos = glm::vec2(static_cast<float>(x), static_cast<float>(y));
+}
+
+void Application::onUpdateGUI() {
+
+}
+
+void Application::onMouseMove() {
+
 }
 

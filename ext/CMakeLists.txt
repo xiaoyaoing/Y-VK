@@ -78,3 +78,10 @@ set_target_properties(spirv-cross-msl PROPERTIES FOLDER "EXT" POSITION_INDEPENDE
 set_target_properties(spirv-cross-reflect PROPERTIES FOLDER "EXT" POSITION_INDEPENDENT_CODE ON)
 set_target_properties(spirv-cross-util PROPERTIES FOLDER "EXT" POSITION_INDEPENDENT_CODE ON)
 
+
+#gltf loader
+#add_subdirectory(tinygltf)
+
+#add_library(tinygltf INTERFACE)
+#target_sources(tinygltf INTERFACE tinygltf/tiny_gltf.h)
+#target_include_directories(stb_image INTERFACE stb_image)

@@ -49,7 +49,10 @@ void Gui::prepare(const VkPipelineCache pipelineCache, const VkRenderPass render
 
     auto pushConstantRange = vkCommon::initializers::pushConstantRange(VK_SHADER_STAGE_VERTEX_BIT,
                                                                        sizeof(PushConstBlock), 0);
-    auto pipelineLayoutCreateInfo = vkCommon::initializers::pipelineLayoutCreateInfo(descriptorLayout->getHandle());
+
+    std::vector<VkDescriptorSetLayout> layout{descriptorLayout->getHandle()};
+    auto pipelineLayoutCreateInfo = vkCommon::initializers::pipelineLayoutCreateInfo(layout);
+    
     pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
     pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
     VK_CHECK_RESULT(vkCreatePipelineLayout(device.getHandle(), &pipelineLayoutCreateInfo, nullptr, &pipelineLayout))
@@ -224,5 +227,18 @@ void Gui::draw(VkCommandBuffer commandBuffer) {
         }
         vertexOffset += cmd_list->VtxBuffer.Size;
     }
+}
+
+bool Gui::checkBox(const char *caption, bool *value) {
+    bool res = ImGui::Checkbox(caption, value);
+    if (res) { updated = true; };
+    return res;
+}
+
+void Gui::text(const char *formatstr, ...) {
+    va_list args;
+            va_start(args, formatstr);
+    ImGui::TextV(formatstr, args);
+            va_end(args);
 }
 

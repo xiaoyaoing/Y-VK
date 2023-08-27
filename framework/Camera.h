@@ -46,10 +46,15 @@ public:
 
     void setTranslation(glm::vec3 translation);
 
+    void translate(const glm::vec3 &delta);
+
+    void rotate(const glm::vec3 &delta);
+
 //    glm::mat4 getViewMatrix();
 //
 //    glm::mat4 getPerspectiveMatrix();
 
+    float rotationSpeed{1};
 private:
     Mode mode{FIRST_PERSON};
 
@@ -65,4 +70,5 @@ private:
     float moveSpeed{1};
 
     float zNear{0.01}, zFar{10}, fov{45}, aspect{1};
+
 };

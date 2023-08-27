@@ -30,6 +30,10 @@ public:
 
     void draw(VkCommandBuffer commandBuffer);
 
+    bool checkBox(const char *caption, bool *value);
+
+    void text(const char *formatstr, ...);
+
 //是否有新的数据 需要更新
     bool updated{false};
 protected:
@@ -63,9 +67,8 @@ protected:
         glm::vec2 translate;
     } pushConstBlock;
 
-//    std::unique_ptr<Image> fontImage;
-//    std::unique_ptr<ImageView> fontImageView;
 
     Texture fontTexture;
     uint32 subPass{0};
+
 };

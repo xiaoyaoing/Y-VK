@@ -1,13 +1,14 @@
 #pragma once
-enum class EventSource
-{
+
+#include <cstdio>
+
+enum class EventSource {
     KeyBoard,
     Mouse,
     TouchScreen
 };
 
-class InputEvent
-{
+class InputEvent {
 public:
     EventSource getSource() const;
 
@@ -18,8 +19,7 @@ private:
     EventSource source;
 };
 
-enum class KeyCode
-{
+enum class KeyCode {
     Unknown,
     Space,
     Apostrophe, /* ' */
@@ -126,16 +126,14 @@ enum class KeyCode
     RightAlt
 };
 
-enum class KeyAction
-{
+enum class KeyAction {
     Down,
     Up,
     Repeat,
     Unknown
 };
 
-class KeyInputEvent : public InputEvent
-{
+class KeyInputEvent : public InputEvent {
 public:
     KeyInputEvent(KeyAction action, KeyCode code);
 
@@ -146,4 +144,83 @@ public:
 private:
     KeyAction action;
     KeyCode code;
+};
+
+enum class MouseButton {
+    Left,
+    Right,
+    Middle,
+    Back,
+    Forward,
+    Unknown
+};
+
+enum class MouseAction {
+    Down,
+    Up,
+    Move,
+    Unknown
+};
+
+class MouseButtonInputEvent : public InputEvent {
+public:
+
+    MouseButtonInputEvent(MouseButton button, MouseAction action, float posX, float posY);
+
+    MouseButton getButton() const;
+
+
+    MouseAction getAction() const;
+
+
+    float getPosX() const;
+
+
+    float getPosY() const;
+
+
+private:
+    MouseButton button;
+
+    MouseAction action;
+
+    float posX;
+
+    float posY;
+};
+
+enum class TouchAction {
+    Down,
+    Up,
+    Move,
+    Cancel,
+    PointerDown,
+    PointerUp,
+    Unknown
+};
+
+class TouchInputEvent : public InputEvent {
+public:
+    TouchInputEvent(int pointer_id, size_t pointer_count, TouchAction action, float pos_x, float pos_y);
+
+    TouchAction getAction() const;
+
+    int getPointerId() const;
+
+    const size_t &getTouchPoints() const;
+
+    float getPosX() const;
+
+    float getPosY() const;
+
+private:
+    TouchAction action;
+
+    int pointerId;
+
+    size_t touchPoints;
+
+    float posX;
+
+    float posY;
 };

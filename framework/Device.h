@@ -37,6 +37,7 @@ public:
         allocator = _allocator;
     }
 
+
 protected:
     VmaAllocator allocator;
     VkPhysicalDevice _physicalDevice;
@@ -44,6 +45,8 @@ protected:
     std::vector<std::vector<std::unique_ptr<Queue>>> queues{};
 
     std::vector<VkExtensionProperties> deviceExtensions{};
+
+    // std::unique_ptr<CommandPool> commandPool;
 
     std::vector<const char *> enabled_extensions{};
 

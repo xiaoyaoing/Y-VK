@@ -112,7 +112,11 @@ protected:
 
     virtual void updateScene();
 
-    virtual void updateGUI();
+    void updateGUI();
+
+    virtual void onUpdateGUI();
+
+    virtual void onMouseMove();
 
     virtual void buildCommandBuffers() = 0;
 
@@ -160,6 +164,29 @@ protected:
 
     std::unique_ptr<Gui> gui;
 
+
+    int width, height;
+
+    //Camera related  variable begin
+    struct {
+        bool left{false};
+        bool middle{false};
+        bool right{false};
+    } mouseButtons;
+
+    glm::vec2 mousePos;
+
+    glm::vec2 touchPos;
+
+    glm::vec3 rotation;
+
+    bool viewUpdated{false};
+
+    float rotationSpeed{1};
+    //Camera related  variable end
+
+
+
     VkPipelineCache pipelineCache{VK_NULL_HANDLE};
 
 
@@ -172,4 +199,5 @@ protected:
 
     void createRenderPipeline();
 
+    void handleMouseMove(float x, float y);
 };

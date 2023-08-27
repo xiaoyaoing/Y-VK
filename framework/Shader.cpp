@@ -44,6 +44,11 @@ VkShaderStageFlagBits getShaderStage(const std::string &ext) {
 //     file.close();
 //     return buffer;
 // }
+Shader::SHADER_LOAD_MODE getShaderMode(const std::string &ext) {
+    if (ext == "spv")
+        return Shader::SPV;
+    return Shader::ORIGIN_SHADER;
+}
 
 bool Shader::initFromSpv() {
     return false;
@@ -54,7 +59,7 @@ bool Shader::initFromOriginShader() {
 }
 
 Shader::Shader(Device &device, const std::string &path, SHADER_LOAD_MODE mode) {
-
+    mode = getShaderMode(FileUtils::getFileExt(path));
     if (mode == SHADER_LOAD_MODE::SPV) {
         std::ifstream file(path, std::ios::ate | std::ios::binary);
         if (!file.is_open()) {
@@ -85,7 +90,12 @@ Shader::Shader(Device &device, const std::string &path, SHADER_LOAD_MODE mode) {
             LOGE("Failed to compile shader, Error: {}", shaderLog.c_str());
             exit(-1);
         }
-
+        VkShaderModuleCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        createInfo.codeSize = spirvCode.size() * sizeof(uint32_t);
+        createInfo.pCode = reinterpret_cast<const uint32_t *>(spirvCode.data());
+        createInfo.pNext = nullptr;
+        VK_CHECK_RESULT(vkCreateShaderModule(device.getHandle(), &createInfo, nullptr, &shader));
     }
 
     // create shader

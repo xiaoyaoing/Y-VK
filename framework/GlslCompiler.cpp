@@ -123,7 +123,7 @@ namespace GlslCompiler {
 
         spv::SpvBuildLogger logger;
 
-        //  glslang::GlslangToSpv(*intermediate, spirv, &logger);
+        glslang::GlslangToSpv(*intermediate, spirv, &logger);
 
         info_log += logger.getAllMessages() + "\n";
 

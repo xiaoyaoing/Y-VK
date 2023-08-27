@@ -6,12 +6,14 @@ class Device;
 
 
 class Shader {
+
+
+public:
     enum SHADER_LOAD_MODE {
         SPV,
         ORIGIN_SHADER
     };
-
-public:
+    
     Shader(Device &device, const std::string &path, SHADER_LOAD_MODE mode = SPV);
 
     ~Shader();

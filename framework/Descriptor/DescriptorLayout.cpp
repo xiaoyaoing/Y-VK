@@ -45,6 +45,5 @@ void DescriptorLayout::createLayout(VkDescriptorSetLayoutCreateFlags flags) {
     descSetLayoutInfo.pBindings = layoutBindings.data();
     // descSetLayoutInfo.pNext = &flagsInfo;
     descSetLayoutInfo.flags = flags;
-    ASSERT(vkCreateDescriptorSetLayout(_deivce.getHandle(), &descSetLayoutInfo, nullptr, &_layout) == VK_SUCCESS,
-           "create descriptor layout");
+    VK_CHECK_RESULT(vkCreateDescriptorSetLayout(_deivce.getHandle(), &descSetLayoutInfo, nullptr, &_layout));
 }

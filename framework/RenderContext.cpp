@@ -134,6 +134,8 @@ void RenderContext::submit(CommandBuffer &buffer, VkFence fence) {
         frameActive = false;
 
     }
+
+    queue.wait();
 }
 
 VkFormat RenderContext::getSwapChainFormat() const {

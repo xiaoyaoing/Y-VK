@@ -131,12 +131,56 @@ KeyAction GlfwTranslateKeyAction(int action) {
     return KeyAction::Unknown;
 }
 
+inline MouseAction GlfwTranslateMouseAction(int action) {
+    if (action == GLFW_PRESS) {
+        return MouseAction::Down;
+    } else if (action == GLFW_RELEASE) {
+        return MouseAction::Up;
+    }
+
+    return MouseAction::Unknown;
+}
+
+inline MouseButton GlfwTranslateMouseButton(int button) {
+    if (button < GLFW_MOUSE_BUTTON_6) {
+        return static_cast<MouseButton>(button);
+    }
+
+    return MouseButton::Unknown;
+}
+
 void keyCallback(GLFWwindow *window, int key, int /*scancode*/, int action, int /*mods*/) {
     KeyCode key_code = GlfwTranslateKeyCode(key);
     KeyAction key_action = GlfwTranslateKeyAction(action);
 
     if (auto app = reinterpret_cast<Application *>(glfwGetWindowUserPointer(window))) {
         app->inputEvent(KeyInputEvent{key_action, key_code});
+    }
+}
+
+void cursor_position_callback(GLFWwindow *window, double xpos, double ypos) {
+    if (auto *app = reinterpret_cast<Application *>(glfwGetWindowUserPointer(window))) {
+        app->inputEvent(MouseButtonInputEvent{
+                MouseButton::Unknown,
+                MouseAction::Move,
+                static_cast<float>(xpos),
+                static_cast<float>(ypos)});
+    }
+}
+
+void mouseButtonCallBack(GLFWwindow *window, int button, int action, int mods) {
+    MouseAction mouseAction = GlfwTranslateMouseAction(action);
+    auto mouseButton = GlfwTranslateMouseButton(button);
+
+    if (auto app = reinterpret_cast<Application *>(glfwGetWindowUserPointer(window))) {
+        double xpos, ypos;
+        glfwGetCursorPos(window, &xpos, &ypos);
+
+        app->inputEvent(MouseButtonInputEvent{
+                mouseButton,
+                mouseAction,
+                static_cast<float>(xpos),
+                static_cast<float>(ypos)});
     }
 }
 
@@ -153,6 +197,9 @@ Window::Window(const WindowProp &prop, Application *app) {
     handle = glfwCreateWindow(prop.extent.width, prop.extent.height, prop.title.c_str(), nullptr, nullptr);
     glfwSetWindowUserPointer(handle, app);
     glfwSetKeyCallback(handle, keyCallback);
+    glfwSetMouseButtonCallback(handle, mouseButtonCallBack);
+    glfwSetCursorPosCallback(handle, cursor_position_callback);
+
 }
 //
 // Created by 打工人 on 2023/3/11.
