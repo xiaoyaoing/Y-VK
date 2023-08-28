@@ -2,6 +2,7 @@
 #include "Device.h"
 #include <Utils/DebugUtils.h>
 #include "Queue.h"
+#include "Command/CommandPool.h"
 
 #define VMA_IMPLEMENTATION
 
@@ -109,10 +110,14 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                     std::move(std::make_unique<Queue>(this, queueFamilyIndex, i, presentSupport, queueFamilyProp)));
         }
     }
+
+    commandPool = std::make_unique<CommandPool>(*this,
+                                                getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0).getFamilyIndex(),
+                                                CommandBuffer::ResetMode::AlwaysAllocate);
 }
 
 
-const Queue &Device::getQueueByFlag(VkQueueFlagBits requiredFlag, uint32_t queueIndex) {
+Queue & Device::getQueueByFlag(VkQueueFlagBits requiredFlag, uint32_t queueIndex) {
     for (const auto &queueFamily: queues) {
         const auto &prop = queueFamily[0]->getProp();
         auto queueFlag = prop.queueFlags;

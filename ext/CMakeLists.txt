@@ -10,7 +10,7 @@ target_include_directories(vma INTERFACE ${VMA_DIR})
 target_link_libraries(vma INTERFACE Vulkan::Vulkan)
 
 add_library(stb_image INTERFACE)
-target_sources(stb_image INTERFACE stb_image/stb_image.c)
+target_sources(stb_image INTERFACE)
 target_include_directories(stb_image INTERFACE stb_image)
 
 add_subdirectory(glfw)
@@ -85,3 +85,14 @@ set_target_properties(spirv-cross-util PROPERTIES FOLDER "EXT" POSITION_INDEPEND
 #add_library(tinygltf INTERFACE)
 #target_sources(tinygltf INTERFACE tinygltf/tiny_gltf.h)
 #target_include_directories(stb_image INTERFACE stb_image)
+set(KTX_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ktx)
+add_library(ktx INTERFACE)
+
+target_sources(ktx INTERFACE
+        ${KTX_DIR}/lib/texture.c
+        ${KTX_DIR}/lib/hashlist.c
+        ${KTX_DIR}/lib/checkheader.c
+        ${KTX_DIR}/lib/swap.c
+        ${KTX_DIR}/lib/memstream.c
+        ${KTX_DIR}/lib/filestream.c)
+target_include_directories(ktx INTERFACE ${KTX_DIR}/include)

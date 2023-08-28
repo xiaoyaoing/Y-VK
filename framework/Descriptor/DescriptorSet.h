@@ -14,7 +14,7 @@ class DescriptorSet {
     VkDescriptorSet _descriptorSet;
     Device &_device;
 public:
-    VkDescriptorSet getHandle() {
+    VkDescriptorSet &getHandle() {
         return _descriptorSet;
     }
 
@@ -31,4 +31,6 @@ public:
     void
     updateImage(const std::vector<VkDescriptorImageInfo> &imageInfos, const uint32_t dstBinding,
                 VkDescriptorType descType);
+
+    ~DescriptorSet();
 };

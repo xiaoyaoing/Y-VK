@@ -18,7 +18,7 @@ void Example::createDescriptorSet() {
     descriptorSet = std::make_unique<DescriptorSet>(*device, *descriptorPool, *descriptorLayout, 1);
     descriptorSet->updateBuffer({uniform_buffers.scene.get()}, 0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 
-    textures.texture1 = loadTexture(FileUtils::getResourcePath() + "Window.png");
+    textures.texture1 = Texture::loadTexture(*device, FileUtils::getResourcePath() + "Window.png");
 
     auto imageDescriptorInfo = vkCommon::initializers::descriptorImageInfo(textures.texture1);
 
@@ -57,8 +57,8 @@ void Example::createGraphicsPipeline() {
     auto fragShader = Shader(*device, FileUtils::getShaderPath() + "base.frag");
 
     VkPipelineShaderStageCreateInfo shaderStages[] = {
-            vertexShader.PipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT),
-            fragShader.PipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT)};
+            vertexShader.PipelineShaderStageCreateInfo(),
+            fragShader.PipelineShaderStageCreateInfo()};
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType =
@@ -233,6 +233,21 @@ void Example::buildCommandBuffers() {
         draw(commandBuffer, renderContext->getRenderFrame(i));
         commandBuffer.endRecord();
     }
+}
+
+void Example::draw(CommandBuffer &commandBuffer, RenderFrame &renderFrame) {
+    bindUniformBuffers(commandBuffer);
+    renderPipeline->draw(commandBuffer, renderFrame);
+    commandBuffer.beginRenderPass(renderFrame.getRenderTarget(), renderPipeline->getRenderPass(),
+                                  RenderContext::g_context->getFrameBuffer(),
+                                  Default::clearValues(), VkSubpassContents{});
+    const VkViewport viewport = vkCommon::initializers::viewport((float) width, (float) height, 0.0f, 1.0f);
+    const VkRect2D scissor = vkCommon::initializers::rect2D(width, height, 0, 0);
+    vkCmdSetViewport(commandBuffer.getHandle(), 0, 1, &viewport);
+    vkCmdSetScissor(commandBuffer.getHandle(), 0, 1, &scissor);
+    gui->draw(commandBuffer.getHandle());
+
+    commandBuffer.endRenderPass();
 }
 
 void Example::onUpdateGUI() {

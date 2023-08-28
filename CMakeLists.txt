@@ -12,7 +12,9 @@ add_subdirectory(framework)
 
 
 add_subdirectory(samples/sample1)
+add_subdirectory(samples/instancing)
 add_dependencies(sample1 framework)
+add_dependencies(instancing framework)
 
 
 file(COPY shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

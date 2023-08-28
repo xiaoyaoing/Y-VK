@@ -7,7 +7,7 @@ message("Project Files: ${HEADER_FILES}")
 
 # 接下来你可以使用source_group命令将这些文件分组，以在IDE中更好地组织项目结构
 # source_group("Project Files" FILES ${PROJECT_FILES})
-add_library(${target_name} STATIC ${PROJECT_FILES} ../ext/tinygltf/tiny_gltf.h)
+add_library(${target_name} STATIC ${PROJECT_FILES} ../ext/tinygltf/tiny_gltf.h Scene/Compoment.cpp Scene/Compoment.h Scene/Images/KtxImage.cpp Scene/Images/KtxImage.h)
 message(${target_name})
 message(STATUS "Vulkan library: ${Vulkan_LIBRARY}")
 
@@ -21,6 +21,7 @@ target_link_libraries(${target_name} PUBLIC
         stb_image
         glm
         imgui
+        ktx
 
         glslang
         glslang-default-resource-limits

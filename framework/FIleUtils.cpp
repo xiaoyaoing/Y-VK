@@ -48,6 +48,15 @@ namespace FileUtils {
 #endif
     }
 
+    std::string getResourcePath(const std::string &path) {
+        return getResourcePath() + path;
+    }
+
+    std::string getShaderPath(const std::string &path) {
+        return getShaderPath() + path;
+    }
+
+
     std::string getShaderPath() {
 #ifdef VK_SHADERS_DIR
         return VK_SHADERS_DIR;

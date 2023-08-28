@@ -47,7 +47,7 @@ CommandBuffer &RenderContext::begin() {
     if (acquiredSem == VK_NULL_HANDLE) {
         throw std::runtime_error("Couldn't begin frame");
     }
-    const auto &queue = device.getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0);
+    auto &queue = device.getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0);
     return getActiveRenderFrame().requestCommandBuffer(queue);
 }
 

@@ -12,7 +12,11 @@ namespace FileUtils {
 
     std::string getResourcePath();
 
+    std::string getResourcePath(const std::string &path);
+
     std::string getShaderPath();
+
+    std::string getShaderPath(const std::string &path);
 
     std::vector<uint8_t> readShaderBinary(const std::string filename);
 }

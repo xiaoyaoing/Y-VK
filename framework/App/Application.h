@@ -61,7 +61,6 @@ public:
 
     void mainloop();
 
-    Texture loadTexture(const std::string &path);
 
 protected:
     // #ifdef _WIN32
@@ -131,7 +130,7 @@ protected:
     std::unordered_map<const char *, bool> instanceExtensions;
     std::vector<const char *> validationLayers{"VK_LAYER_KHRONOS_validation"};
 
-    std::unique_ptr<CommandPool> commandPool;
+    // std::unique_ptr<CommandPool> commandPool;
     std::vector<std::unique_ptr<CommandBuffer>> commandBuffers;
     //    ptr<Image> _depthImage;
     //    ptr<ImageView> _depthImageView;
@@ -139,7 +138,6 @@ protected:
     //
     std::unique_ptr<Window> window{nullptr};
 
-    std::unique_ptr<Pipeline> graphicsPipeline{nullptr};
 
     std::unique_ptr<RenderPipeline> renderPipeline{nullptr};
 

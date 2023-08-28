@@ -264,4 +264,6 @@ namespace vkCommon {
     void setImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageLayout oldLayout,
                         VkImageLayout newLayout);
 
+    void setImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageLayout oldLayout,
+                        VkImageLayout newLayout, VkImageSubresourceRange subresourceRange);
 };

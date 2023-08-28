@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Vulkan.h"
+#include "Command/CommandPool.h"
 #include <unordered_map>
 
 #include <Queue.h>
@@ -23,7 +24,7 @@ public:
            VkSurfaceKHR surface,
            std::unordered_map<const char *, bool> requested_extensions = {});
 
-    const Queue &getQueueByFlag(VkQueueFlagBits requiredFlag, uint32_t queueIndex);
+    Queue & getQueueByFlag(VkQueueFlagBits requiredFlag, uint32_t queueIndex);
 
     const Queue &getPresentQueue(uint32_t queueIndex);
 
@@ -37,6 +38,14 @@ public:
         allocator = _allocator;
     }
 
+    CommandPool &getCommandPool() {
+        return *commandPool;
+    }
+
+
+    CommandBuffer createCommandBuffer(VkCommandBufferLevel level, bool begin = false) {
+        return commandPool->allocateCommandBuffer(level, begin);
+    }
 
 protected:
     VmaAllocator allocator;
@@ -46,7 +55,7 @@ protected:
 
     std::vector<VkExtensionProperties> deviceExtensions{};
 
-    // std::unique_ptr<CommandPool> commandPool;
+    std::unique_ptr<CommandPool> commandPool;
 
     std::vector<const char *> enabled_extensions{};
 

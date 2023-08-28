@@ -13,12 +13,13 @@ public:
         SPV,
         ORIGIN_SHADER
     };
-    
+
     Shader(Device &device, const std::string &path, SHADER_LOAD_MODE mode = SPV);
+
 
     ~Shader();
 
-    VkPipelineShaderStageCreateInfo PipelineShaderStageCreateInfo(VkShaderStageFlagBits shaderStage);
+    VkPipelineShaderStageCreateInfo PipelineShaderStageCreateInfo();
 
 private:
     bool initFromSpv();
@@ -26,6 +27,9 @@ private:
     bool initFromOriginShader();
 
     VkShaderModule shader;
+
+    Device &device;
+
     VkShaderStageFlagBits tage;
 
 };

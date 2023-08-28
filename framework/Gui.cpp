@@ -44,15 +44,15 @@ void Gui::prepare(const VkPipelineCache pipelineCache, const VkRenderPass render
     Shader vertexShader(device, FileUtils::getShaderPath() + "gui.vert"), fragShader(device,
                                                                                      FileUtils::getShaderPath() +
                                                                                      "gui.frag");
-    shaders = {vertexShader.PipelineShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT),
-               fragShader.PipelineShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT)};
+    shaders = {vertexShader.PipelineShaderStageCreateInfo(),
+               fragShader.PipelineShaderStageCreateInfo()};
 
     auto pushConstantRange = vkCommon::initializers::pushConstantRange(VK_SHADER_STAGE_VERTEX_BIT,
                                                                        sizeof(PushConstBlock), 0);
 
     std::vector<VkDescriptorSetLayout> layout{descriptorLayout->getHandle()};
     auto pipelineLayoutCreateInfo = vkCommon::initializers::pipelineLayoutCreateInfo(layout);
-    
+
     pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
     pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
     VK_CHECK_RESULT(vkCreatePipelineLayout(device.getHandle(), &pipelineLayoutCreateInfo, nullptr, &pipelineLayout))
@@ -134,7 +134,7 @@ void Gui::prepare(const VkPipelineCache pipelineCache, const VkRenderPass render
 }
 
 void Gui::prepareResoucrces(Application *app) {
-    fontTexture = app->loadTexture(FileUtils::getResourcePath() + "Roboto-Medium.ttf");
+    fontTexture = Texture::loadTexture(device, FileUtils::getResourcePath() + "Roboto-Medium.ttf");
 
     // Descriptor pool
     std::vector<VkDescriptorPoolSize> poolSizes = {
@@ -237,8 +237,8 @@ bool Gui::checkBox(const char *caption, bool *value) {
 
 void Gui::text(const char *formatstr, ...) {
     va_list args;
-            va_start(args, formatstr);
+    va_start(args, formatstr);
     ImGui::TextV(formatstr, args);
-            va_end(args);
+    va_end(args);
 }
 

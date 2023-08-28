@@ -31,6 +31,9 @@ protected:
     std::unique_ptr<DescriptorSet> descriptorSet{nullptr};
     std::unique_ptr<DescriptorPool> descriptorPool{nullptr};
 
+    std::unique_ptr<Pipeline> graphicsPipeline{nullptr};
+
+
     void prepareUniformBuffers();
 
     void createDescriptorSetLayout();
@@ -52,5 +55,7 @@ protected:
     }
 
     void onUpdateGUI() override;
+
+    void draw(CommandBuffer &commandBuffer, RenderFrame &renderFrame) override;
 
 };

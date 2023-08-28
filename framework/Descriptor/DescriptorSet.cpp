@@ -57,3 +57,6 @@ void DescriptorSet::updateImage(const std::vector<VkDescriptorImageInfo> &imageI
 
     vkUpdateDescriptorSets(_device.getHandle(), 1, &writeSet, 0, nullptr);
 }
+
+DescriptorSet::~DescriptorSet() {
+}

@@ -58,7 +58,7 @@ bool Shader::initFromOriginShader() {
     return false;
 }
 
-Shader::Shader(Device &device, const std::string &path, SHADER_LOAD_MODE mode) {
+Shader::Shader(Device &device, const std::string &path, SHADER_LOAD_MODE mode) : device(device) {
     mode = getShaderMode(FileUtils::getFileExt(path));
     if (mode == SHADER_LOAD_MODE::SPV) {
         std::ifstream file(path, std::ios::ate | std::ios::binary);
@@ -80,12 +80,12 @@ Shader::Shader(Device &device, const std::string &path, SHADER_LOAD_MODE mode) {
         VK_CHECK_RESULT(vkCreateShaderModule(device.getHandle(), &createInfo, nullptr, &shader));
 
     } else {
-        std::vector<uint32_t> spirvCode;
+        std::vector <uint32_t> spirvCode;
         std::string shaderLog;
 
         auto shaderBuffer = FileUtils::readShaderBinary(path);
-
-        if (!GlslCompiler::compileToSpirv(getShaderStage(FileUtils::getFileExt(path)), shaderBuffer, "main", spirvCode,
+        tage = getShaderStage(FileUtils::getFileExt(path));
+        if (!GlslCompiler::compileToSpirv(tage, shaderBuffer, "main", spirvCode,
                                           shaderLog)) {
             LOGE("Failed to compile shader, Error: {}", shaderLog.c_str());
             exit(-1);
@@ -103,11 +103,12 @@ Shader::Shader(Device &device, const std::string &path, SHADER_LOAD_MODE mode) {
 }
 
 Shader::~Shader() {
+    vkDestroyShaderModule(device.getHandle(), shader, nullptr);
 }
 
-VkPipelineShaderStageCreateInfo Shader::PipelineShaderStageCreateInfo(VkShaderStageFlagBits shaderStage) {
+VkPipelineShaderStageCreateInfo Shader::PipelineShaderStageCreateInfo() {
     VkPipelineShaderStageCreateInfo info{VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO};
-    info.stage = shaderStage;
+    info.stage = tage;
     info.module = shader;
     info.pName = "main";
     return info;
