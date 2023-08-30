@@ -19,4 +19,20 @@ KtxImage::KtxImage(const std::string &path) {
     layers = ktxTexture->numLayers;
     format = VK_FORMAT_R8G8B8A8_SRGB;
     data = {ktxTextureData, ktxTextureData + ktxTextureSize};
+
+
+    if (layers > 1) {
+
+        for (uint32_t layer = 0; layer < layers; layer++) {
+            std::vector<VkDeviceSize> layerOffsets{};
+            for (uint32_t level = 0; level < mipMaps.size(); level++) {
+                ktx_size_t offset;
+
+                result = ktxTexture_GetImageOffset(ktxTexture, level, layer, 0, &offset);
+                assert(result == KTX_SUCCESS);
+                layerOffsets.push_back(static_cast<VkDeviceSize>(offset));
+            }
+            offsets.push_back(layerOffsets);
+        }
+    }
 }

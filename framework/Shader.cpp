@@ -80,14 +80,14 @@ Shader::Shader(Device &device, const std::string &path, SHADER_LOAD_MODE mode) :
         VK_CHECK_RESULT(vkCreateShaderModule(device.getHandle(), &createInfo, nullptr, &shader));
 
     } else {
-        std::vector <uint32_t> spirvCode;
+        std::vector<uint32_t> spirvCode;
         std::string shaderLog;
 
         auto shaderBuffer = FileUtils::readShaderBinary(path);
         tage = getShaderStage(FileUtils::getFileExt(path));
         if (!GlslCompiler::compileToSpirv(tage, shaderBuffer, "main", spirvCode,
                                           shaderLog)) {
-            LOGE("Failed to compile shader, Error: {}", shaderLog.c_str());
+            LOGE("Failed to compile shader {}, Error: {}", path, shaderLog.c_str());
             exit(-1);
         }
         VkShaderModuleCreateInfo createInfo{};

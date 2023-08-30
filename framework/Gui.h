@@ -36,9 +36,8 @@ public:
 
 //是否有新的数据 需要更新
     bool updated{false};
-protected:
-
     float scale{1.f};
+protected:
 
     VkPipeline pipeline{};
 

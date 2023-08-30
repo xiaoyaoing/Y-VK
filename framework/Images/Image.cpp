@@ -108,6 +108,8 @@ Image::Image(Device &device, VkImage handle, const VkExtent3D &extent, VkFormat 
                                                                                   usage(image_usage),
                                                                                   sample_count(sample_count) {
 
+    subresource.mipLevel = 1;
+    subresource.arrayLayer = 1;
 }
 
 Image::Image(Image &&other) : device(other.device),
@@ -132,4 +134,8 @@ void Image::addView(ImageView *pView) {
 
 Device &Image::getDevice() {
     return device;
+}
+
+uint32_t Image::getArrayLayerCount() const {
+    return array_layer_count;
 }

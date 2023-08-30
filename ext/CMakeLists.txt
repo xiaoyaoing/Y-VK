@@ -95,4 +95,4 @@ target_sources(ktx INTERFACE
         ${KTX_DIR}/lib/swap.c
         ${KTX_DIR}/lib/memstream.c
         ${KTX_DIR}/lib/filestream.c)
-target_include_directories(ktx INTERFACE ${KTX_DIR}/include)
+target_include_directories(ktx INTERFACE ${KTX_DIR}/include ${KTX_DIR}/other_include)

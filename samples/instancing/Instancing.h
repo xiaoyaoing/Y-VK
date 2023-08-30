@@ -18,10 +18,11 @@ public:
 
 protected:
     struct UBOVS {
-        glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f),
-                                      glm::vec3(0.0f, 0.0f, 1.0f));
+        glm::mat4 projection;
         glm::mat4 view;
-        glm::mat4 proj;
+        glm::vec4 lightPos = glm::vec4(0.0f, -5.0f, 0.0f, 1.0f);
+        float locSpeed = 0.0f;
+        float globSpeed = 0.0f;
     } ubo_vs;
 
     struct {
@@ -77,6 +78,8 @@ protected:
     void updateUniformBuffers();
 
     void createGraphicsPipeline();
+
+    void prepareInstanceData();
 
     void bindUniformBuffers(CommandBuffer &commandBuffer) override;
 

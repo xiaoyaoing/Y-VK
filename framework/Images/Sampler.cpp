@@ -19,10 +19,10 @@ Sampler::Sampler(Device &device, VkSamplerAddressMode sampleMode, VkFilter filte
     samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
     samplerInfo.unnormalizedCoordinates = VK_FALSE;
     samplerInfo.compareEnable = VK_FALSE;
-    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+    samplerInfo.compareOp = VK_COMPARE_OP_NEVER;
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-//    samplerInfo.minLod = 0.0f;
-//    samplerInfo.maxLod = maxLod;
+    samplerInfo.minLod = 0.0f;
+    samplerInfo.maxLod = maxLod;
 //    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 //    samplerInfo.mipLodBias = 0.0;
 //    samplerInfo.maxAnisotropy = 1.0;

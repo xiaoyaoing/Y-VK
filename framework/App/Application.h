@@ -117,6 +117,8 @@ protected:
 
     virtual void onMouseMove();
 
+    virtual void onViewUpdated();
+
     virtual void buildCommandBuffers() = 0;
 
 protected:
@@ -161,6 +163,8 @@ protected:
     std::unique_ptr<Camera> camera;
 
     std::unique_ptr<Gui> gui;
+
+    float frameTimer{1};
 
 
     int width, height;

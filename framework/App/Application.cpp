@@ -72,7 +72,7 @@ void Application::getRequiredInstanceExtensions() {
     }
     if (enableValidationLayers)
         addInstanceExtension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    addInstanceExtension(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+    //  addInstanceExtension(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 }
 
 void Application::updateScene() {
@@ -92,18 +92,18 @@ void Application::updateGUI() {
     ImGui::NewFrame();
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
-//    ImGui::SetNextWindowPos(ImVec2(10 * UIOverlay.scale, 10 * UIOverlay.scale));
-//    ImGui::SetNextWindowSize(ImVec2(0, 0), ImGuiSetCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImVec2(10 * gui->scale, 10 * gui->scale));
+    ImGui::SetNextWindowSize(ImVec2(0, 0), ImGuiSetCond_FirstUseEver);
     ImGui::Begin("Vulkan Example", nullptr,
                  ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
-//    ImGui::TextUnformatted(title.c_str());
-//    ImGui::TextUnformatted(deviceProperties.deviceName);
-//    ImGui::Text("%.2f ms/frame (%.1d fps)", (1000.0f / lastFPS), lastFPS);
+    ImGui::TextUnformatted("Vk Example");
+    ImGui::TextUnformatted("Device");
+    ImGui::Text("%.2f ms/frame (%.1d fps)", (1000.0f / 1, 1));
 
 
-//    ImGui::PushItemWidth(110.0f * UIOverlay.scale);
-//    OnUpdateUIOverlay(&UIOverlay);
-//    ImGui::PopItemWidth();
+    ImGui::PushItemWidth(110.0f * gui->scale);
+    // OnUpdateUIOverlay(&UIOverlay);
+    ImGui::PopItemWidth();
     onUpdateGUI();
     ImGui::End();
     ImGui::PopStyleVar();
@@ -248,6 +248,11 @@ void Application::createAllocator() {
 void Application::update() {
     auto tStart = std::chrono::high_resolution_clock::now();
 
+    if (viewUpdated) {
+        viewUpdated = false;
+        onViewUpdated();
+    }
+
     updateScene();
     updateGUI();
 
@@ -257,7 +262,12 @@ void Application::update() {
 
     auto tDiff = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
 
-    camera->update(tDiff / 1000.f);
+    frameTimer = tDiff / 1000.f;
+    camera->update(frameTimer);
+
+    if (camera->moving()) {
+        viewUpdated = true;
+    }
 }
 
 // HWND Application::setupWindow(HINSTANCE hinstance, WNDPROC wndproc)
@@ -533,6 +543,10 @@ void Application::onUpdateGUI() {
 }
 
 void Application::onMouseMove() {
+
+}
+
+void Application::onViewUpdated() {
 
 }
 

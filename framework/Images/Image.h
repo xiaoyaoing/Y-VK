@@ -56,9 +56,11 @@ public:
         return usage;
     };
 
-    inline const VkExtent3D &getExtent() {
+    inline const VkExtent3D getExtent() {
         return extent;
     }
+
+    uint32_t getArrayLayerCount() const;
 
     Image(VmaAllocator allocator, VmaMemoryUsage memoryUsage, const VkImageCreateInfo &createInfo);
 
@@ -79,6 +81,9 @@ public:
 
     Device &getDevice();
 
+    VkImageSubresource subresource{};
+
+
 protected:
     Device &device;
     VkImage image;
@@ -96,9 +101,8 @@ protected:
 
     VkImageTiling tiling{};
 
-    VkImageSubresource subresource{};
 
-    uint32_t array_layer_count{0};
+    uint32_t array_layer_count{1};
 
     uint8_t *mapped_data{nullptr};
 

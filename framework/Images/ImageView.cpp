@@ -75,10 +75,11 @@ ImageView::ImageView(Image &image, VkImageViewType view_type, VkFormat format, u
             format = format;
     imageViewInfo.subresourceRange.aspectMask = isDepthOrStencilFormat(format) ? VK_IMAGE_ASPECT_DEPTH_BIT
                                                                                : VK_IMAGE_ASPECT_COLOR_BIT;
-    imageViewInfo.subresourceRange.baseMipLevel = 0;
+//    imageViewInfo.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     imageViewInfo.subresourceRange.levelCount = 1;
     imageViewInfo.subresourceRange.baseArrayLayer = 0;
-    imageViewInfo.subresourceRange.layerCount = 1;
+    imageViewInfo.subresourceRange.layerCount = image.subresource.arrayLayer;
+    imageViewInfo.subresourceRange.levelCount = image.subresource.mipLevel;
     VK_CHECK_RESULT(vkCreateImageView(_device.getHandle(), &imageViewInfo, nullptr, &_view));
     image.addView(this);
 }

@@ -62,6 +62,7 @@ public:
         vkCmdBindPipeline(_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     }
 
+
     inline void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) {
         vkCmdDraw(_buffer, vertexCount, instanceCount, firstVertex, firstInstance);
     }

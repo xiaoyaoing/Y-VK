@@ -220,6 +220,8 @@ namespace gltfLoading {
 
         std::unique_ptr<Buffer> vertices, indices;
 
+        uint32_t vertexCount{0}, indexCount{0};
+
         bool metallicRoughnessWorkflow;
 
         Model(Device &device);

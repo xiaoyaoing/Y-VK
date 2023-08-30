@@ -71,52 +71,50 @@ namespace gltfLoading {
         if ((fileLoadingFlags & FileLoadingFlags::PreTransformVertices) ||
             (fileLoadingFlags & FileLoadingFlags::PreMultiplyVertexColors) ||
             (fileLoadingFlags & FileLoadingFlags::FlipY)) {
-
-            if ((fileLoadingFlags & FileLoadingFlags::PreTransformVertices) ||
-                (fileLoadingFlags & FileLoadingFlags::PreMultiplyVertexColors) ||
-                (fileLoadingFlags & FileLoadingFlags::FlipY)) {
-                const bool preTransform = fileLoadingFlags & FileLoadingFlags::PreTransformVertices;
-                const bool preMultiplyColor = fileLoadingFlags & FileLoadingFlags::PreMultiplyVertexColors;
-                const bool flipY = fileLoadingFlags & FileLoadingFlags::FlipY;
-                for (Node *node: linearNodes) {
-                    if (node->mesh) {
-                        const glm::mat4 localMatrix = node->getMatrix();
-                        for (auto &primitive: node->mesh->primitives) {
-                            for (uint32_t i = 0; i < primitive->vertexCount; i++) {
-                                Vertex &vertex = vertexData[primitive->firstVertex + i];
-                                // Pre-transform vertex positions by node-hierarchy
-                                if (preTransform) {
-                                    vertex.pos = glm::vec3(localMatrix * glm::vec4(vertex.pos, 1.0f));
-                                    vertex.normal = glm::normalize(glm::mat3(localMatrix) * vertex.normal);
-                                }
-                                // Flip Y-Axis of vertex positions
-                                if (flipY) {
-                                    vertex.pos.y *= -1.0f;
-                                    vertex.normal.y *= -1.0f;
-                                }
-                                // Pre-Multiply vertex colors with material base color
-                                if (preMultiplyColor) {
-                                    vertex.color = primitive->material.baseColorFactor * vertex.color;
-                                }
+            const bool preTransform = fileLoadingFlags & FileLoadingFlags::PreTransformVertices;
+            const bool preMultiplyColor = fileLoadingFlags & FileLoadingFlags::PreMultiplyVertexColors;
+            const bool flipY = fileLoadingFlags & FileLoadingFlags::FlipY;
+            for (Node *node: linearNodes) {
+                if (node->mesh) {
+                    const glm::mat4 localMatrix = node->getMatrix();
+                    for (auto &primitive: node->mesh->primitives) {
+                        for (uint32_t i = 0; i < primitive->vertexCount; i++) {
+                            Vertex &vertex = vertexData[primitive->firstVertex + i];
+                            // Pre-transform vertex positions by node-hierarchy
+                            if (preTransform) {
+                                vertex.pos = glm::vec3(localMatrix * glm::vec4(vertex.pos, 1.0f));
+                                vertex.normal = glm::normalize(glm::mat3(localMatrix) * vertex.normal);
+                            }
+                            // Flip Y-Axis of vertex positions
+                            if (flipY) {
+                                vertex.pos.y *= -1.0f;
+                                vertex.normal.y *= -1.0f;
+                            }
+                            // Pre-Multiply vertex colors with material base color
+                            if (preMultiplyColor) {
+                                vertex.color = primitive->material.baseColorFactor * vertex.color;
                             }
                         }
                     }
                 }
             }
-
-            for (auto extension: gltfModel.extensionsUsed) {
-                if (extension == "KHR_materials_pbrSpecularGlossiness") {
-                    std::cout << "Required extension: " << extension;
-                    metallicRoughnessWorkflow = false;
-                }
-            }
-            vertices = std::make_unique<Buffer>(device, DATA_SIZE(vertexData), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                                                VMA_MEMORY_USAGE_CPU_TO_GPU);
-            vertices->uploadData(vertexData.data(), DATA_SIZE(vertexData));
-            indices = std::make_unique<Buffer>(device, DATA_SIZE(indexData), VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                                               VMA_MEMORY_USAGE_CPU_TO_GPU);
-            indices->uploadData(indexData.data(), DATA_SIZE(indexData));
         }
+
+        for (auto extension: gltfModel.extensionsUsed) {
+            if (extension == "KHR_materials_pbrSpecularGlossiness") {
+                std::cout << "Required extension: " << extension;
+                metallicRoughnessWorkflow = false;
+            }
+        }
+        vertexCount = vertexData.size();
+        indexCount = indexData.size();
+        vertices = std::make_unique<Buffer>(device, DATA_SIZE(vertexData), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                                            VMA_MEMORY_USAGE_CPU_TO_GPU);
+        vertices->uploadData(vertexData.data(), DATA_SIZE(vertexData));
+        indices = std::make_unique<Buffer>(device, DATA_SIZE(indexData), VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                                           VMA_MEMORY_USAGE_CPU_TO_GPU);
+        indices->uploadData(indexData.data(), DATA_SIZE(indexData));
+
     }
 
     void Model::loadMaterials(tinygltf::Model &gltfModel) {

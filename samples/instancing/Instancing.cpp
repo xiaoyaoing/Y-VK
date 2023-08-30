@@ -2,6 +2,7 @@
 // Created by pc on 2023/8/17.
 //
 
+#include <random>
 #include "Instancing.h"
 #include "Shader.h"
 #include "Common/VulkanInitializers.h"
@@ -9,7 +10,9 @@
 
 #define VERTEX_BUFFER_BIND_ID 0
 #define INSTANCE_BUFFER_BIND_ID 1
-#define INSTANCE_NUM 1024
+#define INSTANCE_NUM 8192
+#define M_PI      3.14159265358979323846
+
 
 void Example::prepareUniformBuffers() {
     uniform_buffers.scene = std::make_unique<Buffer>(*device, sizeof(ubo_vs), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -22,12 +25,15 @@ void Example::loadResources() {
             "textures/texturearray_rocks_rgba.ktx"));
     textures.planetTexture = Texture::loadTexture(*device,
                                                   FileUtils::getResourcePath("textures/lavaplanet_rgba.ktx"));
+    const uint32_t glTFLoadingFlags = gltfLoading::FileLoadingFlags::PreTransformVertices |
+                                      gltfLoading::FileLoadingFlags::PreMultiplyVertexColors |
+                                      gltfLoading::FileLoadingFlags::FlipY;
 
     models.planets = std::make_unique<gltfLoading::Model>(*device);
-    models.planets->loadFromFile(FileUtils::getResourcePath("models/planet.gltf"));
+    models.planets->loadFromFile(FileUtils::getResourcePath("models/lavaplanet.gltf"), glTFLoadingFlags);
 
     models.rockets = std::make_unique<gltfLoading::Model>(*device);
-    models.rockets->loadFromFile(FileUtils::getResourcePath("models/rock01.gltf"));
+    models.rockets->loadFromFile(FileUtils::getResourcePath("models/rock01.gltf"), glTFLoadingFlags);
 }
 
 void Example::createDescriptorSet() {
@@ -40,8 +46,6 @@ void Example::createDescriptorSet() {
     descriptors.rockDescriptor->updateBuffer({uniform_buffers.scene.get()}, 0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     descriptors.rockDescriptor->updateImage({vkCommon::initializers::descriptorImageInfo(textures.rocketTexture)}, 1,
                                             VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-
-
 }
 
 void Example::createDescriptorPool() {
@@ -54,17 +58,17 @@ void Example::createDescriptorPool() {
 }
 
 void Example::updateUniformBuffers() {
-    static auto startTime = std::chrono::high_resolution_clock::now();
+    // if ()
+    {
+        ubo_vs.projection = camera->matrices.perspective;
+        ubo_vs.view = camera->matrices.view;
+    }
 
-    auto currentTime = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-    ubo_vs.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo_vs.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo_vs.proj = glm::perspective(glm::radians(45.0f), 1.f, 0.1f, 10.0f);
-    ubo_vs.proj[1][1] *= -1;
-
-    ubo_vs.view = camera->matrices.view;
-    ubo_vs.proj = camera->matrices.perspective;
+    //  if (!paused)
+    {
+        ubo_vs.locSpeed += frameTimer * 0.35f;
+        ubo_vs.globSpeed += frameTimer * 0.01f;
+    }
     // ubo_vs.model = glm::mat4::Ide
     uniform_buffers.scene->uploadData(&ubo_vs, sizeof(ubo_vs));
 }
@@ -88,10 +92,9 @@ void Example::createGraphicsPipeline() {
             // 每个顶点属性的数据在一组顶点之间跨越。每个实例之间使用相同的顶点属性数据。
                            vkCommon::initializers::vertexInputBindingDescription(INSTANCE_BUFFER_BIND_ID,
                                                                                  sizeof(InstanceData),
-                                                                                 VK_VERTEX_INPUT_RATE_INSTANCE)
-    };
+                                                                                 VK_VERTEX_INPUT_RATE_INSTANCE)};
 
-// Vertex attribute bindings
+    // Vertex attribute bindings
     // Note that the shader declaration for per-vertex and per-instance attributes is the same, the different input rates are only stored in the bindings:
     // instanced.vert:
     //	layout (location = 0) in vec3 inPos;		Per-Vertex
@@ -102,13 +105,13 @@ void Example::createGraphicsPipeline() {
             // These are advanced for each vertex fetched by the vertex shader
             vkCommon::initializers::vertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 0,
                                                                     VK_FORMAT_R32G32B32_SFLOAT,
-                                                                    0),                 // Location 0: Position
+                                                                    0), // Location 0: Position
             vkCommon::initializers::vertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 1,
                                                                     VK_FORMAT_R32G32B32_SFLOAT,
                                                                     sizeof(float) * 3), // Location 1: Normal
             vkCommon::initializers::vertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 2, VK_FORMAT_R32G32_SFLOAT,
                                                                     sizeof(float) *
-                                                                    6),     // Location 2: Texture coordinates
+                                                                    6), // Location 2: Texture coordinates
             vkCommon::initializers::vertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 3,
                                                                     VK_FORMAT_R32G32B32_SFLOAT,
                                                                     sizeof(float) * 8), // Location 3: Color
@@ -116,17 +119,16 @@ void Example::createGraphicsPipeline() {
             // These are fetched for each instance rendered
             vkCommon::initializers::vertexInputAttributeDescription(INSTANCE_BUFFER_BIND_ID, 4,
                                                                     VK_FORMAT_R32G32B32_SFLOAT,
-                                                                    0),                   // Location 4: Position
+                                                                    0), // Location 4: Position
             vkCommon::initializers::vertexInputAttributeDescription(INSTANCE_BUFFER_BIND_ID, 5,
                                                                     VK_FORMAT_R32G32B32_SFLOAT,
                                                                     sizeof(float) * 3), // Location 5: Rotation
             vkCommon::initializers::vertexInputAttributeDescription(INSTANCE_BUFFER_BIND_ID, 6, VK_FORMAT_R32_SFLOAT,
-                                                                    sizeof(float) * 6),       // Location 6: Scale
+                                                                    sizeof(float) * 6), // Location 6: Scale
             vkCommon::initializers::vertexInputAttributeDescription(INSTANCE_BUFFER_BIND_ID, 7, VK_FORMAT_R32_SINT,
                                                                     sizeof(float) *
-                                                                    7),           // Location 7: Texture array layer index
+                                                                    7), // Location 7: Texture array layer index
     };
-
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -242,12 +244,11 @@ void Example::createGraphicsPipeline() {
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineInfo.basePipelineIndex = -1;
 
-
-    //init instanced rock pipeline
+    // init instanced rock pipeline
     auto vertexShader = std::make_unique<Shader>(*device, FileUtils::getShaderPath() + "instancing.vert");
     auto fragShader = std::make_unique<Shader>(*device, FileUtils::getShaderPath() + "instancing.frag");
     shaderStages[0] = vertexShader->PipelineShaderStageCreateInfo();
-    shaderStages[0] = fragShader->PipelineShaderStageCreateInfo();
+    shaderStages[1] = fragShader->PipelineShaderStageCreateInfo();
 
     vertexInputInfo.vertexBindingDescriptionCount = bindingDescriptions.size();
     vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
@@ -258,30 +259,26 @@ void Example::createGraphicsPipeline() {
             vkCreateGraphicsPipelines(device->getHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
                                       &pipelines.instancedRockPipeline))
 
-
-    //init planet pipeline
+    // init planet pipeline
 
     vertexShader = std::make_unique<Shader>(*device, FileUtils::getShaderPath("planet.vert"));
     fragShader = std::make_unique<Shader>(*device, FileUtils::getShaderPath("planet.frag"));
     shaderStages[0] = vertexShader->PipelineShaderStageCreateInfo();
-    shaderStages[0] = fragShader->PipelineShaderStageCreateInfo();
+    shaderStages[1] = fragShader->PipelineShaderStageCreateInfo();
     vertexInputInfo.vertexBindingDescriptionCount = 1;
-    //pos normal uv color
+    // pos normal uv color
     vertexInputInfo.vertexAttributeDescriptionCount = 4;
     VK_CHECK_RESULT(
             vkCreateGraphicsPipelines(device->getHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
                                       &pipelines.planetPipeline))
 
-
-
-
-    //init statField pipeline
-//    rasterizer.cullMode = VK_CULL_MODE_NONE;
-//    depthStencil.depthWriteEnable = false;
-//    vertexShader = std::make_unique<Shader>(*device, FileUtils::getShaderPath("planet.vert"));
-//    fragShader = std::make_unique<Shader>(*device, FileUtils::getShaderPath("planet.frag"));
-//    shaderStages[0] = vertexShader->PipelineShaderStageCreateInfo();
-//    shaderStages[0] = fragShader->PipelineShaderStageCreateInfo();
+    // init statField pipeline
+    //    rasterizer.cullMode = VK_CULL_MODE_NONE;
+    //    depthStencil.depthWriteEnable = false;
+    //    vertexShader = std::make_unique<Shader>(*device, FileUtils::getShaderPath("planet.vert"));
+    //    fragShader = std::make_unique<Shader>(*device, FileUtils::getShaderPath("planet.frag"));
+    //    shaderStages[0] = vertexShader->PipelineShaderStageCreateInfo();
+    //    shaderStages[0] = fragShader->PipelineShaderStageCreateInfo();
 
     //  VkPipeline pipeline;
 
@@ -292,7 +289,7 @@ void Example::prepare() {
     Application::prepare();
 
     loadResources();
-
+    prepareInstanceData();
 
     prepareUniformBuffers();
     createDescriptorSetLayout();
@@ -311,14 +308,16 @@ void Example::createDescriptorSetLayout() {
     descriptorLayout->createLayout(0);
 }
 
-Example::Example() : Application("Drawing Triangle", 1024, 1024) {
-
+Example::Example() : Application("Drawing Triangle", 1280, 720) {
 
     camera = std::make_unique<Camera>();
     camera->flipY = true;
     camera->setPerspective(45.f, 1.f, 0.1f, 10.0f);
     camera->setRotation(glm::vec3(0));
     camera->setTranslation(glm::vec3(0.f, 0.f, -2.f));
+    camera->setTranslation(glm::vec3(5.5f, -1.85f, -18.5f));
+    camera->setRotation(glm::vec3(-17.2f, -4.7f, 0.0f));
+    camera->setPerspective(60.0f, (float) width / (float) height, 1.0f, 256.0f);
 }
 
 void Example::bindUniformBuffers(CommandBuffer &commandBuffer) {
@@ -332,7 +331,7 @@ void Example::buildCommandBuffers() {
         commandBuffer.beginRecord(0);
         //    commandBuffer.bindPipeline(graphicsPipeline->getHandle());
         renderContext->setActiveFrameIdx(i);
-//        bindUniformBuffers(commandBuffer);
+        //        bindUniformBuffers(commandBuffer);
         draw(commandBuffer, renderContext->getRenderFrame(i));
         commandBuffer.endRecord();
     }
@@ -344,23 +343,106 @@ void Example::onUpdateGUI() {
     gui->text("Hello imgui");
 }
 
+void Example::prepareInstanceData() {
+    std::vector<InstanceData> instanceData;
+    instanceData.resize(INSTANCE_NUM);
+
+    std::default_random_engine rndGenerator(0);
+    std::uniform_real_distribution<float> uniformDist(0.0, 1.0);
+    std::uniform_int_distribution<uint32_t> rndTextureIndex(0, textures.rocketTexture.image->getLayers());
+
+    // Distribute rocks randomly on two different rings
+    for (auto i = 0; i < INSTANCE_NUM / 2; i++) {
+        glm::vec2 ring0{7.0f, 11.0f};
+        glm::vec2 ring1{14.0f, 18.0f};
+
+        float rho, theta;
+
+        // Inner ring
+        rho = sqrt((pow(ring0[1], 2.0f) - pow(ring0[0], 2.0f)) * uniformDist(rndGenerator) + pow(ring0[0], 2.0f));
+        theta = 2.0 * M_PI * uniformDist(rndGenerator);
+        instanceData[i].pos = glm::vec3(rho * cos(theta), uniformDist(rndGenerator) * 0.5f - 0.25f, rho * sin(theta));
+        instanceData[i].rot = glm::vec3(M_PI * uniformDist(rndGenerator), M_PI * uniformDist(rndGenerator),
+                                        M_PI * uniformDist(rndGenerator));
+        instanceData[i].scale = 1.5f + uniformDist(rndGenerator) - uniformDist(rndGenerator);
+        instanceData[i].texIndex = rndTextureIndex(rndGenerator);
+        instanceData[i].scale *= 0.75f;
+
+        // Outer ring
+        rho = sqrt((pow(ring1[1], 2.0f) - pow(ring1[0], 2.0f)) * uniformDist(rndGenerator) + pow(ring1[0], 2.0f));
+        theta = 2.0 * M_PI * uniformDist(rndGenerator);
+        instanceData[i + INSTANCE_NUM / 2].pos = glm::vec3(rho * cos(theta), uniformDist(rndGenerator) * 0.5f - 0.25f,
+                                                           rho * sin(theta));
+        instanceData[i + INSTANCE_NUM / 2].rot = glm::vec3(M_PI * uniformDist(rndGenerator),
+                                                           M_PI * uniformDist(rndGenerator),
+                                                           M_PI * uniformDist(rndGenerator));
+        instanceData[i + INSTANCE_NUM / 2].scale = 1.5f + uniformDist(rndGenerator) - uniformDist(rndGenerator);
+        instanceData[i + INSTANCE_NUM / 2].texIndex = rndTextureIndex(rndGenerator);
+        instanceData[i + INSTANCE_NUM / 2].scale *= 0.75f;
+    }
+
+    instanceBuffer.buffer = std::make_unique<Buffer>(*device, sizeof(InstanceData) * instanceData.size(),
+                                                     VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+                                                     VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+
+
+    instanceBuffer.buffer->uploadData(instanceData.data(), DATA_SIZE(instanceData));
+    // Staging
+    // Instanced data is static, copy to device local memory
+    // This results in better performance
+}
+
 void Example::draw(CommandBuffer &commandBuffer, RenderFrame &renderFrame) {
     bindUniformBuffers(commandBuffer);
-//    renderPipeline->draw(commandBuffer, renderFrame);
+    //    renderPipeline->draw(commandBuffer, renderFrame);
 
     commandBuffer.beginRenderPass(renderFrame.getRenderTarget(), renderPipeline->getRenderPass(),
                                   RenderContext::g_context->getFrameBuffer(),
                                   Default::clearValues(), VkSubpassContents{});
+
     const VkViewport viewport = vkCommon::initializers::viewport((float) width, (float) height, 0.0f, 1.0f);
     const VkRect2D scissor = vkCommon::initializers::rect2D(width, height, 0, 0);
     vkCmdSetViewport(commandBuffer.getHandle(), 0, 1, &viewport);
     vkCmdSetScissor(commandBuffer.getHandle(), 0, 1, &scissor);
+
+    commandBuffer.bindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayOut, 0,
+                                     {descriptors.planetDescriptor.get()},
+                                     {});
+    vkCmdBindPipeline(commandBuffer.getHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.planetPipeline);
+    models.planets->draw(commandBuffer);
+
+    commandBuffer.bindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayOut, 0,
+                                     {descriptors.rockDescriptor.get()},
+                                     {});
+
+    VkDeviceSize offsets[1] = {0};
+
+    vkCmdBindPipeline(commandBuffer.getHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.instancedRockPipeline);
+    //   models.rockets->draw(commandBuffer);
+
+    vkCmdBindVertexBuffers(commandBuffer.getHandle(), VERTEX_BUFFER_BIND_ID, 1, &models.rockets->vertices->getHandle(),
+                           offsets);
+
+    // Binding point 1 : Instance data buffer
+    vkCmdBindVertexBuffers(commandBuffer.getHandle(), INSTANCE_BUFFER_BIND_ID, 1, &instanceBuffer.buffer->getHandle(),
+                           offsets);
+
+
+    // Bind index buffer
+    vkCmdBindIndexBuffer(commandBuffer.getHandle(), models.rockets->indices->getHandle(), 0, VK_INDEX_TYPE_UINT32);
+
+    // Render instances
+    vkCmdDrawIndexed(commandBuffer.getHandle(), models.rockets->indexCount, INSTANCE_NUM, 0, 0, 0);
+//    vkCmdDrawIndexed(commandBuffer.getHandle(), models.rockets->indexCount, 1, 0, 0, 0);
+
+
     gui->draw(commandBuffer.getHandle());
 
     commandBuffer.endRenderPass();
 }
 
 int main() {
+
     Example *example = new Example();
     example->prepare();
     example->mainloop();

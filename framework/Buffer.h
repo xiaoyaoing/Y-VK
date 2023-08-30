@@ -23,7 +23,7 @@ public:
 
     void cleanup();
 
-    inline VkBuffer getHandle() {
+    inline VkBuffer &getHandle() {
         return _buffer;
     }
 
