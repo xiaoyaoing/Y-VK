@@ -53,6 +53,8 @@ protected:
         uint32_t texIndex;
     };
 
+    std::unique_ptr<gltfLoading::Model> sponza{nullptr};
+
     struct {
         std::unique_ptr<Buffer> buffer{nullptr};
         std::unique_ptr<DescriptorSet> descriptorSet{nullptr};
@@ -91,6 +93,6 @@ protected:
 
     void onUpdateGUI() override;
 
-    void draw(CommandBuffer &commandBuffer, RenderFrame &renderFrame) override;
+    void draw(CommandBuffer &commandBuffer) override;
 
 };

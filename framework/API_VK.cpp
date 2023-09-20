@@ -6,7 +6,7 @@
 
 #include <Buffer.h>
 #include <Device.h>
-#include <Common/VulkanInitializers.h>
+#include <Common\VkCommon.h>
 #include <Images/Sampler.h>
 
 

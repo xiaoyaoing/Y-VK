@@ -13,6 +13,5 @@ struct Texture {
     std::unique_ptr<Sampler> sampler;
 
     static Texture loadTexture(Device &device, const std::string &path);
-
     static Texture loadTextureArray(Device &device, const std::string &path);
 };

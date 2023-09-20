@@ -5,14 +5,13 @@
 #include <random>
 #include "Instancing.h"
 #include "Shader.h"
-#include "Common/VulkanInitializers.h"
+#include "..\..\framework\Common\VkCommon.h"
 #include "FIleUtils.h"
 
 #define VERTEX_BUFFER_BIND_ID 0
 #define INSTANCE_BUFFER_BIND_ID 1
 #define INSTANCE_NUM 8192
-#define M_PI      3.14159265358979323846
-
+#define M_PI 3.14159265358979323846
 
 void Example::prepareUniformBuffers() {
     uniform_buffers.scene = std::make_unique<Buffer>(*device, sizeof(ubo_vs), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -271,18 +270,6 @@ void Example::createGraphicsPipeline() {
     VK_CHECK_RESULT(
             vkCreateGraphicsPipelines(device->getHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
                                       &pipelines.planetPipeline))
-
-    // init statField pipeline
-    //    rasterizer.cullMode = VK_CULL_MODE_NONE;
-    //    depthStencil.depthWriteEnable = false;
-    //    vertexShader = std::make_unique<Shader>(*device, FileUtils::getShaderPath("planet.vert"));
-    //    fragShader = std::make_unique<Shader>(*device, FileUtils::getShaderPath("planet.frag"));
-    //    shaderStages[0] = vertexShader->PipelineShaderStageCreateInfo();
-    //    shaderStages[0] = fragShader->PipelineShaderStageCreateInfo();
-
-    //  VkPipeline pipeline;
-
-    // graphicsPipeline = std::make_unique<Pipeline>(pipeline);
 }
 
 void Example::prepare() {
@@ -290,8 +277,8 @@ void Example::prepare() {
 
     loadResources();
     prepareInstanceData();
-
     prepareUniformBuffers();
+    
     createDescriptorSetLayout();
     createDescriptorPool();
     createDescriptorSet();
@@ -308,7 +295,7 @@ void Example::createDescriptorSetLayout() {
     descriptorLayout->createLayout(0);
 }
 
-Example::Example() : Application("Drawing Triangle", 1280, 720) {
+Example::Example() : Application("Instancing", 1280, 720) {
 
     camera = std::make_unique<Camera>();
     camera->flipY = true;
@@ -332,7 +319,7 @@ void Example::buildCommandBuffers() {
         //    commandBuffer.bindPipeline(graphicsPipeline->getHandle());
         renderContext->setActiveFrameIdx(i);
         //        bindUniformBuffers(commandBuffer);
-        draw(commandBuffer, renderContext->getRenderFrame(i));
+        draw(commandBuffer);
         commandBuffer.endRecord();
     }
 }
@@ -383,21 +370,17 @@ void Example::prepareInstanceData() {
 
     instanceBuffer.buffer = std::make_unique<Buffer>(*device, sizeof(InstanceData) * instanceData.size(),
                                                      VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
-                                                     VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-
+                                                     VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                                     VMA_MEMORY_USAGE_CPU_TO_GPU);
 
     instanceBuffer.buffer->uploadData(instanceData.data(), DATA_SIZE(instanceData));
-    // Staging
-    // Instanced data is static, copy to device local memory
-    // This results in better performance
 }
 
-void Example::draw(CommandBuffer &commandBuffer, RenderFrame &renderFrame) {
+void Example::draw(CommandBuffer &commandBuffer) {
     bindUniformBuffers(commandBuffer);
     //    renderPipeline->draw(commandBuffer, renderFrame);
 
-    commandBuffer.beginRenderPass(renderFrame.getRenderTarget(), renderPipeline->getRenderPass(),
-                                  RenderContext::g_context->getFrameBuffer(),
+    commandBuffer.beginRenderPass(renderPipeline->getRenderPass(),
                                   Default::clearValues(), VkSubpassContents{});
 
     const VkViewport viewport = vkCommon::initializers::viewport((float) width, (float) height, 0.0f, 1.0f);
@@ -427,15 +410,11 @@ void Example::draw(CommandBuffer &commandBuffer, RenderFrame &renderFrame) {
     vkCmdBindVertexBuffers(commandBuffer.getHandle(), INSTANCE_BUFFER_BIND_ID, 1, &instanceBuffer.buffer->getHandle(),
                            offsets);
 
-
     // Bind index buffer
     vkCmdBindIndexBuffer(commandBuffer.getHandle(), models.rockets->indices->getHandle(), 0, VK_INDEX_TYPE_UINT32);
 
     // Render instances
     vkCmdDrawIndexed(commandBuffer.getHandle(), models.rockets->indexCount, INSTANCE_NUM, 0, 0, 0);
-//    vkCmdDrawIndexed(commandBuffer.getHandle(), models.rockets->indexCount, 1, 0, 0, 0);
-
-
     gui->draw(commandBuffer.getHandle());
 
     commandBuffer.endRenderPass();
@@ -448,21 +427,3 @@ int main() {
     example->mainloop();
     return 0;
 }
-
-// Example *example{nullptr};
-// LRESULT __stdcall WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-// {
-//     if (example)
-//     {
-//         example->handleMessages(hWnd, uMsg, wParam, lParam);
-//     }
-//     return (DefWindowProcA(hWnd, uMsg, wParam, lParam));
-// }
-// int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int)
-// {
-//     example = new Example();
-//     example->prepare();
-//     example->mainloop();
-//     delete example();
-//     return 0;
-// }

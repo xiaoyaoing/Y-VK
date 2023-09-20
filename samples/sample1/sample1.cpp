@@ -4,17 +4,19 @@
 
 #include "sample1.h"
 #include "Shader.h"
-#include "Common/VulkanInitializers.h"
+#include "../../framework/Common/VkCommon.h"
 #include "FIleUtils.h"
 
 
-void Example::prepareUniformBuffers() {
+void Example::prepareUniformBuffers()
+{
     uniform_buffers.scene = std::make_unique<Buffer>(*device, sizeof(ubo_vs), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                                      VMA_MEMORY_USAGE_CPU_TO_GPU);
     uniform_buffers.scene->uploadData(&ubo_vs, sizeof(ubo_vs));
 }
 
-void Example::createDescriptorSet() {
+void Example::createDescriptorSet()
+{
     descriptorSet = std::make_unique<DescriptorSet>(*device, *descriptorPool, *descriptorLayout, 1);
     descriptorSet->updateBuffer({uniform_buffers.scene.get()}, 0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 
@@ -25,16 +27,18 @@ void Example::createDescriptorSet() {
     descriptorSet->updateImage({imageDescriptorInfo}, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 }
 
-void Example::createDescriptorPool() {
-
+void Example::createDescriptorPool()
+{
     std::vector<VkDescriptorPoolSize> poolSizes = {
-            vkCommon::initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2),
-            vkCommon::initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2)};
+        vkCommon::initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2),
+        vkCommon::initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2)
+    };
 
     descriptorPool = std::make_unique<DescriptorPool>(*device, poolSizes, 2);
 }
 
-void Example::updateUniformBuffers() {
+void Example::updateUniformBuffers()
+{
     static auto startTime = std::chrono::high_resolution_clock::now();
 
     auto currentTime = std::chrono::high_resolution_clock::now();
@@ -50,19 +54,20 @@ void Example::updateUniformBuffers() {
     uniform_buffers.scene->uploadData(&ubo_vs, sizeof(ubo_vs));
 }
 
-void Example::createGraphicsPipeline() {
-
+void Example::createGraphicsPipeline()
+{
     // todo handle shader complie
     auto vertexShader = Shader(*device, FileUtils::getShaderPath() + "base.vert");
     auto fragShader = Shader(*device, FileUtils::getShaderPath() + "base.frag");
 
     VkPipelineShaderStageCreateInfo shaderStages[] = {
-            vertexShader.PipelineShaderStageCreateInfo(),
-            fragShader.PipelineShaderStageCreateInfo()};
+        vertexShader.PipelineShaderStageCreateInfo(),
+        fragShader.PipelineShaderStageCreateInfo()
+    };
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType =
-            VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     auto bindingDescription = Vertex::getBindingDescription();
     auto attributeDescriptions = Vertex::getAttributeDescriptions();
     vertexInputInfo.vertexBindingDescriptionCount = 1;
@@ -78,8 +83,8 @@ void Example::createGraphicsPipeline() {
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float) renderContext->getSwapChainExtent().width;
-    viewport.height = (float) renderContext->getSwapChainExtent().height;
+    viewport.width = (float)renderContext->getSwapChainExtent().width;
+    viewport.height = (float)renderContext->getSwapChainExtent().height;
     viewport.minDepth = 0;
     viewport.maxDepth = 1.0;
 
@@ -111,7 +116,7 @@ void Example::createGraphicsPipeline() {
 
     VkPipelineMultisampleStateCreateInfo multisampling{};
     multisampling.sType =
-            VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+        VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampling.sampleShadingEnable = VK_FALSE;
     multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     multisampling.minSampleShading = 1.0f; // Optional
@@ -121,13 +126,13 @@ void Example::createGraphicsPipeline() {
 
     VkPipelineColorBlendAttachmentState colorBlendAttachment{};
     colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
-                                          VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
-                                          VK_COLOR_COMPONENT_A_BIT;
+        VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
+        VK_COLOR_COMPONENT_A_BIT;
     colorBlendAttachment.blendEnable = VK_FALSE;
 
     VkPipelineColorBlendStateCreateInfo colorBlending{};
     colorBlending.sType =
-            VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+        VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlending.logicOpEnable = VK_FALSE;
     colorBlending.logicOp = VK_LOGIC_OP_COPY;
     colorBlending.attachmentCount = 1;
@@ -186,11 +191,12 @@ void Example::createGraphicsPipeline() {
 
     VkPipeline pipeline;
     VK_CHECK_RESULT(
-            vkCreateGraphicsPipelines(device->getHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline));
+        vkCreateGraphicsPipelines(device->getHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline));
     graphicsPipeline = std::make_unique<Pipeline>(pipeline);
 }
 
-void Example::prepare() {
+void Example::prepare()
+{
     Application::prepare();
 
     prepareUniformBuffers();
@@ -203,14 +209,16 @@ void Example::prepare() {
     buildCommandBuffers();
 }
 
-void Example::createDescriptorSetLayout() {
+void Example::createDescriptorSetLayout()
+{
     descriptorLayout = std::make_unique<DescriptorLayout>(*device);
     descriptorLayout->addBinding(VK_SHADER_STAGE_VERTEX_BIT, 0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0);
     descriptorLayout->addBinding(VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0);
     descriptorLayout->createLayout(0);
 }
 
-Example::Example() : Application("Drawing Triangle", 1024, 1024) {
+Example::Example() : Application("Drawing Triangle", 1024, 1024)
+{
     camera = std::make_unique<Camera>();
     camera->flipY = true;
     camera->setPerspective(45.f, 1.f, 0.1f, 10.0f);
@@ -218,30 +226,33 @@ Example::Example() : Application("Drawing Triangle", 1024, 1024) {
     camera->setTranslation(glm::vec3(0.f, 0.f, -2.f));
 }
 
-void Example::bindUniformBuffers(CommandBuffer &commandBuffer) {
+void Example::bindUniformBuffers(CommandBuffer& commandBuffer)
+{
     commandBuffer.bindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayOut, 0, {descriptorSet.get()},
                                      {});
 }
 
-void Example::buildCommandBuffers() {
-    for (int i = commandBuffers.size() - 1; i >= 0; i--) {
-        auto &commandBuffer = *commandBuffers[i];
+void Example::buildCommandBuffers()
+{
+    for (int i = commandBuffers.size() - 1; i >= 0; i--)
+    {
+        auto& commandBuffer = *commandBuffers[i];
         commandBuffer.beginRecord(0);
         commandBuffer.bindPipeline(graphicsPipeline->getHandle());
         renderContext->setActiveFrameIdx(i);
         bindUniformBuffers(commandBuffer);
-        draw(commandBuffer, renderContext->getRenderFrame(i));
+        draw(commandBuffer);
         commandBuffer.endRecord();
     }
 }
 
-void Example::draw(CommandBuffer &commandBuffer, RenderFrame &renderFrame) {
+void Example::draw(CommandBuffer& commandBuffer)
+{
     bindUniformBuffers(commandBuffer);
-    renderPipeline->draw(commandBuffer, renderFrame);
-    commandBuffer.beginRenderPass(renderFrame.getRenderTarget(), renderPipeline->getRenderPass(),
-                                  RenderContext::g_context->getFrameBuffer(),
+    renderPipeline->draw(commandBuffer);
+    commandBuffer.beginRenderPass(renderPipeline->getRenderPass(),
                                   Default::clearValues(), VkSubpassContents{});
-    const VkViewport viewport = vkCommon::initializers::viewport((float) width, (float) height, 0.0f, 1.0f);
+    const VkViewport viewport = vkCommon::initializers::viewport((float)width, (float)height, 0.0f, 1.0f);
     const VkRect2D scissor = vkCommon::initializers::rect2D(width, height, 0, 0);
     vkCmdSetViewport(commandBuffer.getHandle(), 0, 1, &viewport);
     vkCmdSetScissor(commandBuffer.getHandle(), 0, 1, &scissor);
@@ -250,14 +261,16 @@ void Example::draw(CommandBuffer &commandBuffer, RenderFrame &renderFrame) {
     commandBuffer.endRenderPass();
 }
 
-void Example::onUpdateGUI() {
+void Example::onUpdateGUI()
+{
     gui->text("Hello");
     gui->text("Hello IMGUI");
     gui->text("Hello imgui");
 }
 
-int main() {
-    Example *example = new Example();
+int main()
+{
+    auto example = new Example();
     example->prepare();
     example->mainloop();
     return 0;

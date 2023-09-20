@@ -45,6 +45,8 @@ namespace sg {
 
         void setLayers(uint32_t layers);
 
+        void generateMipMap();
+
 
     protected:
         std::unique_ptr<Image> vkImage;

@@ -78,4 +78,47 @@ namespace sg {
     void SgImage::setLayers(uint32_t layers) {
         SgImage::layers = layers;
     }
+
+    void SgImage::generateMipMap() {
+        assert(mipMaps.size() == 1 && "Mipmaps already generated");
+
+        auto extent = getExtent();
+        auto next_width = std::max<uint32_t>(1u, extent.width / 2);
+        auto next_height = std::max<uint32_t>(1u, extent.height / 2);
+        auto channels = 4;
+        auto next_size = next_width * next_height * channels;
+
+        while (true) {
+            // Make space for next mipmap
+            auto old_size = toUint32(data.size());
+            data.resize(old_size + next_size);
+
+            auto &prev_mipmap = mipMaps.back();
+            // Update mipmaps
+            Mipmap next_mipmap{};
+            next_mipmap.level = prev_mipmap.level + 1;
+            next_mipmap.offset = old_size;
+            next_mipmap.extent = {next_width, next_height, 1u};
+
+            //todo
+
+            // std::copy(data.begin()+ next_mipmap.offset,data.begin()+prev_mipmap.offset,data.begin()+pr
+
+            // Fill next mipmap memory
+//            stbir_resize_uint8(data.data() + prev_mipmap.offset, prev_mipmap.extent.width, prev_mipmap.extent.height, 0,
+//                               data.data() + next_mipmap.offset, next_mipmap.extent.width, next_mipmap.extent.height, 0,
+//                               channels);
+
+            mipMaps.emplace_back(std::move(next_mipmap));
+
+            // Next mipmap values
+            next_width = std::max<uint32_t>(1u, next_width / 2);
+            next_height = std::max<uint32_t>(1u, next_height / 2);
+            next_size = next_width * next_height * channels;
+
+            if (next_width == 1 && next_height == 1) {
+                break;
+            }
+        }
+    }
 }

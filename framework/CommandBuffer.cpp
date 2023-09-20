@@ -2,6 +2,7 @@
 #include "Buffer.h"
 #include "Images/Image.h"
 #include "Descriptor/DescriptorSet.h"
+#include "RenderContext.h"
 #include <RenderPass.h>
 #include <FrameBuffer.h>
 #include <RenderTarget.h>
@@ -105,15 +106,17 @@ void CommandBuffer::imageMemoryBarrier(const ImageView &view, ImageMemoryBarrier
 //}
 
 
-void CommandBuffer::beginRenderPass(const RenderTarget &render_target, RenderPass &render_pass,
-                                    const FrameBuffer &framebuffer, const std::vector<VkClearValue> &clear_values,
+void CommandBuffer::beginRenderPass(RenderPass &render_pass, const std::vector<VkClearValue> &clear_values,
                                     VkSubpassContents contents) {
     VkRenderPassBeginInfo renderPassInfo{};
+
+    auto frameBuffer = RenderContext::g_context->getFrameBuffer();
+
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass = render_pass.getHandle();
-    renderPassInfo.framebuffer = framebuffer.getHandle();
+    renderPassInfo.framebuffer = frameBuffer.getHandle();
     renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = render_target.getExtent();
+    renderPassInfo.renderArea.extent = frameBuffer.getExtent();
 
     renderPassInfo.clearValueCount = clear_values.size();
     renderPassInfo.pClearValues = clear_values.data();

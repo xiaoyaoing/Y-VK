@@ -10,6 +10,9 @@
 
 #include "ext/tinygltf/tiny_gltf.h"
 
+#include <filesystem>
+
+
 #include "API_VK.h"
 //#include "Mesh.h"
 
@@ -49,7 +52,7 @@ namespace gltfLoading {
         Texture *occlusionTexture = nullptr;
         Texture *emissiveTexture = nullptr;
         std::unique_ptr<DescriptorSet> descriptorSet;
-
+        
         Material(Device &device);
     };
 
@@ -207,15 +210,7 @@ namespace gltfLoading {
         std::vector<Material> materials;
         std::vector<Animation> animations;
 
-//        struct{
-//            std::unique_ptr<Buffer> buffer;
-//            int count;
-//        } vertices;
-//
-//        struct{
-//            std::unique_ptr<Buffer> buffer;
-//            int count;
-//        } indices;
+        std::filesystem::path modelPath;
 
 
         std::unique_ptr<Buffer> vertices, indices;

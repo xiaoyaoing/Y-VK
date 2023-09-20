@@ -5,19 +5,19 @@
 #include <Device.h>
 #include <Subpass.h>
 
-Pipeline::Pipeline(const PipelineInfo &pipelineInfo, ptr<Device> device,
-                   const std::vector<VkVertexInputBindingDescription> &inputBindings,
-                   const std::vector<VkVertexInputAttributeDescription> &vertexInputAttributs,
-                   VkPipelineLayout pipelineLayout, VkRenderPass renderPass) {
-
+Pipeline::Pipeline(const PipelineInfo& pipelineInfo, ptr<Device> device,
+                   const std::vector<VkVertexInputBindingDescription>& inputBindings,
+                   const std::vector<VkVertexInputAttributeDescription>& vertexInputAttributs,
+                   VkPipelineLayout pipelineLayout, VkRenderPass renderPass)
+{
     // DVKGfxPipeline* pipeline    = new DVKGfxPipeline();
     _device = device;
     _layout = pipelineLayout;
     VkPipelineVertexInputStateCreateInfo vertexInputState{};
     vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputState.vertexBindingDescriptionCount = (uint32_t) inputBindings.size();
+    vertexInputState.vertexBindingDescriptionCount = (uint32_t)inputBindings.size();
     vertexInputState.pVertexBindingDescriptions = inputBindings.data();
-    vertexInputState.vertexAttributeDescriptionCount = (uint32_t) vertexInputAttributs.size();
+    vertexInputState.vertexAttributeDescriptionCount = (uint32_t)vertexInputAttributs.size();
     vertexInputState.pVertexAttributeDescriptions = vertexInputAttributs.data();
 
     VkPipelineColorBlendStateCreateInfo colorBlendState{};
@@ -47,7 +47,7 @@ Pipeline::Pipeline(const PipelineInfo &pipelineInfo, ptr<Device> device,
     pipelineCreateInfo.layout = pipelineLayout;
     pipelineCreateInfo.renderPass = renderPass;
     pipelineCreateInfo.subpass = pipelineInfo.subpass;
-    pipelineCreateInfo.stageCount = (uint32_t) shaderStages.size();
+    pipelineCreateInfo.stageCount = (uint32_t)shaderStages.size();
     pipelineCreateInfo.pStages = shaderStages.data();
     pipelineCreateInfo.pVertexInputState = &vertexInputState;
     pipelineCreateInfo.pInputAssemblyState = &(pipelineInfo.inputAssemblyState);
@@ -58,40 +58,44 @@ Pipeline::Pipeline(const PipelineInfo &pipelineInfo, ptr<Device> device,
     pipelineCreateInfo.pDepthStencilState = &(pipelineInfo.depthStencilState);
     pipelineCreateInfo.pDynamicState = &dynamicState;
 
-    if (pipelineInfo.tessellationState.patchControlPoints != 0) {
+    if (pipelineInfo.tessellationState.patchControlPoints != 0)
+    {
         pipelineCreateInfo.pTessellationState = &(pipelineInfo.tessellationState);
     }
 
     // todo add pipeline cache
     VK_CHECK_RESULT(
-            vkCreateGraphicsPipelines(device->getHandle(), nullptr, 1, &pipelineCreateInfo, nullptr, &_pipeline));
+        vkCreateGraphicsPipelines(device->getHandle(), nullptr, 1, &pipelineCreateInfo, nullptr, &_pipeline));
 }
 
-void RenderPipeline::draw(CommandBuffer &commandBuffer, RenderFrame &renderFrame, VkSubpassContents contents) {
-
-    std::unique_ptr<Subpass> &pass = subPasses[0];
+void RenderPipeline::draw(CommandBuffer& commandBuffer, VkSubpassContents contents)
+{
+    std::unique_ptr<Subpass>& pass = subPasses[0];
     // todo handle multpasses
-    pass->updateRenderTargetAttachments(renderFrame.getRenderTarget());
-    commandBuffer.beginRenderPass(renderFrame.getRenderTarget(), *renderPass,
-                                  RenderContext::g_context->getFrameBuffer(),
+    // pass->updateRenderTargetAttachments(renderFrame.getRenderTarget());
+    commandBuffer.beginRenderPass(*renderPass,
                                   Default::clearValues(), contents);
     pass->draw(commandBuffer);
 }
 
-RenderPass &RenderPipeline::getRenderPass() const {
+RenderPass& RenderPipeline::getRenderPass() const
+{
     return *renderPass;
 }
 
-void RenderPipeline::addSubPass(std::unique_ptr<Subpass> &&subpass) {
+void RenderPipeline::addSubPass(std::unique_ptr<Subpass>&& subpass)
+{
     subPasses.push_back(std::move(subpass));
 }
 
-void RenderPipeline::createRenderPass(RenderTarget &target, std::vector<LoadStoreInfo> &loadStoreOps) {
+void RenderPipeline::createRenderPass(RenderTarget& target, std::vector<LoadStoreInfo>& loadStoreOps)
+{
     //    assert(subpasses.size() > 0 && "Cannot create a render pass without any subpass");
     assert(!subPasses.empty());
     std::vector<SubpassInfo> subpassInfos(subPasses.size());
     auto subpassInfoIt = subpassInfos.begin();
-    for (auto &subpass: subPasses) {
+    for (auto& subpass : subPasses)
+    {
         subpassInfoIt->inputAttachments = subpass->getInputAttachments();
         subpassInfoIt->outputAttachments = subpass->getOutputAttachments();
         subpassInfoIt->colorResolveAttachments = subpass->getColorResolveAttachments();
@@ -103,11 +107,14 @@ void RenderPipeline::createRenderPass(RenderTarget &target, std::vector<LoadStor
         ++subpassInfoIt;
     }
 
-    renderPass = std::make_unique<RenderPass>(device, target.getAttachments(), loadStoreOps, subpassInfos);
+    // renderPass = std::make_unique<RenderPass>(device, target.getAttachments(), loadStoreOps, subpassInfos);
 }
 
-RenderPipeline::RenderPipeline(Device &device) : device(device) {}
+RenderPipeline::RenderPipeline(Device& device) : device(device)
+{
+}
 
-void RenderPipeline::createRenderPass(VkRenderPass pass) {
+void RenderPipeline::createRenderPass(VkRenderPass pass)
+{
     renderPass = std::make_unique<RenderPass>(device, pass);
 }

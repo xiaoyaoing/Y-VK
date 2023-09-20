@@ -4,7 +4,10 @@
 #include "Images/Image.h"
 #include "Images/ImageView.h"
 
-struct Attachment {
+struct HwTexture;
+
+struct Attachment
+{
     VkFormat format{VK_FORMAT_UNDEFINED};
 
     VkSampleCountFlagBits samples{VK_SAMPLE_COUNT_1_BIT};
@@ -13,47 +16,95 @@ struct Attachment {
 
     VkImageLayout initial_layout{VK_IMAGE_LAYOUT_UNDEFINED};
 
+    VkAttachmentLoadOp loadOp{};
+
+    VkAttachmentStoreOp storeOp{};
+
+
     Attachment() = default;
 
-    Attachment(VkFormat format, VkSampleCountFlagBits samples, VkImageUsageFlags usage) : format(format),
-                                                                                          samples(samples),
-                                                                                          usage(usage) {}
+    Attachment(VkFormat format, VkSampleCountFlagBits samples, VkImageUsageFlags usage, VkAttachmentLoadOp loadOp,
+               VkAttachmentStoreOp storeOp) : format(format),
+                                              samples(samples),
+                                              usage(usage),
+                                              loadOp(loadOp),
+                                              storeOp(storeOp)
+    {
+    }
 };
 
-class RenderTarget {
+struct FrameBufferAttchment
+{
+    // std::vector
+};
+
+// class RenderTarget
+// {
+//     std::vector<Image> _images;
+//     std::vector<ImageView> _views;
+//     std::vector<Attachment> _attachments;
+// };
+
+struct VulkanAttachment
+{
+    HwTexture * texture;
+    uint8_t level = 0;
+    uint16_t layer = 0;
+    ImageView  & getImageView();
+    Image & getImage();
+};
+
+//通过vulkanAttachments初始化attachments数组
+//
+class RenderTarget
+{
+
+
+    std::vector<ImageView *> views;
+    
     std::vector<Image> _images;
     std::vector<ImageView> _views;
     std::vector<Attachment> _attachments;
     std::vector<uint32_t> inAttachment = {};
     std::vector<uint32_t> outAttachment = {0};
     VkExtent2D _extent;
+
+    std::vector<VulkanAttachment> attachments;
+    
 public:
-    using CreateFunc = std::function<std::unique_ptr<RenderTarget>(Image &&)>;
+    using CreateFunc = std::function<std::unique_ptr<RenderTarget>(Image&&)>;
 
     static CreateFunc defaultRenderTargetCreateFunction;
 
-    RenderTarget(std::vector<Image> &&images);
+    explicit RenderTarget(const std::vector<VulkanAttachment>& attachments)
+        : attachments(attachments)
+    {
+    }
 
-    RenderTarget(std::vector<ImageView> &&imageViews);
+    
 
-    const std::vector<uint32_t> &getInAttachment() const;
 
-    void setInAttachment(const std::vector<uint32_t> &inAttachment);
+    RenderTarget(std::vector<Image>&& images);
 
-    const std::vector<uint32_t> &getOutAttachment() const;
+    RenderTarget(std::vector<ImageView>&& imageViews);
 
-    void setOutAttachment(const std::vector<uint32_t> &outAttachment);
+    const std::vector<uint32_t>& getInAttachment() const;
 
-    const std::vector<Image> &getImages() const;
+    void setInAttachment(const std::vector<uint32_t>& inAttachment);
 
-    const std::vector<ImageView> &getViews() const;
+    const std::vector<uint32_t>& getOutAttachment() const;
 
-    void setLayout(uint32_t &i, VkImageLayout layout);
+    void setOutAttachment(const std::vector<uint32_t>& outAttachment);
+
+    const std::vector<Image>& getImages() const;
+
+    const std::vector<ImageView>& getViews() const;
+
+    void setLayout(uint32_t& i, VkImageLayout layout);
 
     VkExtent2D getExtent() const;
 
-    const std::vector<Attachment> &getAttachments() const;
+    const std::vector<Attachment>& getAttachments() const;
 
-    void setAttachments(const std::vector<Attachment> &attachments);
+    void setAttachments(const std::vector<Attachment>& attachments);
 };
-

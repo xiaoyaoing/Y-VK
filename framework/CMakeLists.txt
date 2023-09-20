@@ -7,7 +7,7 @@ message("Project Files: ${HEADER_FILES}")
 
 # 接下来你可以使用source_group命令将这些文件分组，以在IDE中更好地组织项目结构
 # source_group("Project Files" FILES ${PROJECT_FILES})
-add_library(${target_name} STATIC ${PROJECT_FILES} ../ext/tinygltf/tiny_gltf.h Scene/Compoment.cpp Scene/Compoment.h Scene/Images/KtxImage.cpp Scene/Images/KtxImage.h)
+add_library(${target_name} STATIC ${PROJECT_FILES} ../ext/tinygltf/tiny_gltf.h Scene/Compoment.cpp Scene/Compoment.h Scene/Images/KtxImage.cpp Scene/Images/KtxImage.h defered/Defered.cpp defered/Defered.h)
 message(${target_name})
 message(STATUS "Vulkan library: ${Vulkan_LIBRARY}")
 
@@ -38,7 +38,7 @@ message(STATUS ${Vulkan_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})
 # include_directories(${Vulkan_INCLUDE_DIRS})
 
 # 设置头文件搜索路径
-target_include_directories(${target_name} PUBLIC ${PROJECT_SOURCE_DIR}/framework "C:\\VulkanSDK\\1.3.250.1\\Include")
+target_include_directories(${target_name} PUBLIC ${PROJECT_SOURCE_DIR}/framework "C:\\VulkanSDK\\1.3.261.1\\Include")
 
 set(FRAMEWORK_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/framework" CACHE PATH "Path to the framework include directory")
 

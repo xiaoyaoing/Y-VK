@@ -91,6 +91,6 @@ protected:
 
     void onUpdateGUI() override;
 
-    void draw(CommandBuffer &commandBuffer, RenderFrame &renderFrame) override;
+    void draw(CommandBuffer &commandBuffer) override;
 
 };

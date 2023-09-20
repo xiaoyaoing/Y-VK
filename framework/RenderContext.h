@@ -6,6 +6,10 @@
 #include "Vulkan.h"
 #include "Images/ImageView.h"
 #include "RenderFrame.h"
+#include <RenderTarget.h>
+
+#include "Pipeline.h"
+#include "RenderGraph/RenderGraph.h"
 
 class Device;
 
@@ -15,11 +19,14 @@ class Window;
 
 class FrameBuffer;
 
-struct RenderContext {
+struct RenderContext
+{
 public:
-    RenderContext(Device &device, VkSurfaceKHR surface, Window &window);
+    RenderContext(Device& device, VkSurfaceKHR surface, Window& window);
 
-    static RenderContext *g_context;
+    // RenderContext(Device &device, VkSurfaceKHR surface, Window &window);
+
+    static RenderContext* g_context;
 
     // static RenderContext &getGlobalRenderContext() {
     //     return Singleton<RenderContext>::getInstance();
@@ -42,30 +49,36 @@ public:
     //    }
     void prepare();
 
-    CommandBuffer &begin();
+    CommandBuffer& begin();
 
     void beginFrame();
 
     void waitFrame();
 
-    RenderFrame &getActiveRenderFrame();
+    //  RenderFrame &getActiveRenderFrame();
 
-    RenderFrame &getRenderFrame(int idx);
+    //  RenderFrame &getRenderFrame(int idx);
 
     uint32_t getActiveFrameIndex() const;
 
-    void submit(CommandBuffer &buffer, VkFence fence = VK_NULL_HANDLE);
+    void submit(CommandBuffer& buffer, VkFence fence = VK_NULL_HANDLE);
 
-    void createFrameBuffers(RenderPass &renderpass);
+    void createFrameBuffers(RenderPass& renderpass);
 
-    FrameBuffer &getFrameBuffer(uint32_t idx);
+    FrameBuffer& getFrameBuffer(uint32_t idx);
 
-    FrameBuffer &getFrameBuffer();
+    FrameBuffer& getFrameBuffer();
 
-    VkSemaphore submit(const Queue &queue, const std::vector<CommandBuffer *> &commandBuffers, VkSemaphore waitSem,
+    VkSemaphore submit(const Queue& queue, const std::vector<CommandBuffer*>& commandBuffers, VkSemaphore waitSem,
                        VkPipelineStageFlags waitPiplineStage);
 
     void setActiveFrameIdx(int idx);
+
+    bool isPrepared() const;
+
+    void draw(const Scene& scene);
+
+    RenderGraph& getRenderGraph();
 
 private:
     bool frameActive = false;
@@ -75,26 +88,31 @@ private:
 
 
     VkInstance instance;
-    std::vector<const char *> instanceLayers;
-    std::vector<const char *> instanceExtensions;
-    std::vector<const char *> appDeviceExtensions;
-    std::vector<const char *> appInstanceExtensions;
-    VkPhysicalDeviceFeatures2 *physicalDeviceFeatures2 = nullptr;
+    std::vector<const char*> instanceLayers;
+    std::vector<const char*> instanceExtensions;
+    std::vector<const char*> appDeviceExtensions;
+    std::vector<const char*> appInstanceExtensions;
+    VkPhysicalDeviceFeatures2* physicalDeviceFeatures2 = nullptr;
 
-    Device &device;
+    Device& device;
     std::unique_ptr<SwapChain> swapchain;
 
-    std::vector<std::unique_ptr<RenderFrame>> frames;
+    //  std::vector<std::unique_ptr<RenderFrame>> frames;
     std::vector<std::unique_ptr<FrameBuffer>> frameBuffers;
     VkExtent2D surfaceExtent;
 
     // 交换链图像信号 acquire-next
     //   VkSemaphore imageAcquireSem;
 
-    struct {
+    struct
+    {
         VkSemaphore presentFinishedSem;
         VkSemaphore renderFinishedSem;
     } semaphores;
+
+    PipelineState pipelineState;
+
+    std::vector<CommandBuffer> commandBuffers;
+
+    std::unique_ptr<RenderGraph> renderGraph;
 };
-
-

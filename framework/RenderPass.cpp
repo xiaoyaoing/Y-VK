@@ -158,7 +158,7 @@ RenderPass::~RenderPass() {
 }
 
 RenderPass::RenderPass(Device &device, const std::vector<Attachment> &attachments,
-                       const std::vector<LoadStoreInfo> &load_store_infos, const std::vector<SubpassInfo> &subpasses)
+                       const std::vector<SubpassInfo> &subpasses)
         : device(device) {
 
     std::vector<VkAttachmentDescription> attachmentDescriptions;
@@ -171,13 +171,19 @@ RenderPass::RenderPass(Device &device, const std::vector<Attachment> &attachment
         attachmentDescription.finalLayout = isDepthOrStencilFormat(attachments[i].format)
                                             ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
                                             : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        //
+        // if (i < load_store_infos.size()) {
+        //     attachmentDescription.loadOp = load_store_infos[i].load_op;
+        //     attachmentDescription.storeOp = load_store_infos[i].store_op;
+        //     attachmentDescription.stencilLoadOp = load_store_infos[i].load_op;
+        //     attachmentDescription.stencilStoreOp = load_store_infos[i].store_op;
+        // }
+        attachmentDescription.loadOp =attachments[i].loadOp;
+        attachmentDescription.storeOp =attachments[i].storeOp;
+        attachmentDescription.loadOp =attachments[i].loadOp;
+        attachmentDescription.storeOp =attachments[i].storeOp;
 
-        if (i < load_store_infos.size()) {
-            attachmentDescription.loadOp = load_store_infos[i].load_op;
-            attachmentDescription.storeOp = load_store_infos[i].store_op;
-            attachmentDescription.stencilLoadOp = load_store_infos[i].load_op;
-            attachmentDescription.stencilStoreOp = load_store_infos[i].store_op;
-        }
+        
         attachmentDescriptions.push_back(attachmentDescription);
     }
 

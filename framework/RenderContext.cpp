@@ -10,97 +10,113 @@
 #include <RenderTarget.h>
 #include <FrameBuffer.h>
 
-RenderContext *RenderContext::g_context = nullptr;
+#include "Common/ResourceCache.h"
 
-RenderContext::RenderContext(Device &device, VkSurfaceKHR surface, Window &window) : device(device) {
+RenderContext* RenderContext::g_context = nullptr;
+
+RenderContext::RenderContext(Device& device, VkSurfaceKHR surface, Window& window)
+    : device(device)
+{
     swapchain = std::make_unique<SwapChain>(device, surface, window);
-    if (swapchain) {
+    if (swapchain)
+    {
         surfaceExtent = swapchain->getExtent();
 
         VkExtent3D extent{surfaceExtent.width, surfaceExtent.height, 1};
 
-        for (auto &image_handle: swapchain->getImages()) {
+        for (auto& image_handle : swapchain->getImages())
+        {
             auto swapChainImage = Image(device, image_handle,
                                         extent,
                                         swapchain->getImageFormat(),
                                         swapchain->getUseage());
-            auto render_target = RenderTarget::defaultRenderTargetCreateFunction(std::move(swapChainImage));
-            frames.emplace_back(std::make_unique<RenderFrame>(device, std::move(render_target)));
+            // auto render_target = createFunc(std::move(swapChainImage));
+            //frames.emplace_back(std::make_unique<RenderFrame>(device, std::move(render_target)));
         }
     }
 
     VkSemaphoreCreateInfo semaphoreCreateInfo{VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
     VK_CHECK_RESULT(
-            vkCreateSemaphore(device.getHandle(), &semaphoreCreateInfo, nullptr, &semaphores.renderFinishedSem));
+        vkCreateSemaphore(device.getHandle(), &semaphoreCreateInfo, nullptr, &semaphores.renderFinishedSem));
     VK_CHECK_RESULT(
-            vkCreateSemaphore(device.getHandle(), &semaphoreCreateInfo, nullptr, &semaphores.presentFinishedSem));
-
+        vkCreateSemaphore(device.getHandle(), &semaphoreCreateInfo, nullptr, &semaphores.presentFinishedSem));
 }
 
-CommandBuffer &RenderContext::begin() {
+CommandBuffer& RenderContext::begin()
+{
     assert(prepared && "RenderContext not prepared for rendering, call prepare()");
 
-    if (!frameActive) {
+    if (!frameActive)
+    {
         beginFrame();
     }
 
-    if (acquiredSem == VK_NULL_HANDLE) {
+    if (acquiredSem == VK_NULL_HANDLE)
+    {
         throw std::runtime_error("Couldn't begin frame");
     }
-    auto &queue = device.getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0);
-    return getActiveRenderFrame().requestCommandBuffer(queue);
+    auto& queue = device.getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0);
+    // return getActiveRenderFrame().requestCommandBuffer(queue);
 }
 
-void RenderContext::beginFrame() {
-    assert(activeFrameIndex < frames.size());
-    auto &prev_frame = *frames[activeFrameIndex];
-    if (swapchain) {
+void RenderContext::beginFrame()
+{
+    // assert(activeFrameIndex < frames.size());
+    if (swapchain)
+    {
         VK_CHECK_RESULT(swapchain->acquireNextImage(activeFrameIndex, semaphores.presentFinishedSem, VK_NULL_HANDLE));
     }
     frameActive = true;
-    getActiveRenderFrame().reset();
+    //   getActiveRenderFrame().reset();
 }
 
-void RenderContext::waitFrame() {
+void RenderContext::waitFrame()
+{
 }
 
-RenderFrame &RenderContext::getActiveRenderFrame() {
-    assert(frameActive);
-    assert(activeFrameIndex < frames.size());
-    return *frames[activeFrameIndex];
-}
+// RenderFrame &RenderContext::getActiveRenderFrame() {
+//     assert(frameActive);
+//     assert(activeFrameIndex < frames.size());
+//     return *frames[activeFrameIndex];
+// }
 
-void RenderContext::prepare() {
-    if (swapchain) {
+void RenderContext::prepare()
+{
+    if (swapchain)
+    {
         surfaceExtent = swapchain->getExtent();
 
         VkExtent3D extent{surfaceExtent.width, surfaceExtent.height, 1};
 
-        for (auto &image_handle: swapchain->getImages()) {
-            auto swapchain_image = Image{
-                    device, image_handle,
-                    extent,
-                    swapchain->getImageFormat(),
-                    swapchain->getUseage()};
-            auto render_target = RenderTarget::defaultRenderTargetCreateFunction(std::move(swapchain_image));
-            frames.emplace_back(std::make_unique<RenderFrame>(device, std::move(render_target)));
+        for (auto& image_handle : swapchain->getImages())
+        {
+            // auto swapchain_image = Image{
+            //         device, image_handle,
+            //         extent,
+            //         swapchain->getImageFormat(),
+            //         swapchain->getUseage()};
+            // auto render_target = RenderTarget::defaultRenderTargetCreateFunction(std::move(swapchain_image));
+            // frames.emplace_back(std::make_unique<RenderFrame>(device, std::move(render_target)));
         }
-    } else {
+    }
+    else
+    {
         swapchain = nullptr;
     }
 }
 
-uint32_t RenderContext::getActiveFrameIndex() const {
+uint32_t RenderContext::getActiveFrameIndex() const
+{
     return activeFrameIndex;
 }
 
-void RenderContext::submit(CommandBuffer &buffer, VkFence fence) {
+void RenderContext::submit(CommandBuffer& buffer, VkFence fence)
+{
     std::vector<VkCommandBuffer> cmdBufferHandles{buffer.getHandle()};
 
 
     auto queue = device.getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0);
 
-    RenderFrame &frame = getActiveRenderFrame();
     VkSubmitInfo submitInfo{VK_STRUCTURE_TYPE_SUBMIT_INFO};
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 
@@ -116,7 +132,8 @@ void RenderContext::submit(CommandBuffer &buffer, VkFence fence) {
 
     queue.submit({submitInfo}, fence);
 
-    if (swapchain) {
+    if (swapchain)
+    {
         VkSwapchainKHR vk_swapchain = swapchain->getHandle();
 
         VkPresentInfoKHR present_info{VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
@@ -132,40 +149,45 @@ void RenderContext::submit(CommandBuffer &buffer, VkFence fence) {
         // LOGE("Presented")
 
         frameActive = false;
-
     }
 
     queue.wait();
 }
 
-VkFormat RenderContext::getSwapChainFormat() const {
+VkFormat RenderContext::getSwapChainFormat() const
+{
     return swapchain->getImageFormat();
 }
 
-VkExtent2D RenderContext::getSwapChainExtent() const {
+VkExtent2D RenderContext::getSwapChainExtent() const
+{
     return swapchain->getExtent();
 }
 
-FrameBuffer &RenderContext::getFrameBuffer(uint32_t idx) {
+FrameBuffer& RenderContext::getFrameBuffer(uint32_t idx)
+{
     return *frameBuffers[idx];
 }
 
-FrameBuffer &RenderContext::getFrameBuffer() {
+FrameBuffer& RenderContext::getFrameBuffer()
+{
     return getFrameBuffer(this->activeFrameIndex);
 }
 
 VkSemaphore
-RenderContext::submit(const Queue &queue, const std::vector<CommandBuffer *> &commandBuffers, VkSemaphore /*waitSem*/,
-                      VkPipelineStageFlags waitPiplineStage) {
+RenderContext::submit(const Queue& queue, const std::vector<CommandBuffer*>& commandBuffers, VkSemaphore /*waitSem*/,
+                      VkPipelineStageFlags waitPiplineStage)
+{
     std::vector<VkCommandBuffer> cmdBufferHandles(commandBuffers.size(), VK_NULL_HANDLE);
 
     std::transform(commandBuffers.begin(), commandBuffers.end(), cmdBufferHandles.begin(),
-                   [](const CommandBuffer *buffer) -> VkCommandBuffer {
+                   [](const CommandBuffer* buffer) -> VkCommandBuffer
+                   {
                        return buffer->getHandle();
                    });
 
 
-    RenderFrame &frame = getActiveRenderFrame();
+    //  RenderFrame &frame = getActiveRenderFrame();
     VkSubmitInfo submitInfo{VK_STRUCTURE_TYPE_SUBMIT_INFO};
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = &semaphores.presentFinishedSem;
@@ -177,7 +199,8 @@ RenderContext::submit(const Queue &queue, const std::vector<CommandBuffer *> &co
     VkFence fence;
     queue.submit({submitInfo}, fence);
 
-    if (swapchain) {
+    if (swapchain)
+    {
         VkSwapchainKHR vk_swapchain = swapchain->getHandle();
 
         VkPresentInfoKHR present_info{VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
@@ -204,32 +227,49 @@ RenderContext::submit(const Queue &queue, const std::vector<CommandBuffer *> &co
     }
 
     // Frame is not active anymore
-//    if (imageAcquireSem) {
-//        //        release_owned_semaphore(acquired_semaphore);
-//        imageAcquireSem = VK_NULL_HANDLE;
-//    }
+    //    if (imageAcquireSem) {
+    //        //        release_owned_semaphore(acquired_semaphore);
+    //        imageAcquireSem = VK_NULL_HANDLE;
+    //    }
     frameActive = false;
 
     return VK_NULL_HANDLE;
 }
 
-void RenderContext::createFrameBuffers(RenderPass &renderPass) {
-    if (!frameBuffers.empty()) {
+void RenderContext::createFrameBuffers(RenderPass& renderPass)
+{
+    if (!frameBuffers.empty())
+    {
         return;
     }
-    for (auto &renderFrame: frames) {
-        frameBuffers.emplace_back(std::make_unique<FrameBuffer>(device, renderFrame->getRenderTarget(), renderPass));
-    }
+    // for (auto &renderFrame: frames) {
+    //     frameBuffers.emplace_back(std::make_unique<FrameBuffer>(device, renderFrame->getRenderTarget(), renderPass));
+    // }
 }
 
-uint32_t RenderContext::getSwapChainImageCount() const {
+uint32_t RenderContext::getSwapChainImageCount() const
+{
     return swapchain->getImageCount();
 }
 
-RenderFrame &RenderContext::getRenderFrame(int idx) {
-    return *frames[idx];
+// RenderFrame &RenderContext::getRenderFrame(int idx) {
+//     return *frames[idx];
+// }
+
+void RenderContext::setActiveFrameIdx(int idx)
+{
+    activeFrameIndex = idx;
 }
 
-void RenderContext::setActiveFrameIdx(int idx) {
-    activeFrameIndex = idx;
+bool RenderContext::isPrepared() const
+{
+    return prepared;
+}
+
+void RenderContext::draw(const Scene& scene)
+{
+    auto& commandBuffer = commandBuffers[activeFrameIndex];
+    auto& pipeline = device.getResourceCache().requestPipeline(pipelineState);
+
+    commandBuffer.bindPipeline(pipeline.getHandle());
 }

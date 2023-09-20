@@ -44,23 +44,26 @@
 // #include <windef.h>
 // #endif
 
-class Application {
-
-    void initWindow(const char *name, int width, int height);
+class Application
+{
+    void initWindow(const char* name, int width, int height);
 
     virtual void initGUI();
 
     bool frameBufferResized{};
 
 public:
-    Application(const char *name, int width, int height);
+    Application(const char* name, int width, int height);
+
+    Application(): Application("Vulkan", 512, 512)
+    {
+    }
 
     virtual void prepare();
 
-    void inputEvent(const InputEvent &inputEvent);
+    void inputEvent(const InputEvent& inputEvent);
 
     void mainloop();
-
 
 protected:
     // #ifdef _WIN32
@@ -70,7 +73,7 @@ protected:
     //* create functions
     //    virtual std::unique_ptr<RenderTarget> createRenderTarget(Image &image) {}
 
-    virtual void draw(CommandBuffer &commandBuffer, RenderFrame &renderFrame);
+    virtual void draw(CommandBuffer& commandBuffer);
 
     virtual void createCommandBuffer();
 
@@ -90,24 +93,29 @@ protected:
 
     virtual void update();
 
-    virtual void bindUniformBuffers(CommandBuffer &commandBuffer) {}
+    virtual void bindUniformBuffers(CommandBuffer& commandBuffer)
+    {
+    }
 
     //*
     virtual void getRequiredInstanceExtensions();
 
-    inline void addDeviceExtension(const char *extension, bool optional = true) {
+    inline void addDeviceExtension(const char* extension, bool optional = true)
+    {
         deviceExtensions[extension] = optional;
     }
 
-    inline void addInstanceExtension(const char *extension, bool optional = true) {
+    inline void addInstanceExtension(const char* extension, bool optional = true)
+    {
         instanceExtensions[extension] = optional;
     }
+
 
     virtual void initVk();
 
     virtual void drawFrame();
 
-    void drawRenderPasses(CommandBuffer &buffer, RenderTarget &renderTarget);
+    void drawRenderPasses(CommandBuffer& buffer, RenderTarget& renderTarget);
 
     virtual void updateScene();
 
@@ -119,7 +127,9 @@ protected:
 
     virtual void onViewUpdated();
 
-    virtual void buildCommandBuffers() = 0;
+    virtual void buildCommandBuffers()
+    {
+    }
 
 protected:
     VmaAllocator _allocator{};
@@ -128,9 +138,12 @@ protected:
 
     std::vector<VkFramebuffer> _frameBuffers;
 
-    std::unordered_map<const char *, bool> deviceExtensions;
-    std::unordered_map<const char *, bool> instanceExtensions;
-    std::vector<const char *> validationLayers{"VK_LAYER_KHRONOS_validation"};
+    // 指定怎么处理renderPass里面的attachment
+    std::vector<LoadStoreInfo> loadStoreInfos{};
+
+    std::unordered_map<const char*, bool> deviceExtensions;
+    std::unordered_map<const char*, bool> instanceExtensions;
+    std::vector<const char*> validationLayers{"VK_LAYER_KHRONOS_validation"};
 
     // std::unique_ptr<CommandPool> commandPool;
     std::vector<std::unique_ptr<CommandBuffer>> commandBuffers;
@@ -170,7 +183,8 @@ protected:
     int width, height;
 
     //Camera related  variable begin
-    struct {
+    struct
+    {
         bool left{false};
         bool middle{false};
         bool right{false};
@@ -186,7 +200,6 @@ protected:
 
     float rotationSpeed{1};
     //Camera related  variable end
-
 
 
     VkPipelineCache pipelineCache{VK_NULL_HANDLE};

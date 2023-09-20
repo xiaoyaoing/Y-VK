@@ -24,6 +24,8 @@ namespace gltfLoading {
     }
 
     void Model::loadFromFile(const std::string &path, uint32_t fileLoadingFlags, float scale) {
+        this->modelPath = path;
+
         tinygltf::Model gltfModel;
         tinygltf::TinyGLTF gltfContext;
 //    if (fileLoadingFlags & FileLoadingFlags::DontLoadImages) {
@@ -216,8 +218,9 @@ namespace gltfLoading {
     }
 
     void Model::loadImages(tinygltf::Model gltfModel, Device &device, Queue &queue) {
+        auto parentDir = modelPath.parent_path().string() + "/";
         for (tinygltf::Image &image: gltfModel.images) {
-            Texture texture = Texture::loadTexture(device, image.uri);
+            Texture texture = Texture::loadTexture(device, parentDir + image.uri);
             textures.push_back(std::move(texture));
         }
         // Create an empty texture to be used for empty material images

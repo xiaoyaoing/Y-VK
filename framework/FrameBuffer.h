@@ -1,3 +1,6 @@
+#pragma once
+
+
 #include <Vulkan.h>
 
 class Device;
@@ -6,18 +9,24 @@ class RenderTarget;
 
 class RenderPass;
 
-class FrameBuffer {
+class FrameBuffer
+{
 public:
-    FrameBuffer(Device &deivce, RenderTarget &renderTarget, RenderPass &renderPass);
+    //  FrameBuffer(Device& deivce, std::vector<ImageView>& views, RenderPass& renderPass, VkExtent2D extent);
+    FrameBuffer(Device& device, RenderTarget& renderTarget, RenderPass& renderPass);
 
-//    explicit FrameBuffer(VkFramebuffer framebuffer) : _framebuffer(framebuffer) {}
+    //    explicit FrameBuffer(VkFramebuffer framebuffer) : _framebuffer(framebuffer) {}
 
     inline VkFramebuffer getHandle() const { return _framebuffer; }
 
-    void cleanup() {}
+    void cleanup()
+    {
+    }
+
+    const VkExtent2D& getExtent() const;
 
 protected:
     VkFramebuffer _framebuffer;
-    Device &device;
+    Device& device;
     VkExtent2D extent;
 };

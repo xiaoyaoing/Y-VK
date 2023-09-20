@@ -3,7 +3,7 @@
 //
 
 #include "Gui.h"
-#include <Common/VulkanInitializers.h>
+#include <Common\VkCommon.h>
 #include <Shader.h>
 #include "Device.h"
 #include "App/Application.h"

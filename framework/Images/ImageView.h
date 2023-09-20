@@ -16,6 +16,9 @@ public:
         return image;
     }
 
+    ImageView(ImageView &) = delete;
+
+
 //    ImageView( ptr<Device> & device, const ptr<Image> & targetImage,
 //              VkImageAspectFlags aspect, uint32_t mipLevels);
     ImageView(Image &image, VkImageViewType view_type, VkFormat format = VK_FORMAT_UNDEFINED,
