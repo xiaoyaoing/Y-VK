@@ -6,6 +6,11 @@ bool isDepthOnlyFormat(VkFormat format);
 
 bool isDepthOrStencilFormat(VkFormat format);
 
+//bool is_dynamic_buffer_descriptor_type(VkDescriptorType descriptor_type);
+
+
+//bool is_buffer_descriptor_type(VkDescriptorType descriptor_type);
+
 struct ImageMemoryBarrier {
     VkImageLayout oldLayout, newLayout;
     VkAccessFlags srcAccessMask, dstAccessMask;

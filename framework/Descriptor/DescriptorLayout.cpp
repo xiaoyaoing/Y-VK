@@ -80,6 +80,7 @@ DescriptorLayout::DescriptorLayout(Device& device, std::vector<Shader>& shaders)
     }
 
 
+    bindings = layoutBindings;
     VkDescriptorSetLayoutCreateInfo descSetLayoutInfo = {};
     descSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     descSetLayoutInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
@@ -132,4 +133,14 @@ void DescriptorLayout::createLayout(VkDescriptorSetLayoutCreateFlags flags)
     // descSetLayoutInfo.pNext = &flagsInfo;
     descSetLayoutInfo.flags = flags;
     VK_CHECK_RESULT(vkCreateDescriptorSetLayout(_deivce.getHandle(), &descSetLayoutInfo, nullptr, &_layout));
+}
+
+const VkDescriptorSetLayoutBinding& DescriptorLayout::getLayoutBindingInfo(int bindingIndex) const
+{
+    return bindings[bindingIndex];
+}
+
+std::vector<VkDescriptorSetLayoutBinding> DescriptorLayout::getBindings() const
+{
+    return bindings;
 }

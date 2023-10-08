@@ -12,7 +12,9 @@
 
 #include <vulkan/vulkan_core.h>
 
+
 #include <memory>
+#include <map>
 #include <vector>
 #include <string>
 #include <cstdarg>
@@ -34,55 +36,67 @@
 
 #define DATA_SIZE(vec) (vec.size() * sizeof(vec[0]))
 
-typedef uint32_t uint32;
+using uint32 = uint32_t;
 
-template<class T>
-inline uint32 toUint32(T t) {
+template <class T>
+inline uint32 toUint32(T t)
+{
     return uint32(t);
 }
 
-template<typename T>
+template <typename T>
 using ptr = std::shared_ptr<T>;
 
-template<class T, class Handle>
-std::vector<Handle> getHandles(const std::vector<T &> &vec) {
+template <class T, class Handle>
+std::vector<Handle> getHandles(const std::vector<T&>& vec)
+{
     std::vector<Handle> handles;
     handles.reserve(vec.size());
-    std::transform(vec.begin(), vec.end(), handles.begin(), [](T *t) { return t->getHandle(); });
+    std::transform(vec.begin(), vec.end(), handles.begin(), [](T* t) { return t->getHandle(); });
     return handles;
 }
 
-template<class T>
-std::vector<T> AllocateVector(size_t size) {
+template <class T>
+std::vector<T> AllocateVector(size_t size)
+{
     std::vector<T> vec;
     vec.reserve(size);
     return vec;
 }
 
-template<typename T>
-class Singleton {
-public:
-    static T &instance;
+template <class T>
+using BindingMap = std::map<uint32_t, std::map<uint32_t, T>>;
 
-    static T &getInstance() {
+template <typename T>
+class Singleton
+{
+public:
+    static T& instance;
+
+    static T& getInstance()
+    {
         // 使用局部静态变量确保在第一次调用时初始化，且线程安全
         return instance;
     }
 
     // 禁止拷贝构造和赋值运算符
-    Singleton(const Singleton &) = delete;
+    Singleton(const Singleton&) = delete;
 
-    Singleton &operator=(const Singleton &) = delete;
+    Singleton& operator=(const Singleton&) = delete;
 
 private:
-    Singleton() {} // 私有构造函数，确保只能通过 getInstance() 获取实例
+    Singleton()
+    {
+    } // 私有构造函数，确保只能通过 getInstance() 获取实例
 };
 
-namespace Default {
+namespace Default
+{
     std::vector<VkClearValue> clearValues();
 }
 
-struct LoadStoreInfo {
+struct LoadStoreInfo
+{
     VkAttachmentLoadOp load_op = VK_ATTACHMENT_LOAD_OP_CLEAR;
 
     VkAttachmentStoreOp store_op = VK_ATTACHMENT_STORE_OP_STORE;

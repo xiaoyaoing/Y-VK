@@ -130,8 +130,8 @@ Shader::Shader(Device& device, const std::string& path, SHADER_LOAD_MODE mode) :
     {
         std::string shaderLog;
         auto shaderBuffer = FileUtils::readShaderBinary(path);
-        tage = getShaderStage(FileUtils::getFileExt(path));
-        if (!GlslCompiler::compileToSpirv(tage, shaderBuffer, "main", spirvCode,
+        stage = getShaderStage(FileUtils::getFileExt(path));
+        if (!GlslCompiler::compileToSpirv(stage, shaderBuffer, "main", spirvCode,
                                           shaderLog))
         {
             LOGE("Failed to compile shader {}, Error: {}", path, shaderLog.c_str());
@@ -143,24 +143,24 @@ Shader::Shader(Device& device, const std::string& path, SHADER_LOAD_MODE mode) :
     createInfo.codeSize = spirvCode.size() * sizeof(uint32_t);
     createInfo.pCode = reinterpret_cast<const uint32_t*>(spirvCode.data());
     createInfo.pNext = nullptr;
-    VK_CHECK_RESULT(vkCreateShaderModule(device.getHandle(), &createInfo, nullptr, &shader));
+    VK_CHECK_RESULT(vkCreateShaderModule(device.getHandle(), &createInfo, nullptr, &shader))
 
     std::hash<std::string> hasher{};
     id = hasher(std::string(reinterpret_cast<const char*>(spirvCode.data()),
                             reinterpret_cast<const char*>(spirvCode.data() + spirvCode.size())));
     //reflect shader resources
-    assert(SpirvShaderReflection::reflectShaderResources(spirvCode,tage,resources));
+    assert(SpirvShaderReflection::reflectShaderResources(spirvCode,stage,resources));
 }
 
 Shader::~Shader()
 {
-    vkDestroyShaderModule(device.getHandle(), shader, nullptr);
+    // vkDestroyShaderModule(device.getHandle(), shader, nullptr);
 }
 
-VkPipelineShaderStageCreateInfo Shader::PipelineShaderStageCreateInfo()
+VkPipelineShaderStageCreateInfo Shader::PipelineShaderStageCreateInfo() const
 {
     VkPipelineShaderStageCreateInfo info{VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO};
-    info.stage = tage;
+    info.stage = stage;
     info.module = shader;
     info.pName = "main";
     return info;

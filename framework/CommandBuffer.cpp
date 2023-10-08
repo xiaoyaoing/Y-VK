@@ -8,20 +8,20 @@
 #include <RenderTarget.h>
 #include <algorithm>
 
-void CommandBuffer::beginRecord(VkCommandBufferUsageFlags usage) {
+void CommandBuffer::beginRecord(VkCommandBufferUsageFlags usage)
+{
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = usage; // Optional
     beginInfo.pInheritanceInfo = nullptr; // Optional
-    if (vkBeginCommandBuffer(_buffer, &beginInfo) != VK_SUCCESS) {
-        throw std::runtime_error("failed to begin recording command");
-    }
+    VK_CHECK_RESULT(vkBeginCommandBuffer(_buffer, &beginInfo))
 }
 
 
 void CommandBuffer::beginRenderPass(VkRenderPass renderPass, VkFramebuffer buffer,
-                                    const std::vector<VkClearValue> &clearValues,
-                                    const VkExtent2D &extent2D) {
+                                    const std::vector<VkClearValue>& clearValues,
+                                    const VkExtent2D& extent2D)
+{
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass = renderPass;
@@ -36,39 +36,56 @@ void CommandBuffer::beginRenderPass(VkRenderPass renderPass, VkFramebuffer buffe
     vkCmdBeginRenderPass(_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void CommandBuffer::bindVertexBuffer(std::vector<ptr<Buffer>> &buffers, const std::vector<VkDeviceSize> &offsets) {
+void CommandBuffer::bindVertexBuffer(std::vector<ptr<Buffer>>& buffers, const std::vector<VkDeviceSize>& offsets)
+{
     std::vector<VkBuffer> bufferHandles(buffers.size());
     std::transform(buffers.begin(), buffers.end(), bufferHandles.begin(),
-                   [](ptr<Buffer> &buffer) { return buffer->getHandle(); });
+                   [](ptr<Buffer>& buffer) { return buffer->getHandle(); });
 
     vkCmdBindVertexBuffers(_buffer, 0, static_cast<uint32_t>(bufferHandles.size()), bufferHandles.data(),
                            offsets.data());
 }
 
-void CommandBuffer::bindIndicesBuffer(const ptr<Buffer> &buffer, VkDeviceSize offset) {
+void CommandBuffer::bindIndicesBuffer(const ptr<Buffer>& buffer, VkDeviceSize offset)
+{
     // auto bufferHandles = getHandles<Buffer,VkBuffer>(buffers);
     vkCmdBindIndexBuffer(_buffer, buffer->getHandle(), offset, VK_INDEX_TYPE_UINT16);
 }
 
 void CommandBuffer::bindDescriptorSets(VkPipelineBindPoint bindPoint, VkPipelineLayout layout, uint32_t firstSet,
-                                       const std::vector<DescriptorSet *> &descriptorSets,
-                                       const std::vector<uint32_t> &dynamicOffsets) {
+                                       const std::vector<DescriptorSet>& descriptorSets,
+                                       const std::vector<uint32_t>& dynamicOffsets)
+{
     std::vector<VkDescriptorSet> vkDescriptorSets(descriptorSets.size(), VK_NULL_HANDLE);
     std::transform(descriptorSets.begin(), descriptorSets.end(), vkDescriptorSets.begin(),
-                   [](DescriptorSet *descriptorSet) { return descriptorSet->getHandle(); });
+                   [](auto descriptorSet) { return descriptorSet.getHandle(); });
     vkCmdBindDescriptorSets(_buffer, bindPoint, layout, firstSet, vkDescriptorSets.size(), vkDescriptorSets.data(),
                             dynamicOffsets.size(), dynamicOffsets.data());
 }
 
 void
-CommandBuffer::copyBufferToImage(Buffer &src, Image &dst, const std::vector<VkBufferImageCopy> &copyRegions) {
+CommandBuffer::copyBufferToImage(Buffer& src, Image& dst, const std::vector<VkBufferImageCopy>& copyRegions)
+{
     vkCmdCopyBufferToImage(_buffer,
                            src.getHandle(), dst.getHandle(),
                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                            static_cast<uint32_t>(copyRegions.size()), copyRegions.data());
 }
 
-void CommandBuffer::imageMemoryBarrier(const ImageView &view, ImageMemoryBarrier barrier) {
+void CommandBuffer::imageMemoryBarrier(const ImageView& view, ImageMemoryBarrier barrier)
+{
+    auto subresourceRange = view.getSubResourceRange();
+    auto format = view.getFormat();
+    if (isDepthOnlyFormat(format))
+    {
+        subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    }
+    else if (isDepthOnlyFormat(format))
+    {
+        subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+    }
+
+
     VkImageMemoryBarrier vkBarrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
     vkBarrier.oldLayout = barrier.oldLayout;
     vkBarrier.newLayout = barrier.newLayout;
@@ -77,6 +94,7 @@ void CommandBuffer::imageMemoryBarrier(const ImageView &view, ImageMemoryBarrier
     vkBarrier.image = view.getImage().getHandle();
     vkBarrier.srcQueueFamilyIndex = barrier.oldQueueFamily;
     vkBarrier.dstQueueFamilyIndex = barrier.newQueueFamily;
+    vkBarrier.subresourceRange = subresourceRange;
 
     vkCmdPipelineBarrier(getHandle(),
                          barrier.srcStageMask,
@@ -106,11 +124,12 @@ void CommandBuffer::imageMemoryBarrier(const ImageView &view, ImageMemoryBarrier
 //}
 
 
-void CommandBuffer::beginRenderPass(RenderPass &render_pass, const std::vector<VkClearValue> &clear_values,
-                                    VkSubpassContents contents) {
+void CommandBuffer::beginRenderPass(RenderPass& render_pass, const std::vector<VkClearValue>& clear_values,
+                                    VkSubpassContents contents)
+{
     VkRenderPassBeginInfo renderPassInfo{};
 
-    auto frameBuffer = RenderContext::g_context->getFrameBuffer();
+    const auto& frameBuffer = RenderContext::g_context->getFrameBuffer();
 
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass = render_pass.getHandle();
@@ -125,10 +144,30 @@ void CommandBuffer::beginRenderPass(RenderPass &render_pass, const std::vector<V
     vkCmdBeginRenderPass(_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void CommandBuffer::endRenderPass() {
+void CommandBuffer::endRenderPass()
+{
     vkCmdEndRenderPass(_buffer);
 }
 
-CommandBuffer::~CommandBuffer() {
+CommandBuffer::~CommandBuffer()
+{
 }
 
+void CommandBuffer::beginRenderPass(RenderPass& render_pass, FrameBuffer& frameBuffer,
+                                    const std::vector<VkClearValue>& clear_values, VkSubpassContents contents)
+{
+    VkRenderPassBeginInfo renderPassInfo{};
+
+
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = render_pass.getHandle();
+    renderPassInfo.framebuffer = frameBuffer.getHandle();
+    renderPassInfo.renderArea.offset = {0, 0};
+    renderPassInfo.renderArea.extent = frameBuffer.getExtent();
+
+    renderPassInfo.clearValueCount = clear_values.size();
+    renderPassInfo.pClearValues = clear_values.data();
+
+
+    vkCmdBeginRenderPass(_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+}

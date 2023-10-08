@@ -27,6 +27,39 @@ namespace sg {
         void createVkImage(Device &device, VkImageViewType image_view_type = VK_IMAGE_VIEW_TYPE_2D,
                            VkImageCreateFlags flags = 0);
 
+
+        /**
+         * \brief load from hardware texture
+         */
+        SgImage(Device &device, const std::string &path, VkImageViewType viewType);
+
+        /**
+         * \brief create from image attribute 
+         */
+        SgImage(Device &device,
+                const std::string &name,
+                const VkExtent3D &extent,
+                VkFormat format,
+                VkImageUsageFlags image_usage,
+                VmaMemoryUsage memory_usage,
+                VkImageViewType viewType,
+                VkSampleCountFlagBits sample_count = VK_SAMPLE_COUNT_1_BIT,
+                uint32_t mip_levels = 1,
+                uint32_t array_layers = 1,
+                VkImageCreateFlags flags = 0);
+
+        /**
+         * \brief load from existing image.Mainly from swapChainImage
+         */
+        SgImage(Device &device,
+                VkImage handle,
+                const VkExtent3D &extent,
+                VkFormat format,
+                VkImageUsageFlags image_usage,
+                VkSampleCountFlagBits sample_count = VK_SAMPLE_COUNT_1_BIT,
+                VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D);
+
+
         std::vector<uint8_t> &getData();
 
         uint64_t getBufferSize() const;
@@ -36,6 +69,8 @@ namespace sg {
         Image &getVkImage();
 
         ImageView &getVkImageView();
+
+        VkFormat getFormat() const;
 
         const std::vector<std::vector<VkDeviceSize>> &getOffsets() const;
 
@@ -48,10 +83,14 @@ namespace sg {
         void generateMipMap();
 
 
-    protected:
-        std::unique_ptr<Image> vkImage;
+        void loadResources(const std::string &path);
 
-        std::unique_ptr<ImageView> vkImageView;
+    private:
+
+    protected:
+        std::unique_ptr<Image> vkImage{nullptr};
+
+        std::unique_ptr<ImageView> vkImageView{nullptr};
 
         std::vector<uint8_t> data;
 
@@ -64,9 +103,9 @@ namespace sg {
 
         std::vector<std::vector<VkDeviceSize>> offsets;
 
+        std::string name;
+
     protected:
         uint32_t layers{1};
-
-
     };
 }

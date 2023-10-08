@@ -12,7 +12,7 @@ class RenderPass;
 class FrameBuffer
 {
 public:
-    //  FrameBuffer(Device& deivce, std::vector<ImageView>& views, RenderPass& renderPass, VkExtent2D extent);
+    // FrameBuffer(Device& deivce, std::vector<ImageView>& views, RenderPass& renderPass, VkExtent2D extent);
     FrameBuffer(Device& device, RenderTarget& renderTarget, RenderPass& renderPass);
 
     //    explicit FrameBuffer(VkFramebuffer framebuffer) : _framebuffer(framebuffer) {}
@@ -23,7 +23,7 @@ public:
     {
     }
 
-    const VkExtent2D& getExtent() const;
+    VkExtent2D getExtent() const;
 
 protected:
     VkFramebuffer _framebuffer;

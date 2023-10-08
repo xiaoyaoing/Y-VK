@@ -10,6 +10,7 @@
 
 #include "Pipeline.h"
 #include "RenderGraph/RenderGraph.h"
+#include "ResourceBindingState.h"
 
 class Device;
 
@@ -19,34 +20,31 @@ class Window;
 
 class FrameBuffer;
 
-struct RenderContext
+class Sampler;
+
+class  RenderContext
 {
 public:
-    RenderContext(Device& device, VkSurfaceKHR surface, Window& window);
+    void bindBuffer(uint32_t setId, const Buffer& buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t binding,
+                    uint32_t array_element);
 
-    // RenderContext(Device &device, VkSurfaceKHR surface, Window &window);
+    void
+    bindImage(uint32_t setId, const ImageView& view, const Sampler& sampler, uint32_t binding, uint32_t array_element);
+
+
+    const std::unordered_map<uint32_t, ResourceSet>& getResourceSets() const;
+
+
+    RenderContext(Device& device, VkSurfaceKHR surface, Window& window);
 
     static RenderContext* g_context;
 
-    // static RenderContext &getGlobalRenderContext() {
-    //     return Singleton<RenderContext>::getInstance();
-    // }
     VkFormat getSwapChainFormat() const;
 
     VkExtent2D getSwapChainExtent() const;
 
     uint32_t getSwapChainImageCount() const;
 
-    //  inline uint32_t getBackBufferCount() { return backBufferCount; }
-
-    //    inline const std::vector<VkImage>& getBackBufferImages() const
-    //    {
-    //        return _backBufferImages;
-    //    }
-    //    inline  const std::vector<VkImageView>& getBackBufferViews() const
-    //    {
-    //        return _backBufferImageViews;
-    //    }
     void prepare();
 
     CommandBuffer& begin();
@@ -78,7 +76,14 @@ public:
 
     void draw(const Scene& scene);
 
-    RenderGraph& getRenderGraph();
+    RenderGraph& getRenderGraph() const ;
+
+    PipelineState& getPipelineState();
+
+    sg::SgImage& getCurHwtexture();
+
+
+    void flushDescriptorState(CommandBuffer& commandBuffer, VkPipelineBindPoint pipeline_bind_point);
 
 private:
     bool frameActive = false;
@@ -112,7 +117,12 @@ private:
 
     PipelineState pipelineState;
 
+
     std::vector<CommandBuffer> commandBuffers;
 
     std::unique_ptr<RenderGraph> renderGraph;
+
+    std::vector<sg::SgImage> hwTextures;
+
+    std::unordered_map<uint32_t, ResourceSet> resourceSets;
 };

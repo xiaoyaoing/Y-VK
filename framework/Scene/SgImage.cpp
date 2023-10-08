@@ -10,27 +10,54 @@
 #include "Scene/Images/TtfImage.h"
 #include "Scene/Images/KtxImage.h"
 #include <FIleUtils.h>
+#include <ktx.h>
+#include <stb_image.h>
+
+#include "Gui.h"
 
 namespace sg {
     std::unique_ptr<SgImage> SgImage::load(const std::string &path) {
-        auto ext = FileUtils::getFileExt(path);
-        if (ext == "jpg" || ext == "png") {
-            return std::make_unique<StbImage>(path);
-        } else if (ext == "ttf") {
-            return std::make_unique<TtfImage>(path);
-        } else if (ext == "ktx") {
-            return std::make_unique<KtxImage>(path);
-        }
+//        auto ext = FileUtils::getFileExt(path);
+//        if (ext == "jpg" || ext == "png")
+//        {
+//            return std::make_unique<StbImage>(path);
+//        }
+//        else if (ext == "ttf")
+//        {
+//            return std::make_unique<TtfImage>(path);
+//        }
+//        else if (ext == "ktx")
+//        {
+//            return std::make_unique<KtxImage>(path);
+//        }
         return std::unique_ptr<SgImage>();
     }
 
     void SgImage::createVkImage(Device &device, VkImageViewType image_view_type, VkImageCreateFlags flags) {
+        assert(vkImage == nullptr && "Image has been created");
+        assert(vkImageView == nullptr && "ImageView has been created");
         vkImage = std::make_unique<Image>(device, extent3D, format,
                                           VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                                           VMA_MEMORY_USAGE_GPU_ONLY, VK_SAMPLE_COUNT_1_BIT, toUint32(mipMaps.size()),
-                                          layers,
-                                          VK_IMAGE_TILING_OPTIMAL, flags);
+                                          layers, flags);
         vkImageView = std::make_unique<ImageView>(*vkImage, image_view_type);
+    }
+
+    SgImage::SgImage(Device &device, const std::string &path, VkImageViewType viewType) {
+        loadResources(path);
+        createVkImage(device, viewType);
+    }
+
+    SgImage::SgImage(Device &device, const std::string &name, const VkExtent3D &extent, VkFormat format,
+                     VkImageUsageFlags image_usage, VmaMemoryUsage memory_usage, VkImageViewType viewType,
+                     VkSampleCountFlagBits sample_count, uint32_t mip_levels, uint32_t array_layers,
+                     VkImageCreateFlags flags) : format(format), extent3D(extent), name(name) {
+        vkImage = std::make_unique<Image>(device, extent, format, image_usage, memory_usage, sample_count, mip_levels,
+                                          array_layers, flags);
+        vkImageView = std::make_unique<ImageView>(*vkImage, viewType);
+
+        this->format = format;
+        this->extent3D = extent;
     }
 
     uint64_t SgImage::getBufferSize() const {
@@ -41,15 +68,15 @@ namespace sg {
         return data;
     }
 
-//    void SgImage::createImage(Device &device) {
-//
-//    }
+    //    void SgImage::createImage(Device &device) {
+    //
+    //    }
 
-//    void SgImage::createVkImage(Device &device)
-//    {
-//        vkImage = std::make_unique<Image>(device, format, extent3D, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-//        vkImageView = std::make_unique<ImageView>(*vkImage, VK_IMAGE_VIEW_TYPE_2D);
-//    }
+    //    void SgImage::createVkImage(Device &device)
+    //    {
+    //        vkImage = std::make_unique<Image>(device, format, extent3D, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+    //        vkImageView = std::make_unique<ImageView>(*vkImage, VK_IMAGE_VIEW_TYPE_2D);
+    //    }
 
     VkExtent3D SgImage::getExtent() const {
         return extent3D;
@@ -61,6 +88,10 @@ namespace sg {
 
     ImageView &SgImage::getVkImageView() {
         return *vkImageView;
+    }
+
+    VkFormat SgImage::getFormat() const {
+        return format;
     }
 
     const std::vector<Mipmap> &SgImage::getMipMaps() const {
@@ -105,9 +136,9 @@ namespace sg {
             // std::copy(data.begin()+ next_mipmap.offset,data.begin()+prev_mipmap.offset,data.begin()+pr
 
             // Fill next mipmap memory
-//            stbir_resize_uint8(data.data() + prev_mipmap.offset, prev_mipmap.extent.width, prev_mipmap.extent.height, 0,
-//                               data.data() + next_mipmap.offset, next_mipmap.extent.width, next_mipmap.extent.height, 0,
-//                               channels);
+            //            stbir_resize_uint8(data.data() + prev_mipmap.offset, prev_mipmap.extent.width, prev_mipmap.extent.height, 0,
+            //                               data.data() + next_mipmap.offset, next_mipmap.extent.width, next_mipmap.extent.height, 0,
+            //                               channels);
 
             mipMaps.emplace_back(std::move(next_mipmap));
 
@@ -121,4 +152,68 @@ namespace sg {
             }
         }
     }
+
+    void SgImage::loadResources(const std::string &path) {
+        auto ext = FileUtils::getFileExt(path);
+        if (ext == "jpg" || ext == "png") {
+            int w, h, comp;
+            auto rawData = stbi_load(path.c_str(), &w, &h, &comp, 4);
+            comp = 4;
+            data = {rawData, rawData + w * h * comp};
+            stbi_image_free(rawData);
+
+            extent3D = {toUint32(w), toUint32(h), 1};
+            format = VK_FORMAT_R8G8B8A8_SRGB;
+        } else if (ext == "ttf") {
+            assert(FileUtils::getFileExt(path) == "ttf");
+            ImGuiIO &io = ImGui::GetIO();
+            io.Fonts->AddFontFromFileTTF(path.c_str(), 16.f);
+
+            unsigned char *fontData;
+            int texWidth, texHeight;
+            io.Fonts->GetTexDataAsRGBA32(&fontData, &texWidth, &texHeight);
+
+            data = std::vector<uint8_t>(fontData, fontData + texHeight * texWidth * 4);
+            format = VK_FORMAT_R8G8B8A8_UNORM;
+            extent3D = {toUint32(texWidth), toUint32(texHeight), 1};
+        } else if (ext == "ktx") {
+            ktxTexture *ktxTexture;
+            ktxResult result = ktxTexture_CreateFromNamedFile(path.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT,
+                                                              &ktxTexture);
+            assert(result == KTX_SUCCESS);
+            this->extent3D = VkExtent3D{ktxTexture->baseWidth, ktxTexture->baseHeight, 1};
+
+            ktx_uint8_t *ktxTextureData = ktxTexture_GetData(ktxTexture);
+            ktx_size_t ktxTextureSize = ktxTexture_GetSize(ktxTexture);
+
+            mipMaps.resize(ktxTexture->numLevels);
+            layers = ktxTexture->numLayers;
+            format = VK_FORMAT_R8G8B8A8_SRGB;
+            data = {ktxTextureData, ktxTextureData + ktxTextureSize};
+
+
+            if (layers > 1) {
+                for (uint32_t layer = 0; layer < layers; layer++) {
+                    std::vector<VkDeviceSize> layerOffsets{};
+                    for (uint32_t level = 0; level < mipMaps.size(); level++) {
+                        ktx_size_t offset;
+
+                        result = ktxTexture_GetImageOffset(ktxTexture, level, layer, 0, &offset);
+                        assert(result == KTX_SUCCESS);
+                        layerOffsets.push_back(static_cast<VkDeviceSize>(offset));
+                    }
+                    offsets.push_back(layerOffsets);
+                }
+            }
+        }
+    }
+}
+
+
+sg::SgImage::SgImage(Device &device, VkImage handle, const VkExtent3D &extent, VkFormat format,
+                     VkImageUsageFlags image_usage, VkSampleCountFlagBits sample_count, VkImageViewType viewType) {
+    vkImage = std::make_unique<Image>(device, handle, extent, format, image_usage, sample_count);
+    vkImageView = std::make_unique<ImageView>(*vkImage, viewType);
+    this->format = format;
+    this->extent3D = extent;
 }

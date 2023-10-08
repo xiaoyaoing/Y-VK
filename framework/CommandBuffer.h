@@ -1,11 +1,13 @@
 #pragma once
 
 #include "FrameBuffer.h"
-#include "Pipeline.h"
 #include "Vulkan.h"
 #include "Utils/VkUtils.h"
+#include "PipelineState.h"
 
 class Image;
+
+class ImageView;
 
 class DescriptorSet;
 
@@ -54,7 +56,7 @@ public:
                          VkSubpassContents contents);
 
     void bindDescriptorSets(VkPipelineBindPoint bindPoint, VkPipelineLayout layout, uint32_t firstSet,
-                            const std::vector<DescriptorSet*>& descriptorSets,
+                            const std::vector<DescriptorSet>& descriptorSets,
                             const std::vector<uint32_t>& dynamicOffsets);
 
     void bindVertexBuffer(std::vector<ptr<Buffer>>& buffers, const std::vector<VkDeviceSize>& offsets);
@@ -63,8 +65,7 @@ public:
 
     void copyBufferToImage(Buffer&, Image&, const std::vector<VkBufferImageCopy>& copyRegions);
 
-    //    void bindDescriptor
-    inline void bindPipeline(const VkPipeline& pipeline)
+    inline void bindPipeline(const VkPipeline& pipeline) const
     {
         vkCmdBindPipeline(_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     }
@@ -83,7 +84,7 @@ public:
 
     inline void endRecord()
     {
-        VK_CHECK_RESULT(vkEndCommandBuffer(_buffer));
+        VK_CHECK_RESULT(vkEndCommandBuffer(_buffer))
     }
 
     inline void endPass()
@@ -100,5 +101,5 @@ public:
 protected:
     VkCommandBuffer _buffer;
 
-    // PipelineState state;
+    PipelineState state;
 };

@@ -209,11 +209,12 @@ RenderPass::RenderPass(Device &device, const std::vector<Attachment> &attachment
                 }
                 continue;
             }
-            VkAttachmentReference reference{k, VK_IMAGE_LAYOUT_GENERAL};
+            VkAttachmentReference reference{k, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
             colorAttachments[0].push_back(reference);
         }
 
         subpass_description.pColorAttachments = colorAttachments[0].data();
+        subpass_description.colorAttachmentCount = 1;
 
         if (default_depth_stencilAttachment != VK_ATTACHMENT_UNUSED) {
             VkAttachmentReference reference{default_depth_stencilAttachment,

@@ -228,7 +228,7 @@ Example::Example() : Application("Drawing Triangle", 1024, 1024)
 
 void Example::bindUniformBuffers(CommandBuffer& commandBuffer)
 {
-    commandBuffer.bindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayOut, 0, {descriptorSet.get()},
+    commandBuffer.bindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayOut, 0, {*descriptorSet},
                                      {});
 }
 

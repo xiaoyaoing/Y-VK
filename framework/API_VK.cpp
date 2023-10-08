@@ -12,8 +12,8 @@
 
 Texture Texture::loadTexture(Device &device, const std::string &path) {
     Texture texture{};
-    texture.image = sg::SgImage::load(path);
-    texture.image->createVkImage(device);
+    texture.image = std::make_unique<sg::SgImage>(device,path,VK_IMAGE_VIEW_TYPE_2D);
+  //  texture.image->createVkImage(device);
 
     Buffer imageBuffer = Buffer(device, texture.image->getBufferSize(),
                                 VK_BUFFER_USAGE_TRANSFER_SRC_BIT,

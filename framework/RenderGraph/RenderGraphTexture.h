@@ -1,16 +1,18 @@
 #pragma once
+
 #include <memory>
 #include <vulkan/vulkan_core.h>
 
+#include "vk_mem_alloc.h"
+#include "Scene/SgImage.h"
+
+
+class Device;
 
 class ImageView;
+
 class Image;
 
-struct HwTexture
-{
-    std::unique_ptr<ImageView> view;
-    std::unique_ptr<Image> image;
-};
 
 class Texture;
 
@@ -19,20 +21,29 @@ class Texture;
  * Texture used in RenderGraph.
  * Real hardware texture only created when required.
  */
-class RenderGraphTexture
-{
-    std::unique_ptr<Texture> hwTexture;
+class RenderGraphTexture {
+    sg::SgImage *hwTexture{nullptr};
+    //
+    // Image* image{nullptr};
+    // ImageView* imageView{nullptr};
 
 public:
-    struct Descriptor
-    {
-        VkExtent2D extent;
+    struct Descriptor {
+        //Device &device;
+        VkExtent2D extent{};
         VkFormat format;
         VkImageUsageFlags usageFlags;
+        VmaMemoryUsage memoryUsage;
     };
 
-    HwTexture * getHandle() const;
+    RenderGraphTexture() = default;
 
-    void create(const char* name,
-                const Descriptor& descriptor);
+    void setHwTexture(sg::SgImage *hwTexture);
+
+    sg::SgImage *getHwTexture() const;
+
+    // const HwTexture& getHandle() const;
+
+    void create(const char *name,
+                const Descriptor &descriptor);
 };

@@ -4,7 +4,6 @@
 #pragma once
 
 class Image {
-
 public:
     Image(Device &device,
           const VkExtent3D &extent,
@@ -14,10 +13,7 @@ public:
           VkSampleCountFlagBits sample_count = VK_SAMPLE_COUNT_1_BIT,
           uint32_t mip_levels = 1,
           uint32_t array_layers = 1,
-          VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL,
-          VkImageCreateFlags flags = 0,
-          uint32_t num_queue_families = 0,
-          const uint32_t *queue_families = nullptr);
+          VkImageCreateFlags flags = 0);
 
     Image(Device &device,
           VkImage handle,
@@ -36,27 +32,29 @@ public:
 
     Image(Image &&other);
 
-    inline VkImage getHandle() {
+    VkImageSubresource getSubresource() const;
+
+    inline VkImage getHandle() const {
         return image;
     };
 
-    inline VkFormat getFormat() {
+    inline VkFormat getFormat() const {
         return format;
     }
 
-    inline VkImageType getImageType() {
+    inline VkImageType getImageType() const {
         return type;
     }
 
-    inline VkSampleCountFlagBits getSampleCount() {
+    inline VkSampleCountFlagBits getSampleCount() const {
         return VK_SAMPLE_COUNT_1_BIT;
     };
 
-    inline VkImageUsageFlags getUseFlags() {
+    inline VkImageUsageFlags getUseFlags() const {
         return usage;
     };
 
-    inline const VkExtent3D getExtent() {
+    inline const VkExtent3D getExtent() const {
         return extent;
     }
 
@@ -82,7 +80,6 @@ public:
     Device &getDevice();
 
     VkImageSubresource subresource{};
-
 
 protected:
     Device &device;
@@ -110,3 +107,9 @@ protected:
 
     std::vector<ImageView> views;
 };
+
+//struct HwTexture
+//{
+//    std::unique_ptr<Image> image;
+//    std::unique_ptr<ImageView> view;
+//};

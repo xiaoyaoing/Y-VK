@@ -1,5 +1,7 @@
 #pragma once
+
 #include "PassNode.h"
+#include "VirtualResource.h"
 #include "RenderTarget.h"
 #include "RenderGraphId.h"
 #include "RenderGraphPass.h"
@@ -20,21 +22,6 @@
 
 
 class CommandBuffer;
-
-class VirtualResource
-{
-    virtual void create();
-    virtual void destroy();
-};
-
-template <class RESOURCE>
-class Resource : public VirtualResource
-{
-public:
-    Resource(const char* name, typename RESOURCE::Descriptor desc);
-
-    RESOURCE resource{};
-};
 
 
 struct RenderPassDesc
@@ -70,24 +57,33 @@ public:
 
 
     template <typename RESOURCE>
-    RenderGraphId<RESOURCE> create(char* name, const typename RESOURCE::Descriptor& desc) noexcept
+    RenderGraphId<RESOURCE> create(char* name, const typename RESOURCE::Descriptor& desc)
     {
         VirtualResource* virtualResource = Resource<RESOURCE>(name, desc);
         return RenderGraphId<RESOURCE>(addResource(virtualResource));
     }
 
+    RenderGraphId<RenderGraphTexture> import(const char * name,sg::SgImage * hwTexture);
+
     class Builder
     {
     public:
         void read(VirtualResource* resource, PassNode* node);
+
         void write(VirtualResource* resource, PassNode* node);
+
         void declare(const char* name,
                      const RenderGraphPassDescriptor& desc);
-        // void read(VirtualResource * resource,PassNode * node);
 
+        Builder(PassNode* node, RenderGraph& renderGraph)
+            : node(node),
+              renderGraph(renderGraph)
+        {
+        }
 
     protected:
         PassNode* node;
+        RenderGraph& renderGraph;
     };
 
     template <typename RESOURCE>
@@ -97,31 +93,31 @@ public:
         return RenderGraphId<RESOURCE>(addResource(virtualResource));
     }
 
+
+
     RenderGraphHandle addResource(VirtualResource* resource);
 
     void setUp();
 
-    void execute(CommandBuffer& commandBuffer)
-    {
-        for (auto node : renderGraphNodes)
-        {
-            node->execute(*this, commandBuffer);
-        }
-    }
+    void execute(CommandBuffer& commandBuffer);
 
 
-    void addPassInternal(const char* name, RenderGraphPassBase* base)
+    PassNode* addPassInternal(const char* name, RenderGraphPassBase* base)
     {
-        auto node = new PassNode(*this, name, base);
-        renderGraphNodes.push_back(node);
+        //auto node = ;
+        auto node = new RenderPassNode(*this, name, base);
+        renderGraphNodes.emplace_back(node);
+        return node;
+        //renderGraphNodes.push_back(node);
     }
 
 
     template <typename Data, typename Setup, typename Execute>
     void addPass(const char* name, Setup setup, Execute&& execute)
     {
-        auto renderpass = new RenderGraphPass<Data, Execute> > (std::forward<Execute>(execute));
-        setup(renderpass->getData());
+        auto pass = new RenderGraphPass<Data, Execute>(std::forward<Execute>(execute));
+        Builder builder(addPassInternal(name, pass), *this);
+        setup(builder, pass->getData());
     }
 
     VirtualResource* getResource(RenderGraphHandle handle);
@@ -130,9 +126,29 @@ public:
 
     Device& getDevice();
 
+    ~RenderGraph()
+    {
+        for (const auto& passNode : renderGraphNodes)
+            delete passNode;
+        for (const auto& resource : virtualResources)
+            delete resource;
+    }
+
 private:
-    std::vector<PassNode*> renderGraphNodes;
-    std::vector<VirtualResource*> virtualResources;
+    struct ResourceSlot
+    {
+        using Version = RenderGraphHandle::Version;
+        using Index = int16_t;
+        Index rid = 0; // VirtualResource* index in mResources
+        Index nid = 0; // ResourceNode* index in mResourceNodes
+        Index sid = -1; // ResourceNode* index in mResourceNodes for reading subresource's parent
+        Version version = 0;
+    };
+
+    std::vector<PassNode*> renderGraphNodes{};
+    std::vector<VirtualResource*> virtualResources{};
+    //  std::vector<ResourceNode *> mResourceNodes;
+    std::vector<ResourceSlot> resourceSlots{};
     Device& device;
     // std::vector<std::unique_ptr<Vi>>
 };

@@ -54,14 +54,12 @@ public:
 
     Shader(Device& device, const std::string& path, SHADER_LOAD_MODE mode = SPV);
 
-    // Shader(Shader& another): device(another.device)
-    // {
-    //     int k = 1;
-    // }
+
+    //  Shader(Shader & other) = delete;
 
     ~Shader();
 
-    VkPipelineShaderStageCreateInfo PipelineShaderStageCreateInfo();
+    VkPipelineShaderStageCreateInfo PipelineShaderStageCreateInfo() const;
 
 
     std::vector<ShaderResource>& getShaderResources()
@@ -71,16 +69,20 @@ public:
 
     [[nodiscard]] size_t getId() const;
 
+    VkShaderStageFlagBits getStage() const;
+
+    const std::string& getEntryPoint() const;
+
 private:
     bool initFromSpv();
 
     bool initFromOriginShader();
 
-    VkShaderModule shader;
+    VkShaderModule shader{VK_NULL_HANDLE};
 
     Device& device;
 
-    VkShaderStageFlagBits tage;
+    VkShaderStageFlagBits stage;
 
     std::vector<ShaderResource> resources;
 

@@ -11,38 +11,32 @@
 #include "RenderGraph/RenderGraphId.h"
 
 
-class ShaderReflectionTest : public Application
-{
+class ShaderReflectionTest : public Application {
 public:
-    void drawFrame() override
-    {
-        auto& graph = renderContext->getRenderGraph();
-        struct GBufferPassData
-        {
+    void drawFrame() override {
+        auto &graph = renderContext->getRenderGraph();
+        struct GBufferPassData {
             RenderGraphId<RenderGraphTexture> shadows;
 
             RenderGraphId<RenderGraphTexture> depth;
 
             RenderGraphId<RenderGraphTexture> color;
 
-            RenderGraph<RenderGraphTexture> output;
+            RenderGraphId<RenderGraphTexture> output;
         };
 
-        graph.addPass<GBufferPassData>("gbuffer", [&](RenderGraph::Builder& builder, GBufferPassData& data)
-                                       {
+        graph.addPass<GBufferPassData>("gbuffer", [&](RenderGraph::Builder &builder, GBufferPassData &data) {
                                            builder.declare("Color Pass Target", {
-                                                               .color = {data.color, data.output},
-                                                               .depth = {data.depth}
+                                                                   .color = {data.color, data.output},
+                                                                   .depth = {data.depth}
                                                            }
                                            );
                                        },
-                                       [&](RenderPassContext& context)
-                                       {
-                                           auto& commandBuffer = context.commandBuffer;
+                                       [&](GBufferPassData &data, RenderPassContext &context) {
+                                           auto &commandBuffer = context.commandBuffer;
                                            commandBuffer.bindPipeline(context.pipeline);
 
-                                           for (auto& mesh : scene->meshes)
-                                           {
+                                           for (auto &mesh: scene->meshes) {
                                                mesh->bindAndDraw(commandBuffer);
                                            }
 
@@ -52,8 +46,7 @@ public:
                                        });
     }
 
-    void initVk() override
-    {
+    void initVk() override {
         getRequiredInstanceExtensions();
         _instance = std::make_unique<Instance>(std::string("vulkanApp"), instanceExtensions, validationLayers);
         surface = window->createSurface(*_instance);
@@ -62,8 +55,7 @@ public:
         uint32_t physical_device_count{0};
         VK_CHECK_RESULT(vkEnumeratePhysicalDevices(_instance->getHandle(), &physical_device_count, nullptr));
 
-        if (physical_device_count < 1)
-        {
+        if (physical_device_count < 1) {
             throw std::runtime_error("Couldn't find a physical device that supports Vulkan.");
         }
 
@@ -73,7 +65,7 @@ public:
         LOGI("Found {} physical device", physical_device_count);
 
         VK_CHECK_RESULT(
-            vkEnumeratePhysicalDevices(_instance->getHandle(), &physical_device_count, physical_devices.data()));
+                vkEnumeratePhysicalDevices(_instance->getHandle(), &physical_device_count, physical_devices.data()));
 
         addDeviceExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
@@ -85,7 +77,6 @@ public:
 
 
         std::vector<Shader> shaders;
-        // shaders.emplace_back(vertShader);
         shaders.emplace_back(*device, FileUtils::getShaderPath() + "instancing.vert");
 
         shaders.emplace_back(*device, FileUtils::getShaderPath() + "instancing.frag");
@@ -93,9 +84,8 @@ public:
         RenderGraph graph(*device);
 
 
-        struct RenderPassDesc
-        {
-            std::vector<SubpassInfo>& subpasses;
+        struct RenderPassDesc {
+            std::vector<SubpassInfo> &subpasses;
             std::vector<Attachment> colorAttachments;
             Attachment depthAttachment;
         };
@@ -107,8 +97,7 @@ public:
 };
 
 
-int main()
-{
+int main() {
     ShaderReflectionTest shader_reflection_test;
     shader_reflection_test.prepare();
 }

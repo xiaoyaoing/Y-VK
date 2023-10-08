@@ -6,28 +6,36 @@ class Image;
 
 class Device;
 
-class ImageView {
+class ImageView
+{
 public:
-    inline VkImageView getHandle() const {
+    inline VkImageView getHandle() const
+    {
         return _view;
     }
 
-    inline Image &getImage() const {
+    inline Image& getImage() const
+    {
         return image;
     }
 
-    ImageView(ImageView &) = delete;
+    ImageView(ImageView&) = delete;
+
+    ImageView(ImageView&& other);
 
 
-//    ImageView( ptr<Device> & device, const ptr<Image> & targetImage,
-//              VkImageAspectFlags aspect, uint32_t mipLevels);
-    ImageView(Image &image, VkImageViewType view_type, VkFormat format = VK_FORMAT_UNDEFINED,
+    //    ImageView( ptr<Device> & device, const ptr<Image> & targetImage,
+    //              VkImageAspectFlags aspect, uint32_t mipLevels);
+    ImageView(Image& image, VkImageViewType view_type, VkFormat format = VK_FORMAT_UNDEFINED,
               uint32_t mip_level = 0, uint32_t base_array_layer = 0,
               uint32_t n_mip_levels = 0, uint32_t n_array_layers = 0);
 
-    const VkImageSubresourceRange &getSubResourceRange() const;
+    VkFormat getFormat() const;
 
-    static VkImageViewCreateInfo getDefaultImageViewInfo() {
+    const VkImageSubresourceRange& getSubResourceRange() const;
+
+    static VkImageViewCreateInfo getDefaultImageViewInfo()
+    {
         VkImageViewCreateInfo depthViewInfo = {};
         depthViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         depthViewInfo.pNext = nullptr;
@@ -44,8 +52,8 @@ public:
 
 protected:
     VkImageView _view;
-    Image &image;
-    Device &_device;
+    Image& image;
+    Device& _device;
     VkFormat _format;
-    VkImageSubresourceRange _subResourceRange;
+    VkImageSubresourceRange subResourceRange;
 };

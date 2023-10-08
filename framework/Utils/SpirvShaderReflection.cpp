@@ -32,7 +32,7 @@ inline void readResourceDecoration<spv::DecorationDescriptorSet>(const spirv_cro
                                                                  const spirv_cross::Resource& resource,
                                                                  ShaderResource& shaderResource)
 {
-    shaderResource.binding = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
+    shaderResource.set = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
 }
 
 
@@ -96,8 +96,10 @@ inline void readShaderResourceUniformBuffer(const spirv_cross::CompilerReflectio
         resource.stages = stage;
         resource.name = spirvResource.name;
 
+        read_resource_arraySize(compiler, spirvResource, resource);
         read_resource_size(compiler, spirvResource, resource);
         readResourceDecoration<spv::DecorationLocation>(compiler, spirvResource, resource);
+        readResourceDecoration<spv::DecorationBinding>(compiler, spirvResource, resource);
         resources.emplace_back(std::move(resource));
     }
 }
@@ -106,7 +108,7 @@ inline void readShaderResourceImageSampler(const spirv_cross::CompilerReflection
                                            VkShaderStageFlagBits stage,
                                            std::vector<ShaderResource>& resources)
 {
-    auto inputResources = compiler.get_shader_resources().uniform_buffers;
+    auto inputResources = compiler.get_shader_resources().sampled_images;
     for (auto& spirvResource : inputResources)
     {
         ShaderResource resource{};

@@ -1,4 +1,5 @@
 #pragma once
+
 #include "RenderGraphId.h"
 #include "RenderGraphPass.h"
 #include "RenderGraphTexture.h"
@@ -24,8 +25,8 @@ struct RenderGraphPassDescriptor
 class PassNode
 {
 public:
-    PassNode(RenderGraph& renderGraph, const char* name, RenderGraphPassBase* base);
-    virtual void execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer);
+    virtual void execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) = 0;
+    virtual ~PassNode() = default;
 
 protected:
 };
@@ -44,20 +45,30 @@ class RenderPassNode : public PassNode
 
         RenderGraphPassDescriptor desc;
 
-        RenderGraphId<RenderGraphTexture> attachmentInfo[ATTACHMENT_COUNT] = {};
+        //RenderGraphId<RenderGraphTexture> attachmentInfo[ATTACHMENT_COUNT];
 
 
         void devirtualize(RenderGraph& renderGraph);
 
-        RenderTarget renderTarget;
+        std::unique_ptr<RenderTarget> renderTarget;
+
         RenderTarget& getRenderTarget();
     };
 
 public:
     void execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) override;
 
+    RenderPassNode(RenderGraph& renderGraph, const char* name, RenderGraphPassBase* base);
+
+    ~RenderPassNode() override
+    {
+        delete mRenderPass;
+    }
+
 private:
-    RenderGraphPassBase* mRenderPass;
+    friend class RenderGraph;
+
+    RenderGraphPassBase* mRenderPass{nullptr};
     RenderPassData renderTargetData;
 };
 

@@ -10,10 +10,11 @@ class DescriptorLayout
 public:
     DescriptorLayout(Device& device);
 
+    // DescriptorLayout(DescriptorLayout & other) = delete;
 
     DescriptorLayout(Device& device, std::vector<Shader>& shaders);
 
-    inline VkDescriptorSetLayout getHandle()
+    inline VkDescriptorSetLayout getHandle() const
     {
         return _layout;
     }
@@ -24,8 +25,13 @@ public:
 
     void createLayout(VkDescriptorSetLayoutCreateFlags flags);
 
+    const VkDescriptorSetLayoutBinding& getLayoutBindingInfo(int bindingIndex) const;
+
+    std::vector<VkDescriptorSetLayoutBinding> getBindings() const;
+
 private:
     VkDescriptorSetLayout _layout;
     std::vector<std::pair<VkDescriptorSetLayoutBinding, VkDescriptorBindingFlags>> _descBindingInfos{};
+    std::vector<VkDescriptorSetLayoutBinding> bindings;
     Device& _deivce;
 };

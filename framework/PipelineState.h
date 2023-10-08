@@ -1,17 +1,10 @@
 #pragma once
-#include "Shader.h"
 #include "Vulkan.h"
+
+#include <PipelineLayout.h>
 
 class RenderPass;
 
-struct PipelineLayout
-{
-    // The shader modules that this pipeline layout uses
-    std::vector<Shader*> shader_modules;
-
-    // The shader resources that this pipeline layout uses, indexed by their name
-    std::unordered_map<std::string, ShaderResource*> shader_resources;
-};
 
 struct VertexInputState
 {
@@ -22,112 +15,179 @@ struct VertexInputState
 
 struct SpecializationConstantState
 {
-    VkBool32 depth_clamp_enable{VK_FALSE};
+    VkBool32 depthClampEnable{VK_FALSE};
 
-    VkBool32 rasterizer_discard_enable{VK_FALSE};
+    VkBool32 rasterizerDiscardEnable{VK_FALSE};
 
-    VkPolygonMode polygon_mode{VK_POLYGON_MODE_FILL};
+    VkPolygonMode polygonMode{VK_POLYGON_MODE_FILL};
 
-    VkCullModeFlags cull_mode{VK_CULL_MODE_BACK_BIT};
+    VkCullModeFlags cullMode{VK_CULL_MODE_BACK_BIT};
 
-    VkFrontFace front_face{VK_FRONT_FACE_COUNTER_CLOCKWISE};
+    VkFrontFace frontFace{VK_FRONT_FACE_COUNTER_CLOCKWISE};
 
-    VkBool32 depth_bias_enable{VK_FALSE};
+    VkBool32 depthBiasEnable{VK_FALSE};
 };
 
 struct InputAssemblyState
 {
     VkPrimitiveTopology topology{VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST};
 
-    VkBool32 primitive_restart_enable{VK_FALSE};
+    VkBool32 primitiveRestartEnable{VK_FALSE};
 };
 
 struct RasterizationState
 {
-    VkBool32 depth_clamp_enable{VK_FALSE};
+    VkBool32 depthClampEnable{VK_FALSE};
 
-    VkBool32 rasterizer_discard_enable{VK_FALSE};
+    VkBool32 rasterizerDiscardEnable{VK_FALSE};
 
-    VkPolygonMode polygon_mode{VK_POLYGON_MODE_FILL};
+    VkPolygonMode polygonMode{VK_POLYGON_MODE_FILL};
 
-    VkCullModeFlags cull_mode{VK_CULL_MODE_BACK_BIT};
+    VkCullModeFlags cullMode{VK_CULL_MODE_BACK_BIT};
 
-    VkFrontFace front_face{VK_FRONT_FACE_COUNTER_CLOCKWISE};
+    VkFrontFace frontFace{VK_FRONT_FACE_COUNTER_CLOCKWISE};
 
-    VkBool32 depth_bias_enable{VK_FALSE};
+    VkBool32 depthBiasEnable{VK_FALSE};
 };
 
 struct ViewportState
 {
-    uint32_t viewport_count{1};
+    uint32_t viewportCount{1};
 
-    uint32_t scissor_count{1};
+    uint32_t scissorCount{1};
 };
 
 struct MultisampleState
 {
-    VkSampleCountFlagBits rasterization_samples{VK_SAMPLE_COUNT_1_BIT};
+    VkSampleCountFlagBits rasterizationSamples{VK_SAMPLE_COUNT_1_BIT};
 
-    VkBool32 sample_shading_enable{VK_FALSE};
+    VkBool32 sampleShadingEnable{VK_FALSE};
 
-    float min_sample_shading{0.0f};
+    float minSampleShading{0.0f};
 
-    VkSampleMask sample_mask{0};
+    VkSampleMask sampleMask{0};
 
-    VkBool32 alpha_to_coverage_enable{VK_FALSE};
+    VkBool32 alphaToCoverageEnable{VK_FALSE};
 
-    VkBool32 alpha_to_one_enable{VK_FALSE};
+    VkBool32 alphaToOneEnable{VK_FALSE};
+};
+
+struct StencilOpState
+{
+    VkStencilOp failOp{VK_STENCIL_OP_REPLACE};
+
+    VkStencilOp passOp{VK_STENCIL_OP_REPLACE};
+
+    VkStencilOp depthFailOp{VK_STENCIL_OP_REPLACE};
+
+    VkCompareOp compareOp{VK_COMPARE_OP_NEVER};
 };
 
 struct DepthStencilState
 {
-    VkStencilOp fail_op{VK_STENCIL_OP_REPLACE};
+    VkBool32 depthTestEnable{VK_TRUE};
 
-    VkStencilOp pass_op{VK_STENCIL_OP_REPLACE};
+    VkBool32 depthWriteEnable{VK_TRUE};
 
-    VkStencilOp depth_fail_op{VK_STENCIL_OP_REPLACE};
+    // Note: Using reversed depth-buffer for increased precision, so Greater depth values are kept
+    VkCompareOp depthCompareOp{VK_COMPARE_OP_GREATER};
 
-    VkCompareOp compare_op{VK_COMPARE_OP_NEVER};
+    VkBool32 depthBoundsTestEnable{VK_FALSE};
+
+    VkBool32 stencilTestEnable{VK_FALSE};
+
+    StencilOpState front{};
+
+    StencilOpState back{};
 };
-
 
 struct ColorBlendAttachmentState
 {
-    VkBool32 blend_enable{VK_FALSE};
+    VkBool32 blendEnable{VK_FALSE};
 
-    VkBlendFactor src_color_blend_factor{VK_BLEND_FACTOR_ONE};
+    VkBlendFactor srcColorBlendFactor{VK_BLEND_FACTOR_ONE};
 
-    VkBlendFactor dst_color_blend_factor{VK_BLEND_FACTOR_ZERO};
+    VkBlendFactor dstColorBlendFactor{VK_BLEND_FACTOR_ZERO};
 
-    VkBlendOp color_blend_op{VK_BLEND_OP_ADD};
+    VkBlendOp colorBlendOp{VK_BLEND_OP_ADD};
 
-    VkBlendFactor src_alpha_blend_factor{VK_BLEND_FACTOR_ONE};
+    VkBlendFactor srcAlphaBlendFactor{VK_BLEND_FACTOR_ONE};
 
-    VkBlendFactor dst_alpha_blend_factor{VK_BLEND_FACTOR_ZERO};
+    VkBlendFactor dstAlphaBlendFactor{VK_BLEND_FACTOR_ZERO};
 
-    VkBlendOp alpha_blend_op{VK_BLEND_OP_ADD};
+    VkBlendOp alphaBlendOp{VK_BLEND_OP_ADD};
 
-    VkColorComponentFlags color_write_mask{
+    VkColorComponentFlags colorWriteMask{
         VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
     };
 };
 
-
 struct ColorBlendState
 {
-    VkBool32 logic_op_enable{VK_FALSE};
+    VkBool32 logicOpEnable{VK_FALSE};
 
-    VkLogicOp logic_op{VK_LOGIC_OP_CLEAR};
+    VkLogicOp logicOp{VK_LOGIC_OP_CLEAR};
 
     std::vector<ColorBlendAttachmentState> attachments;
 };
 
-
 struct PipelineState
 {
-    PipelineLayout* pipeline_layout{nullptr};
+public:
+    void reset();
 
-    const RenderPass* render_pass{nullptr};
+    void setPipelineLayout(PipelineLayout& pipelineLayout);
+
+    void setRenderPass(const RenderPass& renderPass);
+
+    void setSpecializationConstant(uint32_t constantId, const std::vector<uint8_t>& data);
+
+    void setVertexInputState(const VertexInputState& vertexInputState);
+
+    void setInputAssemblyState(const InputAssemblyState& inputAssemblyState);
+
+    void setRasterizationState(const RasterizationState& rasterizationState);
+
+    void setViewportState(const ViewportState& viewportState);
+
+    void setMultisampleState(const MultisampleState& multisampleState);
+
+    void setDepthStencilState(const DepthStencilState& depthStencilState);
+
+    void setColorBlendState(const ColorBlendState& colorBlendState);
+
+    void setSubpassIndex(uint32_t subpassIndex);
+
+    const PipelineLayout& getPipelineLayout() const;
+
+    const RenderPass* getRenderPass() const;
+
+    const SpecializationConstantState& getSpecializationConstantState() const;
+
+    const VertexInputState& getVertexInputState() const;
+
+    const InputAssemblyState& getInputAssemblyState() const;
+
+    const RasterizationState& getRasterizationState() const;
+
+    const ViewportState& getViewportState() const;
+
+    const MultisampleState& getMultisampleState() const;
+
+    const DepthStencilState& getDepthStencilState() const;
+
+    const ColorBlendState& getColorBlendState() const;
+
+    uint32_t getSubpassIndex() const;
+
+    bool isDirty() const;
+
+    void clearDirty();
+
+private:
+    PipelineLayout* pipelineLayout{nullptr};
+
+    const RenderPass* renderPass{nullptr};
 
     SpecializationConstantState specializationConstantState{};
 
@@ -144,4 +204,8 @@ struct PipelineState
     DepthStencilState depthStencilState{};
 
     ColorBlendState colorBlendState{};
+
+    uint32_t subpassIndex{0U};
+
+    bool dirty{false};
 };

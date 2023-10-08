@@ -14,6 +14,7 @@ add_subdirectory(samples/sample1)
 add_subdirectory(samples/instancing)
 add_subdirectory(samples/defered)
 add_subdirectory(samples/shaderreFlection)
+add_subdirectory(samples/renderGraphTest)
 
 add_dependencies(sample1 framework)
 add_dependencies(instancing framework)

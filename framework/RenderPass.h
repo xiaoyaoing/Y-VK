@@ -27,7 +27,7 @@ struct SubpassInfo
 class RenderPass
 {
 public:
-    VkRenderPass getHandle()
+    VkRenderPass getHandle() const
     {
         return _pass;
     }

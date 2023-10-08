@@ -9,8 +9,10 @@
 #include <Images/Image.h>
 #include <RenderTarget.h>
 #include <FrameBuffer.h>
+#include <Buffer.h>
 
 #include "Common/ResourceCache.h"
+#include "Images/Sampler.h"
 
 RenderContext* RenderContext::g_context = nullptr;
 
@@ -30,8 +32,7 @@ RenderContext::RenderContext(Device& device, VkSurfaceKHR surface, Window& windo
                                         extent,
                                         swapchain->getImageFormat(),
                                         swapchain->getUseage());
-            // auto render_target = createFunc(std::move(swapChainImage));
-            //frames.emplace_back(std::make_unique<RenderFrame>(device, std::move(render_target)));
+            hwTextures.emplace_back(device, image_handle, extent, swapchain->getImageFormat(), swapchain->getUseage());
         }
     }
 
@@ -40,6 +41,8 @@ RenderContext::RenderContext(Device& device, VkSurfaceKHR surface, Window& windo
         vkCreateSemaphore(device.getHandle(), &semaphoreCreateInfo, nullptr, &semaphores.renderFinishedSem));
     VK_CHECK_RESULT(
         vkCreateSemaphore(device.getHandle(), &semaphoreCreateInfo, nullptr, &semaphores.presentFinishedSem));
+
+    renderGraph = std::make_unique<RenderGraph>(device);
 }
 
 CommandBuffer& RenderContext::begin()
@@ -272,4 +275,101 @@ void RenderContext::draw(const Scene& scene)
     auto& pipeline = device.getResourceCache().requestPipeline(pipelineState);
 
     commandBuffer.bindPipeline(pipeline.getHandle());
+}
+
+RenderGraph& RenderContext::getRenderGraph() const
+{
+    return *renderGraph;
+}
+
+PipelineState& RenderContext::getPipelineState()
+{
+    return pipelineState;
+}
+
+sg::SgImage& RenderContext::getCurHwtexture()
+{
+    return hwTextures[activeFrameIndex];
+}
+
+void RenderContext::bindBuffer(uint32_t setId, const Buffer& buffer, VkDeviceSize offset, VkDeviceSize range,
+                               uint32_t binding, uint32_t array_element)
+{
+    resourceSets[setId].bindBuffer(buffer, offset, range, binding, array_element);
+}
+
+void RenderContext::bindImage(uint32_t setId, const ImageView& view, const Sampler& sampler, uint32_t binding,
+                              uint32_t array_element)
+{
+    resourceSets[setId].bindImage(view, sampler, binding, array_element);
+}
+
+const std::unordered_map<uint32_t, ResourceSet>& RenderContext::getResourceSets() const
+{
+    return resourceSets;
+}
+
+void RenderContext::flushDescriptorState(CommandBuffer& commandBuffer, VkPipelineBindPoint pipeline_bind_point)
+{
+    auto& pipelineLayout = pipelineState.getPipelineLayout();
+    for (auto& resourceSetIt : resourceSets)
+    {
+        BindingMap<VkDescriptorBufferInfo> buffer_infos;
+        BindingMap<VkDescriptorImageInfo> image_infos;
+
+        std::vector<uint32_t> dynamic_offsets;
+
+        auto descriptorSetID = resourceSetIt.first;
+        auto& resourceSet = resourceSetIt.second;
+
+        if (!pipelineState.getPipelineLayout().hasLayout(descriptorSetID))
+            continue;
+
+        auto& descriptorSetLayout = pipelineLayout.getDescriptorLayout(descriptorSetID);
+
+        for (auto& bindingIt : resourceSet.getResourceBindings())
+        {
+            auto bindingIndex = bindingIt.first;
+            auto& bindingResources = bindingIt.second;
+
+            for (auto& elementIt : bindingResources)
+            {
+                auto arrayElement = elementIt.first;
+                auto& resourceInfo = elementIt.second;
+
+                auto& buffer = resourceInfo.buffer;
+                auto& sampler = resourceInfo.sampler;
+                auto& imageView = resourceInfo.image_view;
+
+                auto& bindingInfo = descriptorSetLayout.getLayoutBindingInfo(bindingIndex);
+
+                if (buffer != nullptr)
+                {
+                    VkDescriptorBufferInfo bufferInfo{
+                        .buffer = buffer->getHandle(), .offset = resourceInfo.offset, .range = resourceInfo.range
+                    };
+
+                    buffer_infos[bindingIndex][arrayElement] = bufferInfo;
+                }
+
+                if (imageView != nullptr && sampler != nullptr)
+                {
+                    VkDescriptorImageInfo imageInfo{
+                        .sampler = sampler->getHandle(),
+                        .imageView = imageView->getHandle(),
+                        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                    };
+
+                    image_infos[bindingIndex][arrayElement] = imageInfo;
+                }
+            }
+        }
+
+        auto descriptorPool = device.getResourceCache().requestDescriptorPool(descriptorSetLayout);
+        auto descriptorSet = device.getResourceCache().requestDescriptorSet(
+            descriptorSetLayout, descriptorPool, buffer_infos, image_infos);
+
+        commandBuffer.bindDescriptorSets(pipeline_bind_point, pipelineLayout.getHandle(), descriptorSetID,
+                                         {descriptorSet}, dynamic_offsets);
+    }
 }

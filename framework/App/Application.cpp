@@ -4,7 +4,7 @@
 #include "Application.h"
 #include "Instance.h"
 #include "Scene.h"
-#include "..\Common\VkCommon.h"
+#include "../Common/VkCommon.h"
 #include "Gui.h"
 #include <RenderTarget.h>
 #include <Shader.h>
@@ -13,7 +13,8 @@
 #include <Camera.h>
 
 
-void Application::initVk() {
+void Application::initVk()
+{
     getRequiredInstanceExtensions();
     _instance = std::make_unique<Instance>(std::string("vulkanApp"), instanceExtensions, validationLayers);
     surface = window->createSurface(*_instance);
@@ -22,7 +23,8 @@ void Application::initVk() {
     uint32_t physical_device_count{0};
     VK_CHECK_RESULT(vkEnumeratePhysicalDevices(_instance->getHandle(), &physical_device_count, nullptr));
 
-    if (physical_device_count < 1) {
+    if (physical_device_count < 1)
+    {
         throw std::runtime_error("Couldn't find a physical device that supports Vulkan.");
     }
 
@@ -32,7 +34,7 @@ void Application::initVk() {
     LOGI("Found {} physical device", physical_device_count);
 
     VK_CHECK_RESULT(
-            vkEnumeratePhysicalDevices(_instance->getHandle(), &physical_device_count, physical_devices.data()));
+        vkEnumeratePhysicalDevices(_instance->getHandle(), &physical_device_count, physical_devices.data()));
 
     addDeviceExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
@@ -64,10 +66,12 @@ void Application::initVk() {
     VK_CHECK_RESULT(vkCreateFence(device->getHandle(), &fenceInfo, nullptr, &fence));
 }
 
-void Application::getRequiredInstanceExtensions() {
+void Application::getRequiredInstanceExtensions()
+{
     uint32_t glfwExtensionsCount = 0;
-    const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionsCount);
-    for (uint32_t i = 0; i < glfwExtensionsCount; i++) {
+    const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionsCount);
+    for (uint32_t i = 0; i < glfwExtensionsCount; i++)
+    {
         addInstanceExtension(glfwExtensions[i]);
     }
     if (enableValidationLayers)
@@ -75,19 +79,23 @@ void Application::getRequiredInstanceExtensions() {
     //  addInstanceExtension(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 }
 
-void Application::updateScene() {
+void Application::updateScene()
+{
 }
 
-void Application::updateGUI() {
-    ImGuiIO &io = ImGui::GetIO();
+void Application::updateGUI()
+{
+    if (!gui)
+        return;
+    ImGuiIO& io = ImGui::GetIO();
 
-    io.DisplaySize = ImVec2((float) 1024, (float) 1024);
+    io.DisplaySize = ImVec2((float)1024, (float)1024);
     io.DeltaTime = 0;
-//
-//    io.MousePos = ImVec2(mousePos.x, mousePos.y);
-//    io.MouseDown[0] = mouseButtons.left && UIOverlay.visible;
-//    io.MouseDown[1] = mouseButtons.right && UIOverlay.visible;
-//    io.MouseDown[2] = mouseButtons.middle && UIOverlay.visible;
+    //
+    //    io.MousePos = ImVec2(mousePos.x, mousePos.y);
+    //    io.MouseDown[0] = mouseButtons.left && UIOverlay.visible;
+    //    io.MouseDown[1] = mouseButtons.right && UIOverlay.visible;
+    //    io.MouseDown[2] = mouseButtons.middle && UIOverlay.visible;
 
     ImGui::NewFrame();
 
@@ -109,19 +117,22 @@ void Application::updateGUI() {
     ImGui::PopStyleVar();
     ImGui::Render();
 
-    if (gui->update() || gui->updated) {
+    if (gui->update() || gui->updated)
+    {
         buildCommandBuffers();
         gui->updated = false;
     }
 }
 
-void Application::createFrameBuffers() {
+void Application::createFrameBuffers()
+{
 }
 
-void Application::createCommandBuffer() {
-//    commandPool = std::make_unique<CommandPool>(*device,
-//                                                device->getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0).getFamilyIndex(),
-//                                                CommandBuffer::ResetMode::AlwaysAllocate);
+void Application::createCommandBuffer()
+{
+    //    commandPool = std::make_unique<CommandPool>(*device,
+    //                                                device->getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0).getFamilyIndex(),
+    //                                                CommandBuffer::ResetMode::AlwaysAllocate);
 
     auto frameCount = renderContext->getSwapChainImageCount();
     commandBuffers.reserve(frameCount);
@@ -132,16 +143,14 @@ void Application::createCommandBuffer() {
     allocateInfo.commandBufferCount = frameCount;
     std::vector<VkCommandBuffer> vkCommandBuffers(frameCount);
 
-    if (vkAllocateCommandBuffers(device->getHandle(), &allocateInfo, vkCommandBuffers.data()) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate command buffers!");
-    }
-    for (const auto &vkCommandBuffer: vkCommandBuffers)
+    VK_CHECK_RESULT(vkAllocateCommandBuffers(device->getHandle(), &allocateInfo, vkCommandBuffers.data()))
+
+    for (const auto& vkCommandBuffer : vkCommandBuffers)
         commandBuffers.emplace_back(std::move(std::make_unique<CommandBuffer>(vkCommandBuffer)));
 }
 
-void Application::createRenderPass() {
-
-
+void Application::createRenderPass()
+{
     // // //use RenderTarget Structure
     // // assert(renderContext->isPrepared() && "RenderContext must be initialized");
     // // auto &renderTarget = renderContext->getRenderFrame(0).getRenderTarget();
@@ -233,7 +242,8 @@ void Application::createRenderPass() {
     // renderPipeline->createRenderPass(vkRenderPass);
 }
 
-void Application::createDepthStencil() {
+void Application::createDepthStencil()
+{
     //    auto depthImageInfo = Image::getDefaultImageInfo();
     //    depthImageInfo.extent = VkExtent3D{_context->getSwapChainExtent().width, _context->getSwapChainExtent().height, 1};
     //    depthImageInfo.format = VK_FORMAT_D32_SFLOAT;
@@ -244,7 +254,8 @@ void Application::createDepthStencil() {
     //    _depthImageView = std::make_shared<ImageView>(device, _depthImage, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
 }
 
-void Application::createAllocator() {
+void Application::createAllocator()
+{
     VmaAllocatorCreateInfo allocatorInfo = {};
     allocatorInfo.physicalDevice = device->getPhysicalDevice();
     allocatorInfo.device = device->getHandle();
@@ -254,10 +265,12 @@ void Application::createAllocator() {
     device->setMemoryAllocator(_allocator);
 }
 
-void Application::update() {
+void Application::update()
+{
     auto tStart = std::chrono::high_resolution_clock::now();
 
-    if (viewUpdated) {
+    if (viewUpdated)
+    {
         viewUpdated = false;
         onViewUpdated();
     }
@@ -274,7 +287,8 @@ void Application::update() {
     frameTimer = tDiff / 1000.f;
     camera->update(frameTimer);
 
-    if (camera->moving()) {
+    if (camera->moving())
+    {
         viewUpdated = true;
     }
 }
@@ -288,11 +302,12 @@ void Application::update() {
 // {
 // }
 
-void Application::draw(CommandBuffer &commandBuffer) {
+void Application::draw(CommandBuffer& commandBuffer)
+{
     bindUniformBuffers(commandBuffer);
- //   renderPipeline->draw(commandBuffer, renderFrame);
+    //   renderPipeline->draw(commandBuffer, renderFrame);
 
-    const VkViewport viewport = vkCommon::initializers::viewport((float) width, (float) height, 0.0f, 1.0f);
+    const VkViewport viewport = vkCommon::initializers::viewport((float)width, (float)height, 0.0f, 1.0f);
     const VkRect2D scissor = vkCommon::initializers::rect2D(width, height, 0, 0);
     vkCmdSetViewport(commandBuffer.getHandle(), 0, 1, &viewport);
     vkCmdSetScissor(commandBuffer.getHandle(), 0, 1, &scissor);
@@ -308,63 +323,75 @@ void Application::draw(CommandBuffer &commandBuffer) {
         memory_barrier.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         memory_barrier.dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 
-       // commandBuffer.imageMemoryBarrier(renderFrame.getRenderTarget().getViews()[0], memory_barrier);
+        // commandBuffer.imageMemoryBarrier(renderFrame.getRenderTarget().getViews()[0], memory_barrier);
     }
 }
 
-void Application::createRenderContext() {
-    auto surface_priority_list = std::vector<VkSurfaceFormatKHR>{{VK_FORMAT_R8G8B8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR},
-                                                                 {VK_FORMAT_B8G8R8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR}};
+void Application::createRenderContext()
+{
+    auto surface_priority_list = std::vector<VkSurfaceFormatKHR>{
+        {VK_FORMAT_R8G8B8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR},
+        {VK_FORMAT_B8G8R8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR}
+    };
     renderContext = std::make_unique<RenderContext>(*device, surface, *window);
     RenderContext::g_context = renderContext.get();
 }
 
-void Application::drawFrame() {
+void Application::drawFrame()
+{
     vkWaitForFences(device->getHandle(), 1, &fence, VK_TRUE, UINT64_MAX);
     vkResetFences(device->getHandle(), 1, &fence);
     renderContext->beginFrame();
-    auto &commandBuffer = *commandBuffers[renderContext->getActiveFrameIndex()];
+    auto& commandBuffer = *commandBuffers[renderContext->getActiveFrameIndex()];
     renderContext->submit(commandBuffer, fence);
 }
 
-void Application::drawRenderPasses(CommandBuffer &buffer, RenderTarget &renderTarget) {
+void Application::drawRenderPasses(CommandBuffer& buffer, RenderTarget& renderTarget)
+{
     //    renderPipeline->draw(buffer, renderTarget);
 }
 
-void Application::initWindow(const char *name, int width, int height) {
+void Application::initWindow(const char* name, int width, int height)
+{
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     window = std::make_unique<Window>(Window::WindowProp{"title"}, this);
-//    glfwSetFramebufferSizeCallback(window->getHandle(), [](GLFWwindow *window, int width, int height) {
-//        auto *app = reinterpret_cast<Application *>(glfwGetWindowUserPointer(window));
-//        app->frameBufferResized = true;
-//    });
+    //    glfwSetFramebufferSizeCallback(window->getHandle(), [](GLFWwindow *window, int width, int height) {
+    //        auto *app = reinterpret_cast<Application *>(glfwGetWindowUserPointer(window));
+    //        app->frameBufferResized = true;
+    //    });
 }
 
-void Application::initGUI() {
-    gui = std::make_unique<Gui>(*device);
-    gui->prepare(pipelineCache, renderPipeline->getRenderPass().getHandle());
-    gui->prepareResoucrces(this);
+void Application::initGUI()
+{
+    // gui = std::make_unique<Gui>(*device);
+    // gui->prepare(pipelineCache, renderPipeline->getRenderPass().getHandle());
+    // gui->prepareResoucrces(this);
 }
 
-void Application::createCommandPool() {
+void Application::createCommandPool()
+{
 }
 
-VkPhysicalDevice Application::createPhysicalDevice() {
+VkPhysicalDevice Application::createPhysicalDevice()
+{
     return nullptr;
 }
 
-void Application::prepare() {
+void Application::prepare()
+{
     initVk();
     initGUI();
 }
 
-Application::Application(const char *name, int width, int height) : width(width), height(height) {
+Application::Application(const char* name, int width, int height) : width(width), height(height)
+{
     initWindow(name, width, height);
 }
 
-void Application::createRenderPipeline() {
+void Application::createRenderPipeline()
+{
     scene = std::make_unique<Scene>(*device);
     renderPipeline = std::make_unique<RenderPipeline>(*device);
     renderPipeline->addSubPass(std::make_unique<GeomSubpass>(*scene));
@@ -374,123 +401,140 @@ void Application::createRenderPipeline() {
 }
 
 
-void Application::inputEvent(const InputEvent &inputEvent) {
+void Application::inputEvent(const InputEvent& inputEvent)
+{
     auto source = inputEvent.getSource();
 
-    if (source == EventSource::KeyBoard) {
-        const auto &keyEvent = static_cast<const KeyInputEvent &>(inputEvent);
+    if (source == EventSource::KeyBoard)
+    {
+        const auto& keyEvent = static_cast<const KeyInputEvent&>(inputEvent);
         auto action = keyEvent.getAction();
         auto code = keyEvent.getCode();
 
-        switch (action) {
-
-            case KeyAction::Down:
-                switch (code) {
-                    case KeyCode::W:
-                        camera->keys.up = true;
-                        break;
-                    case KeyCode::S:
-                        camera->keys.down = true;
-                        break;
-                    case KeyCode::A:
-                        camera->keys.left = true;
-                        break;
-                    case KeyCode::D:
-                        camera->keys.right = true;
-                        break;
-                    default:
-                        break;
-                }
+        switch (action)
+        {
+        case KeyAction::Down:
+            switch (code)
+            {
+            case KeyCode::W:
+                camera->keys.up = true;
                 break;
-            case KeyAction::Up:
-                switch (code) {
-                    case KeyCode::W:
-                        camera->keys.up = false;
-                        break;
-                    case KeyCode::S:
-                        camera->keys.down = false;
-                        break;
-                    case KeyCode::A:
-                        camera->keys.left = false;
-                        break;
-                    case KeyCode::D:
-                        camera->keys.right = false;
-                        break;
-                    default:
-                        break;
-                }
+            case KeyCode::S:
+                camera->keys.down = true;
                 break;
-            case KeyAction::Repeat:
+            case KeyCode::A:
+                camera->keys.left = true;
                 break;
-            case KeyAction::Unknown:
+            case KeyCode::D:
+                camera->keys.right = true;
                 break;
+            default:
+                break;
+            }
+            break;
+        case KeyAction::Up:
+            switch (code)
+            {
+            case KeyCode::W:
+                camera->keys.up = false;
+                break;
+            case KeyCode::S:
+                camera->keys.down = false;
+                break;
+            case KeyCode::A:
+                camera->keys.left = false;
+                break;
+            case KeyCode::D:
+                camera->keys.right = false;
+                break;
+            default:
+                break;
+            }
+            break;
+        case KeyAction::Repeat:
+            break;
+        case KeyAction::Unknown:
+            break;
         }
     }
-    if (source == EventSource::Mouse) {
-        const auto &mouseEvent = static_cast<const MouseButtonInputEvent &>(inputEvent);
+    if (source == EventSource::Mouse)
+    {
+        const auto& mouseEvent = static_cast<const MouseButtonInputEvent&>(inputEvent);
         handleMouseMove(mouseEvent.getPosX(), mouseEvent.getPosY());
         auto action = mouseEvent.getAction();
         auto button = mouseEvent.getButton();
-        switch (action) {
-            case MouseAction::Down:
-                switch (button) {
-                    case MouseButton::Left:
-                        mouseButtons.left = true;
-                        break;
-                    case MouseButton::Right:
-                        mouseButtons.right = true;
-                        break;
-                    case MouseButton::Middle:
-                        mouseButtons.middle = true;
-                        break;
-                    default:
-                        break;
-                }
+        switch (action)
+        {
+        case MouseAction::Down:
+            switch (button)
+            {
+            case MouseButton::Left:
+                mouseButtons.left = true;
                 break;
-            case MouseAction::Up:
-                switch (button) {
-                    case MouseButton::Left:
-                        mouseButtons.left = false;
-                        break;
-                    case MouseButton::Right:
-                        mouseButtons.right = false;
-                        break;
-                    case MouseButton::Middle:
-                        mouseButtons.middle = false;
-                        break;
-                    default:
-                        break;
-                }
+            case MouseButton::Right:
+                mouseButtons.right = true;
                 break;
-            case MouseAction::Move:
+            case MouseButton::Middle:
+                mouseButtons.middle = true;
                 break;
-            case MouseAction::Unknown:
+            default:
                 break;
+            }
+            break;
+        case MouseAction::Up:
+            switch (button)
+            {
+            case MouseButton::Left:
+                mouseButtons.left = false;
+                break;
+            case MouseButton::Right:
+                mouseButtons.right = false;
+                break;
+            case MouseButton::Middle:
+                mouseButtons.middle = false;
+                break;
+            default:
+                break;
+            }
+            break;
+        case MouseAction::Move:
+            break;
+        case MouseAction::Unknown:
+            break;
         }
-    } else if (source == EventSource::TouchScreen) {
-        const auto &touchEvent = static_cast<const TouchInputEvent &>(inputEvent);
+    }
+    else if (source == EventSource::TouchScreen)
+    {
+        const auto& touchEvent = static_cast<const TouchInputEvent&>(inputEvent);
 
-        if (touchEvent.getAction() == TouchAction::Down) {
+        if (touchEvent.getAction() == TouchAction::Down)
+        {
             //   touchDown = true;
             touchPos.x = static_cast<int32_t>(touchEvent.getPosX());
             touchPos.y = static_cast<int32_t>(touchEvent.getPosY());
             mousePos.x = touchEvent.getPosX();
             mousePos.y = touchEvent.getPosY();
             mouseButtons.left = true;
-        } else if (touchEvent.getAction() == TouchAction::Up) {
+        }
+        else if (touchEvent.getAction() == TouchAction::Up)
+        {
             touchPos.x = static_cast<int32_t>(touchEvent.getPosX());
             touchPos.y = static_cast<int32_t>(touchEvent.getPosY());
             //   touchTimer = 0.0;
             //   touchDown = false;
             camera->keys.up = false;
             mouseButtons.left = false;
-        } else if (touchEvent.getAction() == TouchAction::Move) {
+        }
+        else if (touchEvent.getAction() == TouchAction::Move)
+        {
             bool handled = false;
-            if (gui) {
-                ImGuiIO &io = ImGui::GetIO();
+            if (gui)
+            {
+                ImGuiIO& io = ImGui::GetIO();
                 handled = io.WantCaptureMouse;
             }
-            if (!handled) {
+            if (!handled)
+            {
                 int32_t eventX = static_cast<int32_t>(touchEvent.getPosX());
                 int32_t eventY = static_cast<int32_t>(touchEvent.getPosY());
 
@@ -510,35 +554,40 @@ void Application::inputEvent(const InputEvent &inputEvent) {
             }
         }
     }
-
 }
 
-void Application::mainloop() {
-    while (!glfwWindowShouldClose(window->getHandle())) {
+void Application::mainloop()
+{
+    while (!glfwWindowShouldClose(window->getHandle()))
+    {
         glfwPollEvents();
         update();
     }
 }
 
-void Application::handleMouseMove(float x, float y) {
+void Application::handleMouseMove(float x, float y)
+{
     bool handled = false;
     float dx = static_cast<int32_t>(mousePos.x) - x;
     float dy = static_cast<int32_t>(mousePos.y) - y;
     onMouseMove();
 
 
-    if (mouseButtons.left) {
+    if (mouseButtons.left)
+    {
         rotation.x += dy * 1.25f * rotationSpeed;
         rotation.y -= dx * 1.25f * rotationSpeed;
         camera->rotate(glm::vec3(dy * camera->rotationSpeed, -dx * camera->rotationSpeed, 0.0f));
         viewUpdated = true;
     }
-    if (mouseButtons.right) {
+    if (mouseButtons.right)
+    {
         //   zoom += dy * .005f * zoom_speed;
         camera->translate(glm::vec3(-0.0f, 0.0f, dy * .005f));
         viewUpdated = true;
     }
-    if (mouseButtons.middle) {
+    if (mouseButtons.middle)
+    {
         //   camera_pos.x -= dx * 0.01f;
         //     camera_pos.y -= dy * 0.01f;
         camera->translate(glm::vec3(-dx * 0.01f, -dy * 0.01f, 0.0f));
@@ -547,15 +596,14 @@ void Application::handleMouseMove(float x, float y) {
     mousePos = glm::vec2(static_cast<float>(x), static_cast<float>(y));
 }
 
-void Application::onUpdateGUI() {
-
+void Application::onUpdateGUI()
+{
 }
 
-void Application::onMouseMove() {
-
+void Application::onMouseMove()
+{
 }
 
-void Application::onViewUpdated() {
-
+void Application::onViewUpdated()
+{
 }
-
