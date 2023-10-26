@@ -62,7 +62,7 @@ public:
     VkPipelineShaderStageCreateInfo PipelineShaderStageCreateInfo() const;
 
 
-    std::vector<ShaderResource>& getShaderResources()
+    const std::vector<ShaderResource>& getShaderResources() const
     {
         return resources;
     }

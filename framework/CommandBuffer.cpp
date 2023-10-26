@@ -5,7 +5,8 @@
 #include "RenderContext.h"
 #include <RenderPass.h>
 #include <FrameBuffer.h>
-#include <RenderTarget.h>
+#include <Pipeline.h>
+
 #include <algorithm>
 
 void CommandBuffer::beginRecord(VkCommandBufferUsageFlags usage)
@@ -36,20 +37,20 @@ void CommandBuffer::beginRenderPass(VkRenderPass renderPass, VkFramebuffer buffe
     vkCmdBeginRenderPass(_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void CommandBuffer::bindVertexBuffer(std::vector<ptr<Buffer>>& buffers, const std::vector<VkDeviceSize>& offsets)
+void CommandBuffer::bindVertexBuffer(std::vector<const Buffer*>& buffers, const std::vector<VkDeviceSize>& offsets)
 {
     std::vector<VkBuffer> bufferHandles(buffers.size());
     std::transform(buffers.begin(), buffers.end(), bufferHandles.begin(),
-                   [](ptr<Buffer>& buffer) { return buffer->getHandle(); });
+                   [](const Buffer*& buffer) { return buffer->getHandle(); });
 
     vkCmdBindVertexBuffers(_buffer, 0, static_cast<uint32_t>(bufferHandles.size()), bufferHandles.data(),
                            offsets.data());
 }
 
-void CommandBuffer::bindIndicesBuffer(const ptr<Buffer>& buffer, VkDeviceSize offset)
+void CommandBuffer::bindIndicesBuffer(const Buffer& buffer, VkDeviceSize offset)
 {
     // auto bufferHandles = getHandles<Buffer,VkBuffer>(buffers);
-    vkCmdBindIndexBuffer(_buffer, buffer->getHandle(), offset, VK_INDEX_TYPE_UINT16);
+    vkCmdBindIndexBuffer(_buffer, buffer.getHandle(), offset, VK_INDEX_TYPE_UINT16);
 }
 
 void CommandBuffer::bindDescriptorSets(VkPipelineBindPoint bindPoint, VkPipelineLayout layout, uint32_t firstSet,
@@ -170,4 +171,26 @@ void CommandBuffer::beginRenderPass(RenderPass& render_pass, FrameBuffer& frameB
 
 
     vkCmdBeginRenderPass(_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+}
+
+
+void CommandBuffer::bindPipeline(const Pipeline& pipeline) const
+{
+    vkCmdBindPipeline(_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getHandle());
+}
+
+void CommandBuffer::setViewport(uint32_t firstViewport, const std::vector<VkViewport>& viewports)
+{
+    vkCmdSetViewport(getHandle(), firstViewport, toUint32(viewports.size()), viewports.data());
+}
+
+void CommandBuffer::setScissor(uint32_t firstScissor, const std::vector<VkRect2D>& scissors)
+{
+    vkCmdSetScissor(getHandle(), firstScissor, toUint32(scissors.size()), scissors.data());
+}
+
+void CommandBuffer::bindVertexBuffer(const Buffer& buffer, VkDeviceSize offset)
+{
+    std::vector<const Buffer*> buffers = {&buffer};
+    bindVertexBuffer(buffers, {offset});
 }

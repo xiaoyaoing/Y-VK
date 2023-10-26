@@ -15,48 +15,51 @@ class ImageView;
 
 class Sampler;
 
-struct ResourceInfo {
+struct ResourceInfo
+{
     bool dirty{false};
 
-    const Buffer *buffer{nullptr};
+    const Buffer* buffer{nullptr};
 
     VkDeviceSize offset{0};
 
     VkDeviceSize range{0};
 
-    const ImageView *image_view{nullptr};
+    const ImageView* image_view{nullptr};
 
-    const Sampler *sampler{nullptr};
+    const Sampler* sampler{nullptr};
 };
 
-struct ResourceSet {
+struct ResourceSet
+{
 public:
     void
-    bindBuffer(const Buffer &buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t binding, uint32_t array_element);
+    bindBuffer(const Buffer& buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t binding, uint32_t array_element);
 
-    void bindImage(const ImageView &view, const Sampler &sampler, uint32_t binding, uint32_t array_element);
+    void bindImage(const ImageView& view, const Sampler& sampler, uint32_t binding, uint32_t array_element);
 
-    const BindingMap<ResourceInfo> &getResourceBindings() const;
+    const BindingMap<ResourceInfo>& getResourceBindings() const;
+
+    bool isDirty() const;
 
 private:
     BindingMap<ResourceInfo> resourceBindings;
 
+    bool dirty{false};
 };
 
-class ResourceBindingState {
+class ResourceBindingState
+{
 public:
-    void bindBuffer(uint32_t setId, const Buffer &buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t binding,
+    void bindBuffer(uint32_t setId, const Buffer& buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t binding,
                     uint32_t array_element);
 
     void
-    bindImage(uint32_t setId, const ImageView &view, const Sampler &sampler, uint32_t binding, uint32_t array_element);
+    bindImage(uint32_t setId, const ImageView& view, const Sampler& sampler, uint32_t binding, uint32_t array_element);
 
 
-    const std::unordered_map<uint32_t, ResourceSet> &getResourceSets() const;
+    const std::unordered_map<uint32_t, ResourceSet>& getResourceSets() const;
 
 private:
     std::unordered_map<uint32_t, ResourceSet> resourceSets;
-
 };
-
-

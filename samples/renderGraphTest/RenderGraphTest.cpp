@@ -10,14 +10,24 @@
 void Example::drawFrame()
 {
     // auto& graph = renderContext->getRenderGraph();
+
+    // renderContext->getPipelineState().setViewportState(ViewportState{.})
+    auto& commandBuffer = commandBuffers[renderContext->getActiveFrameIndex()];
+    commandBuffer->beginRecord(0);
+
+
+    commandBuffer->setViewport(0, {vkCommon::initializers::viewport((float)width, (float)height, 0.0f, 1.0f)});
+    commandBuffer->setScissor(0, {vkCommon::initializers::rect2D(width, height, 0, 0)});
+
+    // commandBufffer
     RenderGraph graph(*device);
     struct GBufferPassData
     {
-        RenderGraphId<RenderGraphTexture> shadows;
-
         RenderGraphId<RenderGraphTexture> depth;
 
         RenderGraphId<RenderGraphTexture> color;
+
+        RenderGraphId<RenderGraphTexture> normal;
 
         RenderGraphId<RenderGraphTexture> output;
     };
@@ -25,7 +35,6 @@ void Example::drawFrame()
     vkWaitForFences(device->getHandle(), 1, &fence, VK_TRUE, UINT64_MAX);
     vkResetFences(device->getHandle(), 1, &fence);
     renderContext->beginFrame();
-    commandBuffers[renderContext->getActiveFrameIndex()]->beginRecord(0);
     graph.addPass<GBufferPassData>("gbuffer", [&](RenderGraph::Builder& builder, GBufferPassData& data)
                                    {
                                        //                                       data.output = graph.create<RenderGraphTexture>("output",
@@ -36,6 +45,22 @@ void Example::drawFrame()
                                        //                                               .memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY
                                        //                                           });
                                        data.output = graph.import("output", &renderContext->getCurHwtexture());
+                                       data.color = graph.create<RenderGraphTexture>("color",
+                                           {
+                                               .extent = renderContext->getSwapChainExtent(),
+                                               .format = VK_FORMAT_R8G8B8A8_SRGB,
+                                               .usageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                               .memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY
+                                           });
+
+                                       data.normal = graph.create<RenderGraphTexture>("normal",
+                                           {
+                                               .extent = renderContext->getSwapChainExtent(),
+                                               .format = VK_FORMAT_R8G8B8A8_SRGB,
+                                               .usageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                               .memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY
+                                           });
+
                                        data.depth = graph.create<RenderGraphTexture>("depth", {
                                            .extent = renderContext->getSwapChainExtent(),
                                            .format = VK_FORMAT_D32_SFLOAT,
@@ -43,60 +68,60 @@ void Example::drawFrame()
                                            VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT,
                                            .memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY
                                        });
+                                       graph.getBlackBoard().put("color", data.color);
+                                       graph.getBlackBoard().put("normal", data.normal);
+                                       graph.getBlackBoard().put("depth", data.depth);
+
                                        builder.declare("Color Pass Target", {
-                                                           .color = {data.output, data.depth},
-                                                           .depth = {data.depth}
+                                                           .color = {data.depth, data.color, data.normal}
                                                        }
                                        );
                                    },
-                                   [&](GBufferPassData& data, RenderPassContext& context)
+                                   [&](GBufferPassData& data, const RenderPassContext& context)
                                    {
                                        auto& commandBuffer = context.commandBuffer;
-                                       commandBuffer.bindPipeline(context.pipeline);
 
+                                       //commandBuffer.bindPipeline(context.pipeline);
+                                       renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.gBuffer);
+                                       renderContext->getPipelineState().setRenderPass(context.renderPass);
 
-                                       static auto startTime = std::chrono::high_resolution_clock::now();
-
-                                       auto currentTime = std::chrono::high_resolution_clock::now();
-                                       float time = std::chrono::duration<float, std::chrono::seconds::period>(
-                                           currentTime - startTime).count();
-                                       ubo_vs.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f),
-                                                                  glm::vec3(0.0f, 0.0f, 1.0f));
-                                       ubo_vs.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f),
-                                                                 glm::vec3(0.0f, 0.0f, 0.0f),
-                                                                 glm::vec3(0.0f, 0.0f, 1.0f));
-                                       ubo_vs.proj = glm::perspective(glm::radians(45.0f), 1.f, 0.1f, 10.0f);
-                                       ubo_vs.proj[1][1] *= -1;
-
-                                       ubo_vs.view = camera->matrices.view;
-                                       ubo_vs.proj = camera->matrices.perspective;
-                                       // ubo_vs.model = glm::mat4::Ide
-                                       uniform_buffers.scene->uploadData(&ubo_vs, sizeof(ubo_vs));
-
-                                       renderContext->bindBuffer(0, *uniform_buffers.scene, 0,
-                                                                 uniform_buffers.scene->getSize(), 0, 0);
-                                       renderContext->bindImage(0, textures.texture1.image->getVkImageView(),
-                                                                *textures.texture1.sampler, 1, 0);
-                                       renderContext->flushDescriptorState(
-                                           commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
-                                       for (auto& mesh : scene->meshes)
-                                       {
-                                           mesh->bindAndDraw(commandBuffer);
-                                       }
+                                       renderContext->draw(commandBuffer, *sponza);
                                        commandBuffer.endRenderPass();
 
-                                       ImageMemoryBarrier memory_barrier{};
-                                       memory_barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                                       memory_barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-                                       memory_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-                                       memory_barrier.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-                                       memory_barrier.dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-                                       commandBuffer.imageMemoryBarrier(
-                                           context.renderTarget.getHwTextures()[0]->getVkImageView(), memory_barrier);
-
-
-                                       commandBuffer.endRecord();
+                                       //                                       ImageMemoryBarrier memory_barrier{};
+                                       //                                       memory_barrier.oldLayout = VK_IMAGE_LAYOUT0_COLOR_ATTACHMENT_OPTIMAL;
+                                       //                                       memory_barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+                                       //                                       memory_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                                       //                                       memory_barrier.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+                                       //                                       memory_barrier.dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+                                       //                                       commandBuffer.imageMemoryBarrier(
+                                       //                                               context.renderTarget.getHwTextures()[0]->getVkImageView(),
+                                       //                                               memory_barrier);
+                                       //                                       commandBuffer.endRecord();
                                    });
+
+    //    struct LightingPassData {
+    //        RenderGraphId<RenderGraphTexture> depth;
+    //
+    //        RenderGraphId<RenderGraphTexture> color;
+    //
+    //        RenderGraphId<RenderGraphTexture> normal;
+    //
+    //        RenderGraphId<RenderGraphTexture> output;
+    //    };
+    //    graph.addPass<LightingPassData>("lighting", [&](RenderGraph::Builder &builder, LightingPassData &data) {
+    //                                        data.depth = graph.getBlackBoard().get<RenderGraphTexture>("depth");
+    //                                        data.color = graph.getBlackBoard().get<RenderGraphTexture>("color");
+    //                                        data.normal = graph.getBlackBoard().get<RenderGraphTexture>("normal");
+    //                                        data.output = graph.import("outPut",&renderContext->getCurHwtexture());
+    //                                   },
+    //                                    [&](LightingPassData &data, const RenderPassContext &context) {
+    //                                        renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.lighting);
+    //
+    //                                    });
+
+    //  graph.addPresentPass(graph.getBlackBoard().get<RenderGraphTexture>("outPut"));
+
     graph.execute(*commandBuffers[renderContext->getActiveFrameIndex()]);
     // commandBuffers[renderContext->getActiveFrameIndex()]->endRenderPass();
     renderContext->submit(*commandBuffers[renderContext->getActiveFrameIndex()], fence);
@@ -167,6 +192,14 @@ void Example::prepare()
     createGraphicsPipeline();
 
     buildCommandBuffers();
+
+    sponza = gltfLoading::Model::loadFromFile(*device, FileUtils::getResourcePath("sponza/sponza.gltf"));
+
+    std::vector<Shader> shaders{
+        Shader(*device, FileUtils::getShaderPath("defered.vert")),
+        Shader(*device, FileUtils::getShaderPath("defered.frag"))
+    };
+    pipelineLayouts.gBuffer = std::make_unique<PipelineLayout>(*device, shaders);
 }
 
 void Example::createDescriptorSetLayout()

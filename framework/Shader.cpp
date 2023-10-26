@@ -87,6 +87,11 @@ size_t Shader::getId() const
     return id;
 }
 
+VkShaderStageFlagBits Shader::getStage() const
+{
+    return stage;
+}
+
 bool Shader::initFromSpv()
 {
     return false;

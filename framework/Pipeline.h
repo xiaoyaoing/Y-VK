@@ -164,7 +164,7 @@ struct PipelineInfo
 class Pipeline
 {
 public:
-    inline VkPipeline getHandle() { return _pipeline; }
+    VkPipeline getHandle() const { return _pipeline; }
 
     // explicit Pipeline(VkPipeline pipeline) : _pipeline(pipeline)
     // {

@@ -37,6 +37,14 @@ protected:
     std::unique_ptr<Pipeline> graphicsPipeline{nullptr};
 
 
+    std::unique_ptr<gltfLoading::Model> sponza;
+
+    struct
+    {
+        std::unique_ptr<PipelineLayout> gBuffer, lighting;
+    } pipelineLayouts;
+
+
     void prepareUniformBuffers();
 
     void createDescriptorSetLayout();

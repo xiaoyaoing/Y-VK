@@ -11,6 +11,8 @@
 #include "Pipeline.h"
 #include "RenderGraph/RenderGraph.h"
 #include "ResourceBindingState.h"
+#include "Scene/gltfloader.h"
+#include "Utils/BufferPool.h"
 
 class Device;
 
@@ -22,7 +24,37 @@ class FrameBuffer;
 
 class Sampler;
 
-class  RenderContext
+class Scene;
+
+
+struct FrameResource
+{
+    static constexpr uint32_t BUFFER_POOL_BLOCK_SIZE = 256;
+
+    const std::unordered_map<VkBufferUsageFlags, uint32_t> supported_usage_map = {
+        {VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 1},
+        {VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, 2},
+        // x2 the size of BUFFER_POOL_BLOCK_SIZE since SSBOs are normally much larger than other types of buffers
+        {VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 1},
+        {VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 1}
+    };
+
+    FrameResource(Device&);
+
+    void reset();
+
+    std::unordered_map<VkBufferUsageFlags, std::unique_ptr<BufferPool>> bufferPools{};
+    // CommandBuffer commandBuffer;
+};
+
+struct alignas(16) GlobalUniform
+{
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 proj;
+};
+
+class RenderContext
 {
 public:
     void bindBuffer(uint32_t setId, const Buffer& buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t binding,
@@ -31,6 +63,9 @@ public:
     void
     bindImage(uint32_t setId, const ImageView& view, const Sampler& sampler, uint32_t binding, uint32_t array_element);
 
+    void flushPipelineState(CommandBuffer& commandBuffer);
+
+    void bindPipelineLayout(PipelineLayout& layout);
 
     const std::unordered_map<uint32_t, ResourceSet>& getResourceSets() const;
 
@@ -76,7 +111,7 @@ public:
 
     void draw(const Scene& scene);
 
-    RenderGraph& getRenderGraph() const ;
+    RenderGraph& getRenderGraph() const;
 
     PipelineState& getPipelineState();
 
@@ -84,6 +119,12 @@ public:
 
 
     void flushDescriptorState(CommandBuffer& commandBuffer, VkPipelineBindPoint pipeline_bind_point);
+
+    void draw(CommandBuffer& commandBuffer, gltfLoading::Model& model);
+
+    void draw(CommandBuffer& commandBuffer, gltfLoading::Node& node);
+
+    BufferAllocation allocateBuffer(VkDeviceSize allocateSize, VkBufferUsageFlags usage);
 
 private:
     bool frameActive = false;
@@ -118,7 +159,9 @@ private:
     PipelineState pipelineState;
 
 
-    std::vector<CommandBuffer> commandBuffers;
+    std::vector<CommandBuffer> commandBuffers{};
+
+    std::vector<std::unique_ptr<FrameResource>> frameResources{};
 
     std::unique_ptr<RenderGraph> renderGraph;
 

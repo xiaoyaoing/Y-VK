@@ -6,8 +6,8 @@
 #include "App/Application.h"
 #include "Scene/gltfloader.h"
 
-class Example : public Application {
-
+class Example : public Application
+{
 public:
     void prepare() override;
 
@@ -17,7 +17,8 @@ public:
     Example();
 
 protected:
-    struct UBOVS {
+    struct UBOVS
+    {
         glm::mat4 projection;
         glm::mat4 view;
         glm::vec4 lightPos = glm::vec4(0.0f, -5.0f, 0.0f, 1.0f);
@@ -25,41 +26,50 @@ protected:
         float globSpeed = 0.0f;
     } ubo_vs;
 
-    struct {
+    struct
+    {
         std::unique_ptr<Buffer> scene;
     } uniform_buffers;
 
+    std::unique_ptr<gltfLoading::Model> sponza;
 
-    struct {
+
+    struct
+    {
         std::unique_ptr<gltfLoading::Model> planets;
         std::unique_ptr<gltfLoading::Model> rockets;
     } models;
 
-    struct {
+    struct
+    {
         Texture planetTexture;
         Texture rocketTexture;
     } textures;
 
-    struct {
+    struct
+    {
         VkPipeline startFieldPipeline;
         VkPipeline planetPipeline;
         VkPipeline instancedRockPipeline;
     } pipelines;
 
-    struct InstanceData {
+    struct InstanceData
+    {
         glm::vec3 pos;
         glm::vec3 rot;
         float scale;
         uint32_t texIndex;
     };
 
-    struct {
+    struct
+    {
         std::unique_ptr<Buffer> buffer{nullptr};
         std::unique_ptr<DescriptorSet> descriptorSet{nullptr};
     } instanceBuffer;
 
 
-    struct {
+    struct
+    {
         std::unique_ptr<DescriptorSet> rockDescriptor;
         std::unique_ptr<DescriptorSet> planetDescriptor;
     } descriptors;
@@ -81,16 +91,16 @@ protected:
 
     void prepareInstanceData();
 
-    void bindUniformBuffers(CommandBuffer &commandBuffer) override;
+    void bindUniformBuffers(CommandBuffer& commandBuffer) override;
 
     void buildCommandBuffers() override;
 
-    void updateScene() override {
+    void updateScene() override
+    {
         updateUniformBuffers();
     }
 
     void onUpdateGUI() override;
 
-    void draw(CommandBuffer &commandBuffer) override;
-
+    void draw(CommandBuffer& commandBuffer) override;
 };

@@ -2,20 +2,19 @@
 
 #include "Shader.h"
 #include "Vulkan.h"
+#include <optional>
 
 class Device;
 
-class DescriptorLayout
-{
+class DescriptorLayout {
 public:
-    DescriptorLayout(Device& device);
+    DescriptorLayout(Device &device);
 
     // DescriptorLayout(DescriptorLayout & other) = delete;
 
-    DescriptorLayout(Device& device, std::vector<Shader>& shaders);
+    DescriptorLayout(Device &device, std::vector<Shader> &shaders);
 
-    inline VkDescriptorSetLayout getHandle() const
-    {
+    inline VkDescriptorSetLayout getHandle() const {
         return _layout;
     }
 
@@ -25,7 +24,12 @@ public:
 
     void createLayout(VkDescriptorSetLayoutCreateFlags flags);
 
-    const VkDescriptorSetLayoutBinding& getLayoutBindingInfo(int bindingIndex) const;
+
+    const VkDescriptorSetLayoutBinding &getLayoutBindingInfo(int bindingIndex) const;
+
+    const VkDescriptorSetLayoutBinding &getLayoutBindingInfo(std::string &name) const;
+
+    bool hasLayoutBinding(std::string &name) const;
 
     std::vector<VkDescriptorSetLayoutBinding> getBindings() const;
 
@@ -33,5 +37,6 @@ private:
     VkDescriptorSetLayout _layout;
     std::vector<std::pair<VkDescriptorSetLayoutBinding, VkDescriptorBindingFlags>> _descBindingInfos{};
     std::vector<VkDescriptorSetLayoutBinding> bindings;
-    Device& _deivce;
+    std::unordered_map<std::string, uint32_t> resourceLookUp;
+    Device &_deivce;
 };

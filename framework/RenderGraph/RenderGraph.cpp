@@ -17,6 +17,7 @@ void RenderGraph::Builder::declare(const char* name, const RenderGraphPassDescri
 
 RenderGraph::RenderGraph(Device& device) : device(device)
 {
+    blackBoard = std::make_unique<Blackboard>();
 }
 
 RenderGraphHandle RenderGraph::addResource(VirtualResource* resource)
@@ -68,6 +69,10 @@ void RenderGraph::execute(CommandBuffer& commandBuffer)
             node->execute(*this, commandBuffer);
         }
     }
+}
+
+Blackboard &RenderGraph::getBlackBoard() {
+    return *blackBoard;
 }
 
 

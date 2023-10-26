@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.17)
+
 project(VulkanDemo)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_definitions(-DGLM_FORCE_DEPTH_ZERO_TO_ONE)
 add_definitions(-DVK_RESOURCES_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/resources/\")

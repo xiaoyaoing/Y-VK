@@ -27,6 +27,8 @@ struct ResourceCacheState
 
     std::unordered_map<std::size_t, PipelineLayout> pipeline_layouts;
 
+    std::unordered_map<std::size_t, Pipeline> pipelines;
+
     std::unordered_map<std::size_t, DescriptorLayout> descriptor_set_layouts;
 
     std::unordered_map<std::size_t, DescriptorPool> descriptor_pools;

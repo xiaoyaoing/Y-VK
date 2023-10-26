@@ -21,6 +21,8 @@ class Subpass;
 
 class FrameBuffer;
 
+class Pipeline;
+
 class CommandBuffer
 {
 public:
@@ -59,9 +61,12 @@ public:
                             const std::vector<DescriptorSet>& descriptorSets,
                             const std::vector<uint32_t>& dynamicOffsets);
 
-    void bindVertexBuffer(std::vector<ptr<Buffer>>& buffers, const std::vector<VkDeviceSize>& offsets);
+    void bindVertexBuffer(std::vector<const Buffer*>& buffers, const std::vector<VkDeviceSize>& offsets);
 
-    void bindIndicesBuffer(const ptr<Buffer>& buffer, VkDeviceSize offset);
+    void bindVertexBuffer(const Buffer& buffers, VkDeviceSize offset);
+
+
+    void bindIndicesBuffer(const Buffer& buffer, VkDeviceSize offset);
 
     void copyBufferToImage(Buffer&, Image&, const std::vector<VkBufferImageCopy>& copyRegions);
 
@@ -69,6 +74,8 @@ public:
     {
         vkCmdBindPipeline(_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     }
+
+    void bindPipeline(const Pipeline& pipeline) const;
 
 
     inline void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
@@ -81,6 +88,10 @@ public:
     {
         vkCmdDrawIndexed(_buffer, index_count, instance_count, first_index, vertex_offset, first_instance);
     }
+
+    void setViewport(uint32_t firstViewport, const std::vector<VkViewport>& viewports);
+
+    void setScissor(uint32_t firstScissor, const std::vector<VkRect2D>& scissors);
 
     inline void endRecord()
     {

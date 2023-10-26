@@ -2,8 +2,7 @@
 
 #include <glm/gtx/hash.hpp>
 
-#include "FrameBuffer.h"
-#include "Pipeline.h"
+#include "PipelineState.h"
 #include "RenderTarget.h"
 #include "Descriptor/DescriptorLayout.h"
 #include "Descriptor/DescriptorPool.h"
@@ -285,6 +284,203 @@ namespace std
             return result;
         }
     };
+
+    template <>
+    struct hash<SpecializationConstantState>
+    {
+        // std::size_t operator()(const SpecializationConstantState &specialization_constant_state) const
+        // {
+        //     std::size_t result = 0;
+        //
+        //     for (auto constants : specialization_constant_state.)
+        //     {
+        //        hash_combine(result, constants.first);
+        //         for (const auto data : constants.second)
+        //         {
+        //            hash_combine(result, data);
+        //         }
+        //     }
+        //
+        //     return result;
+        // }
+    };
+
+    template <>
+    struct hash<VkVertexInputAttributeDescription>
+    {
+        std::size_t operator()(const VkVertexInputAttributeDescription& vertex_attrib) const
+        {
+            std::size_t result = 0;
+
+            hash_combine(result, vertex_attrib.binding);
+            hash_combine(result, static_cast<std::underlying_type<VkFormat>::type>(vertex_attrib.format));
+            hash_combine(result, vertex_attrib.location);
+            hash_combine(result, vertex_attrib.offset);
+
+            return result;
+        }
+    };
+
+    template <>
+    struct hash<VkVertexInputBindingDescription>
+    {
+        std::size_t operator()(const VkVertexInputBindingDescription& vertex_binding) const
+        {
+            std::size_t result = 0;
+
+            hash_combine(result, vertex_binding.binding);
+            hash_combine(result, static_cast<std::underlying_type<VkVertexInputRate>::type>(vertex_binding.inputRate));
+            hash_combine(result, vertex_binding.stride);
+
+            return result;
+        }
+    };
+
+
+    template <>
+    struct hash<ColorBlendAttachmentState>
+    {
+        std::size_t operator()(const ColorBlendAttachmentState& colorBlendAttachment) const
+        {
+            std::size_t result = 0;
+
+            hash_combine(result, static_cast<std::underlying_type<VkBlendOp>::type>(colorBlendAttachment.alphaBlendOp));
+            hash_combine(result, colorBlendAttachment.blendEnable);
+            hash_combine(result, static_cast<std::underlying_type<VkBlendOp>::type>(colorBlendAttachment.colorBlendOp));
+            hash_combine(result, colorBlendAttachment.colorWriteMask);
+            hash_combine(
+                result,
+                static_cast<std::underlying_type<VkBlendFactor>::type>(colorBlendAttachment.dstAlphaBlendFactor));
+            hash_combine(
+                result,
+                static_cast<std::underlying_type<VkBlendFactor>::type>(colorBlendAttachment.dstColorBlendFactor));
+            hash_combine(
+                result,
+                static_cast<std::underlying_type<VkBlendFactor>::type>(colorBlendAttachment.srcAlphaBlendFactor));
+            hash_combine(
+                result,
+                static_cast<std::underlying_type<VkBlendFactor>::type>(colorBlendAttachment.srcColorBlendFactor));
+
+            return result;
+        }
+    };
+
+    template <>
+    struct hash<StencilOpState>
+    {
+        std::size_t operator()(const StencilOpState& stencil) const
+        {
+            std::size_t result = 0;
+
+            hash_combine(result, static_cast<std::underlying_type<VkCompareOp>::type>(stencil.compareOp));
+            hash_combine(result, static_cast<std::underlying_type<VkStencilOp>::type>(stencil.depthFailOp));
+            hash_combine(result, static_cast<std::underlying_type<VkStencilOp>::type>(stencil.failOp));
+            hash_combine(result, static_cast<std::underlying_type<VkStencilOp>::type>(stencil.passOp));
+
+            return result;
+        }
+    };
+
+
+    template <>
+    struct hash<PipelineState>
+    {
+        std::size_t operator()(const PipelineState& pipelineState) const
+        {
+            std::size_t result = 0;
+
+            hash_combine(result, pipelineState.getPipelineLayout().getHandle());
+
+            // For graphics only
+            if (auto renderPass = pipelineState.getRenderPass())
+            {
+                hash_combine(result, renderPass->getHandle());
+            }
+
+            // fixme
+            // hash_combine(result, pipelineState.getSpecializationConstantState());
+
+            hash_combine(result, pipelineState.getSubpassIndex());
+
+            for (auto& shaderModule : pipelineState.getPipelineLayout().getShaders())
+            {
+                hash_combine(result, shaderModule.getId());
+            }
+
+            // VkPipelineVertexInputStateCreateInfo
+            for (auto& attribute : pipelineState.getVertexInputState().attributes)
+            {
+                hash_combine(result, attribute);
+            }
+
+            for (auto& binding : pipelineState.getVertexInputState().bindings)
+            {
+                hash_combine(result, binding);
+            }
+
+            // VkPipelineInputAssemblyStateCreateInfo
+            hash_combine(result, pipelineState.getInputAssemblyState().primitiveRestartEnable);
+            hash_combine(
+                result,
+                static_cast<std::underlying_type<VkPrimitiveTopology>::type>(
+                    pipelineState.getInputAssemblyState().topology));
+
+            // VkPipelineViewportStateCreateInfo
+            hash_combine(result, pipelineState.getViewportState().viewportCount);
+            hash_combine(result, pipelineState.getViewportState().scissorCount);
+
+            // VkPipelineRasterizationStateCreateInfo
+            hash_combine(result, pipelineState.getRasterizationState().cullMode);
+            hash_combine(result, pipelineState.getRasterizationState().depthBiasEnable);
+            hash_combine(result, pipelineState.getRasterizationState().depthClampEnable);
+            hash_combine(
+                result,
+                static_cast<std::underlying_type<VkFrontFace>::type>(
+                    pipelineState.getRasterizationState().frontFace));
+            hash_combine(
+                result,
+                static_cast<std::underlying_type<VkPolygonMode>::type>(
+                    pipelineState.getRasterizationState().polygonMode));
+            hash_combine(result, pipelineState.getRasterizationState().rasterizerDiscardEnable);
+
+            // VkPipelineMultisampleStateCreateInfo
+            hash_combine(result, pipelineState.getMultisampleState().alphaToCoverageEnable);
+            hash_combine(result, pipelineState.getMultisampleState().alphaToOneEnable);
+            hash_combine(result, pipelineState.getMultisampleState().minSampleShading);
+            hash_combine(
+                result,
+                static_cast<std::underlying_type<VkSampleCountFlagBits>::type>(
+                    pipelineState.getMultisampleState().rasterizationSamples));
+            hash_combine(result, pipelineState.getMultisampleState().sampleShadingEnable);
+            hash_combine(result, pipelineState.getMultisampleState().sampleMask);
+
+            // VkPipelineDepthStencilStateCreateInfo
+            hash_combine(result, pipelineState.getDepthStencilState().back);
+            hash_combine(result, pipelineState.getDepthStencilState().depthBoundsTestEnable);
+            hash_combine(
+                result,
+                static_cast<std::underlying_type<VkCompareOp>::type>(
+                    pipelineState.getDepthStencilState().depthCompareOp));
+            hash_combine(result, pipelineState.getDepthStencilState().depthTestEnable);
+            hash_combine(result, pipelineState.getDepthStencilState().depthWriteEnable);
+            hash_combine(result, pipelineState.getDepthStencilState().front);
+            hash_combine(result, pipelineState.getDepthStencilState().stencilTestEnable);
+
+            // VkPipelineColorBlendStateCreateInfo
+            hash_combine(
+                result,
+                static_cast<std::underlying_type<VkLogicOp>::type>(
+                    pipelineState.getColorBlendState().logicOp));
+            hash_combine(result, pipelineState.getColorBlendState().logicOpEnable);
+
+            for (auto& attachment : pipelineState.getColorBlendState().attachments)
+            {
+                hash_combine(result, attachment);
+            }
+
+            return result;
+        }
+    };
 }
 
 
@@ -293,17 +489,6 @@ inline void hash_param(size_t& seed, const T& value)
 {
     hash_combine(seed, value);
 }
-
-// template<typename T>
-// inline void hash_param(size_t &seed, const BindingMap<T> &vars) {
-//     // for (const auto &var: vars) {
-//     //     std::hash<T> hasher;
-//     //     for (auto &bindingVar: vars) {
-//     //         hash_combine(seed, bindingVar.first);
-//     //         hash_combine(seed, bindingVar.second);
-//     //     }
-//     // }
-// }
 
 
 template <typename T, typename... Args>

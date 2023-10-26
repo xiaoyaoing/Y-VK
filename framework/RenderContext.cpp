@@ -11,10 +11,28 @@
 #include <FrameBuffer.h>
 #include <Buffer.h>
 
+#include "VertexData.h"
 #include "Common/ResourceCache.h"
+#include "Common/VkCommon.h"
 #include "Images/Sampler.h"
 
 RenderContext* RenderContext::g_context = nullptr;
+
+void FrameResource::reset()
+{
+    for (auto& it : bufferPools)
+        it.second.reset();
+}
+
+FrameResource::FrameResource(Device& device)
+{
+    for (auto& it : supported_usage_map)
+    {
+        bufferPools.emplace(
+            it.first,
+            std::move(std::make_unique<BufferPool>(device, BUFFER_POOL_BLOCK_SIZE * it.second * 1024, it.first)));
+    }
+}
 
 RenderContext::RenderContext(Device& device, VkSurfaceKHR surface, Window& window)
     : device(device)
@@ -43,6 +61,12 @@ RenderContext::RenderContext(Device& device, VkSurfaceKHR surface, Window& windo
         vkCreateSemaphore(device.getHandle(), &semaphoreCreateInfo, nullptr, &semaphores.presentFinishedSem));
 
     renderGraph = std::make_unique<RenderGraph>(device);
+
+    FrameResource r(device);
+    for (uint32_t i = 0; i < getSwapChainImageCount(); i++)
+    {
+        frameResources.emplace_back(std::make_unique<FrameResource>(device));
+    }
 }
 
 CommandBuffer& RenderContext::begin()
@@ -54,11 +78,15 @@ CommandBuffer& RenderContext::begin()
         beginFrame();
     }
 
+    frameResources[activeFrameIndex].reset();
+
     if (acquiredSem == VK_NULL_HANDLE)
     {
         throw std::runtime_error("Couldn't begin frame");
     }
     auto& queue = device.getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0);
+
+
     // return getActiveRenderFrame().requestCommandBuffer(queue);
 }
 
@@ -213,29 +241,9 @@ RenderContext::submit(const Queue& queue, const std::vector<CommandBuffer*>& com
         present_info.swapchainCount = 1;
         present_info.pSwapchains = &vk_swapchain;
         present_info.pImageIndices = &activeFrameIndex;
-
-        //        VkDisplayPresentInfoKHR disp_present_info{};
-        //        if (device.is_extension_supported(VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME) &&
-        //            window.get_display_present_info(&disp_present_info, surface_extent.width, surface_extent.height)) {
-        //            // Add display present info if supported and wanted
-        //            present_info.pNext = &disp_present_info;
-        //        }
-
-        VK_CHECK_RESULT(queue.present(present_info));
-
-        //        if (result == VK_SUBOPTIMAL_KHR || result == VK_ERROR_OUT_OF_DATE_KHR)
-        //        {
-        //            handle_surface_changes();
-        //        }
+        VK_CHECK_RESULT(queue.present(present_info))
     }
-
-    // Frame is not active anymore
-    //    if (imageAcquireSem) {
-    //        //        release_owned_semaphore(acquired_semaphore);
-    //        imageAcquireSem = VK_NULL_HANDLE;
-    //    }
     frameActive = false;
-
     return VK_NULL_HANDLE;
 }
 
@@ -304,10 +312,16 @@ void RenderContext::bindImage(uint32_t setId, const ImageView& view, const Sampl
     resourceSets[setId].bindImage(view, sampler, binding, array_element);
 }
 
+// const std::unordered_map<uint32_t, ResourceSet>& RenderContext::getResourceSets() const
+// {
+//     return resourceSets;
+// }
+
 const std::unordered_map<uint32_t, ResourceSet>& RenderContext::getResourceSets() const
 {
     return resourceSets;
 }
+
 
 void RenderContext::flushDescriptorState(CommandBuffer& commandBuffer, VkPipelineBindPoint pipeline_bind_point)
 {
@@ -321,6 +335,9 @@ void RenderContext::flushDescriptorState(CommandBuffer& commandBuffer, VkPipelin
 
         auto descriptorSetID = resourceSetIt.first;
         auto& resourceSet = resourceSetIt.second;
+
+        if (!resourceSet.isDirty())
+            continue;
 
         if (!pipelineState.getPipelineLayout().hasLayout(descriptorSetID))
             continue;
@@ -372,4 +389,81 @@ void RenderContext::flushDescriptorState(CommandBuffer& commandBuffer, VkPipelin
         commandBuffer.bindDescriptorSets(pipeline_bind_point, pipelineLayout.getHandle(), descriptorSetID,
                                          {descriptorSet}, dynamic_offsets);
     }
+}
+
+
+void RenderContext::flushPipelineState(CommandBuffer& commandBuffer)
+{
+    commandBuffer.bindPipeline(device.getResourceCache().requestPipeline(this->getPipelineState()));
+}
+
+void RenderContext::bindPipelineLayout(PipelineLayout& layout)
+{
+    pipelineState.setPipelineLayout(layout);
+}
+
+void RenderContext::draw(CommandBuffer& commandBuffer, gltfLoading::Model& model)
+{
+    model.bindBuffer(commandBuffer);
+    for (auto& node : model.linearNodes)
+        draw(commandBuffer, *node);
+
+    // VkDeviceSize offsets[1] = {0};
+    // VkBuffer vertexBuffer[] = {vertices->getHandle()};
+    // vkCmdBindVertexBuffers(commandBuffer.getHandle(), 0, 1, vertexBuffer, offsets);
+    // vkCmdBindIndexBuffer(commandBuffer.getHandle(), indices->getHandle(), 0, VK_INDEX_TYPE_UINT32);
+    // for (auto &node: linearNodes)
+    //     draw(*node, commandBuffer, renderFlags, pipelineLayout, bindImageSet);
+}
+
+void RenderContext::draw(CommandBuffer& commandBuffer, gltfLoading::Node& node)
+{
+    auto& pipelineLayout = pipelineState.getPipelineLayout();
+
+    auto inputResources = pipelineLayout.getShaderResources(ShaderResourceType::Input, VK_SHADER_STAGE_VERTEX_BIT);
+
+
+    //fixme 
+    VertexInputState vertexInputState{};
+    vertexInputState.bindings = {Vertex::getBindingDescription()};
+    vertexInputState.attributes = Vertex::getAttributeDescriptions();
+
+
+    pipelineState.setVertexInputState(vertexInputState);
+
+    flushPipelineState(commandBuffer);
+
+
+    auto allocation = allocateBuffer(sizeof(GlobalUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+
+    //todo: use camera data here
+    GlobalUniform uniform{.model = node.getMatrix(), .view = glm::mat4(1), .proj = glm::mat4(1)};
+    allocation.buffer->uploadData(&uniform, allocation.size, allocation.offset);
+    bindBuffer(0, *allocation.buffer, allocation.offset, allocation.size, 0, 0);
+
+    auto& descriptorLayout = pipelineLayout.getDescriptorLayout(0);
+
+    for (auto& prim : node.mesh->primitives)
+    {
+        const auto& material = prim->material;
+        for (auto& texture : material.textures)
+        {
+            if (descriptorLayout.hasLayoutBinding(texture->name))
+            {
+                auto& binding = descriptorLayout.getLayoutBindingInfo(texture->name);
+                bindImage(0, texture->image->getVkImageView(), texture->getSampler(), binding.binding, 0);
+            }
+        }
+        flushDescriptorState(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+        commandBuffer.drawIndexed(prim->indexCount, 1, prim->firstIndex, 0, 0);
+    }
+    for (auto& child : node.children)
+        draw(commandBuffer, node);
+}
+
+BufferAllocation RenderContext::allocateBuffer(VkDeviceSize allocateSize, VkBufferUsageFlags usage)
+{
+    auto& frameResource = frameResources[activeFrameIndex];
+    // assert(frameResource.bufferPools.contains(usage), "Buffer usage not contained");
+    return frameResource->bufferPools.at(usage)->AllocateBufferBlock(allocateSize);
 }

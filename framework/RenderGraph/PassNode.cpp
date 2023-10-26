@@ -9,25 +9,31 @@
 #include "VertexData.h"
 
 
-void RenderPassNode::RenderPassData::devirtualize(RenderGraph &renderGraph) {
+void RenderPassNode::RenderPassData::devirtualize(RenderGraph& renderGraph)
+{
     std::vector<Image> images;
-    std::vector<sg::SgImage *> attachments;
-    for (size_t i = 0; i < desc.color.size(); i++) {
-        const auto *pResource = static_cast<const Resource<RenderGraphTexture> *>(renderGraph.
-                getResource(desc.color[i]));
+    std::vector<sg::SgImage*> attachments;
+    for (size_t i = 0; i < desc.color.size(); i++)
+    {
+        const auto* pResource = static_cast<const Resource<RenderGraphTexture>*>(renderGraph.
+            getResource(desc.color[i]));
         attachments.push_back(pResource->getHandle().getHwTexture());
         //images.emplace_back(hwTexture->image);
     }
     renderTarget = std::make_unique<RenderTarget>(attachments);
 }
 
-RenderTarget &RenderPassNode::RenderPassData::getRenderTarget() {
+RenderTarget& RenderPassNode::RenderPassData::getRenderTarget()
+{
     return *renderTarget;
 }
 
 VkPipeline pipeline = VK_NULL_HANDLE;
 
-VkPipeline getPipeline(Device &device, RenderPass &renderPass) {
+VkPipeline getPipeline(Device& device, RenderPass& renderPass)
+{
+    if (pipeline != VK_NULL_HANDLE)
+        return pipeline;
     std::vector<Shader> shaders;
     shaders.emplace_back(device, FileUtils::getShaderPath() + "base.vert");
     shaders.emplace_back(device, FileUtils::getShaderPath() + "base.frag");
@@ -57,17 +63,17 @@ VkPipeline getPipeline(Device &device, RenderPass &renderPass) {
         return pipeline;
 
 
-    auto & pipelineLayOut = device.getResourceCache().requestPipelineLayout(shaders);
+    auto& pipelineLayOut = device.getResourceCache().requestPipelineLayout(shaders);
     RenderContext::g_context->getPipelineState().setPipelineLayout(pipelineLayOut);
 
     VkPipelineShaderStageCreateInfo shaderStages[] = {
-            shaders[0].PipelineShaderStageCreateInfo(),
-            shaders[1].PipelineShaderStageCreateInfo()
+        shaders[0].PipelineShaderStageCreateInfo(),
+        shaders[1].PipelineShaderStageCreateInfo()
     };
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType =
-            VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     auto bindingDescription = Vertex::getBindingDescription();
     auto attributeDescriptions = Vertex::getAttributeDescriptions();
     vertexInputInfo.vertexBindingDescriptionCount = 1;
@@ -116,7 +122,7 @@ VkPipeline getPipeline(Device &device, RenderPass &renderPass) {
 
     VkPipelineMultisampleStateCreateInfo multisampling{};
     multisampling.sType =
-            VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+        VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampling.sampleShadingEnable = VK_FALSE;
     multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     multisampling.minSampleShading = 1.0f; // Optional
@@ -126,13 +132,13 @@ VkPipeline getPipeline(Device &device, RenderPass &renderPass) {
 
     VkPipelineColorBlendAttachmentState colorBlendAttachment{};
     colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
-                                          VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
-                                          VK_COLOR_COMPONENT_A_BIT;
+        VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
+        VK_COLOR_COMPONENT_A_BIT;
     colorBlendAttachment.blendEnable = VK_FALSE;
 
     VkPipelineColorBlendStateCreateInfo colorBlending{};
     colorBlending.sType =
-            VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+        VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlending.logicOpEnable = VK_FALSE;
     colorBlending.logicOp = VK_LOGIC_OP_COPY;
     colorBlending.attachmentCount = 1;
@@ -171,7 +177,7 @@ VkPipeline getPipeline(Device &device, RenderPass &renderPass) {
     // pipelineInfo.pDepthStencilState = nullptr;
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = nullptr;
-  //  pipelineInfo.layout = pipelineLayout;
+    //  pipelineInfo.layout = pipelineLayout;
     pipelineInfo.layout = pipelineLayOut.getHandle();
 
     pipelineInfo.renderPass = renderPass.getHandle();
@@ -180,15 +186,17 @@ VkPipeline getPipeline(Device &device, RenderPass &renderPass) {
     pipelineInfo.basePipelineIndex = -1;
 
     VK_CHECK_RESULT(
-            vkCreateGraphicsPipelines(device.getHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline))
+        vkCreateGraphicsPipelines(device.getHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline))
     return pipeline;
 }
 
-void RenderPassNode::execute(RenderGraph &renderGraph, CommandBuffer &commandBuffer) {
+void RenderPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer)
+{
     renderTargetData.devirtualize(renderGraph);
 
-    auto &renderTarget = renderTargetData.getRenderTarget();
+    auto& renderTarget = renderTargetData.getRenderTarget();
     auto hwTextures = renderTarget.getHwTextures();
+
     //  for (auto &hwTexture: renderTarget.getHwTextures()) {
     {
         // Image 0 is the swapchain
@@ -200,55 +208,83 @@ void RenderPassNode::execute(RenderGraph &renderGraph, CommandBuffer &commandBuf
         memoryBarrier.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         memoryBarrier.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
-        commandBuffer.imageMemoryBarrier(hwTextures[0]->getVkImageView(), memoryBarrier);
+        ImageMemoryBarrier depthMemoryBarrier{};
+        depthMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        depthMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        depthMemoryBarrier.srcAccessMask = 0;
+        depthMemoryBarrier.dstAccessMask =
+            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        depthMemoryBarrier.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        depthMemoryBarrier.dstStageMask =
+            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+
+
+        // commandBuffer.imageMemoryBarrier(hwTextures[0]->getVkImageView(), memoryBarrier);
 
         // Skip 1 as it is handled later as a depth-stencil attachment
-        for (size_t i = 2; i < renderTarget.getHwTextures().size(); ++i) {
-            commandBuffer.imageMemoryBarrier(hwTextures[i]->getVkImageView(), memoryBarrier);
+        for (size_t i = 0; i < renderTarget.getHwTextures().size(); ++i)
+        {
+            if (isDepthOrStencilFormat(hwTextures[i]->getFormat()))
+            {
+                commandBuffer.imageMemoryBarrier(hwTextures[i]->getVkImageView(), depthMemoryBarrier);
+            }
+            else
+                commandBuffer.imageMemoryBarrier(hwTextures[i]->getVkImageView(), memoryBarrier);
         }
     }
-
-    {
-        ImageMemoryBarrier memoryBarrier{};
-        memoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        memoryBarrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        memoryBarrier.srcAccessMask = 0;
-        memoryBarrier.dstAccessMask =
-                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-        memoryBarrier.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        memoryBarrier.dstStageMask =
-                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-
-        commandBuffer.imageMemoryBarrier(hwTextures[1]->getVkImageView(), memoryBarrier);
-    }
+    //
+    // {
+    //     ImageMemoryBarrier memoryBarrier{};
+    //     memoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    //     memoryBarrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    //     memoryBarrier.srcAccessMask = 0;
+    //     memoryBarrier.dstAccessMask =
+    //         VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    //     memoryBarrier.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    //     memoryBarrier.dstStageMask =
+    //         VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    //
+    //     commandBuffer.imageMemoryBarrier(hwTextures[1]->getVkImageView(), memoryBarrier);
+    // }
 
     //setImageLayout(commandBuffer.getHandle(),hwTexture->getVkImage().getHandle(),)
     //}
 
-    auto &renderPass = renderGraph.getDevice().getResourceCache().requestRenderPass(renderTarget.getAttachments(), {});
+    auto& renderPass = renderGraph.getDevice().getResourceCache().requestRenderPass(renderTarget.getAttachments(), {});
 
-    auto &framebuffer = renderGraph.getDevice().getResourceCache().requestFrameBuffer(
-            renderTargetData.getRenderTarget(), renderPass);
+    auto& framebuffer = renderGraph.getDevice().getResourceCache().requestFrameBuffer(
+        renderTargetData.getRenderTarget(), renderPass);
 
-    commandBuffer.beginRenderPass(renderPass, framebuffer, Default::clearValues(), {});
+    std::vector<VkClearValue> clearValues = {};
 
+    commandBuffer.beginRenderPass(renderPass, framebuffer, renderTarget.getDefaultClearValues(), {});
 
     RenderPassContext context = {
-            .renderPass = renderPass, .commandBuffer = commandBuffer,
-            .renderTarget = renderTarget,
-            .pipeline = getPipeline(renderGraph.getDevice(), renderPass),
-
+        .renderPass = renderPass, .commandBuffer = commandBuffer,
+        .renderTarget = renderTarget,
+        // .pipeline = getPipeline(renderGraph.getDevice(), renderPass),
     };
 
+    auto& renderContext = *RenderContext::g_context;
+
+    ColorBlendState colorBlendState = renderContext.getPipelineState().getColorBlendState();
+    colorBlendState.attachments.resize(renderPass.getColorOutputCount(0));
+    renderContext.getPipelineState().setColorBlendState(colorBlendState);
     mRenderPass->execute(context);
 }
 
-void RenderPassNode::declareRenderTarget(const char *name, const RenderGraphPassDescriptor &descriptor) {
+void RenderPassNode::declareRenderTarget(const char* name, const RenderGraphPassDescriptor& descriptor)
+{
     renderTargetData.name = name;
 
     renderTargetData.desc = descriptor;
 }
 
-RenderPassNode::RenderPassNode(RenderGraph &renderGraph, const char *name, RenderGraphPassBase *base) : mRenderPass(
-        base) {
+RenderPassNode::RenderPassNode(RenderGraph& renderGraph, const char* name, RenderGraphPassBase* base) : mRenderPass(
+    base)
+{
+}
+
+void PresentPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer)
+{
 }

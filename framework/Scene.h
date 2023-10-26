@@ -7,11 +7,10 @@
 
 #pragma once
 
-class Scene {
+class Scene
+{
 public:
-    Scene(Device &device);
-    
-    std::vector<std::unique_ptr<Mesh>> meshes;
+    Scene(Device& device);
+
+    //std::vector<std::unique_ptr<Mesh>> meshes;
 };
-
-

@@ -7,7 +7,8 @@
 
 struct HwTexture;
 
-struct Attachment {
+struct Attachment
+{
     VkFormat format{VK_FORMAT_UNDEFINED};
 
     VkSampleCountFlagBits samples{VK_SAMPLE_COUNT_1_BIT};
@@ -30,11 +31,13 @@ struct Attachment {
                                               samples(samples),
                                               usage(usage),
                                               loadOp(loadOp),
-                                              storeOp(storeOp) {
+                                              storeOp(storeOp)
+    {
     }
 };
 
-struct FrameBufferAttchment {
+struct FrameBufferAttchment
+{
     // std::vector
 };
 
@@ -61,10 +64,11 @@ struct FrameBufferAttchment {
 
 //通过vulkanAttachments初始化attachments数组
 //
-class RenderTarget {
+class RenderTarget
+{
     //   std::vector<ImageView *> views;
 
-    std::vector<sg::SgImage *> hwTextures;
+    std::vector<sg::SgImage*> hwTextures;
 
     std::vector<Image> _images;
     std::vector<ImageView> _views;
@@ -76,41 +80,42 @@ class RenderTarget {
     // std::vector<VulkanAttachment> attachments;
 
 public:
-    RenderTarget(const std::vector<sg::SgImage *> hwTextures);
+    RenderTarget(const std::vector<sg::SgImage*> hwTextures);
 
 
-    using CreateFunc = std::function<std::unique_ptr<RenderTarget>(Image &&)>;
+    using CreateFunc = std::function<std::unique_ptr<RenderTarget>(Image&&)>;
 
     static CreateFunc defaultRenderTargetCreateFunction;
 
-//    explicit RenderTarget(const std::vector<VulkanAttachment> &attachments)
-//            : attachments(attachments) {
-//    }
+    //    explicit RenderTarget(const std::vector<VulkanAttachment> &attachments)
+    //            : attachments(attachments) {
+    //    }
 
+    std::vector<VkClearValue> getDefaultClearValues() const;
 
-    RenderTarget(std::vector<Image> &&images);
+    RenderTarget(std::vector<Image>&& images);
 
-    RenderTarget(std::vector<ImageView> &&imageViews);
+    RenderTarget(std::vector<ImageView>&& imageViews);
 
-    const std::vector<uint32_t> &getInAttachment() const;
+    const std::vector<uint32_t>& getInAttachment() const;
 
-    void setInAttachment(const std::vector<uint32_t> &inAttachment);
+    void setInAttachment(const std::vector<uint32_t>& inAttachment);
 
-    const std::vector<uint32_t> &getOutAttachment() const;
+    const std::vector<uint32_t>& getOutAttachment() const;
 
-    void setOutAttachment(const std::vector<uint32_t> &outAttachment);
+    void setOutAttachment(const std::vector<uint32_t>& outAttachment);
 
-    const std::vector<Image> &getImages() const;
+    const std::vector<Image>& getImages() const;
 
-    const std::vector<ImageView> &getViews() const;
+    const std::vector<ImageView>& getViews() const;
 
-    void setLayout(uint32_t &i, VkImageLayout layout);
+    void setLayout(uint32_t& i, VkImageLayout layout);
 
     VkExtent2D getExtent() const;
 
-    const std::vector<Attachment> &getAttachments() const;
+    const std::vector<Attachment>& getAttachments() const;
 
-    void setAttachments(const std::vector<Attachment> &attachments);
+    void setAttachments(const std::vector<Attachment>& attachments);
 
-    const std::vector<sg::SgImage *> &getHwTextures() const;
+    const std::vector<sg::SgImage*>& getHwTextures() const;
 };

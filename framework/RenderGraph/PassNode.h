@@ -8,11 +8,11 @@
 
 class RenderGraph;
 
-struct RenderGraphPassDescriptor
-{
+struct RenderGraphPassDescriptor {
     std::vector<RenderGraphId<RenderGraphTexture>> color;
     RenderGraphId<RenderGraphTexture> depth;
     RenderGraphId<RenderGraphTexture> stencil;
+    //  std::vector<RenderGraphSubPassInfo> subpasses;
     // Attachments attachments{};
     // Viewport viewport{};
     // math::float4 clearColor{};
@@ -22,25 +22,27 @@ struct RenderGraphPassDescriptor
 };
 
 
-class PassNode
-{
+class PassNode {
 public:
-    virtual void execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) = 0;
+    virtual void execute(RenderGraph &renderGraph, CommandBuffer &commandBuffer) = 0;
+
     virtual ~PassNode() = default;
 
 protected:
 };
 
+class PresentPassNode : public PassNode {
+    virtual void execute(RenderGraph &renderGraph, CommandBuffer &commandBuffer) override;
+};
 
-class RenderPassNode : public PassNode
-{
-    virtual void declareRenderTarget(const char* name, const RenderGraphPassDescriptor& descriptor);
 
-    class RenderPassData
-    {
+class RenderPassNode : public PassNode {
+    virtual void declareRenderTarget(const char *name, const RenderGraphPassDescriptor &descriptor);
+
+    class RenderPassData {
     public:
         static constexpr size_t ATTACHMENT_COUNT = 6;
-        const char* name = {};
+        const char *name = {};
         bool imported = false;
 
         RenderGraphPassDescriptor desc;
@@ -48,30 +50,25 @@ class RenderPassNode : public PassNode
         //RenderGraphId<RenderGraphTexture> attachmentInfo[ATTACHMENT_COUNT];
 
 
-        void devirtualize(RenderGraph& renderGraph);
+        void devirtualize(RenderGraph &renderGraph);
 
         std::unique_ptr<RenderTarget> renderTarget;
 
-        RenderTarget& getRenderTarget();
+        RenderTarget &getRenderTarget();
     };
 
 public:
-    void execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) override;
+    void execute(RenderGraph &renderGraph, CommandBuffer &commandBuffer) override;
 
-    RenderPassNode(RenderGraph& renderGraph, const char* name, RenderGraphPassBase* base);
+    RenderPassNode(RenderGraph &renderGraph, const char *name, RenderGraphPassBase *base);
 
-    ~RenderPassNode() override
-    {
+    ~RenderPassNode() override {
         delete mRenderPass;
     }
 
 private:
     friend class RenderGraph;
 
-    RenderGraphPassBase* mRenderPass{nullptr};
+    RenderGraphPassBase *mRenderPass{nullptr};
     RenderPassData renderTargetData;
-};
-
-class PresentPassNode : public PassNode
-{
 };

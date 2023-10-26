@@ -82,11 +82,9 @@ ResourceCache::ResourceCache(Device& device) : device(device)
 {
 }
 
-Pipeline& ResourceCache::requestPipeline(const PipelineState& state)
+Pipeline& ResourceCache::requestPipeline(const PipelineState& pipelineState)
 {
-    //fixme
-    Pipeline* pipeline;
-    return *pipeline;
+    return requestResource(device, pipelineMutex, state.pipelines, pipelineState);
 }
 
 PipelineLayout& ResourceCache::requestPipelineLayout(std::vector<Shader>& shaders)

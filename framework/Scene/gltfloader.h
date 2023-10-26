@@ -16,10 +16,20 @@
 #include "API_VK.h"
 //#include "Mesh.h"
 
-namespace gltfLoading {
+namespace gltfLoading
+{
+    struct VertexAttribute
+    {
+        VkFormat format = VK_FORMAT_UNDEFINED;
+
+        std::uint32_t stride = 0;
+
+        std::uint32_t offset = 0;
+    };
 
 
-    enum FileLoadingFlags {
+    enum FileLoadingFlags
+    {
         None = 0x00000000,
         PreTransformVertices = 0x00000001,
         PreMultiplyVertexColors = 0x00000002,
@@ -27,7 +37,8 @@ namespace gltfLoading {
         DontLoadImages = 0x00000008
     };
 
-    enum RenderFlags {
+    enum RenderFlags
+    {
         BindImages = 0x00000001,
         RenderOpaqueNodes = 0x00000002,
         RenderAlphaMaskedNodes = 0x00000004,
@@ -36,35 +47,43 @@ namespace gltfLoading {
 
     struct Skin;
 
-    struct Material {
-        enum AlphaMode {
-            ALPHAMODE_OPAQUE, ALPHAMODE_MASK, ALPHAMODE_BLEND
+    struct Material
+    {
+        enum AlphaMode
+        {
+            ALPHAMODE_OPAQUE,
+            ALPHAMODE_MASK,
+            ALPHAMODE_BLEND
         };
+
         AlphaMode alphaMode = ALPHAMODE_OPAQUE;
-        Device &device;
+        Device& device;
         float alphaCutoff = 1.0f;
         float metallicFactor = 1.0f;
         float roughnessFactor = 1.0f;
         glm::vec4 baseColorFactor = glm::vec4(1.0f);
-        Texture *baseColorTexture = nullptr;
-        Texture *metallicRoughnessTexture = nullptr;
-        Texture *normalTexture = nullptr;
-        Texture *occlusionTexture = nullptr;
-        Texture *emissiveTexture = nullptr;
+        Texture* baseColorTexture = nullptr;
+        Texture* metallicRoughnessTexture = nullptr;
+        Texture* normalTexture = nullptr;
+        Texture* occlusionTexture = nullptr;
+        Texture* emissiveTexture = nullptr;
+        std::vector<Texture*> textures;
         std::unique_ptr<DescriptorSet> descriptorSet;
-        
-        Material(Device &device);
+
+        Material(Device& device);
     };
 
 
-    struct Primitive {
+    struct Primitive
+    {
         uint32_t firstIndex;
         uint32_t indexCount;
         uint32_t firstVertex;
         uint32_t vertexCount;
-        Material &material;
+        Material& material;
 
-        struct Dimensions {
+        struct Dimensions
+        {
             glm::vec3 min = glm::vec3(FLT_MAX);
             glm::vec3 max = glm::vec3(-FLT_MAX);
             glm::vec3 size;
@@ -72,45 +91,55 @@ namespace gltfLoading {
             float radius;
         } dimensions;
 
+        std::unordered_map<std::string, VertexAttribute> vertexAttributes;
+
+        bool getVertexAttribute(const std::string& name, VertexAttribute& attribute) const;
+
+        void setVertxAttribute(const std::string& name, VertexAttribute& attribute);
+
         void setDimensions(glm::vec3 min, glm::vec3 max);
 
-        Primitive(uint32_t firstIndex, uint32_t indexCount, Material &material) : firstIndex(firstIndex),
-                                                                                  indexCount(indexCount),
-                                                                                  material(material) {};
+        Primitive(uint32_t firstIndex, uint32_t indexCount, Material& material) : firstIndex(firstIndex),
+            indexCount(indexCount),
+            material(material)
+        {
+        };
     };
 
 
-    struct Mesh {
+    struct Mesh
+    {
         std::string name;
-        Device &device;
+        Device& device;
         std::vector<std::unique_ptr<Primitive>> primitives;
 
-        struct {
+
+        struct
+        {
             std::unique_ptr<Buffer> buffer{nullptr};
             std::unique_ptr<DescriptorSet> descriptorSet{nullptr};
         } uniformBuffer;
 
-        struct UniformBlock {
+        struct UniformBlock
+        {
             glm::mat4 matrix;
             glm::mat4 jointMatrix[64]{};
             float jointcount{0};
         } uniformBlock;
 
-        Mesh(Device &device, glm::mat4 matrix);
+        Mesh(Device& device, glm::mat4 matrix);
     };
 
-    class gltfloader {
 
-    };
-
-    struct Node {
-        Node *parent;
+    struct Node
+    {
+        Node* parent;
         uint32_t index;
-        std::vector<Node *> children;
+        std::vector<Node*> children;
         glm::mat4 matrix;
         std::string name;
-        Mesh *mesh;
-        Skin *skin;
+        Mesh* mesh;
+        Skin* skin;
         int32_t skinIndex = -1;
         glm::vec3 translation{};
         glm::vec3 scale{1.0f};
@@ -126,39 +155,58 @@ namespace gltfLoading {
     };
 
 
-    struct Skin {
+    struct Skin
+    {
         std::string name;
-        Node *skeletonRoot = nullptr;
+        Node* skeletonRoot = nullptr;
         std::vector<glm::mat4> inverseBindMatrices;
-        std::vector<Node *> joints;
+        std::vector<Node*> joints;
     };
 
-    struct AnimationChannel {
-        enum PathType {
-            TRANSLATION, ROTATION, SCALE
+    struct AnimationChannel
+    {
+        enum PathType
+        {
+            TRANSLATION,
+            ROTATION,
+            SCALE
         };
+
         PathType path;
-        Node *node;
+        Node* node;
         uint32_t samplerIndex;
     };
 
-/*
-    glTF animation sampler
-*/
-    struct AnimationSampler {
-        enum InterpolationType {
-            LINEAR, STEP, CUBICSPLINE
+    /*
+        glTF animation sampler
+    */
+    struct AnimationSampler
+    {
+        enum InterpolationType
+        {
+            LINEAR,
+            STEP,
+            CUBICSPLINE
         };
+
         InterpolationType interpolation;
         std::vector<float> inputs;
         std::vector<glm::vec4> outputsVec4;
     };
 
-    enum class VertexComponent {
-        Position, Normal, UV, Color, Tangent, Joint0, Weight0
+    enum class VertexComponent
+    {
+        Position,
+        Normal,
+        UV,
+        Color,
+        Tangent,
+        Joint0,
+        Weight0
     };
 
-    struct Vertex {
+    struct Vertex
+    {
         glm::vec3 pos;
         glm::vec3 normal;
         glm::vec2 uv;
@@ -179,7 +227,7 @@ namespace gltfLoading {
         inputAttributeDescriptions(uint32_t binding, const std::vector<VertexComponent> components);
 
         /** @brief Returns the default pipeline vertex input state create info structure for the requested vertex components */
-        static VkPipelineVertexInputStateCreateInfo *
+        static VkPipelineVertexInputStateCreateInfo*
         getPipelineVertexInputState(const std::vector<VertexComponent> components);
     };
 
@@ -187,7 +235,8 @@ namespace gltfLoading {
     /*
     glTF animation
 */
-    struct Animation {
+    struct Animation
+    {
         std::string name;
         std::vector<AnimationSampler> samplers;
         std::vector<AnimationChannel> channels;
@@ -195,14 +244,15 @@ namespace gltfLoading {
         float end = std::numeric_limits<float>::min();
     };
 
-    struct Model {
-        Device &device;
-        Queue &queue;
-//        Mesh *mesh;
-        std::vector<Node *> nodes;
-        std::vector<Node *> linearNodes;
+    struct Model
+    {
+        Device& device;
+        Queue& queue;
+        //        Mesh *mesh;
+        std::vector<Node*> nodes;
+        std::vector<Node*> linearNodes;
 
-        std::vector<Skin *> skins;
+        std::vector<Skin*> skins;
 
         std::vector<Texture> textures;
         Texture emptyTexture;
@@ -219,30 +269,34 @@ namespace gltfLoading {
 
         bool metallicRoughnessWorkflow;
 
-        Model(Device &device);
+        static std::unique_ptr<Model> loadFromFile(Device& device, const std::string& path);
 
-        Texture *getTexture(int idx);
+        Model(Device& device);
 
-        void loadFromFile(const std::string &path, uint32_t fileLoadingFlags = 0, float scale = 1.0f);
+        Texture* getTexture(int idx);
 
-        void loadMaterials(tinygltf::Model &gltfModel);
+        void loadFromFile(const std::string& path, uint32_t fileLoadingFlags = 0, float scale = 1.0f);
+
+        void loadMaterials(tinygltf::Model& gltfModel);
+
+        void bindBuffer(CommandBuffer& commandBuffer);
 
         void
-        draw(CommandBuffer &commandBuffer, uint32_t renderFlags = 0, VkPipelineLayout pipelineLayout = VK_NULL_HANDLE,
+        draw(CommandBuffer& commandBuffer, uint32_t renderFlags = 0, VkPipelineLayout pipelineLayout = VK_NULL_HANDLE,
              uint32_t bindImageSet = 1);
 
-        void draw(Node &node, CommandBuffer &commandBuffer, uint32_t renderFlags = 0,
+        void draw(Node& node, CommandBuffer& commandBuffer, uint32_t renderFlags = 0,
                   VkPipelineLayout pipelineLayout = VK_NULL_HANDLE,
                   uint32_t bindImageSet = 1);
 
+        void iteratePrims();
+
         ~Model();
 
-        void loadImages(tinygltf::Model model, Device &device, Queue &queue);
+        void loadImages(tinygltf::Model model, Device& device, Queue& queue);
 
         void
-        loadNode(Node *parent, const tinygltf::Node &node, uint32_t nodeIndex, const tinygltf::Model &model,
-                 std::vector<uint32_t> &indexBuffer, std::vector<Vertex> &vertexBuffer, float globalscale);
+        loadNode(Node* parent, const tinygltf::Node& node, uint32_t nodeIndex, const tinygltf::Model& model,
+                 std::vector<uint32_t>& indexBuffer, std::vector<Vertex>& vertexBuffer, float globalscale);
     };
-
-
 }

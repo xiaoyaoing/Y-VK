@@ -14,12 +14,14 @@
 #include <array>
 #include "Vulkan.h"
 
-struct Vertex {
+struct Vertex
+{
     glm::vec3 pos;
     glm::vec3 color;
     glm::vec2 uv;
 
-    static VkVertexInputBindingDescription getBindingDescription() {
+    static VkVertexInputBindingDescription getBindingDescription()
+    {
         VkVertexInputBindingDescription bindingDescription{};
         bindingDescription.binding = 0;
         bindingDescription.stride = sizeof(Vertex);
@@ -27,9 +29,10 @@ struct Vertex {
         return bindingDescription;
     }
 
-    static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions() {
-        std::array<VkVertexInputAttributeDescription, 3>
-                attributeDescriptions{};
+    static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions()
+    {
+        std::vector<VkVertexInputAttributeDescription> attributeDescriptions(3);
+
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
         attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
@@ -48,7 +51,8 @@ struct Vertex {
 };
 
 
-struct UniformBufferObject {
+struct UniformBufferObject
+{
     glm::mat4 model;
     glm::mat4 view;
     glm::mat4 proj;

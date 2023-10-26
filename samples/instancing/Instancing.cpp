@@ -314,6 +314,9 @@ Example::Example() : Application("Instancing", 1280, 720)
     camera->setTranslation(glm::vec3(5.5f, -1.85f, -18.5f));
     camera->setRotation(glm::vec3(-17.2f, -4.7f, 0.0f));
     camera->setPerspective(60.0f, (float)width / (float)height, 1.0f, 256.0f);
+
+    sponza = std::make_unique<gltfLoading::Model>(*device);
+    sponza->loadFromFile(FileUtils::getResourcePath("sponza/sponza.gltf"));
 }
 
 void Example::bindUniformBuffers(CommandBuffer& commandBuffer)

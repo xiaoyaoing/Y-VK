@@ -7,6 +7,7 @@
 #include "RenderGraphPass.h"
 #include "RenderGraphTexture.h"
 #include "RenderPass.h"
+#include "BlackBoard.h"
 /**render Graph **/
 /*
  * 1.add pass 需要指明pass的输入 注册RenderGraphTexture 这一步会添加passNode 这里node会根据传入的RenderGraphPass::Descriptor创建RenderTarget
@@ -47,6 +48,13 @@ struct RenderPassData
     uint8_t samples = 0; // # of samples (0 = unset, default)
     //  backend::TargetBufferFlags clearFlags{};
     //  backend::TargetBufferFlags discardStart{};
+};
+
+struct RenderGraphSubpassInfo
+{
+    std::vector<RenderGraphId<RenderGraphTexture>> inputAttachments{};
+
+    std::vector<RenderGraphId<RenderGraphTexture>> outputAttachments{};
 };
 
 
@@ -101,6 +109,8 @@ public:
 
     void execute(CommandBuffer& commandBuffer);
 
+    Blackboard & getBlackBoard();
+
 
     PassNode* addPassInternal(const char* name, RenderGraphPassBase* base)
     {
@@ -119,6 +129,8 @@ public:
         Builder builder(addPassInternal(name, pass), *this);
         setup(builder, pass->getData());
     }
+
+    void addPresentPass(RenderGraphId<RenderGraphTexture> textureId);
 
     VirtualResource* getResource(RenderGraphHandle handle);
 
@@ -144,6 +156,8 @@ private:
         Index sid = -1; // ResourceNode* index in mResourceNodes for reading subresource's parent
         Version version = 0;
     };
+
+    std::unique_ptr<Blackboard> blackBoard;
 
     std::vector<PassNode*> renderGraphNodes{};
     std::vector<VirtualResource*> virtualResources{};

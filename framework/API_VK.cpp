@@ -6,24 +6,36 @@
 
 #include <Buffer.h>
 #include <Device.h>
-#include <Common\VkCommon.h>
+#include <Common/VkCommon.h>
 #include <Images/Sampler.h>
 
+sg::SgImage& Texture::getImage()
+{
+    return *image;
+}
 
-Texture Texture::loadTexture(Device &device, const std::string &path) {
+Sampler& Texture::getSampler()
+{
+    return *sampler;
+}
+
+
+Texture Texture::loadTexture(Device& device, const std::string& path)
+{
     Texture texture{};
-    texture.image = std::make_unique<sg::SgImage>(device,path,VK_IMAGE_VIEW_TYPE_2D);
-  //  texture.image->createVkImage(device);
+    texture.image = std::make_unique<sg::SgImage>(device, path, VK_IMAGE_VIEW_TYPE_2D);
+    //  texture.image->createVkImage(device);
 
-    Buffer imageBuffer = Buffer(device, texture.image->getBufferSize(),
-                                VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                                VMA_MEMORY_USAGE_CPU_ONLY);
-    imageBuffer.uploadData(static_cast<void *>(texture.image->getData().data()), texture.image->getBufferSize());
+    auto imageBuffer = Buffer(device, texture.image->getBufferSize(),
+                              VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                              VMA_MEMORY_USAGE_CPU_ONLY);
+    imageBuffer.uploadData(static_cast<void*>(texture.image->getData().data()), texture.image->getBufferSize());
 
     std::vector<VkBufferImageCopy> imageCopyRegions;
 
-    auto &mipmaps = texture.image->getMipMaps();
-    for (int i = 0; i < mipmaps.size(); i++) {
+    auto& mipmaps = texture.image->getMipMaps();
+    for (int i = 0; i < mipmaps.size(); i++)
+    {
         VkBufferImageCopy imageCopy{};
         imageCopy.bufferRowLength = 0;
         imageCopy.bufferImageHeight = 0;
@@ -72,15 +84,16 @@ Texture Texture::loadTexture(Device &device, const std::string &path) {
     return texture;
 }
 
-Texture Texture::loadTextureArray(Device &device, const std::string &path) {
+Texture Texture::loadTextureArray(Device& device, const std::string& path)
+{
     Texture texture{};
     texture.image = sg::SgImage::load(path);
     texture.image->createVkImage(device, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
-    Buffer imageBuffer = Buffer(device, texture.image->getBufferSize(),
-                                VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                                VMA_MEMORY_USAGE_CPU_ONLY);
-    imageBuffer.uploadData(static_cast<void *>(texture.image->getData().data()), texture.image->getBufferSize());
+    auto imageBuffer = Buffer(device, texture.image->getBufferSize(),
+                              VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                              VMA_MEMORY_USAGE_CPU_ONLY);
+    imageBuffer.uploadData(static_cast<void*>(texture.image->getData().data()), texture.image->getBufferSize());
 
     std::vector<VkBufferImageCopy> imageCopyRegions;
 
@@ -88,7 +101,8 @@ Texture Texture::loadTextureArray(Device &device, const std::string &path) {
     auto layers = texture.image->getLayers();
     auto offsets = texture.image->getOffsets();
     for (int32_t layer = 0; layer < layers; layer++)
-        for (int i = 0; i < mipmaps.size(); i++) {
+        for (int i = 0; i < mipmaps.size(); i++)
+        {
             VkBufferImageCopy imageCopy{};
 
             imageCopy.bufferRowLength = 0;

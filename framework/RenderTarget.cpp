@@ -89,5 +89,15 @@ Attachment::Attachment(VkFormat format, VkSampleCountFlagBits samples, VkImageUs
         format{format},
         samples{samples},
         usage{usage} {
+}
 
+std::vector<VkClearValue> RenderTarget::getDefaultClearValues() const {
+    std::vector<VkClearValue> clearValues;
+    for (int i = 0; i < hwTextures.size(); i++) {
+        if (isDepthOrStencilFormat(hwTextures[i]->getFormat()))
+            clearValues.emplace_back(VkClearValue{.depthStencil = {1.f}});
+        else
+            clearValues.emplace_back(VkClearValue{.color = {0.f, 0.f, 0.f, 0.f}});
+    }
+    return clearValues;
 }
