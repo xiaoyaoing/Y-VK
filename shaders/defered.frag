@@ -18,16 +18,17 @@
 
 precision highp float;
 
-#ifdef HAS_BASE_COLOR_TEXTURE
-layout (set=0, binding=0) uniform sampler2D base_color_texture;
-#endif
+// #ifdef HAS_baseColorTexture
+layout (set=0, binding=1) uniform sampler2D baseColorTexture;
+// #endif
 
 layout (location = 0) in vec4 in_pos;
 layout (location = 1) in vec2 in_uv;
 layout (location = 2) in vec3 in_normal;
 
 layout (location = 0) out vec4 o_albedo;
-layout (location = 1) out vec4 o_normal;
+layout (location = 1)  out vec4 o_position;
+layout (location = 2) out vec4 o_normal;
 
 //layout(set = 0, binding = 1) uniform GlobalUniform {
 //    mat4 model;
@@ -49,11 +50,13 @@ void main(void)
 
     vec4 base_color = vec4(1.0, 0.0, 0.0, 1.0);
 
-    //    #ifdef HAS_BASE_COLOR_TEXTURE
-    //    base_color = texture(base_color_texture, in_uv);
+    //    #ifdef HAS_baseColorTexture
+       base_color = texture(baseColorTexture, in_uv);
     //    #else
     //    base_color = pbr_material_uniform.base_color_factor;
     //    #endif
 
     o_albedo = base_color;
+    o_normal = o_normal;
+    o_position = in_pos;
 }

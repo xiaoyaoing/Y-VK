@@ -71,7 +71,7 @@ public:
         return RenderGraphId<RESOURCE>(addResource(virtualResource));
     }
 
-    RenderGraphId<RenderGraphTexture> import(const char * name,sg::SgImage * hwTexture);
+    RenderGraphId<RenderGraphTexture> import(const char* name, sg::SgImage* hwTexture);
 
     class Builder
     {
@@ -82,6 +82,8 @@ public:
 
         void declare(const char* name,
                      const RenderGraphPassDescriptor& desc);
+
+        void addSubpass();
 
         Builder(PassNode* node, RenderGraph& renderGraph)
             : node(node),
@@ -102,14 +104,13 @@ public:
     }
 
 
-
     RenderGraphHandle addResource(VirtualResource* resource);
 
     void setUp();
 
     void execute(CommandBuffer& commandBuffer);
 
-    Blackboard & getBlackBoard();
+    Blackboard& getBlackBoard();
 
 
     PassNode* addPassInternal(const char* name, RenderGraphPassBase* base)

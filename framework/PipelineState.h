@@ -80,7 +80,7 @@ struct StencilOpState
 
     VkStencilOp depthFailOp{VK_STENCIL_OP_REPLACE};
 
-    VkCompareOp compareOp{VK_COMPARE_OP_NEVER};
+    VkCompareOp compareOp{VK_COMPARE_OP_LESS_OR_EQUAL};
 };
 
 struct DepthStencilState
@@ -90,7 +90,7 @@ struct DepthStencilState
     VkBool32 depthWriteEnable{VK_TRUE};
 
     // Note: Using reversed depth-buffer for increased precision, so Greater depth values are kept
-    VkCompareOp depthCompareOp{VK_COMPARE_OP_GREATER};
+    VkCompareOp depthCompareOp{VK_COMPARE_OP_LESS_OR_EQUAL};
 
     VkBool32 depthBoundsTestEnable{VK_FALSE};
 

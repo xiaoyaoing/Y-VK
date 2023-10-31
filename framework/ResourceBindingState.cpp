@@ -17,11 +17,23 @@ void ResourceSet::bindBuffer(const Buffer& buffer, VkDeviceSize offset, VkDevice
 
 void ResourceSet::bindImage(const ImageView& view, const Sampler& sampler, uint32_t binding, uint32_t array_element)
 {
+    if(resourceBindings.contains(binding))
+    {
+        int k = 1;
+    }
     resourceBindings[binding][array_element].dirty = true;
     resourceBindings[binding][array_element].image_view = &view;
     resourceBindings[binding][array_element].sampler = &sampler;
     dirty = true;
 }
+
+void ResourceSet::bindInput(const ImageView& view, uint32_t binding, uint32_t array_element)
+{
+    resourceBindings[binding][array_element].dirty = true;
+    resourceBindings[binding][array_element].image_view = &view;
+    dirty = true;
+}
+
 
 bool ResourceSet::isDirty() const
 {

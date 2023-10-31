@@ -14,6 +14,7 @@
 
 
 #include "API_VK.h"
+#include "Camera.h"
 //#include "Mesh.h"
 
 namespace gltfLoading
@@ -62,12 +63,15 @@ namespace gltfLoading
         float metallicFactor = 1.0f;
         float roughnessFactor = 1.0f;
         glm::vec4 baseColorFactor = glm::vec4(1.0f);
+
+        std::unordered_map<std::string, Texture*> textures{};
+
         Texture* baseColorTexture = nullptr;
         Texture* metallicRoughnessTexture = nullptr;
         Texture* normalTexture = nullptr;
         Texture* occlusionTexture = nullptr;
         Texture* emissiveTexture = nullptr;
-        std::vector<Texture*> textures;
+        //  std::vector<Texture*> textures;
         std::unique_ptr<DescriptorSet> descriptorSet;
 
         Material(Device& device);
@@ -210,10 +214,7 @@ namespace gltfLoading
         glm::vec3 pos;
         glm::vec3 normal;
         glm::vec2 uv;
-        glm::vec4 color;
-        glm::vec4 joint0;
-        glm::vec4 weight0;
-        glm::vec4 tangent;
+
         static VkVertexInputBindingDescription vertexInputBindingDescription;
         static std::vector<VkVertexInputAttributeDescription> vertexInputAttributeDescriptions;
         static VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo;
@@ -246,6 +247,7 @@ namespace gltfLoading
 
     struct Model
     {
+        Camera* camera;
         Device& device;
         Queue& queue;
         //        Mesh *mesh;
@@ -280,6 +282,8 @@ namespace gltfLoading
         void loadMaterials(tinygltf::Model& gltfModel);
 
         void bindBuffer(CommandBuffer& commandBuffer);
+
+        void iterateAllNodes(std::function<void> (CommandBuffer& commandBuffer));
 
         void
         draw(CommandBuffer& commandBuffer, uint32_t renderFlags = 0, VkPipelineLayout pipelineLayout = VK_NULL_HANDLE,

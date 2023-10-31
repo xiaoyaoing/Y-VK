@@ -43,6 +43,7 @@ struct FrameResource
 
     void reset();
 
+    std::unique_ptr<CommandBuffer> commandBuffer{nullptr};
     std::unordered_map<VkBufferUsageFlags, std::unique_ptr<BufferPool>> bufferPools{};
     // CommandBuffer commandBuffer;
 };
@@ -62,6 +63,11 @@ public:
 
     void
     bindImage(uint32_t setId, const ImageView& view, const Sampler& sampler, uint32_t binding, uint32_t array_element);
+
+    void
+    bindInput(uint32_t setId, const ImageView& view, uint32_t binding, uint32_t array_element);
+
+    void clearResourceSets();
 
     void flushPipelineState(CommandBuffer& commandBuffer);
 
@@ -84,7 +90,7 @@ public:
 
     CommandBuffer& begin();
 
-    void beginFrame();
+    CommandBuffer& beginFrame();
 
     void waitFrame();
 
@@ -124,7 +130,11 @@ public:
 
     void draw(CommandBuffer& commandBuffer, gltfLoading::Node& node);
 
+    void drawLightingPass(CommandBuffer& commandBuffer);
+
     BufferAllocation allocateBuffer(VkDeviceSize allocateSize, VkBufferUsageFlags usage);
+
+    const Camera* camera;
 
 private:
     bool frameActive = false;
@@ -142,6 +152,8 @@ private:
 
     Device& device;
     std::unique_ptr<SwapChain> swapchain;
+
+    uint32_t swapChainCount{0};
 
     //  std::vector<std::unique_ptr<RenderFrame>> frames;
     std::vector<std::unique_ptr<FrameBuffer>> frameBuffers;
@@ -166,6 +178,7 @@ private:
     std::unique_ptr<RenderGraph> renderGraph;
 
     std::vector<sg::SgImage> hwTextures;
+
 
     std::unordered_map<uint32_t, ResourceSet> resourceSets;
 };

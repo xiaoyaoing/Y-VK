@@ -1,12 +1,12 @@
-
 #pragma once
 
 #include <glm/mat4x4.hpp>
 #include <glm/ext/matrix_transform.hpp>
 
-class Camera {
-
-    enum Mode {
+class Camera
+{
+    enum Mode
+    {
         FIRST_PERSON,
         THIRD_PERSON
     };
@@ -17,7 +17,8 @@ public:
     ~Camera();
 
 
-    struct {
+    struct
+    {
         bool up{false};
         bool down{false};
         bool left{false};
@@ -27,10 +28,16 @@ public:
     bool flipY{false};
 
 
-    struct {
+    struct
+    {
         glm::mat4 view;
         glm::mat4 perspective;
     } matrices;
+
+    glm::vec4 viewPos{0};
+
+    glm::vec3 position{0}, rotation{0};
+
 
     void updateViewMatrix();
 
@@ -46,23 +53,20 @@ public:
 
     void setTranslation(glm::vec3 translation);
 
-    void translate(const glm::vec3 &delta);
+    void translate(const glm::vec3& delta);
 
-    void rotate(const glm::vec3 &delta);
+    void rotate(const glm::vec3& delta);
 
-//    glm::mat4 getViewMatrix();
-//
-//    glm::mat4 getPerspectiveMatrix();
+    //    glm::mat4 getViewMatrix();
+    //
+    //    glm::mat4 getPerspectiveMatrix();
 
     float rotationSpeed{1};
+
 private:
     Mode mode{FIRST_PERSON};
 
     bool dirty{false};
-
-    glm::vec3 position{0}, rotation{0};
-
-    glm::vec4 viewPos{0};
 
 
     glm::vec3 cameraFront;
@@ -70,5 +74,4 @@ private:
     float moveSpeed{1};
 
     float zNear{0.01}, zFar{10}, fov{45}, aspect{1};
-
 };

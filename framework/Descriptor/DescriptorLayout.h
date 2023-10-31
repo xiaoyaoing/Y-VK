@@ -6,15 +6,17 @@
 
 class Device;
 
-class DescriptorLayout {
+class DescriptorLayout
+{
 public:
-    DescriptorLayout(Device &device);
+    DescriptorLayout(Device& device);
 
     // DescriptorLayout(DescriptorLayout & other) = delete;
 
-    DescriptorLayout(Device &device, std::vector<Shader> &shaders);
+    DescriptorLayout(Device& device, std::vector<Shader>& shaders);
 
-    inline VkDescriptorSetLayout getHandle() const {
+    inline VkDescriptorSetLayout getHandle() const
+    {
         return _layout;
     }
 
@@ -25,11 +27,11 @@ public:
     void createLayout(VkDescriptorSetLayoutCreateFlags flags);
 
 
-    const VkDescriptorSetLayoutBinding &getLayoutBindingInfo(int bindingIndex) const;
+    const VkDescriptorSetLayoutBinding& getLayoutBindingInfo(int bindingIndex) const;
 
-    const VkDescriptorSetLayoutBinding &getLayoutBindingInfo(std::string &name) const;
+    const VkDescriptorSetLayoutBinding& getLayoutBindingInfo(const std::string& name) const;
 
-    bool hasLayoutBinding(std::string &name) const;
+    bool hasLayoutBinding(const std::string& name) const;
 
     std::vector<VkDescriptorSetLayoutBinding> getBindings() const;
 
@@ -38,5 +40,7 @@ private:
     std::vector<std::pair<VkDescriptorSetLayoutBinding, VkDescriptorBindingFlags>> _descBindingInfos{};
     std::vector<VkDescriptorSetLayoutBinding> bindings;
     std::unordered_map<std::string, uint32_t> resourceLookUp;
-    Device &_deivce;
+    std::unordered_map<uint32_t, uint32_t> bindingLookUp;
+    
+    Device& _deivce;
 };

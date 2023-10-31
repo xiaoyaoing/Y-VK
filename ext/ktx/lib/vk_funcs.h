@@ -2,19 +2,8 @@
 /* vi: set sw=2 ts=4 expandtab textwidth=70: */
 
 /*
- * ©2017 Mark Callow.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright 2017-2020 Mark Callow.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
@@ -32,22 +21,29 @@
 #ifndef _VK_FUNCS_H_
 #define _VK_FUNCS_H_
 
+#if !defined(KTX_USE_FUNCPTRS_FOR_VULKAN)
+#define KTX_USE_FUNCPTRS_FOR_VULKAN 1
+#endif
+
 #if defined(KTX_USE_FUNCPTRS_FOR_VULKAN)
 #define VK_NO_PROTOTYPES
 #endif
 
-#include <vulkan/vulkan.h>
+#include "vulkan/vk_platform.h"
+#include "vulkan/vulkan_core.h"
 #include "ktx.h"
 
 #if defined(KTX_USE_FUNCPTRS_FOR_VULKAN)
 
-#if defined(_WIN32)
-extern HMODULE ktxVulkanLibary;
+#if WINDOWS
+#define WINDOWS_LEAN_AND_MEAN
+#include <windows.h>
+extern HMODULE ktxVulkanModuleHandle;
 #else
-extern void* ktxVulkanLibrary;
+extern void* ktxVulkanModuleHandle;
 #endif
 
-extern ktx_bool_t ktxVulkanLoadLibrary(void);
+extern ktx_bool_t ktxLoadVulkanLibrary(void);
 
 /* Declare pointers for functions libktx is using. */
 #define VK_FUNCTION(fun) extern PFN_##fun ktx_##fun;

@@ -9,14 +9,14 @@ DescriptorSet::DescriptorSet(Device& device,
                              DescriptorLayout& descriptorSetLayout,
                              const uint32_t descSetCount) : _device(device)
 {
-    const VkDescriptorSetLayout setLayout = descriptorSetLayout.getHandle();
-    VkDescriptorSetAllocateInfo descSetAllocInfo{};
-    descSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    descSetAllocInfo.pNext = nullptr;
-    descSetAllocInfo.descriptorPool = descriptorPool.getHandle();
-    descSetAllocInfo.descriptorSetCount = descSetCount;
-    descSetAllocInfo.pSetLayouts = &setLayout;
-    VK_CHECK_RESULT(vkAllocateDescriptorSets(device.getHandle(), &descSetAllocInfo, &_descriptorSet));
+    // const VkDescriptorSetLayout setLayout = descriptorSetLayout.getHandle();
+    // VkDescriptorSetAllocateInfo descSetAllocInfo{};
+    // descSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    // descSetAllocInfo.pNext = nullptr;
+    // descSetAllocInfo.descriptorPool = descriptorPool.getHandle();
+    // descSetAllocInfo.descriptorSetCount = descSetCount;
+    // descSetAllocInfo.pSetLayouts = &setLayout;
+    // VK_CHECK_RESULT(vkAllocateDescriptorSets(device.getHandle(), &descSetAllocInfo, &_descriptorSet));
 }
 
 void DescriptorSet::updateBuffer(const std::vector<Buffer*>& buffers, const uint32_t dstBinding,
@@ -70,13 +70,15 @@ DescriptorSet::DescriptorSet(Device& device, const DescriptorLayout& descriptorS
                              const BindingMap<VkDescriptorImageInfo>& imageInfos) : _device(device)
 {
     const VkDescriptorSetLayout setLayout = descriptorSetLayout.getHandle();
-    VkDescriptorSetAllocateInfo descSetAllocInfo{};
-    descSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    descSetAllocInfo.pNext = nullptr;
-    descSetAllocInfo.descriptorPool = descriptorPool.getHandle();
-    descSetAllocInfo.descriptorSetCount = 1;
-    descSetAllocInfo.pSetLayouts = &setLayout;
-    VK_CHECK_RESULT(vkAllocateDescriptorSets(device.getHandle(), &descSetAllocInfo, &_descriptorSet))
+    // VkDescriptorSetAllocateInfo descSetAllocInfo{};
+    // descSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    // descSetAllocInfo.pNext = nullptr;
+    // descSetAllocInfo.descriptorPool = descriptorPool.getHandle();
+    // descSetAllocInfo.descriptorSetCount = 1;
+    // descSetAllocInfo.pSetLayouts = &setLayout;
+    // VK_CHECK_RESULT(vkAllocateDescriptorSets(device.getHandle(), &descSetAllocInfo, &_descriptorSet))
+
+   _descriptorSet = descriptorPool.allocate();
 
     std::vector<VkWriteDescriptorSet> writeSets;
     for (auto& bufferIt : bufferInfos)

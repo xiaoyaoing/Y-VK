@@ -12,7 +12,9 @@ struct RenderGraphPassDescriptor {
     std::vector<RenderGraphId<RenderGraphTexture>> color;
     RenderGraphId<RenderGraphTexture> depth;
     RenderGraphId<RenderGraphTexture> stencil;
-    //  std::vector<RenderGraphSubPassInfo> subpasses;
+
+    
+    // std::vector<RenderGraphSubPassInfo> subpasses;
     // Attachments attachments{};
     // Viewport viewport{};
     // math::float4 clearColor{};

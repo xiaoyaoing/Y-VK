@@ -229,7 +229,14 @@ void RenderPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuf
                 commandBuffer.imageMemoryBarrier(hwTextures[i]->getVkImageView(), depthMemoryBarrier);
             }
             else
+            {
+                if (i > 1)
+                {
+                    memoryBarrier.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+                    memoryBarrier.dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+                }
                 commandBuffer.imageMemoryBarrier(hwTextures[i]->getVkImageView(), memoryBarrier);
+            }
         }
     }
     //
@@ -250,7 +257,16 @@ void RenderPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuf
     //setImageLayout(commandBuffer.getHandle(),hwTexture->getVkImage().getHandle(),)
     //}
 
-    auto& renderPass = renderGraph.getDevice().getResourceCache().requestRenderPass(renderTarget.getAttachments(), {});
+    std::vector<SubpassInfo> subpasses{};
+
+    // if(renderTarget.getAttachments().size() == 3)
+    // {
+    subpasses.push_back(SubpassInfo{.outputAttachments = {2, 3, 4}});
+    subpasses.push_back(SubpassInfo{.inputAttachments = {2, 3, 4}, .outputAttachments = {0}});
+    // }
+
+    auto& renderPass = renderGraph.getDevice().getResourceCache().requestRenderPass(
+        renderTarget.getAttachments(), subpasses);
 
     auto& framebuffer = renderGraph.getDevice().getResourceCache().requestFrameBuffer(
         renderTargetData.getRenderTarget(), renderPass);
@@ -270,6 +286,7 @@ void RenderPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuf
     ColorBlendState colorBlendState = renderContext.getPipelineState().getColorBlendState();
     colorBlendState.attachments.resize(renderPass.getColorOutputCount(0));
     renderContext.getPipelineState().setColorBlendState(colorBlendState);
+
     mRenderPass->execute(context);
 }
 

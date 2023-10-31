@@ -181,7 +181,7 @@ namespace std
         {
             size_t hash{0U};
 
-            hash_combine(hash, pool.getHandle());
+            hash_combine(hash, pool.getDescriptorLayout().getHandle());
             return hash;
         }
     };

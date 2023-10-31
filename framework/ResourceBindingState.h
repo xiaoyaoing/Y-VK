@@ -38,6 +38,8 @@ public:
 
     void bindImage(const ImageView& view, const Sampler& sampler, uint32_t binding, uint32_t array_element);
 
+    void bindInput(const ImageView& view,uint32_t binding, uint32_t array_element);
+
     const BindingMap<ResourceInfo>& getResourceBindings() const;
 
     bool isDirty() const;

@@ -113,7 +113,7 @@ namespace gltfLoading
                             // Pre-Multiply vertex colors with material base color
                             if (preMultiplyColor)
                             {
-                                vertex.color = primitive->material.baseColorFactor * vertex.color;
+                                // vertex.color = primitive->material.baseColorFactor * vertex.color;
                             }
                         }
                     }
@@ -145,6 +145,15 @@ namespace gltfLoading
         for (auto mat : gltfModel.materials)
         {
             Material material(device);
+
+            for (auto& tex : mat.values)
+            {
+                if (tex.first.find("Texture") != std::string::npos)
+                    material.textures.emplace(
+                        tex.first, getTexture(gltfModel.textures[tex.second.TextureIndex()].source));
+            }
+
+
             if (mat.values.find("baseColorTexture") != mat.values.end())
             {
                 material.baseColorTexture = getTexture(
@@ -280,6 +289,20 @@ namespace gltfLoading
     void Model::loadNode(Node* parent, const tinygltf::Node& node, uint32_t nodeIndex, const tinygltf::Model& model,
                          std::vector<uint32_t>& indexBuffer, std::vector<Vertex>& vertexBuffer, float globalscale)
     {
+        if (node.extensions.find("KHR_lights_punctual") != node.extensions.end())
+        {
+            // auto lights      = scene.get_components<sg::Light>();
+            // int  light_index = extension->Get("light").Get<int>();
+            // assert(light_index < lights.size());
+            // auto light = lights[light_index];
+            //
+            // node->set_component(*light);
+            //
+            // light->set_node(*node);
+            int k = 1;
+            
+        }
+
         auto newNode = new Node();
         newNode->index = nodeIndex;
         newNode->parent = parent;
@@ -441,21 +464,21 @@ namespace gltfLoading
                             switch (numColorComponents)
                             {
                             case 3:
-                                vert.color = glm::vec4(glm::make_vec3(&bufferColors[v * 3]), 1.0f);
-                            case 4:
-                                vert.color = glm::make_vec4(&bufferColors[v * 4]);
+                            //   vert.color = glm::vec4(glm::make_vec3(&bufferColors[v * 3]), 1.0f);
+                            case 4: ;
+                            // vert.color = glm::make_vec4(&bufferColors[v * 4]);
                             }
                         }
                         else
                         {
-                            vert.color = glm::vec4(1.0f);
+                            // vert.color = glm::vec4(1.0f);
                         }
-                        vert.tangent = bufferTangents
-                                           ? glm::vec4(glm::make_vec4(&bufferTangents[v * 4]))
-                                           : glm::vec4(
-                                               0.0f);
-                        vert.joint0 = hasSkin ? glm::vec4(glm::make_vec4(&bufferJoints[v * 4])) : glm::vec4(0.0f);
-                        vert.weight0 = hasSkin ? glm::make_vec4(&bufferWeights[v * 4]) : glm::vec4(0.0f);
+                        // vert.tangent = bufferTangents
+                        //                    ? glm::vec4(glm::make_vec4(&bufferTangents[v * 4]))
+                        //                    : glm::vec4(
+                        //                        0.0f);
+                        // vert.joint0 = hasSkin ? glm::vec4(glm::make_vec4(&bufferJoints[v * 4])) : glm::vec4(0.0f);
+                        // vert.weight0 = hasSkin ? glm::make_vec4(&bufferWeights[v * 4]) : glm::vec4(0.0f);
                         vertexBuffer.push_back(vert);
                     }
                 }

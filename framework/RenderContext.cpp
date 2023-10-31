@@ -21,7 +21,7 @@ RenderContext* RenderContext::g_context = nullptr;
 void FrameResource::reset()
 {
     for (auto& it : bufferPools)
-        it.second.reset();
+        it.second->reset();
 }
 
 FrameResource::FrameResource(Device& device)
@@ -62,10 +62,21 @@ RenderContext::RenderContext(Device& device, VkSurfaceKHR surface, Window& windo
 
     renderGraph = std::make_unique<RenderGraph>(device);
 
+
+    VkCommandBufferAllocateInfo allocateInfo{};
+    allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocateInfo.commandPool = device.getCommandPool().getHandle();
+    allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocateInfo.commandBufferCount = getSwapChainImageCount();
+    std::vector<VkCommandBuffer> vkCommandBuffers(getSwapChainImageCount());
+
+    VK_CHECK_RESULT(vkAllocateCommandBuffers(device.getHandle(), &allocateInfo, vkCommandBuffers.data()))
+
     FrameResource r(device);
     for (uint32_t i = 0; i < getSwapChainImageCount(); i++)
     {
         frameResources.emplace_back(std::make_unique<FrameResource>(device));
+        frameResources.back()->commandBuffer = std::make_unique<CommandBuffer>(vkCommandBuffers[i]);
     }
 }
 
@@ -90,7 +101,7 @@ CommandBuffer& RenderContext::begin()
     // return getActiveRenderFrame().requestCommandBuffer(queue);
 }
 
-void RenderContext::beginFrame()
+CommandBuffer& RenderContext::beginFrame()
 {
     // assert(activeFrameIndex < frames.size());
     if (swapchain)
@@ -98,6 +109,24 @@ void RenderContext::beginFrame()
         VK_CHECK_RESULT(swapchain->acquireNextImage(activeFrameIndex, semaphores.presentFinishedSem, VK_NULL_HANDLE));
     }
     frameActive = true;
+
+    frameResources[activeFrameIndex]->reset();
+
+
+    auto& commandBuffer = *frameResources[activeFrameIndex]->commandBuffer;
+    commandBuffer.beginRecord(0);
+
+
+    commandBuffer.setViewport(0, {
+                                  vkCommon::initializers::viewport(float(getSwapChainExtent().width),
+                                                                   float(getSwapChainExtent().height), 0.0f, 1.0f)
+                              });
+    commandBuffer.setScissor(0, {
+                                 vkCommon::initializers::rect2D(float(getSwapChainExtent().width),
+                                                                float(getSwapChainExtent().height), 0, 0)
+                             });
+
+    return commandBuffer;
     //   getActiveRenderFrame().reset();
 }
 
@@ -143,6 +172,18 @@ uint32_t RenderContext::getActiveFrameIndex() const
 
 void RenderContext::submit(CommandBuffer& buffer, VkFence fence)
 {
+    ImageMemoryBarrier memory_barrier{};
+    memory_barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    memory_barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    memory_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    memory_barrier.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    memory_barrier.dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+    buffer.imageMemoryBarrier(
+        getCurHwtexture().getVkImageView(),
+        memory_barrier);
+
+    buffer.endRecord();
+
     std::vector<VkCommandBuffer> cmdBufferHandles{buffer.getHandle()};
 
 
@@ -312,6 +353,12 @@ void RenderContext::bindImage(uint32_t setId, const ImageView& view, const Sampl
     resourceSets[setId].bindImage(view, sampler, binding, array_element);
 }
 
+void RenderContext::bindInput(uint32_t setId, const ImageView& view, uint32_t binding, uint32_t array_element)
+{
+    resourceSets[setId].bindInput(view, binding, array_element);
+}
+
+
 // const std::unordered_map<uint32_t, ResourceSet>& RenderContext::getResourceSets() const
 // {
 //     return resourceSets;
@@ -329,7 +376,7 @@ void RenderContext::flushDescriptorState(CommandBuffer& commandBuffer, VkPipelin
     for (auto& resourceSetIt : resourceSets)
     {
         BindingMap<VkDescriptorBufferInfo> buffer_infos;
-        BindingMap<VkDescriptorImageInfo> image_infos;
+        BindingMap<VkDescriptorImageInfo> imageInfos;
 
         std::vector<uint32_t> dynamic_offsets;
 
@@ -369,22 +416,52 @@ void RenderContext::flushDescriptorState(CommandBuffer& commandBuffer, VkPipelin
                     buffer_infos[bindingIndex][arrayElement] = bufferInfo;
                 }
 
-                if (imageView != nullptr && sampler != nullptr)
+                if (imageView != nullptr || sampler != nullptr)
                 {
                     VkDescriptorImageInfo imageInfo{
-                        .sampler = sampler->getHandle(),
+
                         .imageView = imageView->getHandle(),
                         .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                     };
 
-                    image_infos[bindingIndex][arrayElement] = imageInfo;
+                    if (sampler)
+                        imageInfo.sampler = sampler->getHandle();
+
+                    if (imageView != nullptr)
+                    {
+                        // Add image layout info based on descriptor type
+                        switch (bindingInfo.descriptorType)
+                        {
+                        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+                            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                            break;
+                        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+                            if (isDepthOrStencilFormat(imageView->getFormat()))
+                            {
+                                imageInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+                            }
+                            else
+                            {
+                                imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                            }
+                            break;
+                        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+                            imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+                            break;
+
+                        default:
+                            continue;
+                        }
+                    }
+
+                    imageInfos[bindingIndex][arrayElement] = imageInfo;
                 }
             }
         }
 
         auto descriptorPool = device.getResourceCache().requestDescriptorPool(descriptorSetLayout);
         auto descriptorSet = device.getResourceCache().requestDescriptorSet(
-            descriptorSetLayout, descriptorPool, buffer_infos, image_infos);
+            descriptorSetLayout, descriptorPool, buffer_infos, imageInfos);
 
         commandBuffer.bindDescriptorSets(pipeline_bind_point, pipelineLayout.getHandle(), descriptorSetID,
                                          {descriptorSet}, dynamic_offsets);
@@ -416,6 +493,29 @@ void RenderContext::draw(CommandBuffer& commandBuffer, gltfLoading::Model& model
     //     draw(*node, commandBuffer, renderFlags, pipelineLayout, bindImageSet);
 }
 
+struct Poses
+{
+    glm::vec3 lightPos, cameraPos;
+};
+
+void RenderContext::drawLightingPass(CommandBuffer& commandBuffer)
+{
+    auto buffer = allocateBuffer(sizeof(Poses), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    Poses poses{.lightPos = {0.0f, 2.5f, 0.0f}, .cameraPos = camera->position};
+    buffer.buffer->uploadData(&poses, buffer.size, buffer.offset);
+    bindBuffer(0, *buffer.buffer, buffer.offset, buffer.size, 3, 0);
+
+    flushPipelineState(commandBuffer);
+    flushDescriptorState(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+    commandBuffer.draw(3, 1, 0, 0);
+}
+
+void RenderContext::clearResourceSets()
+{
+    resourceSets.clear();
+}
+
+
 void RenderContext::draw(CommandBuffer& commandBuffer, gltfLoading::Node& node)
 {
     auto& pipelineLayout = pipelineState.getPipelineLayout();
@@ -437,7 +537,9 @@ void RenderContext::draw(CommandBuffer& commandBuffer, gltfLoading::Node& node)
     auto allocation = allocateBuffer(sizeof(GlobalUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     //todo: use camera data here
-    GlobalUniform uniform{.model = node.getMatrix(), .view = glm::mat4(1), .proj = glm::mat4(1)};
+    GlobalUniform uniform{
+        .model = node.getMatrix(), .view = camera->matrices.view, .proj = camera->matrices.perspective
+    };
     allocation.buffer->uploadData(&uniform, allocation.size, allocation.offset);
     bindBuffer(0, *allocation.buffer, allocation.offset, allocation.size, 0, 0);
 
@@ -448,10 +550,10 @@ void RenderContext::draw(CommandBuffer& commandBuffer, gltfLoading::Node& node)
         const auto& material = prim->material;
         for (auto& texture : material.textures)
         {
-            if (descriptorLayout.hasLayoutBinding(texture->name))
+            if (descriptorLayout.hasLayoutBinding(texture.first))
             {
-                auto& binding = descriptorLayout.getLayoutBindingInfo(texture->name);
-                bindImage(0, texture->image->getVkImageView(), texture->getSampler(), binding.binding, 0);
+                auto& binding = descriptorLayout.getLayoutBindingInfo(texture.first);
+                bindImage(0, texture.second->image->getVkImageView(), texture.second->getSampler(), binding.binding, 0);
             }
         }
         flushDescriptorState(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
