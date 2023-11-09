@@ -7,20 +7,31 @@
 #include "VirtualResource.h"
 #include "RenderGraph/RenderGraph.h"
 #include "VertexData.h"
+#include "Images/ImageUtil.h"
 
 
-void RenderPassNode::RenderPassData::devirtualize(RenderGraph& renderGraph)
+void RenderPassNode::RenderPassData::devirtualize(RenderGraph& renderGraph,const RenderPassNode & node)
 {
-    std::vector<Image> images;
-    std::vector<sg::SgImage*> attachments;
-    for (size_t i = 0; i < desc.color.size(); i++)
+    std::vector<sg::SgImage*> images;
+    std::vector<Attachment> attachments;
+    for (const auto& color : desc.color)
     {
-        const auto* pResource = static_cast<const Resource<RenderGraphTexture>*>(renderGraph.
-            getResource(desc.color[i]));
-        attachments.push_back(pResource->getHandle().getHwTexture());
-        //images.emplace_back(hwTexture->image);
+        auto texture = renderGraph.getResource(color);
+        auto hwTexture = texture->getHwTexture();
+
+        auto undefined =texture->first == &node && !texture->imported;
+        auto write = renderGraph.isWrite(color, &node);
+        Attachment attachment = Attachment{.format = hwTexture->getFormat(),
+                                           .samples = hwTexture->getVkImage().getSampleCount(),
+                                           .usage = hwTexture->getVkImage().getUseFlags(),
+                                           .initial_layout = VK_IMAGE_LAYOUT_UNDEFINED,
+                                           .loadOp = (undefined | write)?VK_ATTACHMENT_LOAD_OP_CLEAR:VK_ATTACHMENT_LOAD_OP_LOAD,
+                                           .storeOp = VK_ATTACHMENT_STORE_OP_STORE};
+        
+        images.push_back(hwTexture);
+        attachments.push_back(attachment);
     }
-    renderTarget = std::make_unique<RenderTarget>(attachments);
+    renderTarget = std::make_unique<RenderTarget>(images,attachments);
 }
 
 RenderTarget& RenderPassNode::RenderPassData::getRenderTarget()
@@ -192,70 +203,57 @@ VkPipeline getPipeline(Device& device, RenderPass& renderPass)
 
 void RenderPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer)
 {
-    renderTargetData.devirtualize(renderGraph);
+    renderTargetData.devirtualize(renderGraph,*this);
+    // resolveTextureUsages(renderGraph, commandBuffer);
 
     auto& renderTarget = renderTargetData.getRenderTarget();
+
+    
+    
     auto hwTextures = renderTarget.getHwTextures();
 
-    //  for (auto &hwTexture: renderTarget.getHwTextures()) {
-    {
-        // Image 0 is the swapchain
-        ImageMemoryBarrier memoryBarrier{};
-        memoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        memoryBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        memoryBarrier.srcAccessMask = 0;
-        memoryBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        memoryBarrier.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        memoryBarrier.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-
-        ImageMemoryBarrier depthMemoryBarrier{};
-        depthMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        depthMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        depthMemoryBarrier.srcAccessMask = 0;
-        depthMemoryBarrier.dstAccessMask =
-            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-        depthMemoryBarrier.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        depthMemoryBarrier.dstStageMask =
-            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-
-
-        // commandBuffer.imageMemoryBarrier(hwTextures[0]->getVkImageView(), memoryBarrier);
-
-        // Skip 1 as it is handled later as a depth-stencil attachment
-        for (size_t i = 0; i < renderTarget.getHwTextures().size(); ++i)
-        {
-            if (isDepthOrStencilFormat(hwTextures[i]->getFormat()))
-            {
-                commandBuffer.imageMemoryBarrier(hwTextures[i]->getVkImageView(), depthMemoryBarrier);
-            }
-            else
-            {
-                if (i > 1)
-                {
-                    memoryBarrier.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-                    memoryBarrier.dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
-                }
-                commandBuffer.imageMemoryBarrier(hwTextures[i]->getVkImageView(), memoryBarrier);
-            }
-        }
-    }
-    //
+    // //  for (auto &hwTexture: renderTarget.getHwTextures()) {
     // {
+    //     // Image 0 is the swapchain
     //     ImageMemoryBarrier memoryBarrier{};
     //     memoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    //     memoryBarrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    //     memoryBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     //     memoryBarrier.srcAccessMask = 0;
-    //     memoryBarrier.dstAccessMask =
+    //     memoryBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    //     memoryBarrier.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    //     memoryBarrier.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    //
+    //     ImageMemoryBarrier depthMemoryBarrier{};
+    //     depthMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    //     depthMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    //     depthMemoryBarrier.srcAccessMask = 0;
+    //     depthMemoryBarrier.dstAccessMask =
     //         VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    //     memoryBarrier.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    //     memoryBarrier.dstStageMask =
+    //     depthMemoryBarrier.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    //     depthMemoryBarrier.dstStageMask =
     //         VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
     //
-    //     commandBuffer.imageMemoryBarrier(hwTextures[1]->getVkImageView(), memoryBarrier);
+    //
+    //     // commandBuffer.imageMemoryBarrier(hwTextures[0]->getVkImageView(), memoryBarrier);
+    //
+    //     // Skip 1 as it is handled later as a depth-stencil attachment
+    //     for (size_t i = 0; i < renderTarget.getHwTextures().size(); ++i)
+    //     {
+    //         if (isDepthOrStencilFormat(hwTextures[i]->getFormat()))
+    //         {
+    //             commandBuffer.imageMemoryBarrier(hwTextures[i]->getVkImageView(), depthMemoryBarrier);
+    //         }
+    //         else
+    //         {
+    //             if (i > 1)
+    //             {
+    //                 memoryBarrier.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    //                 memoryBarrier.dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+    //             }
+    //             commandBuffer.imageMemoryBarrier(hwTextures[i]->getVkImageView(), memoryBarrier);
+    //         }
+    //     }
     // }
-
-    //setImageLayout(commandBuffer.getHandle(),hwTexture->getVkImage().getHandle(),)
-    //}
 
     std::vector<SubpassInfo> subpasses{};
 
@@ -265,28 +263,118 @@ void RenderPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuf
     subpasses.push_back(SubpassInfo{.inputAttachments = {2, 3, 4}, .outputAttachments = {0}});
     // }
 
-    auto& renderPass = renderGraph.getDevice().getResourceCache().requestRenderPass(
-        renderTarget.getAttachments(), subpasses);
 
-    auto& framebuffer = renderGraph.getDevice().getResourceCache().requestFrameBuffer(
-        renderTargetData.getRenderTarget(), renderPass);
+    VkAttachmentDescription colorAttachment{};
+    colorAttachment.format = RenderContext::g_context->getSwapChainFormat();
+    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 
-    std::vector<VkClearValue> clearValues = {};
+    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    VkAttachmentDescription depthAttachment{};
 
-    commandBuffer.beginRenderPass(renderPass, framebuffer, renderTarget.getDefaultClearValues(), {});
+    depthAttachment.format = VK_FORMAT_D32_SFLOAT;
+    depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
+    VkAttachmentReference colorAttachmentRef{};
+    colorAttachmentRef.attachment = 0;
+    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference depthAttachmentRef{};
+    depthAttachmentRef.attachment = 1;
+    depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &colorAttachmentRef;
+    subpass.pDepthStencilAttachment = &depthAttachmentRef;
+    subpass.inputAttachmentCount = 0;
+    subpass.pInputAttachments = nullptr;
+    subpass.preserveAttachmentCount = 0;
+    subpass.pPreserveAttachments = nullptr;
+    subpass.pResolveAttachments = nullptr;
+
+    std::array<VkSubpassDependency, 2> dependencies;
+
+    dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependencies[0].dstSubpass = 0;
+    dependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+    dependencies[0].dstStageMask =
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+        VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+    dependencies[1].srcSubpass = 0;
+    dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+    dependencies[1].srcStageMask =
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+        VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+    dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    dependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+    std::vector<VkAttachmentDescription> attachments = {colorAttachment, depthAttachment};
+    // std::vector<VkSubpassDescription> subpasses = {subpass};
+
+    VkRenderPassCreateInfo render_pass_create_info = {};
+    render_pass_create_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    render_pass_create_info.attachmentCount = static_cast<uint32_t>(attachments.size());
+    render_pass_create_info.pAttachments = attachments.data();
+    render_pass_create_info.subpassCount = 1;
+    render_pass_create_info.pSubpasses = &subpass;
+    render_pass_create_info.dependencyCount = 0;
+    render_pass_create_info.pDependencies = dependencies.data();
+
+    VkRenderPass vkRenderPass;
+    VK_CHECK_RESULT(
+        vkCreateRenderPass(renderGraph.getDevice().getHandle(), &render_pass_create_info, nullptr, &vkRenderPass));
+
+
+    //   auto& renderPass = renderGraph.getDevice().getResourceCache().requestRenderPass(
+    //       renderTarget.getAttachments(), subpasses);
+    //
+    //   // RenderPass pass(renderGraph.getDevice(), vkRenderPass);
+    //   // //   commandBuffer.beginRenderPass()
+    //
+    // //renderPass.setHandle(vkRenderPass);
+    //
+    //   auto& framebuffer = renderGraph.getDevice().getResourceCache().requestFrameBuffer(
+    //       renderTargetData.getRenderTarget(), renderPass);
+
+
+    //
+    // std::vector<VkClearValue> clearValues = {};
+    //
+    // commandBuffer.beginRenderPass(renderPass, framebuffer, renderTarget.getDefaultClearValues(), {});
+    //
     RenderPassContext context = {
-        .renderPass = renderPass, .commandBuffer = commandBuffer,
+        // .renderPass = renderPass, .commandBuffer = commandBuffer,
         .renderTarget = renderTarget,
         // .pipeline = getPipeline(renderGraph.getDevice(), renderPass),
     };
-
-    auto& renderContext = *RenderContext::g_context;
-
-    ColorBlendState colorBlendState = renderContext.getPipelineState().getColorBlendState();
-    colorBlendState.attachments.resize(renderPass.getColorOutputCount(0));
-    renderContext.getPipelineState().setColorBlendState(colorBlendState);
-
+    //
+    // auto& renderContext = *RenderContext::g_context;
+    //
+    // ColorBlendState colorBlendState = renderContext.getPipelineState().getColorBlendState();
+    // colorBlendState.attachments.resize(renderPass.getColorOutputCount(0));
+    // renderContext.getPipelineState().setColorBlendState(colorBlendState);
     mRenderPass->execute(context);
 }
 
@@ -298,8 +386,32 @@ void RenderPassNode::declareRenderTarget(const char* name, const RenderGraphPass
 }
 
 RenderPassNode::RenderPassNode(RenderGraph& renderGraph, const char* name, RenderGraphPassBase* base) : mRenderPass(
-    base)
+    base), name(name)
 {
+}
+
+void RenderPassNode::declareRenderPass(const char* name, const RenderGraphPassDescriptor& descriptor)
+{
+    renderTargetData.desc = descriptor;
+}
+
+void PassNode::addTextureUsage(RenderGraphHandle id, RenderGraphTexture::Usage usage)
+{
+    if (textureUsages.contains(id))
+        textureUsages[id] = textureUsages[id] | usage;
+    textureUsages[id] = usage;
+}
+
+void PassNode::resolveTextureUsages(RenderGraph& renderGraph, CommandBuffer& commandBuffer)
+{
+    // for (auto& textureIt : textureUsages)
+    // {
+    //     const auto* pResource = static_cast<const Resource<RenderGraphTexture>*>(renderGraph.
+    //         getResource(textureIt.first));
+    //     auto newLayout = ImageUtil::getDefaultLayout(textureIt.second);
+    //     auto subsubsource = pResource->getHandle().getHwTexture()->getVkImageView().getSubResourceRange();
+    //     pResource->getHandle().getHwTexture()->getVkImage().transitionLayout(commandBuffer, newLayout, subsubsource);
+    // }
 }
 
 void PresentPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer)

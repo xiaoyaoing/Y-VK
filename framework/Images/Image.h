@@ -1,12 +1,18 @@
+#include <unordered_map>
+
 #include "Vulkan.h"
 #include "ImageView.h"
 
 #pragma once
 
-class Image {
+class CommandBuffer;
+
+
+class Image
+{
 public:
-    Image(Device &device,
-          const VkExtent3D &extent,
+    Image(Device& device,
+          const VkExtent3D& extent,
           VkFormat format,
           VkImageUsageFlags image_usage,
           VmaMemoryUsage memory_usage,
@@ -15,54 +21,66 @@ public:
           uint32_t array_layers = 1,
           VkImageCreateFlags flags = 0);
 
-    Image(Device &device,
+    Image(Device& device,
           VkImage handle,
-          const VkExtent3D &extent,
+          const VkExtent3D& extent,
           VkFormat format,
           VkImageUsageFlags image_usage,
           VkSampleCountFlagBits sample_count = VK_SAMPLE_COUNT_1_BIT);
 
 
-    Image &operator=(const Image &) = delete;
+    Image& operator=(const Image&) = delete;
 
-    Image &operator=(Image &&) = delete;
+    Image& operator=(Image&&) = delete;
 
-    Image(const Image &) = delete;
+    Image(const Image&) = delete;
 
 
-    Image(Image &&other);
+    Image(Image&& other);
 
     VkImageSubresource getSubresource() const;
 
-    inline VkImage getHandle() const {
+    inline VkImage getHandle() const
+    {
         return image;
     };
 
-    inline VkFormat getFormat() const {
+    inline VkFormat getFormat() const
+    {
         return format;
     }
 
-    inline VkImageType getImageType() const {
+    inline VkImageType getImageType() const
+    {
         return type;
     }
 
-    inline VkSampleCountFlagBits getSampleCount() const {
+    inline VkSampleCountFlagBits getSampleCount() const
+    {
         return VK_SAMPLE_COUNT_1_BIT;
     };
 
-    inline VkImageUsageFlags getUseFlags() const {
+    inline VkImageUsageFlags getUseFlags() const
+    {
         return usage;
     };
 
-    inline const VkExtent3D getExtent() const {
+    inline const VkExtent3D getExtent() const
+    {
         return extent;
     }
 
     uint32_t getArrayLayerCount() const;
 
-    Image(VmaAllocator allocator, VmaMemoryUsage memoryUsage, const VkImageCreateInfo &createInfo);
+    void transitionLayout(CommandBuffer& commandBuffer, VulkanLayout newLayout,
+                          VkImageSubresourceRange subresourceRange = {.baseMipLevel = 0, .baseArrayLayer = 0,});
 
-    static inline VkImageCreateInfo getDefaultImageInfo() {
+    VulkanLayout getLayout(const VkImageSubresourceRange& subresourceRange);
+
+    Image(VmaAllocator allocator, VmaMemoryUsage memoryUsage, const VkImageCreateInfo& createInfo);
+
+    static inline VkImageCreateInfo getDefaultImageInfo()
+    {
         VkImageCreateInfo imageInfo = {};
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         imageInfo.pNext = nullptr;
@@ -75,14 +93,14 @@ public:
         return imageInfo;
     }
 
-    void addView(ImageView *pView);
+    void addView(ImageView* pView);
 
-    Device &getDevice();
+    Device& getDevice();
 
     VkImageSubresource subresource{};
 
 protected:
-    Device &device;
+    Device& device;
     VkImage image;
     VmaAllocation memory;
 
@@ -101,11 +119,14 @@ protected:
 
     uint32_t array_layer_count{1};
 
-    uint8_t *mapped_data{nullptr};
+    uint8_t* mapped_data{nullptr};
+
 
     bool mapped;
 
     std::vector<ImageView> views;
+
+    std::unordered_map<uint32_t, VulkanLayout> layouts;
 };
 
 //struct HwTexture

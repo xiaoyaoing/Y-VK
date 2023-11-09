@@ -9,6 +9,8 @@
 
 #include <glm/gtx/hash.hpp>
 
+#include <mutex>
+
 #include "FrameBuffer.h"
 #include "Pipeline.h"
 #include "RenderTarget.h"

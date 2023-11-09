@@ -85,6 +85,7 @@ namespace gltfLoading
         uint32_t firstVertex;
         uint32_t vertexCount;
         Material& material;
+        glm::mat4 matrix;
 
         struct Dimensions
         {
@@ -100,6 +101,9 @@ namespace gltfLoading
         bool getVertexAttribute(const std::string& name, VertexAttribute& attribute) const;
 
         void setVertxAttribute(const std::string& name, VertexAttribute& attribute);
+
+        // const glm::mat4 & getMatrix();
+        // void  setMatrix(const glm::mat4 & matrix);
 
         void setDimensions(glm::vec3 min, glm::vec3 max);
 
@@ -248,11 +252,15 @@ namespace gltfLoading
     struct Model
     {
         Camera* camera;
+
+        std::vector<std::unique_ptr<Primitive>> prims;
+
         Device& device;
         Queue& queue;
         //        Mesh *mesh;
         std::vector<Node*> nodes;
         std::vector<Node*> linearNodes;
+
 
         std::vector<Skin*> skins;
 
@@ -272,6 +280,9 @@ namespace gltfLoading
         bool metallicRoughnessWorkflow;
 
         static std::unique_ptr<Model> loadFromFile(Device& device, const std::string& path);
+
+        using PrimitiveCallBack = std::function<void(Primitive& primitive)>;
+        void IteratePrimitives(PrimitiveCallBack primitiveCallBack);
 
         Model(Device& device);
 

@@ -26,6 +26,7 @@
 #include <Utils/DebugUtils.h>
 #include <Utils/VkUtils.h>
 #include <FIleUtils.h>
+#include <Utils/Enums.h>
 
 #include <vk_mem_alloc.h>
 

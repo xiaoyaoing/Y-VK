@@ -300,7 +300,6 @@ namespace gltfLoading
             //
             // light->set_node(*node);
             int k = 1;
-            
         }
 
         auto newNode = new Node();
@@ -541,9 +540,10 @@ namespace gltfLoading
                 newPrimitive->firstVertex = vertexStart;
                 newPrimitive->vertexCount = vertexCount;
                 newPrimitive->setDimensions(posMin, posMax);
+                newPrimitive->matrix = newNode->getMatrix();
 
-
-                newMesh->primitives.push_back(std::move(newPrimitive));
+                prims.push_back(std::move(newPrimitive));
+                //    newMesh->primitives.push_back(std::move(newPrimitive));
             }
             newNode->mesh = newMesh;
         }
@@ -572,6 +572,14 @@ namespace gltfLoading
         auto model = std::make_unique<Model>(device);
         model->loadFromFile(path);
         return model;
+    }
+
+    void Model::IteratePrimitives(PrimitiveCallBack primitiveCallBack)
+    {
+        for (auto& prim : prims)
+        {
+            primitiveCallBack(*prim);
+        }
     }
 
     Model::Model(Device& device) : device(device), queue(device.getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0))

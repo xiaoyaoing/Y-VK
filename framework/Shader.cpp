@@ -154,7 +154,9 @@ Shader::Shader(Device& device, const std::string& path, SHADER_LOAD_MODE mode) :
     id = hasher(std::string(reinterpret_cast<const char*>(spirvCode.data()),
                             reinterpret_cast<const char*>(spirvCode.data() + spirvCode.size())));
     //reflect shader resources
-    assert(SpirvShaderReflection::reflectShaderResources(spirvCode,stage,resources));
+  //  LOGE("Reflected");
+    SpirvShaderReflection::reflectShaderResources(spirvCode,stage,resources);
+   // assert(SpirvShaderReflection::reflectShaderResources(spirvCode,stage,resources));
 }
 
 Shader::~Shader()

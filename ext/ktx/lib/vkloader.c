@@ -2,10 +2,21 @@
 /* vi: set sw=2 ts=4 expandtab: */
 
 /*
- * Copyright 2018-2020 Mark Callow.
- * SPDX-License-Identifier: Apache-2.0
+ * ©2018 Mark Callow.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-
+ 
 /**
  * @internal
  * @file
@@ -20,17 +31,16 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
-
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(KTX_USE_FUNCPTRS_FOR_VULKAN)
 #include "vk_funcs.h"   // Must be included before ktxvulkan.h.
+#endif
 #include "ktxvulkan.h"
 #include "ktxint.h"
-#include "texture1.h"
-#include "texture2.h"
 #include "vk_format.h"
 
 // Macro to check and display Vulkan return results.
@@ -85,7 +95,7 @@ generateMipmaps(ktxVulkanTexture* vkTexture, ktxVulkanDeviceInfo* vdi,
  * @memberof ktxVulkanDeviceInfo
  * @~English
  * @brief Create a ktxVulkanDeviceInfo object.
- *
+ * 
  * Allocates CPU memory for a ktxVulkanDeviceInfo object then calls
  * ktxVulkanDeviceInfo_construct(). See it for documentation of the
  * parameters.
@@ -152,10 +162,18 @@ ktxVulkanDeviceInfo_Construct(ktxVulkanDeviceInfo* This,
 
 #if defined(KTX_USE_FUNCPTRS_FOR_VULKAN)
     // Delay loading not supported so must do it ourselves.
-    if (!ktxVulkanModuleHandle) {
-        result = ktxLoadVulkanLibrary();
-        if (result != KTX_SUCCESS)
-            return result;
+    if (!ktxVulkanLibrary) {
+        if (!ktxVulkanLoadLibrary())
+            // Normal use is for this constructor to be called by an application
+            // that has completed Vulkan initialization. In that case the only
+            // cause for failure would be an incompatible in the version of libvulkan
+            // that is loaded. The only other cause would be an application calling
+            // Vulkan functions without having initialized Vulkan.
+            //
+            // In these cases, an abort along with the messages sent to stderr by
+            // ktxVulkanLoadLibrary is sufficient as released applications should
+            // never suffer these.
+            abort();
     }
 #endif
 
@@ -267,18 +285,16 @@ typedef struct user_cbdata_optimal {
  *
  * @copydetails PFNKTXITERCB
  */
-static KTX_error_code
+static KTX_error_code KTXAPIENTRY
 optimalTilingCallback(int miplevel, int face,
                       int width, int height, int depth,
-                      ktx_uint64_t faceLodSize,
+                      ktx_uint32_t faceLodSize,
                       void* pixels, void* userdata)
 {
     user_cbdata_optimal* ud = (user_cbdata_optimal*)userdata;
 
     // Set up copy to destination region in final image
-#if defined(_DEBUG)
     assert(ud->region < ud->regionsArrayEnd);
-#endif
     ud->region->bufferOffset = ud->offset;
     ud->offset += faceLodSize;
     // These 2 are expressed in texels.
@@ -300,8 +316,6 @@ optimalTilingCallback(int miplevel, int face,
     return KTX_SUCCESS;
 }
 
-uint32_t lcm4(uint32_t a);
-
 /**
  * @internal
  * @~English
@@ -320,26 +334,24 @@ uint32_t lcm4(uint32_t a);
  * element size.
  *
  * This should be used with @c ktx_Texture_IterateFaceLevels or
- * @c ktx_Texture_IterateLoadLevelFaces. Face-level iteration has been
+ * @c ktx_Texture_IterateLoadFaceLevels. Face-level iteration has been
  * selected to minimize the buffering needed between reading the file and
  * copying the data into the staging buffer. Obviously when
  * @c ktx_Texture_IterateFaceLevels is being used, this is a moot point.
 *
  * @copydetails PFNKTXITERCB
  */
-KTX_error_code
+KTX_error_code KTXAPIENTRY
 optimalTilingPadCallback(int miplevel, int face,
                          int width, int height, int depth,
-                         ktx_uint64_t faceLodSize,
+                         ktx_uint32_t faceLodSize,
                          void* pixels, void* userdata)
 {
     user_cbdata_optimal* ud = (user_cbdata_optimal*)userdata;
     ktx_uint32_t rowPitch = width * ud->elementSize;
 
     // Set bufferOffset in destination region in final image
-#if defined(_DEBUG)
     assert(ud->region < ud->regionsArrayEnd);
-#endif
     ud->region->bufferOffset = ud->offset;
 
     // Copy data into staging buffer
@@ -374,8 +386,9 @@ optimalTilingPadCallback(int miplevel, int face,
     if (ud->offset % ud->elementSize != 0 || ud->offset % 4 != 0) {
         // Only elementSizes of 1,2 and 3 will bring us here.
         assert(ud->elementSize < 4 && ud->elementSize > 0);
-        ktx_uint32_t lcm = lcm4(ud->elementSize);
-        ud->offset = _KTX_PADN(lcm, ud->offset);
+        ktx_uint32_t lcm = ud->elementSize == 3 ? 12 : 4;
+        // Can't use _KTX_PADN shortcut because 12 is not power of 2.
+        ud->offset = (ktx_uint32_t)(lcm * ceil((float)ud->offset / lcm));
     }
     // These 2 are expressed in texels; not suitable for dealing with padding.
     ud->region->bufferRowLength = 0;
@@ -410,10 +423,10 @@ typedef struct user_cbdata_linear {
  *
  * Copy the image data into the mapped Vulkan image.
  */
-KTX_error_code
+KTX_error_code KTXAPIENTRY
 linearTilingCallback(int miplevel, int face,
                       int width, int height, int depth,
-                      ktx_uint64_t faceLodSize,
+                      ktx_uint32_t faceLodSize,
                       void* pixels, void* userdata)
 {
     user_cbdata_linear* ud = (user_cbdata_linear*)userdata;
@@ -450,10 +463,10 @@ linearTilingCallback(int miplevel, int face,
  * real Vulkan implementation I have available (Mesa). The reported row & image
  * strides appears to be for an R8G8B8A8_UNORM of the same texel size.
  */
-KTX_error_code
+KTX_error_code KTXAPIENTRY
 linearTilingPadCallback(int miplevel, int face,
                       int width, int height, int depth,
-                      ktx_uint64_t faceLodSize,
+                      ktx_uint32_t faceLodSize,
                       void* pixels, void* userdata)
 {
     user_cbdata_linear* ud = (user_cbdata_linear*)userdata;
@@ -485,7 +498,6 @@ linearTilingPadCallback(int miplevel, int face,
     else
         rowIterations = 1;
 
-    imageIterations = 1;
     // Arrays, including cube map arrays, or 3D textures
     // Note from the Vulkan spec:
     //  *  arrayPitch is undefined for images that were not
@@ -504,7 +516,8 @@ linearTilingPadCallback(int miplevel, int face,
                 imageIterations = depth;
         }
         assert(imageSize <= imagePitch);
-    }
+    } else
+        imageIterations = 1;
 
     if (rowIterations > 1) {
         // Copy the minimum of srcRowPitch, the GL_UNPACK_ALIGNMENT padded size,
@@ -538,10 +551,10 @@ linearTilingPadCallback(int miplevel, int face,
  * @brief Create a Vulkan image object from a ktxTexture object.
  *
  * Creates a VkImage with @c VkFormat etc. matching the KTX data and uploads
- * the images.  Mipmaps will be generated if the @c ktxTexture's
- * @c generateMipmaps flag is set. Returns the handles of the created objects
- * and information about the texture in the @c ktxVulkanTexture pointed at by
- * @p vkTexture.
+ * the images. Also creates a VkImageView object for accessing the image.
+ * Mipmaps will be generated if the @c ktxTexture's @c generateMipmaps
+ * flag is set. Returns the handles of the created objects and information
+ * about the texture in the @c ktxVulkanTexture pointed at by @p vkTexture.
  *
  * @p usageFlags and thus acceptable usage of the created image may be
  * augmented as follows:
@@ -580,9 +593,6 @@ linearTilingPadCallback(int miplevel, int face,
  * @exception KTX_INVALID_OPERATION Requested mipmap generation is not supported
  *                                  by the physical device for the combination
  *                                  of the ktxTexture's format and @p tiling.
- * @exception KTX_INVALID_OPERATION Number of mip levels or array layers exceeds the
- *                                maximums supported for the ktxTexture's format
- *                                and @p tiling.
  * @exception KTX_OUT_OF_MEMORY Sufficient memory could not be allocated
  *                              on either the CPU or the Vulkan device.
  */
@@ -594,7 +604,7 @@ ktxTexture_VkUploadEx(ktxTexture* This, ktxVulkanDeviceInfo* vdi,
                       VkImageLayout finalLayout)
 {
     KTX_error_code           kResult;
-    VkFilter                 blitFilter = VK_FILTER_LINEAR;
+    VkFilter                 blitFilter;
     VkFormat                 vkFormat;
     VkImageType              imageType;
     VkImageViewType          viewType;
@@ -638,7 +648,6 @@ ktxTexture_VkUploadEx(ktxTexture* This, ktxVulkanDeviceInfo* vdi,
         createFlags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
     }
 
-    assert(This->numDimensions >= 1 && This->numDimensions <= 3);
     switch (This->numDimensions) {
       case 1:
         imageType = VK_IMAGE_TYPE_1D;
@@ -646,7 +655,6 @@ ktxTexture_VkUploadEx(ktxTexture* This, ktxVulkanDeviceInfo* vdi,
                         VK_IMAGE_VIEW_TYPE_1D_ARRAY : VK_IMAGE_VIEW_TYPE_1D;
         break;
       case 2:
-      default: // To keep compilers happy.
         imageType = VK_IMAGE_TYPE_2D;
         if (This->isCubemap)
             viewType = This->isArray ?
@@ -665,7 +673,9 @@ ktxTexture_VkUploadEx(ktxTexture* This, ktxVulkanDeviceInfo* vdi,
         break;
     }
 
-    vkFormat = ktxTexture_GetVkFormat(This);
+    vkFormat = vkGetFormatFromOpenGLInternalFormat(This->glInternalformat);
+    if (vkFormat == VK_FORMAT_UNDEFINED)
+        vkFormat = vkGetFormatFromOpenGLFormat(This->glFormat, This->glType);
     if (vkFormat == VK_FORMAT_UNDEFINED) {
         return KTX_INVALID_OPERATION;
     }
@@ -687,9 +697,6 @@ ktxTexture_VkUploadEx(ktxTexture* This, ktxVulkanDeviceInfo* vdi,
                                                       createFlags,
                                                       &imageFormatProperties);
     if (vResult == VK_ERROR_FORMAT_NOT_SUPPORTED) {
-        return KTX_INVALID_OPERATION;
-    }
-    if (This->numLayers > imageFormatProperties.maxArrayLayers) {
         return KTX_INVALID_OPERATION;
     }
 
@@ -722,13 +729,7 @@ ktxTexture_VkUploadEx(ktxTexture* This, ktxVulkanDeviceInfo* vdi,
         numImageLevels = This->numLevels;
     }
 
-    if (numImageLevels > imageFormatProperties.maxMipLevels) {
-        return KTX_INVALID_OPERATION;
-    }
-
-    if (This->classId == ktxTexture2_c) {
-        canUseFasterPath = KTX_TRUE;
-    } else {
+    {
         ktx_uint32_t actualRowPitch = ktxTexture_GetRowPitch(This, 0);
         ktx_uint32_t tightRowPitch = elementSize * This->baseWidth;
         // If the texture's images do not have any row padding, we can use a
@@ -791,7 +792,7 @@ ktxTexture_VkUploadEx(ktxTexture* This, ktxVulkanDeviceInfo* vdi,
         user_cbdata_optimal cbData;
 
 
-        textureSize = ktxTexture_GetDataSizeUncompressed(This);
+        textureSize = ktxTexture_GetSize(This);
         bufferCreateInfo.size = textureSize;
         if (canUseFasterPath) {
             /*
@@ -809,7 +810,7 @@ ktxTexture_VkUploadEx(ktxTexture* This, ktxVulkanDeviceInfo* vdi,
              */
             numCopyRegions = This->isArray ? This->numLevels
                                   : This->numLevels * This->numFaces;
-            /*
+            /* 
              * Add extra space to allow for possible padding described
              * above. A bit ad-hoc but it's only a small amount of
              * memory.
@@ -1118,15 +1119,14 @@ ktxTexture_VkUploadEx(ktxTexture* This, ktxVulkanDeviceInfo* vdi,
     return KTX_SUCCESS;
 }
 
-
 /** @memberof ktxTexture
  * @~English
- * @brief Create a Vulkan image object from a ktxTexture1 object.
+ * @brief Create a Vulkan image object from a ktxTexture object.
  *
  * Calls ktxTexture_VkUploadEx() with the most commonly used options:
  * VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT and
  * VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL.
- *
+ * 
  * @sa ktxTexture_VkUploadEx() for details and use that for complete
  *     control.
  */
@@ -1134,139 +1134,28 @@ KTX_error_code
 ktxTexture_VkUpload(ktxTexture* texture, ktxVulkanDeviceInfo* vdi,
                     ktxVulkanTexture *vkTexture)
 {
-    return ktxTexture_VkUploadEx(ktxTexture(texture), vdi, vkTexture,
+    return ktxTexture_VkUploadEx(texture, vdi, vkTexture,
                                  VK_IMAGE_TILING_OPTIMAL,
                                  VK_IMAGE_USAGE_SAMPLED_BIT,
                                  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-}
-
-/** @memberof ktxTexture1
- * @~English
- * @brief Create a Vulkan image object from a ktxTexture1 object.
- *
- * This simplly calls ktxTexture_VkUploadEx.
- *
- * @copydetails ktxTexture::ktxTexture_VkUploadEx
- */
-KTX_error_code
-ktxTexture1_VkUploadEx(ktxTexture1* This, ktxVulkanDeviceInfo* vdi,
-                       ktxVulkanTexture* vkTexture,
-                       VkImageTiling tiling,
-                       VkImageUsageFlags usageFlags,
-                       VkImageLayout finalLayout)
-{
-    return ktxTexture_VkUploadEx(ktxTexture(This), vdi, vkTexture,
-                                 tiling, usageFlags, finalLayout);
-}
-
-/** @memberof ktxTexture1
- * @~English
- * @brief Create a Vulkan image object from a ktxTexture1 object.
- *
- * Calls ktxTexture_VkUploadEx() with the most commonly used options:
- * VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT and
- * VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL.
- *
- * @sa ktxTexture_VkUploadEx() for details and use that for complete
- *     control.
- */
-KTX_error_code
-ktxTexture1_VkUpload(ktxTexture1* texture, ktxVulkanDeviceInfo* vdi,
-                     ktxVulkanTexture *vkTexture)
-{
-    return ktxTexture_VkUploadEx(ktxTexture(texture), vdi, vkTexture,
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_SAMPLED_BIT,
-                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-}
-
-/** @memberof ktxTexture2
- * @~English
- * @brief Create a Vulkan image object from a ktxTexture2 object.
- *
- * This simplly calls ktxTexture_VkUploadEx.
- *
- * @copydetails ktxTexture::ktxTexture_VkUploadEx
- */
-KTX_error_code
-ktxTexture2_VkUploadEx(ktxTexture2* This, ktxVulkanDeviceInfo* vdi,
-                       ktxVulkanTexture* vkTexture,
-                       VkImageTiling tiling,
-                       VkImageUsageFlags usageFlags,
-                       VkImageLayout finalLayout)
-{
-    return ktxTexture_VkUploadEx(ktxTexture(This), vdi, vkTexture,
-                                 tiling, usageFlags, finalLayout);
-}
-
-/** @memberof ktxTexture2
- * @~English
- * @brief Create a Vulkan image object from a ktxTexture2 object.
- *
- * Calls ktxTexture_VkUploadEx() with the most commonly used options:
- * VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT and
- * VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL.
- *
- * @sa ktxTexture2_VkUploadEx() for details and use that for complete
- *     control.
- */
-KTX_error_code
-ktxTexture2_VkUpload(ktxTexture2* This, ktxVulkanDeviceInfo* vdi,
-                     ktxVulkanTexture *vkTexture)
-{
-    return ktxTexture_VkUploadEx(ktxTexture(This), vdi, vkTexture,
-                                 VK_IMAGE_TILING_OPTIMAL,
-                                 VK_IMAGE_USAGE_SAMPLED_BIT,
-                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-}
-
-/** @memberof ktxTexture1
- * @~English
- * @brief Return the VkFormat enum of a ktxTexture1 object.
- *
- * @return The VkFormat of the ktxTexture. May return VK_FORMAT_UNDEFINED if
- *         there is no mapping from the GL internalformat and format.
- */
-VkFormat
-ktxTexture1_GetVkFormat(ktxTexture1* This)
-{
-    VkFormat vkFormat;
-
-    vkFormat = vkGetFormatFromOpenGLInternalFormat(This->glInternalformat);
-    if (vkFormat == VK_FORMAT_UNDEFINED) {
-        vkFormat = vkGetFormatFromOpenGLFormat(This->glFormat,
-            This->glType);
-    }
-    return vkFormat;
-}
-
-/** @memberof ktxTexture2
- * @~English
- * @brief Return the VkFormat enum of a ktxTexture2 object.
- *
- * @copydetails ktxTexture1::ktxTexture1_GetVkFormat
- */
-VkFormat
-ktxTexture2_GetVkFormat(ktxTexture2* This)
-{
-    return This->vkFormat;
 }
 
 /** @memberof ktxTexture
  * @~English
  * @brief Return the VkFormat enum of a ktxTexture object.
  *
- * In ordert to ensure that the Vulkan uploader is not linked into an application unless explicitly called,
- * this is not a virtual function. It determines the texture type then dispatches to the correct function.
- * @copydetails ktxTexture1::ktxTexture1_GetVkFormat
+ * @return The VkFormat of the ktxTexture. May return VK_FORMAT_UNDEFINED if
+ *         there is no mapping from the GL internalformat and format.
  */
 VkFormat
 ktxTexture_GetVkFormat(ktxTexture* This)
 {
-    if (This->classId == ktxTexture2_c)
-        return ktxTexture2_GetVkFormat((ktxTexture2*)This);
-    else
-        return ktxTexture1_GetVkFormat((ktxTexture1*)This);
+    VkFormat vkFormat;
+
+    vkFormat = vkGetFormatFromOpenGLInternalFormat(This->glInternalformat);
+    if (vkFormat == VK_FORMAT_UNDEFINED)
+        vkFormat = vkGetFormatFromOpenGLFormat(This->glFormat, This->glType);
+    return vkFormat;
 }
 
 //======================================================================

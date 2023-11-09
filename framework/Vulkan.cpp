@@ -3,10 +3,12 @@
 //
 #include <Vulkan.h>
 
-namespace Default {
-    std::vector<VkClearValue> clearValues() {
+namespace Default
+{
+    std::vector<VkClearValue> clearValues()
+    {
         std::vector<VkClearValue> clearValues(2);
-        clearValues[0].color = {{0.f, 0.f, 0.f, 0.0f}};
+        clearValues[0].color = {{0.f, 1.f, 0.f, 0.0f}};
         clearValues[1].depthStencil = {1.0f, 0};
         return clearValues;
     }

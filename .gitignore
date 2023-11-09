@@ -6,4 +6,5 @@ cmake-build-debug-visual-studio--2022
 cmake-build-release-visual-studio--2022
 /cmake-build-debug-mingw
 /build
+/build-vs2022
 .idea

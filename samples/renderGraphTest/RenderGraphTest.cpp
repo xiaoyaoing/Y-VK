@@ -18,183 +18,329 @@ void Example::drawFrame()
 
     // commandBufffer
     RenderGraph graph(*device);
-    struct GBufferPassData
-    {
-        RenderGraphId<RenderGraphTexture> position;
 
-
-        RenderGraphId<RenderGraphTexture> albedo;
-
-        RenderGraphId<RenderGraphTexture> normal;
-
-        RenderGraphId<RenderGraphTexture> depth;
-
-
-        RenderGraphId<RenderGraphTexture> output;
-    };
 
     vkWaitForFences(device->getHandle(), 1, &fence, VK_TRUE, UINT64_MAX);
     vkResetFences(device->getHandle(), 1, &fence);
-    graph.addPass<GBufferPassData>("gbuffer", [&](RenderGraph::Builder& builder, GBufferPassData& data)
-                                   {
-                                       //                                       data.output = graph.create<RenderGraphTexture>("output",
-                                       //                                           {
-                                       //                                               .extent = renderContext->getSwapChainExtent(),
-                                       //                                               .format = VK_FORMAT_R8G8B8A8_SRGB,
-                                       //                                               .usageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                       //                                               .memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY
-                                       //                                           });
-                                       data.albedo = graph.create<RenderGraphTexture>("color",
-                                           {
-                                               .extent = renderContext->getSwapChainExtent(),
-                                               .format = VK_FORMAT_R8G8B8A8_SRGB,
-                                               .usageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-                                               VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
-                                               .memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY
-                                           });
 
-                                       data.normal = graph.create<RenderGraphTexture>("normal",
-                                           {
-                                               .extent = renderContext->getSwapChainExtent(),
-                                               .format = VK_FORMAT_R8G8B8A8_SRGB,
-                                               .usageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-                                               VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
-                                               .memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY
-                                           });
-
-                                       data.depth = graph.create<RenderGraphTexture>("depth", {
-                                           .extent = renderContext->getSwapChainExtent(),
-                                           .format = VK_FORMAT_D32_SFLOAT,
-                                           .usageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
-                                           VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT,
-                                           .memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY
-                                       });
-
-                                       data.position = graph.create<RenderGraphTexture>("position", {
-                                           .extent = renderContext->getSwapChainExtent(),
-                                           .format = VK_FORMAT_R32G32B32A32_SFLOAT,
-                                           .usageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-                                           VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
-                                           .memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY
-                                       });
-
-                                       data.output = graph.import("output", &renderContext->getCurHwtexture());
-
-
-                                       graph.getBlackBoard().put("albedo", data.albedo);
-                                       graph.getBlackBoard().put("normal", data.normal);
-                                       graph.getBlackBoard().put("depth", data.depth);
-                                       graph.getBlackBoard().put("position", data.position);
-                                       graph.getBlackBoard().put("output", data.output);
-
-                                       builder.declare("Color Pass Target", {
-                                                           .color = {
-                                                               data.output, data.depth, data.albedo, data.position,
-                                                               data.normal
-                                                           }
-                                                       }
-                                       );
-                                   },
-                                   [&](GBufferPassData& data, const RenderPassContext& context)
-                                   {
-                                       auto& commandBuffer = context.commandBuffer;
-
-                                       //commandBuffer.bindPipeline(context.pipeline);
-                                       renderContext->getPipelineState().setSubpassIndex(0);
-
-                                       renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.gBuffer);
-                                       renderContext->getPipelineState().setRenderPass(context.renderPass);
-                                       // renderContext->clearResouceSets();
-
-                                       renderContext->clearResourceSets();
-
-                                       //  sponza->iterateAllNodes([&](CommandBuffer  &))
-
-                                       renderContext->draw(commandBuffer, *sponza);
-
-
-                                       // Update blend state attachments
-                                       // auto blend_state = pipeline_state.get_color_blend_state();
-                                       // blend_state.attachments.resize(current_render_pass.render_pass->get_color_output_count(pipeline_state.get_subpass_index()));
-                                       // pipeline_state.set_color_blend_state(blend_state);
-
-                                       // // Reset descriptor sets
-                                       // resource_binding_state.reset();
-                                       // descriptor_set_layout_binding_state.clear();
-                                       //
-                                       // // Clear stored push constants
-                                       // stored_push_constants.clear();
-
-                                       vkCmdNextSubpass(commandBuffer.getHandle(), VK_SUBPASS_CONTENTS_INLINE);
-
-
-                                       renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.lighting);
-                                       renderContext->getPipelineState().setRasterizationState({
-                                           .cullMode = VK_CULL_MODE_NONE
-                                       });
-                                       renderContext->getPipelineState().setSubpassIndex(1);
-                                       renderContext->clearResourceSets();
-                                       ColorBlendState colorBlendState = renderContext->getPipelineState().
-                                           getColorBlendState();
-                                       colorBlendState.attachments.resize(context.renderPass.getColorOutputCount(1));
-                                       renderContext->getPipelineState().setColorBlendState(colorBlendState);
-                                       renderContext->bindInput(
-                                           0, context.renderTarget.getHwTextures()[2]->getVkImageView(), 0, 0);
-                                       renderContext->bindInput(
-                                           0, context.renderTarget.getHwTextures()[3]->getVkImageView(), 1, 0);
-                                       renderContext->bindInput(
-                                           0, context.renderTarget.getHwTextures()[4]->getVkImageView(), 2, 0);
-                                       renderContext->drawLightingPass(commandBuffer);
-
-                                       //    commandBuffer.draw(3,1,0,0);
-
-                                       commandBuffer.endRenderPass();
-                                   });
-
-    // struct LightingPassData {
-    //
-    //     RenderGraphId<RenderGraphTexture> position;
-    //
-    //     RenderGraphId<RenderGraphTexture> normal;
-    //     
-    //     RenderGraphId<RenderGraphTexture> albedo;
-    //
-    //     RenderGraphId<RenderGraphTexture> output;
-    // };
-    // graph.addPass<LightingPassData>("lighting", [&](RenderGraph::Builder &builder, LightingPassData &data) {
-    //                                   data.albedo = graph.getBlackBoard().get<RenderGraphTexture>("albedo");
-    //                                   data.position = graph.getBlackBoard().get<RenderGraphTexture>("position");
-    //                                   data.normal = graph.getBlackBoard().get<RenderGraphTexture>("normal");
-    //
-    //                                   builder.declare("lightingPass",{.color = {data.albedo,data.position,data.normal,data.output}});
-    //                                     
-    //     
-    //                                },
-    //                                 [&](LightingPassData &data, const RenderPassContext &context) {
-    //                                     
-    //                                     renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.lighting);
-    //
-    //                                     context.commandBuffer.draw(3,1,0,0);
-    //                                     
-    //                                 });
-
-    //  graph.addPresentPass(graph.getBlackBoard().get<RenderGraphTexture>("outPut"));
-    struct ImageCopy
+    //ON PASS TWO SUBPASS
+    struct OnePassTwoSubPassDeferedShadingData
     {
-        RenderGraphId<RenderGraphTexture> src;
-        RenderGraphId<RenderGraphTexture> dst;
+        RenderGraphHandle position;
+
+
+        RenderGraphHandle albedo;
+
+        RenderGraphHandle normal;
+
+        RenderGraphHandle depth;
+
+
+        RenderGraphHandle output;
     };
-    // graph.addPass<ImageCopy>("copy", [&](RenderGraph::Builder& builder, ImageCopy& data)
-    //                          {
-    //                              data.src = graph.getBlackBoard().get<RenderGraphTexture>("output");
-    //                              data.dst = graph.import("dst", &renderContext->getCurHwtexture());
-    //                          },
-    //                          [&](ImageCopy& data, const RenderPassContext& context)
-    //                          {
-    //                              auto& commandBuffer = context.commandBuffer;
-    //                              commandBuffer.copyImage(data.src, data.dst);
-    //                              commandBuffer.endRecord();
-    //                          });
+
+    bool useSubpass = false;
+
+    if (useSubpass)
+    {
+        graph.addPass<OnePassTwoSubPassDeferedShadingData>(
+            "gbuffer", [&](RenderGraph::Builder& builder, OnePassTwoSubPassDeferedShadingData& data)
+            {
+                data.albedo = graph.createTexture("color",
+                                                  {
+                                                      .extent = renderContext->getSwapChainExtent(),
+                                                      .useage = TextureUsage::SUBPASS_INPUT |
+                                                      TextureUsage::COLOR_ATTACHMENT
+                                                  });
+
+                data.normal = graph.createTexture("normal",
+                                                  {
+                                                      .extent = renderContext->getSwapChainExtent(),
+                                                      .useage = TextureUsage::SUBPASS_INPUT |
+                                                      TextureUsage::COLOR_ATTACHMENT
+
+                                                  });
+
+                data.depth = graph.createTexture("depth", {
+                                                     .extent = renderContext->getSwapChainExtent(),
+                                                     .useage = TextureUsage::SUBPASS_INPUT |
+                                                     TextureUsage::DEPTH_ATTACHMENT
+
+                                                 });
+
+                data.position = graph.createTexture("position", {
+                                                        .extent = renderContext->getSwapChainExtent(),
+                                                        .useage = TextureUsage::SUBPASS_INPUT |
+                                                        TextureUsage::COLOR_ATTACHMENT
+                                                    });
+
+                data.output = graph.importTexture("output", &renderContext->getCurHwtexture());
+
+
+                graph.getBlackBoard().put("albedo", data.albedo);
+                graph.getBlackBoard().put("normal", data.normal);
+                graph.getBlackBoard().put("depth", data.depth);
+                graph.getBlackBoard().put("position", data.position);
+                graph.getBlackBoard().put("output", data.output);
+
+                builder.declare("Color Pass Target", {
+                                    .color = {
+                                        data.output, data.depth, data.albedo, data.position,
+                                        data.normal
+                                    }
+                                });
+
+                data.output = builder.writeTexture(data.output, TextureUsage::COLOR_ATTACHMENT);
+                data.position = builder.writeTexture(data.position, TextureUsage::COLOR_ATTACHMENT);
+                data.normal = builder.writeTexture(
+                    data.normal, TextureUsage::COLOR_ATTACHMENT);
+                data.albedo = builder.writeTexture(
+                    data.albedo, TextureUsage::COLOR_ATTACHMENT);
+                data.depth = builder.writeTexture(data.depth, TextureUsage::DEPTH_ATTACHMENT);
+
+                data.output = builder.readTexture(data.output, TextureUsage::COLOR_ATTACHMENT);
+                data.position = builder.readTexture(
+                    data.position, TextureUsage::COLOR_ATTACHMENT);
+                data.normal = builder.readTexture(
+                    data.normal, TextureUsage::COLOR_ATTACHMENT);
+                data.albedo = builder.readTexture(
+                    data.albedo, TextureUsage::COLOR_ATTACHMENT);
+                data.depth = builder.readTexture(data.depth, TextureUsage::DEPTH_ATTACHMENT);
+            },
+            [&](OnePassTwoSubPassDeferedShadingData& data, const RenderPassContext& context)
+            {
+                //  context.renderTarget
+                std::vector<SubpassInfo> subpassInfos{};
+                SubpassInfo gBufferSubPassInfo = {
+                    .inputAttachments = {}, .outputAttachments = {2, 3, 4}
+                };
+                SubpassInfo LightingSubPassInfo = {
+                    .inputAttachments = {2, 3, 4}, .outputAttachments = {0}
+                };
+
+
+                renderContext->beginRenderPass(commandBuffer, context.renderTarget,
+                                               {gBufferSubPassInfo, LightingSubPassInfo});
+                renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.gBuffer);
+
+                sponza->bindBuffer(commandBuffer);
+                sponza->IteratePrimitives([&](gltfLoading::Primitive& primitive)
+                    {
+                        VertexInputState vertexInputState{};
+                        vertexInputState.bindings = {Vertex::getBindingDescription()};
+                        vertexInputState.attributes = Vertex::getAttributeDescriptions();
+                        renderContext->getPipelineState().setVertexInputState(vertexInputState);
+                        // renderContext->getPipelineState().setVertexInputState(vertexInputState);
+
+                        const auto allocation = renderContext->allocateBuffer(
+                            sizeof(GlobalUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+
+                        //todo: use camera data here
+                        GlobalUniform uniform{
+                            .model = primitive.matrix, .view = camera->matrices.view,
+                            .proj = camera->matrices.perspective
+                        };
+                        allocation.buffer->uploadData(
+                            &uniform, allocation.size, allocation.offset);
+
+                        renderContext->bindBuffer(
+                            0, *allocation.buffer, allocation.offset, allocation.size, 0,
+                            0);
+                        renderContext->bindMaterial(primitive.material);
+                        renderContext->flushAndDrawIndexed(
+                            commandBuffer, primitive.indexCount, 1, primitive.firstIndex, 0, 0);
+                    }
+                );
+                renderContext->nextSubpass(commandBuffer);
+                renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.lighting);
+
+                struct Poses
+                {
+                    glm::vec3 cameraPos, lightPos;
+                };
+
+                auto buffer = renderContext->allocateBuffer(
+                    sizeof(Poses), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+                const Poses poses{.cameraPos = camera->position, .lightPos = {0.0f, 2.5f, 0.0f}};
+                buffer.buffer->uploadData(&poses, buffer.size, buffer.offset);
+                renderContext->bindBuffer(0, *buffer.buffer, buffer.offset, buffer.size, 3, 0);
+
+                renderContext->bindInput(
+                    0, context.renderTarget.getHwTextures()[2]->getVkImageView(), 0, 0);
+                renderContext->bindInput(
+                    0, context.renderTarget.getHwTextures()[3]->getVkImageView(), 1, 0);
+                renderContext->bindInput(
+                    0, context.renderTarget.getHwTextures()[4]->getVkImageView(), 2, 0);
+
+
+                renderContext->getPipelineState().setRasterizationState({
+                    .cullMode = VK_CULL_MODE_NONE
+                });
+
+                renderContext->flushAndDraw(commandBuffer, 3, 1, 0, 0);
+
+                renderContext->endRenderPass(commandBuffer);
+            });
+    }
+
+
+    //Two RenderPass
+    else
+    {
+        struct GBufferData
+        {
+            RenderGraphHandle position;
+            RenderGraphHandle albedo;
+            RenderGraphHandle normal;
+            RenderGraphHandle depth;
+        };
+        graph.addPass<GBufferData>(
+            "GBufferPass", [&](RenderGraph::Builder& builder, GBufferData& data)
+            {
+                data.albedo = graph.createTexture("albedo",
+                                                  {
+                                                      .extent = renderContext->getSwapChainExtent(),
+                                                      .useage = TextureUsage::SUBPASS_INPUT |
+                                                      TextureUsage::COLOR_ATTACHMENT
+                                                  });
+
+                data.normal = graph.createTexture("normal",
+                                                  {
+                                                      .extent = renderContext->getSwapChainExtent(),
+                                                      .useage = TextureUsage::SUBPASS_INPUT |
+                                                      TextureUsage::COLOR_ATTACHMENT
+
+                                                  });
+
+                data.position = graph.createTexture("position", {
+                                                        .extent = renderContext->getSwapChainExtent(),
+                                                        .useage = TextureUsage::SUBPASS_INPUT |
+                                                        TextureUsage::COLOR_ATTACHMENT
+                                                    });
+
+                data.depth = graph.createTexture("depth", {
+                                                     .extent = renderContext->getSwapChainExtent(),
+                                                     .useage = TextureUsage::SUBPASS_INPUT |
+                                                     TextureUsage::DEPTH_ATTACHMENT
+
+                                                 });
+
+                builder.declare("GBuffer Pass", {.color = {data.depth,data.albedo, data.position, data.normal}});
+
+
+                data.normal = builder.writeTexture(data.normal, TextureUsage::COLOR_ATTACHMENT);
+                data.albedo = builder.writeTexture(data.albedo, TextureUsage::COLOR_ATTACHMENT);
+                data.position = builder.writeTexture(data.position, TextureUsage::COLOR_ATTACHMENT);
+                data.depth = builder.writeTexture(data.depth, TextureUsage::DEPTH_ATTACHMENT);
+                data.depth = builder.readTexture(data.depth, TextureUsage::DEPTH_ATTACHMENT);
+
+
+                graph.getBlackBoard().put("albedo", data.albedo);
+                graph.getBlackBoard().put("normal", data.normal);
+                graph.getBlackBoard().put("position", data.position);
+            },
+            [&](GBufferData& data, const RenderPassContext& context)
+            {
+                renderContext->beginRenderPass(commandBuffer, context.renderTarget, {});
+                renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.gBuffer);
+                sponza->bindBuffer(commandBuffer);
+                sponza->IteratePrimitives([&](gltfLoading::Primitive& primitive)
+                    {
+                        VertexInputState vertexInputState{};
+                        vertexInputState.bindings = {Vertex::getBindingDescription()};
+                        vertexInputState.attributes = Vertex::getAttributeDescriptions();
+                        renderContext->getPipelineState().setVertexInputState(vertexInputState);
+                        // renderContext->getPipelineState().setVertexInputState(vertexInputState);
+
+                        const auto allocation = renderContext->allocateBuffer(
+                            sizeof(GlobalUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+
+                        //todo: use camera data here
+                        GlobalUniform uniform{
+                            .model = primitive.matrix, .view = camera->matrices.view,
+                            .proj = camera->matrices.perspective
+                        };
+                        allocation.buffer->uploadData(
+                            &uniform, allocation.size, allocation.offset);
+
+                        renderContext->bindBuffer(
+                            0, *allocation.buffer, allocation.offset, allocation.size, 0,
+                            0);
+                        renderContext->bindMaterial(primitive.material);
+                        renderContext->flushAndDrawIndexed(
+                            commandBuffer, primitive.indexCount, 1, primitive.firstIndex, 0, 0);
+                    }
+                );
+                renderContext->endRenderPass(commandBuffer);
+            });
+
+        struct LightingData
+        {
+            RenderGraphHandle position;
+            RenderGraphHandle albedo;
+            RenderGraphHandle normal;
+            RenderGraphHandle output;
+        };
+
+        graph.addPass<LightingData>(
+            "LightingPass", [&](RenderGraph::Builder& builder, LightingData& data)
+            {
+                data.position = graph.getBlackBoard()["position"];
+                data.normal = graph.getBlackBoard()["normal"];
+                data.albedo = graph.getBlackBoard()["albedo"];
+                data.output = graph.importTexture("output", &renderContext->getCurHwtexture());
+
+                data.output = builder.writeTexture(data.output, TextureUsage::COLOR_ATTACHMENT);
+                data.output = builder.readTexture(data.output, TextureUsage::COLOR_ATTACHMENT);
+
+                data.normal = builder.readTexture(data.normal, {});
+                data.albedo = builder.readTexture(data.albedo, {});
+                data.position = builder.readTexture(data.position, {});
+
+                builder.declare("Lighting Pass", {.color = {data.output, data.albedo, data.position, data.normal}});
+            },
+            [&](LightingData& data, const RenderPassContext& context)
+            {
+                auto hwTextures = context.renderTarget.getHwTextures();
+                hwTextures[1]->getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY,
+                                                             hwTextures[1]->getVkImageView().getSubResourceRange());
+                hwTextures[2]->getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY,
+                                                             hwTextures[2]->getVkImageView().getSubResourceRange());
+                hwTextures[3]->getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY,
+                                                             hwTextures[3]->getVkImageView().getSubResourceRange());
+                 //  context.renderTarget.getHwTextures()[2]->getVkImage().transitionLayout(commandBuffer,{});
+                 // context.renderTarget.getHwTextures()[3]->getVkImage().transitionLayout(commandBuffer,{});
+
+                SubpassInfo lightingSubpass = {.inputAttachments = {1, 2, 3}, .outputAttachments = {0}};
+                renderContext->beginRenderPass(commandBuffer, context.renderTarget, {lightingSubpass});
+                renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.lighting);
+
+                struct Poses
+                {
+                    glm::vec3 cameraPos, lightPos;
+                };
+
+                auto buffer = renderContext->allocateBuffer(
+                    sizeof(Poses), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+                const Poses poses{.cameraPos = camera->position, .lightPos = {0.0f, 2.5f, 0.0f}};
+                buffer.buffer->uploadData(&poses, buffer.size, buffer.offset);
+                renderContext->bindBuffer(0, *buffer.buffer, buffer.offset, buffer.size, 3, 0);
+
+                renderContext->bindInput(
+                    0, context.renderTarget.getHwTextures()[1]->getVkImageView(), 0, 0);
+                renderContext->bindInput(
+                    0, context.renderTarget.getHwTextures()[2]->getVkImageView(), 1, 0);
+                renderContext->bindInput(
+                    0, context.renderTarget.getHwTextures()[3]->getVkImageView(), 2, 0);
+
+
+                renderContext->getPipelineState().setRasterizationState({
+                    .cullMode = VK_CULL_MODE_NONE
+                });
+                renderContext->flushAndDraw(commandBuffer, 3, 1, 0, 0);
+                renderContext->endRenderPass(commandBuffer);
+            });
+    }
 
 
     graph.execute(commandBuffer);

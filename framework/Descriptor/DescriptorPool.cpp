@@ -1,6 +1,6 @@
 #include "DescriptorPool.h"
 #include "Device.h"
-
+#include "DescriptorLayout.h"
 DescriptorPool::DescriptorPool(Device& device, const DescriptorLayout& layout, uint32_t poolSize): layout(layout),
     device(device), maxPoolSets(poolSize)
 {

@@ -9,10 +9,10 @@ class RenderPass;
 
 struct RenderPassContext
 {
-    RenderPass& renderPass;
-    CommandBuffer& commandBuffer;
+    //RenderPass& renderPass;
+    //CommandBuffer& commandBuffer;
     RenderTarget& renderTarget;
-    VkPipeline pipeline;
+    //VkPipeline pipeline;
 
     // PipelineS
 };

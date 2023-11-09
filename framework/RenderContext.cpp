@@ -111,7 +111,7 @@ CommandBuffer& RenderContext::beginFrame()
     frameActive = true;
 
     frameResources[activeFrameIndex]->reset();
-
+    clearResourceSets();
 
     auto& commandBuffer = *frameResources[activeFrameIndex]->commandBuffer;
     commandBuffer.beginRecord(0);
@@ -358,6 +358,20 @@ void RenderContext::bindInput(uint32_t setId, const ImageView& view, uint32_t bi
     resourceSets[setId].bindInput(view, binding, array_element);
 }
 
+void RenderContext::bindMaterial(const gltfLoading::Material& material)
+{
+    auto& descriptorLayout = pipelineState.getPipelineLayout().getDescriptorLayout(0);
+
+    for (auto& texture : material.textures)
+    {
+        if (descriptorLayout.hasLayoutBinding(texture.first))
+        {
+            auto& binding = descriptorLayout.getLayoutBindingInfo(texture.first);
+            bindImage(0, texture.second->image->getVkImageView(), texture.second->getSampler(), binding.binding, 0);
+        }
+    }
+}
+
 
 // const std::unordered_map<uint32_t, ResourceSet>& RenderContext::getResourceSets() const
 // {
@@ -493,13 +507,28 @@ void RenderContext::draw(CommandBuffer& commandBuffer, gltfLoading::Model& model
     //     draw(*node, commandBuffer, renderFlags, pipelineLayout, bindImageSet);
 }
 
-struct Poses
+void RenderContext::flushAndDrawIndexed(CommandBuffer& commandBuffer, uint32_t indexCount, uint32_t instanceCount,
+                                        uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance)
 {
-    glm::vec3 lightPos, cameraPos;
-};
+    flush(commandBuffer);
+    commandBuffer.drawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+}
+
+void RenderContext::flushAndDraw(CommandBuffer& commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
+                                 uint32_t firstVertex, uint32_t firstInstance)
+{
+    flush(commandBuffer);
+    commandBuffer.draw(vertexCount, instanceCount, firstVertex, firstInstance);
+}
+
 
 void RenderContext::drawLightingPass(CommandBuffer& commandBuffer)
 {
+    struct Poses
+    {
+        glm::vec3 lightPos, cameraPos;
+    };
+
     auto buffer = allocateBuffer(sizeof(Poses), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     Poses poses{.lightPos = {0.0f, 2.5f, 0.0f}, .cameraPos = camera->position};
     buffer.buffer->uploadData(&poses, buffer.size, buffer.offset);
@@ -508,6 +537,94 @@ void RenderContext::drawLightingPass(CommandBuffer& commandBuffer)
     flushPipelineState(commandBuffer);
     flushDescriptorState(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
     commandBuffer.draw(3, 1, 0, 0);
+}
+
+void RenderContext::beginRenderPass(CommandBuffer& commandBuffer, RenderTarget& renderTarget,
+                                    const std::vector<SubpassInfo>& subpassInfos)
+{
+    // auto hwTextures = renderTarget.getHwTextures();
+    //
+    // //转换图像布局
+    // {
+    //     // Image 0 is the swapchain
+    //     ImageMemoryBarrier memoryBarrier{};
+    //     memoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    //     memoryBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    //     memoryBarrier.srcAccessMask = 0;
+    //     memoryBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    //     memoryBarrier.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    //     memoryBarrier.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    //
+    //     ImageMemoryBarrier depthMemoryBarrier{};
+    //     depthMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    //     depthMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    //     depthMemoryBarrier.srcAccessMask = 0;
+    //     depthMemoryBarrier.dstAccessMask =
+    //         VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    //     depthMemoryBarrier.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    //     depthMemoryBarrier.dstStageMask =
+    //         VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    //
+    //
+    //     // commandBuffer.imageMemoryBarrier(hwTextures[0]->getVkImageView(), memoryBarrier);
+    //
+    //     // Skip 1 as it is handled later as a depth-stencil attachment
+    //     for (size_t i = 0; i < renderTarget.getHwTextures().size(); ++i)
+    //     {
+    //         if (isDepthOrStencilFormat(hwTextures[i]->getFormat()))
+    //         {
+    //             commandBuffer.imageMemoryBarrier(hwTextures[i]->getVkImageView(), depthMemoryBarrier);
+    //         }
+    //         else
+    //         {
+    //             if (i > 1)
+    //             {
+    //                 memoryBarrier.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    //                 memoryBarrier.dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+    //             }
+    //             commandBuffer.imageMemoryBarrier(hwTextures[i]->getVkImageView(), memoryBarrier);
+    //         }
+    //     }
+    // }
+    
+    auto& renderPass = device.getResourceCache().requestRenderPass(renderTarget.getAttachments(), subpassInfos);
+    auto& framebuffer = device.getResourceCache().requestFrameBuffer(
+        renderTarget, renderPass);
+    commandBuffer.beginRenderPass(renderPass, framebuffer, renderTarget.getDefaultClearValues(), {});
+
+    ColorBlendState colorBlendState = pipelineState.getColorBlendState();
+    colorBlendState.attachments.resize(renderPass.getColorOutputCount(0));
+    pipelineState.setColorBlendState(colorBlendState);
+
+    pipelineState.setRenderPass(renderPass);
+    pipelineState.setSubpassIndex(0);
+}
+
+void RenderContext::nextSubpass(CommandBuffer& commandBuffer)
+{
+    clearResourceSets();
+
+    uint32_t subpassIdx = pipelineState.getSubpassIndex();
+    pipelineState.setSubpassIndex(subpassIdx + 1);
+
+    ColorBlendState colorBlendState = pipelineState.getColorBlendState();
+    colorBlendState.attachments.resize(pipelineState.getRenderPass()->getColorOutputCount(subpassIdx + 1));
+    pipelineState.setColorBlendState(colorBlendState);
+
+    vkCmdNextSubpass(commandBuffer.getHandle(), {});
+}
+
+void RenderContext::flush(CommandBuffer& commandBuffer)
+{
+    flushPipelineState(commandBuffer);
+    flushDescriptorState(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+}
+
+void RenderContext::endRenderPass(CommandBuffer& commandBuffer)
+{
+    commandBuffer.endPass();
+    resourceSets.clear();
+    pipelineState.reset();
 }
 
 void RenderContext::clearResourceSets()
@@ -519,10 +636,6 @@ void RenderContext::clearResourceSets()
 void RenderContext::draw(CommandBuffer& commandBuffer, gltfLoading::Node& node)
 {
     auto& pipelineLayout = pipelineState.getPipelineLayout();
-
-    auto inputResources = pipelineLayout.getShaderResources(ShaderResourceType::Input, VK_SHADER_STAGE_VERTEX_BIT);
-
-
     //fixme 
     VertexInputState vertexInputState{};
     vertexInputState.bindings = {Vertex::getBindingDescription()};
@@ -568,4 +681,9 @@ BufferAllocation RenderContext::allocateBuffer(VkDeviceSize allocateSize, VkBuff
     auto& frameResource = frameResources[activeFrameIndex];
     // assert(frameResource.bufferPools.contains(usage), "Buffer usage not contained");
     return frameResource->bufferPools.at(usage)->AllocateBufferBlock(allocateSize);
+}
+
+CommandBuffer& RenderContext::getCommandBuffer()
+{
+    return commandBuffers[activeFrameIndex];
 }

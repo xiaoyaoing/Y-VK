@@ -22,7 +22,6 @@ public:
     inline GLFWwindow *getHandle()
     {
         return handle;
-        ;
     }
 
     VkSurfaceKHR createSurface(Instance &instance);

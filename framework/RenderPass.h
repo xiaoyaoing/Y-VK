@@ -27,9 +27,16 @@ struct SubpassInfo
 class RenderPass
 {
 public:
+    RenderPass(RenderPass&& other);
+
     VkRenderPass getHandle() const
     {
         return _pass;
+    }
+
+    void setHandle(VkRenderPass pass)
+    {
+        _pass = pass;
     }
 
     //    RenderPass(const ptr<Device>& device,
@@ -55,6 +62,7 @@ public:
     ~RenderPass();
 
 protected:
+    int temp = 231;
     VkRenderPass _pass;
     Device& device;
     std::vector<uint32_t> colorOutputCount;

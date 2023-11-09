@@ -65,10 +65,12 @@ namespace sg {
         uint64_t getBufferSize() const;
 
         VkExtent3D getExtent() const;
+        
+        VkExtent2D getExtent2D() const;
 
-        Image &getVkImage();
+        Image &getVkImage() const ;
 
-        ImageView &getVkImageView();
+        ImageView &getVkImageView() const ;
 
         VkFormat getFormat() const;
 

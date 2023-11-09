@@ -41,6 +41,6 @@ private:
     std::vector<VkDescriptorSetLayoutBinding> bindings;
     std::unordered_map<std::string, uint32_t> resourceLookUp;
     std::unordered_map<uint32_t, uint32_t> bindingLookUp;
-    
+
     Device& _deivce;
 };

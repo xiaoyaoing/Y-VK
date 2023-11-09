@@ -52,39 +52,38 @@ layout(location = 0) out vec4 o_color;
 
 void main()
 {
-	//Retrieve position from depth
-	// vec4  clip         = vec4(in_uv * 2.0 - 1.0, subpassLoad(i_depth).x, 1.0);
-	// highp vec4 world_w = global_uniform.inv_view_proj * clip;
-	// highp vec3 pos     = world_w.xyz / world_w.w;
-	vec4 albedo = subpassLoad(i_albedo);
+    //Retrieve position from depth
+    // vec4  clip         = vec4(in_uv * 2.0 - 1.0, subpassLoad(i_depth).x, 1.0);
+    // highp vec4 world_w = global_uniform.inv_view_proj * clip;
+    // highp vec3 pos     = world_w.xyz / world_w.w;
+    vec4 albedo = subpassLoad(i_albedo);
     vec4 pos = subpassLoad(i_position);
-	// Transform from [0,1] to [-1,1]
-	vec3 normal = subpassLoad(i_normal).xyz;
-	normal      = normalize(2.0 * normal - 1.0);
-	// Calculate lighting
-	// for (uint i = 0U; i < DIRECTIONAL_LIGHT_COUNT; ++i)
-	// {
-	// 	L += apply_directional_light(lights_info.directional_lights[i], normal);
-	// }
-	// for (uint i = 0U; i < POINT_LIGHT_COUNT; ++i)
-	// {
-	// 	L += apply_point_light(lights_info.point_lights[i], pos, normal);
-	// }
-	// for (uint i = 0U; i < SPOT_LIGHT_COUNT; ++i)
-	// {
-	// 	L += apply_spot_light(lights_info.spot_lights[i], pos, normal);
-	// }
+    // Transform from [0,1] to [-1,1]
+    vec3 normal = subpassLoad(i_normal).xyz;
+    normal      = normalize(2.0 * normal - 1.0);
+    // Calculate lighting
+    // for (uint i = 0U; i < DIRECTIONAL_LIGHT_COUNT; ++i)
+    // {
+    // 	L += apply_directional_light(lights_info.directional_lights[i], normal);
+    // }
+    // for (uint i = 0U; i < POINT_LIGHT_COUNT; ++i)
+    // {
+    // 	L += apply_point_light(lights_info.point_lights[i], pos, normal);
+    // }
+    // for (uint i = 0U; i < SPOT_LIGHT_COUNT; ++i)
+    // {
+    // 	L += apply_spot_light(lights_info.spot_lights[i], pos, normal);
+    // }
 
-	vec3 ambient_color = vec3(0.2) * albedo.xyz;
+    vec3 ambient_color = vec3(0.2) * albedo.xyz;
 
 
     vec3 L = normalize(poses.lightPos-pos.xyz);
     vec3 V = normalize(poses.viewPos-pos.xyz);
     vec3 H = normalize(L+V);
 
-    vec3 diffuse = max(dot(normal,L),0.1f).rrr; 
-    float specular = pow(max(dot(H,normal),0.f),32);
+    vec3 diffuse = max(dot(normal, L), 0.1f).rrr;
+    float specular = pow(max(dot(H, normal), 0.f), 32);
 
-    o_color = vec4(albedo.xyz * diffuse + specular,albedo.a);
-	//
+    o_color = vec4(albedo.xyz * diffuse + specular, albedo.a);
 }

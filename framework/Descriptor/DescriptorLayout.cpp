@@ -77,8 +77,7 @@ DescriptorLayout::DescriptorLayout(Device& device, std::vector<Shader>& shaders)
             bindingFlags.emplace_back(0);
             layoutBindings.emplace_back(bindingInfo);
             resourceLookUp.emplace(resource.name, resource.binding);
-            bindingLookUp.emplace(bindingInfo.binding,layoutBindings.size()-1);
-
+            bindingLookUp.emplace(bindingInfo.binding, layoutBindings.size() - 1);
         }
     }
 
@@ -106,7 +105,7 @@ void DescriptorLayout::addBinding(VkShaderStageFlags stageFlags,
     bindingInfo.pImmutableSamplers = nullptr;
 
     _descBindingInfos.emplace_back(std::move(bindingInfo), bindingFlags);
-    bindingLookUp.emplace(bindingPoint,_descBindingInfos.size()-1);
+    bindingLookUp.emplace(bindingPoint, _descBindingInfos.size() - 1);
 }
 
 void DescriptorLayout::createLayout(VkDescriptorSetLayoutCreateFlags flags)

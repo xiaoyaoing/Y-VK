@@ -91,12 +91,16 @@ namespace sg
         return extent3D;
     }
 
-    Image& SgImage::getVkImage()
+    VkExtent2D SgImage::getExtent2D() const
+    {
+        return {extent3D.width,extent3D.height};
+    }
+    Image &SgImage::getVkImage() const 
     {
         return *vkImage;
     }
 
-    ImageView& SgImage::getVkImageView()
+    ImageView& SgImage::getVkImageView() const 
     {
         return *vkImageView;
     }

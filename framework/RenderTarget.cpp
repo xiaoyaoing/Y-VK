@@ -26,7 +26,7 @@ void RenderTarget::setOutAttachment(const std::vector<uint32_t>& outAttachment)
     RenderTarget::outAttachment = outAttachment;
 }
 
-RenderTarget::RenderTarget(const std::vector<sg::SgImage*> hwTextures) : hwTextures(hwTextures)
+RenderTarget::RenderTarget(const std::vector<sg::SgImage*> hwTextures) : mHwTextures(hwTextures)
 {
     _extent = VkExtent2D{hwTextures.back()->getExtent().width, hwTextures.back()->getExtent().height};
 
@@ -35,9 +35,14 @@ RenderTarget::RenderTarget(const std::vector<sg::SgImage*> hwTextures) : hwTextu
         // ImageView view(image, VK_IMAGE_VIEW_TYPE_2D);
         // _views.emplace_back(image, VK_IMAGE_VIEW_TYPE_2D);
         //todo handle
-        _attachments.emplace_back(hwTexture->getFormat(), hwTexture->getVkImage().getSampleCount(),
+        mAttachments.emplace_back(hwTexture->getFormat(), hwTexture->getVkImage().getSampleCount(),
                                   hwTexture->getVkImage().getUseFlags());
     }
+}
+
+RenderTarget::RenderTarget(const std::vector<sg::SgImage*>& hwTextures, const std::vector<Attachment>& attachments):
+    mHwTextures(hwTextures), mAttachments(attachments), _extent(hwTextures.back()->getExtent2D())
+{
 }
 
 RenderTarget::RenderTarget(std::vector<Image>&& images) : _images(std::move(images))
@@ -47,7 +52,7 @@ RenderTarget::RenderTarget(std::vector<Image>&& images) : _images(std::move(imag
     {
         ImageView view(image, VK_IMAGE_VIEW_TYPE_2D);
         _views.emplace_back(image, VK_IMAGE_VIEW_TYPE_2D);
-        _attachments.emplace_back(image.getFormat(), image.getSampleCount(), image.getUseFlags());
+        mAttachments.emplace_back(image.getFormat(), image.getSampleCount(), image.getUseFlags());
     }
 }
 
@@ -74,47 +79,48 @@ VkExtent2D RenderTarget::getExtent() const
     return _extent;
 }
 
-RenderTarget::CreateFunc RenderTarget::defaultRenderTargetCreateFunction = [](
-    Image&& swapChainImage) -> std::unique_ptr<RenderTarget>
-{
-    VkFormat depthFormat = VK_FORMAT_D32_SFLOAT;
-    Image depthImage(swapChainImage.getDevice(), swapChainImage.getExtent(), depthFormat,
-                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT,
-                     VMA_MEMORY_USAGE_GPU_ONLY);
-    std::vector<Image> images;
-    images.push_back(std::move(swapChainImage));
-    images.push_back(std::move(depthImage));
-    return std::make_unique<RenderTarget>(std::move(images));
-};
+// RenderTarget::CreateFunc RenderTarget::defaultRenderTargetCreateFunction = [](
+//     Image&& swapChainImage) -> std::unique_ptr<RenderTarget>
+// {
+//     VkFormat depthFormat = VK_FORMAT_D32_SFLOAT;
+//     Image depthImage(swapChainImage.getDevice(), swapChainImage.getExtent(), depthFormat,
+//                      VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT,
+//                      VMA_MEMORY_USAGE_GPU_ONLY);
+//     std::vector<Image> images;
+//     images.push_back(std::move(swapChainImage));
+//     images.push_back(std::move(depthImage));
+//     return std::make_unique<RenderTarget>(std::move(images));
+// };
 
 const std::vector<Attachment>& RenderTarget::getAttachments() const
 {
-    return _attachments;
+    return mAttachments;
 }
 
 void RenderTarget::setAttachments(const std::vector<Attachment>& attachments)
 {
-    _attachments = attachments;
+    mAttachments = attachments;
 }
 
 const std::vector<sg::SgImage*>& RenderTarget::getHwTextures() const
 {
-    return hwTextures;
+    return mHwTextures;
 }
 
-Attachment::Attachment(VkFormat format, VkSampleCountFlagBits samples, VkImageUsageFlags usage) :
-    format{format},
-    samples{samples},
-    usage{usage}
-{
-}
+//
+// Attachment::Attachment(VkFormat format, VkSampleCountFlagBits samples, VkImageUsageFlags usage) :
+//     format{format},
+//     samples{samples},
+//     usage{usage}
+// {
+// }
 
 std::vector<VkClearValue> RenderTarget::getDefaultClearValues() const
 {
     std::vector<VkClearValue> clearValues;
-    for (int i = 0; i < hwTextures.size(); i++)
+    for (int i = 0; i < mHwTextures.size(); i++)
     {
-        if (isDepthOrStencilFormat(hwTextures[i]->getFormat()))
+        if (isDepthOrStencilFormat(mHwTextures[i]->getFormat()))
             clearValues.emplace_back(VkClearValue{.depthStencil = {1.f}});
         else
             clearValues.emplace_back(VkClearValue{.color = {0.f, 0.f, 0.f, 0.f}});

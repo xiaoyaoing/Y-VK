@@ -58,14 +58,17 @@ struct alignas(16) GlobalUniform
 class RenderContext
 {
 public:
+    // Resource Functions Begin
+
     void bindBuffer(uint32_t setId, const Buffer& buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t binding,
                     uint32_t array_element);
 
-    void
-    bindImage(uint32_t setId, const ImageView& view, const Sampler& sampler, uint32_t binding, uint32_t array_element);
+    void bindImage(uint32_t setId, const ImageView& view, const Sampler& sampler, uint32_t binding,
+                   uint32_t array_element);
 
-    void
-    bindInput(uint32_t setId, const ImageView& view, uint32_t binding, uint32_t array_element);
+    void bindInput(uint32_t setId, const ImageView& view, uint32_t binding, uint32_t array_element);
+
+    void bindMaterial(const gltfLoading::Material& material);
 
     void clearResourceSets();
 
@@ -74,6 +77,8 @@ public:
     void bindPipelineLayout(PipelineLayout& layout);
 
     const std::unordered_map<uint32_t, ResourceSet>& getResourceSets() const;
+
+    // Resource Functions End
 
 
     RenderContext(Device& device, VkSurfaceKHR surface, Window& window);
@@ -93,10 +98,6 @@ public:
     CommandBuffer& beginFrame();
 
     void waitFrame();
-
-    //  RenderFrame &getActiveRenderFrame();
-
-    //  RenderFrame &getRenderFrame(int idx);
 
     uint32_t getActiveFrameIndex() const;
 
@@ -130,9 +131,26 @@ public:
 
     void draw(CommandBuffer& commandBuffer, gltfLoading::Node& node);
 
+    void flushAndDrawIndexed(CommandBuffer& commandBuffer, uint32_t indexCount, uint32_t instanceCount,
+                             uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance);
+
+    void flushAndDraw(CommandBuffer& commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
+                      uint32_t firstInstance);
+
     void drawLightingPass(CommandBuffer& commandBuffer);
 
+    void beginRenderPass(CommandBuffer& commandBuffer, RenderTarget& renderTarget,
+                         const std::vector<SubpassInfo>& subpassInfos);
+
+    void nextSubpass(CommandBuffer& commandBuffer);
+
+    void flush(CommandBuffer& commandBuffer);
+
+    void endRenderPass(CommandBuffer& commandBuffer);
+
     BufferAllocation allocateBuffer(VkDeviceSize allocateSize, VkBufferUsageFlags usage);
+
+    CommandBuffer& getCommandBuffer();
 
     const Camera* camera;
 

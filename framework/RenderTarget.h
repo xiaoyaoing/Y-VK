@@ -17,23 +17,23 @@ struct Attachment
 
     VkImageLayout initial_layout{VK_IMAGE_LAYOUT_UNDEFINED};
 
-    VkAttachmentLoadOp loadOp{VK_ATTACHMENT_LOAD_OP_CLEAR};
+    VkAttachmentLoadOp loadOp{VK_ATTACHMENT_LOAD_OP_LOAD};
 
     VkAttachmentStoreOp storeOp{VK_ATTACHMENT_STORE_OP_STORE};
 
-    Attachment(VkFormat format, VkSampleCountFlagBits samples, VkImageUsageFlags usage);
-
-
-    Attachment() = default;
-
-    Attachment(VkFormat format, VkSampleCountFlagBits samples, VkImageUsageFlags usage, VkAttachmentLoadOp loadOp,
-               VkAttachmentStoreOp storeOp) : format(format),
-                                              samples(samples),
-                                              usage(usage),
-                                              loadOp(loadOp),
-                                              storeOp(storeOp)
-    {
-    }
+    // Attachment(VkFormat format, VkSampleCountFlagBits samples, VkImageUsageFlags usage);
+    //
+    //
+    // Attachment() = default;
+    //
+    // Attachment(VkFormat format, VkSampleCountFlagBits samples, VkImageUsageFlags usage, VkAttachmentLoadOp loadOp,
+    //            VkAttachmentStoreOp storeOp) : format(format),
+    //                                           samples(samples),
+    //                                           usage(usage),
+    //                                           loadOp(loadOp),
+    //                                           storeOp(storeOp)
+    // {
+    // }
 };
 
 struct FrameBufferAttchment
@@ -68,11 +68,11 @@ class RenderTarget
 {
     //   std::vector<ImageView *> views;
 
-    std::vector<sg::SgImage*> hwTextures;
+    std::vector<sg::SgImage*> mHwTextures;
 
     std::vector<Image> _images;
     std::vector<ImageView> _views;
-    std::vector<Attachment> _attachments;
+    std::vector<Attachment> mAttachments;
     std::vector<uint32_t> inAttachment = {};
     std::vector<uint32_t> outAttachment = {0};
     VkExtent2D _extent;
@@ -81,11 +81,13 @@ class RenderTarget
 
 public:
     RenderTarget(const std::vector<sg::SgImage*> hwTextures);
+    
+    RenderTarget( const std::vector<sg::SgImage*> & hwTextures,const  std::vector<Attachment> & attachments);
 
 
-    using CreateFunc = std::function<std::unique_ptr<RenderTarget>(Image&&)>;
+    // using CreateFunc = std::function<std::unique_ptr<RenderTarget>(Image&&)>;
 
-    static CreateFunc defaultRenderTargetCreateFunction;
+    // static CreateFunc defaultRenderTargetCreateFunction;
 
     //    explicit RenderTarget(const std::vector<VulkanAttachment> &attachments)
     //            : attachments(attachments) {

@@ -1,5 +1,6 @@
 #include "Image.h"
 #include "Device.h"
+#include "ImageUtil.h"
 //
 //Image::Image(VmaAllocator allocator, VmaMemoryUsage memoryUsage, const VkImageCreateInfo &createInfo) {
 //    _allocator = allocator;
@@ -71,8 +72,6 @@ Image::Image(Device& device, const VkExtent3D& extent, VkFormat format, VkImageU
     assert(mip_levels > 0 && "Image should have at least one level");
     assert(array_layers > 0 && "Image should have at least one layer");
 
-    subresource.mipLevel = mip_levels;
-    subresource.arrayLayer = array_layers;
 
     VkImageCreateInfo image_info{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
     image_info.flags = flags;
@@ -146,4 +145,33 @@ Device& Image::getDevice()
 uint32_t Image::getArrayLayerCount() const
 {
     return array_layer_count;
+}
+
+void Image::transitionLayout(CommandBuffer& commandBuffer, VulkanLayout newLayout,
+                             VkImageSubresourceRange subresourceRange)
+{
+    auto oldLayout = getLayout(subresourceRange);
+
+    auto [srcAccessMask, dstAccessMask, srcStage, dstStage, vkOldLayout, vkNewLayout]
+        = ImageUtil::getVkTransition(oldLayout, newLayout);
+
+
+    VkImageMemoryBarrier barrier = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+        .srcAccessMask = srcAccessMask,
+        .dstAccessMask = dstAccessMask,
+        .oldLayout = vkOldLayout,
+        .newLayout = vkNewLayout,
+        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .image = image,
+        .subresourceRange = subresourceRange
+    };
+    vkCmdPipelineBarrier(commandBuffer.getHandle(), srcStage, dstStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+}
+
+VulkanLayout Image::getLayout(const VkImageSubresourceRange& subresourceRange)
+{
+    uint32_t layoutKey = subresourceRange.baseArrayLayer << 16 | subresourceRange.baseMipLevel;
+    return layouts.contains(layoutKey) ? layouts[layoutKey] : VulkanLayout::UNDEFINED;
 }

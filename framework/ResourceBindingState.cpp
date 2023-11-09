@@ -17,7 +17,7 @@ void ResourceSet::bindBuffer(const Buffer& buffer, VkDeviceSize offset, VkDevice
 
 void ResourceSet::bindImage(const ImageView& view, const Sampler& sampler, uint32_t binding, uint32_t array_element)
 {
-    if(resourceBindings.contains(binding))
+    if (resourceBindings.contains(binding))
     {
         int k = 1;
     }
