@@ -187,7 +187,8 @@ RenderPass::~RenderPass()
     vkDestroyRenderPass(device.getHandle(), _pass, nullptr);
 }
 
-RenderPass::RenderPass( RenderPass&& other):_pass(other._pass), device(other.device),colorOutputCount(other.colorOutputCount)
+RenderPass::RenderPass(RenderPass&& other): _pass(other._pass), device(other.device),
+                                            colorOutputCount(other.colorOutputCount)
 {
     other._pass = VK_NULL_HANDLE;
 }
@@ -204,16 +205,9 @@ RenderPass::RenderPass(Device& device, const std::vector<Attachment>& attachment
         attachmentDescription.format = attachments[i].format;
         attachmentDescription.samples = attachments[i].samples;
         attachmentDescription.initialLayout = attachments[i].initial_layout;
-        attachmentDescription.finalLayout = isDepthOrStencilFormat(attachments[i].format)
-                                                ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-                                                : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        //
-        // if (i < load_store_infos.size()) {
-        //     attachmentDescription.loadOp = load_store_infos[i].load_op;
-        //     attachmentDescription.storeOp = load_store_infos[i].store_op;
-        //     attachmentDescription.stencilLoadOp = load_store_infos[i].load_op;
-        //     attachmentDescription.stencilStoreOp = load_store_infos[i].store_op;
-        // }
+        //todo fix this 
+        attachmentDescription.finalLayout = attachments[i].initial_layout;
+
         attachmentDescription.loadOp = attachments[i].loadOp;
         attachmentDescription.storeOp = attachments[i].storeOp;
         attachmentDescription.loadOp = attachments[i].loadOp;
@@ -280,7 +274,7 @@ RenderPass::RenderPass(Device& device, const std::vector<Attachment>& attachment
                 auto defaultLayout = isDepthOrStencilFormat(attachmentDescriptions[inputAttachment].format)
                                          ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
                                          : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                                        // : VK_IMAGE_LAYOUT_GENERAL;
+                // : VK_IMAGE_LAYOUT_GENERAL;
                 auto initialLayout =
                     attachments[inputAttachment].initial_layout == VK_IMAGE_LAYOUT_UNDEFINED
                         ? defaultLayout
@@ -391,7 +385,7 @@ RenderPass::RenderPass(Device& device, const std::vector<Attachment>& attachment
     renderPassInfo.pSubpasses = subpassDescriptions.data();
     renderPassInfo.dependencyCount = subpassDependencies.size();
     renderPassInfo.pDependencies = subpassDependencies.data();
-  //  auto result = vkCreateRenderPass(device.getHandle(), &renderPassInfo, nullptr, &_pass);
+    //  auto result = vkCreateRenderPass(device.getHandle(), &renderPassInfo, nullptr, &_pass);
 
     VK_CHECK_RESULT(vkCreateRenderPass(device.getHandle(), &renderPassInfo, nullptr, &_pass))
 
@@ -421,7 +415,7 @@ RenderPass::RenderPass(Device& device, const std::vector<Attachment>& attachment
 
     VkRenderPassCreateInfo render_pass_create_info = {};
     render_pass_create_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    render_pass_create_info.attachmentCount =atts.size();
+    render_pass_create_info.attachmentCount = atts.size();
     render_pass_create_info.pAttachments = atts.data();
     render_pass_create_info.subpassCount = 1;
     render_pass_create_info.pSubpasses = &subpass;

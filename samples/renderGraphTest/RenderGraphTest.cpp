@@ -225,7 +225,7 @@ void Example::drawFrame()
 
                                                  });
 
-                builder.declare("GBuffer Pass", {.color = {data.depth,data.albedo, data.position, data.normal}});
+                builder.declare("GBuffer Pass", {.color = {data.depth, data.albedo, data.position, data.normal}});
 
 
                 data.normal = builder.writeTexture(data.normal, TextureUsage::COLOR_ATTACHMENT);
@@ -302,14 +302,14 @@ void Example::drawFrame()
             [&](LightingData& data, const RenderPassContext& context)
             {
                 auto hwTextures = context.renderTarget.getHwTextures();
-                hwTextures[1]->getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY,
-                                                             hwTextures[1]->getVkImageView().getSubResourceRange());
-                hwTextures[2]->getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY,
-                                                             hwTextures[2]->getVkImageView().getSubResourceRange());
-                hwTextures[3]->getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY,
-                                                             hwTextures[3]->getVkImageView().getSubResourceRange());
-                 //  context.renderTarget.getHwTextures()[2]->getVkImage().transitionLayout(commandBuffer,{});
-                 // context.renderTarget.getHwTextures()[3]->getVkImage().transitionLayout(commandBuffer,{});
+                // hwTextures[1]->getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY,
+                //                                              hwTextures[1]->getVkImageView().getSubResourceRange());
+                // hwTextures[2]->getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY,
+                //                                              hwTextures[2]->getVkImageView().getSubResourceRange());
+                // hwTextures[3]->getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY,
+                //                                              hwTextures[3]->getVkImageView().getSubResourceRange());
+                //  context.renderTarget.getHwTextures()[2]->getVkImage().transitionLayout(commandBuffer,{});
+                // context.renderTarget.getHwTextures()[3]->getVkImage().transitionLayout(commandBuffer,{});
 
                 SubpassInfo lightingSubpass = {.inputAttachments = {1, 2, 3}, .outputAttachments = {0}};
                 renderContext->beginRenderPass(commandBuffer, context.renderTarget, {lightingSubpass});

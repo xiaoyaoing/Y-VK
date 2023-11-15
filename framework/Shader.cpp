@@ -1,10 +1,12 @@
 #include "Shader.h"
 #include <Device.h>
+#include <filesystem>
 
 #include <fstream>
 #include <FIleUtils.h>
 #include <GlslCompiler.h>
 
+#include "spdlog/fmt/bundled/os.h"
 #include "Utils/SpirvShaderReflection.h"
 
 VkShaderStageFlagBits getShaderStage(const std::string& ext)
@@ -66,6 +68,7 @@ VkShaderStageFlagBits getShaderStage(const std::string& ext)
         return VK_SHADER_STAGE_TASK_BIT_EXT;
     }
 
+
     throw std::runtime_error("File extension `" + ext + "` does not have a vulkan shader stage.");
 }
 
@@ -102,16 +105,40 @@ bool Shader::initFromOriginShader()
     return false;
 }
 
-Shader::Shader(Device& device, const std::string& path, SHADER_LOAD_MODE mode) : device(device)
+Shader::Shader(Device& device, std::string path) : device(device)
 {
-    mode = getShaderMode(FileUtils::getFileExt(path));
+    auto mode = getShaderMode(FileUtils::getFileExt(path));
     std::vector<uint32_t> spirvCode;
+
+    if (path.ends_with(".spv"))
+    {
+        mode = SPV;
+    }
+    else
+    {
+        auto spvPath = path + ".spv";
+        if (std::filesystem::exists(spvPath))
+        {
+            auto spvUpdateTime = std::filesystem::last_write_time(spvPath);
+            auto shaderUpdateTime = std::filesystem::last_write_time(path);
+            if (spvUpdateTime > shaderUpdateTime)
+            {
+                mode = SPV;
+                path = spvPath;
+                LOGI("Cached shader found: {},last update time ", path)
+            }
+        }
+    }
+
     if (mode == SHADER_LOAD_MODE::SPV)
     {
+        stage = getShaderStage(FileUtils::getFileExt(path.substr(0, path.find_last_of("."))));
+
+
         std::ifstream file(path, std::ios::ate | std::ios::binary);
         if (!file.is_open())
         {
-            throw std::runtime_error("failed to open file!");
+            LOGE("Failed  to open file", path.c_str());
         }
         size_t fileSize = (size_t)file.tellg();
         std::vector<char> buffer(fileSize);
@@ -119,17 +146,8 @@ Shader::Shader(Device& device, const std::string& path, SHADER_LOAD_MODE mode) :
         file.read(buffer.data(), fileSize);
         file.close();
 
-        spirvCode.resize(buffer.size());
-        std::transform(buffer.begin(), buffer.end(), spirvCode.begin(),
-                       [](char c) { return static_cast<uint32_t>(c); });
-
-
-        VkShaderModuleCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-        createInfo.codeSize = buffer.size();
-        createInfo.pCode = reinterpret_cast<const uint32_t*>(buffer.data());
-        createInfo.pNext = nullptr;
-        VK_CHECK_RESULT(vkCreateShaderModule(device.getHandle(), &createInfo, nullptr, &shader));
+        spirvCode.assign(reinterpret_cast<const uint32_t*>(buffer.data()),
+                         reinterpret_cast<const uint32_t*>(buffer.data() + buffer.size()));
     }
     else
     {
@@ -139,9 +157,16 @@ Shader::Shader(Device& device, const std::string& path, SHADER_LOAD_MODE mode) :
         if (!GlslCompiler::compileToSpirv(stage, shaderBuffer, "main", spirvCode,
                                           shaderLog))
         {
-            LOGE("Failed to compile shader {}, Error: {}", path, shaderLog.c_str());
-            exit(-1);
+            LOGE("Failed to compile shader {}, Error: {}", path, shaderLog.c_str())
         }
+        else
+        {
+            LOGI("Shader compiled from source code succrssfully", path.c_str());
+        }
+
+        std::ofstream file(path + ".spv", std::ios::binary);
+        file.write(reinterpret_cast<const char*>(spirvCode.data()), spirvCode.size() * sizeof(uint32_t));
+        file.close();
     }
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -153,10 +178,10 @@ Shader::Shader(Device& device, const std::string& path, SHADER_LOAD_MODE mode) :
     std::hash<std::string> hasher{};
     id = hasher(std::string(reinterpret_cast<const char*>(spirvCode.data()),
                             reinterpret_cast<const char*>(spirvCode.data() + spirvCode.size())));
-    //reflect shader resources
-  //  LOGE("Reflected");
-    SpirvShaderReflection::reflectShaderResources(spirvCode,stage,resources);
-   // assert(SpirvShaderReflection::reflectShaderResources(spirvCode,stage,resources));
+    if (!SpirvShaderReflection::reflectShaderResources(spirvCode, stage, resources))
+    {
+        LOGE("Failed to reflect shader resources,Shader path: {}", path.c_str())
+    }
 }
 
 Shader::~Shader()

@@ -10,7 +10,7 @@
 #include "Images/ImageUtil.h"
 
 
-void RenderPassNode::RenderPassData::devirtualize(RenderGraph& renderGraph,const RenderPassNode & node)
+void RenderPassNode::RenderPassData::devirtualize(RenderGraph& renderGraph, const RenderPassNode& node)
 {
     std::vector<sg::SgImage*> images;
     std::vector<Attachment> attachments;
@@ -19,19 +19,22 @@ void RenderPassNode::RenderPassData::devirtualize(RenderGraph& renderGraph,const
         auto texture = renderGraph.getResource(color);
         auto hwTexture = texture->getHwTexture();
 
-        auto undefined =texture->first == &node && !texture->imported;
+        auto undefined = texture->first == &node && !texture->imported;
         auto write = renderGraph.isWrite(color, &node);
-        Attachment attachment = Attachment{.format = hwTexture->getFormat(),
-                                           .samples = hwTexture->getVkImage().getSampleCount(),
-                                           .usage = hwTexture->getVkImage().getUseFlags(),
-                                           .initial_layout = VK_IMAGE_LAYOUT_UNDEFINED,
-                                           .loadOp = (undefined | write)?VK_ATTACHMENT_LOAD_OP_CLEAR:VK_ATTACHMENT_LOAD_OP_LOAD,
-                                           .storeOp = VK_ATTACHMENT_STORE_OP_STORE};
-        
+        auto attachment = Attachment{
+            .format = hwTexture->getFormat(),
+            .samples = hwTexture->getVkImage().getSampleCount(),
+            .usage = hwTexture->getVkImage().getUseFlags(),
+            .initial_layout = ImageUtil::getVkImageLayout(
+                hwTexture->getVkImage().getLayout(hwTexture->getVkImageView().getSubResourceRange())),
+            .loadOp = (undefined | write) ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD,
+            .storeOp = VK_ATTACHMENT_STORE_OP_STORE
+        };
+
         images.push_back(hwTexture);
         attachments.push_back(attachment);
     }
-    renderTarget = std::make_unique<RenderTarget>(images,attachments);
+    renderTarget = std::make_unique<RenderTarget>(images, attachments);
 }
 
 RenderTarget& RenderPassNode::RenderPassData::getRenderTarget()
@@ -203,13 +206,12 @@ VkPipeline getPipeline(Device& device, RenderPass& renderPass)
 
 void RenderPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer)
 {
-    renderTargetData.devirtualize(renderGraph,*this);
+    renderTargetData.devirtualize(renderGraph, *this);
     // resolveTextureUsages(renderGraph, commandBuffer);
 
     auto& renderTarget = renderTargetData.getRenderTarget();
 
-    
-    
+
     auto hwTextures = renderTarget.getHwTextures();
 
     // //  for (auto &hwTexture: renderTarget.getHwTextures()) {
@@ -395,23 +397,28 @@ void RenderPassNode::declareRenderPass(const char* name, const RenderGraphPassDe
     renderTargetData.desc = descriptor;
 }
 
-void PassNode::addTextureUsage(RenderGraphHandle id, RenderGraphTexture::Usage usage)
-{
-    if (textureUsages.contains(id))
-        textureUsages[id] = textureUsages[id] | usage;
-    textureUsages[id] = usage;
-}
+// void PassNode::addTextureUsage(RenderGraphHandle id, RenderGraphTexture::Usage usage)
+// {
+//     
+// }
 
 void PassNode::resolveTextureUsages(RenderGraph& renderGraph, CommandBuffer& commandBuffer)
 {
-    // for (auto& textureIt : textureUsages)
-    // {
-    //     const auto* pResource = static_cast<const Resource<RenderGraphTexture>*>(renderGraph.
-    //         getResource(textureIt.first));
-    //     auto newLayout = ImageUtil::getDefaultLayout(textureIt.second);
-    //     auto subsubsource = pResource->getHandle().getHwTexture()->getVkImageView().getSubResourceRange();
-    //     pResource->getHandle().getHwTexture()->getVkImage().transitionLayout(commandBuffer, newLayout, subsubsource);
-    // }
+    for (auto& textureIt : textureUsages)
+    {
+        const auto* pResource = textureIt.first;
+        const auto newLayout = ImageUtil::getDefaultLayout(textureIt.second);
+        const auto subsubsource = pResource->getHwTexture()->getVkImageView().getSubResourceRange();
+        pResource->getHwTexture()->getVkImage().transitionLayout(commandBuffer, newLayout, subsubsource);
+    }
+}
+
+void PassNode::addTextureUsage(const RenderGraphTexture* texture, RenderGraphTexture::Usage usage)
+{
+    if (textureUsages.contains(texture))
+        textureUsages[texture] = textureUsages[texture] | usage;
+    else
+        textureUsages[texture] = usage;
 }
 
 void PresentPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer)

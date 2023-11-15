@@ -190,6 +190,5 @@ bool SpirvShaderReflection::reflectShaderResources(const std::vector<uint32_t> s
     readShaderResourceUniformBuffer(compiler, stage, shaderResources);
     readShaderResourceImageSampler(compiler, stage, shaderResources);
     readShaderResourceInputAttachment(compiler, stage, shaderResources);
-    LOGI("Reflected");
     return true;
 }

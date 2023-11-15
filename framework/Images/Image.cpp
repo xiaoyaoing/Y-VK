@@ -168,6 +168,12 @@ void Image::transitionLayout(CommandBuffer& commandBuffer, VulkanLayout newLayou
         .subresourceRange = subresourceRange
     };
     vkCmdPipelineBarrier(commandBuffer.getHandle(), srcStage, dstStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+    if (vkNewLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+    {
+        int k = 1;
+    }
+    layouts.insert_or_assign(subresourceRange.baseArrayLayer << 16 | subresourceRange.baseMipLevel, newLayout);
 }
 
 VulkanLayout Image::getLayout(const VkImageSubresourceRange& subresourceRange)

@@ -172,17 +172,21 @@ uint32_t RenderContext::getActiveFrameIndex() const
 
 void RenderContext::submit(CommandBuffer& buffer, VkFence fence)
 {
-    ImageMemoryBarrier memory_barrier{};
-    memory_barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    memory_barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    memory_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    memory_barrier.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    memory_barrier.dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-    buffer.imageMemoryBarrier(
-        getCurHwtexture().getVkImageView(),
-        memory_barrier);
+    // ImageMemoryBarrier memory_barrier{};
+    // memory_barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    // memory_barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    // memory_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    // memory_barrier.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    // memory_barrier.dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+    // buffer.imageMemoryBarrier(
+    //     getCurHwtexture().getVkImageView(),
+    //     memory_barrier);
 
+
+    getCurHwtexture().getVkImage().transitionLayout(buffer, VulkanLayout::PRESENT,
+                                                    getCurHwtexture().getVkImageView().getSubResourceRange());
     buffer.endRecord();
+
 
     std::vector<VkCommandBuffer> cmdBufferHandles{buffer.getHandle()};
 
@@ -586,7 +590,7 @@ void RenderContext::beginRenderPass(CommandBuffer& commandBuffer, RenderTarget& 
     //         }
     //     }
     // }
-    
+
     auto& renderPass = device.getResourceCache().requestRenderPass(renderTarget.getAttachments(), subpassInfos);
     auto& framebuffer = device.getResourceCache().requestFrameBuffer(
         renderTarget, renderPass);

@@ -35,24 +35,26 @@ public:
 
     ~PassNode() override = default;
 
-    void addTextureUsage(RenderGraphHandle id, RenderGraphTexture::Usage usage);
 
     void resolveTextureUsages(RenderGraph& renderGraph, CommandBuffer& commandBuffer);
 
     std::vector<RenderGraphTexture*> devirtualize; // resources need to be create before executing
     std::vector<RenderGraphTexture*> destroy; // resources need to be destroy after executing
 
+    void addTextureUsage(const RenderGraphTexture* texture, RenderGraphTexture::Usage usage);
+
 protected:
-    struct hash
-    {
-        size_t operator()(const RenderGraphHandle& texture) const
-        {
-            return texture.getHash();
-        }
-    };
+    // struct hash
+    // {
+    //     size_t operator()(const RenderGraphHandle& texture) const
+    //     {
+    //         return texture.getHash();
+    //     }
+    // };
 
     // friend class RenderGraph::Builder;
-    std::unordered_map<RenderGraphHandle, TextureUsage, hash> textureUsages;
+    //    std::unordered_map<RenderGraphHandle, TextureUsage, hash> textureUsages;
+    std::unordered_map<const RenderGraphTexture*, TextureUsage> textureUsages;
 };
 
 class PresentPassNode : public PassNode
@@ -90,7 +92,7 @@ private:
         //RenderGraphHandle attachmentInfo[ATTACHMENT_COUNT];
 
 
-        void devirtualize(RenderGraph& renderGraph,const RenderPassNode & node);
+        void devirtualize(RenderGraph& renderGraph, const RenderPassNode& node);
 
         std::unique_ptr<RenderTarget> renderTarget;
 

@@ -91,7 +91,6 @@ public:
         void declare(const char* name,
                      const RenderGraphPassDescriptor& desc);
 
-        //  void addSubpass();
 
         Builder(PassNode* node, RenderGraph& renderGraph)
             : node(node),
@@ -104,12 +103,6 @@ public:
         RenderGraph& renderGraph;
     };
 
-    // template <typename RESOURCE>
-    // RenderGraphId<RESOURCE> create(const char* name, const typename RESOURCE::Descriptor& desc = {})
-    // {
-    //     VirtualResource* virtualResource = new Resource<RESOURCE>(name, desc);
-    //     return RenderGraphId<RESOURCE>(addResource(virtualResource));
-    // }
 
     RenderGraphHandle createTexture(const char* name, const RenderGraphTexture::Descriptor& desc = {});
 
@@ -124,7 +117,7 @@ public:
 
     void execute(CommandBuffer& commandBuffer);
 
-    Blackboard& getBlackBoard();
+    Blackboard& getBlackBoard() const;
 
 
     PassNode* addPassInternal(const char* name, RenderGraphPassBase* base)
@@ -183,6 +176,9 @@ private:
         RenderGraphTexture::Usage usage{};
         bool read{true};
     };
+
+    std::vector<const Edge*> getEdges(RenderGraphNode* node) const;
+
 
     std::unique_ptr<Blackboard> mBlackBoard{};
     std::vector<PassNode*> mPassNodes{};

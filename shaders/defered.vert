@@ -32,7 +32,7 @@ layout (location = 2) out vec3 o_normal;
 
 void main(void)
 {
-    o_pos = global_uniform.model * vec4(position, 1.0);
+    o_pos = global_uniform.model * vec4(position, 1.0f);
 
     o_uv = texcoord_0;
 

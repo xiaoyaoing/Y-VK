@@ -52,7 +52,7 @@ public:
         ORIGIN_SHADER
     };
 
-    Shader(Device& device, const std::string& path, SHADER_LOAD_MODE mode = SPV);
+    Shader(Device& device, std::string path);
 
 
     //  Shader(Shader & other) = delete;
@@ -67,7 +67,7 @@ public:
         return resources;
     }
 
-    [[nodiscard]] size_t getId() const;
+    size_t getId() const;
 
     VkShaderStageFlagBits getStage() const;
 
