@@ -206,7 +206,9 @@ RenderPass::RenderPass(Device& device, const std::vector<Attachment>& attachment
         attachmentDescription.samples = attachments[i].samples;
         attachmentDescription.initialLayout = attachments[i].initial_layout;
         //todo fix this 
-        attachmentDescription.finalLayout = attachments[i].initial_layout;
+        attachmentDescription.finalLayout = isDepthOrStencilFormat(attachmentDescription.format)
+                                                 ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+                                                 : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
         attachmentDescription.loadOp = attachments[i].loadOp;
         attachmentDescription.storeOp = attachments[i].storeOp;
