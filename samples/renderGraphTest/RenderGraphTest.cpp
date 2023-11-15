@@ -18,7 +18,7 @@ void Example::drawFrame()
 
     // commandBufffer
     RenderGraph graph(*device);
-
+    auto& blackBoard = graph.getBlackBoard();
 
     vkWaitForFences(device->getHandle(), 1, &fence, VK_TRUE, UINT64_MAX);
     vkResetFences(device->getHandle(), 1, &fence);
@@ -39,7 +39,6 @@ void Example::drawFrame()
         RenderGraphHandle output;
     };
 
-    bool useSubpass = false;
 
     if (useSubpass)
     {
@@ -77,18 +76,24 @@ void Example::drawFrame()
                 data.output = graph.importTexture("output", &renderContext->getCurHwtexture());
 
 
-                graph.getBlackBoard().put("albedo", data.albedo);
-                graph.getBlackBoard().put("normal", data.normal);
-                graph.getBlackBoard().put("depth", data.depth);
-                graph.getBlackBoard().put("position", data.position);
-                graph.getBlackBoard().put("output", data.output);
+                blackBoard.put("albedo", data.albedo);
+                blackBoard.put("normal", data.normal);
+                blackBoard.put("depth", data.depth);
+                blackBoard.put("position", data.position);
+                blackBoard.put("output", data.output);
 
-                builder.declare("Color Pass Target", {
-                                    .color = {
-                                        data.output, data.depth, data.albedo, data.position,
-                                        data.normal
-                                    }
-                                });
+                RenderGraphPassDescriptor desc{
+                    .textures = {
+                        data.output, data.depth, data.albedo, data.position,
+                        data.normal
+                    }
+                };
+                desc.addSubpass({.outputAttachments = {data.albedo, data.position, data.normal, data.depth}});
+                desc.addSubpass({
+                    .inputAttachments = {data.albedo, data.position, data.normal}, .outputAttachments = {data.output}
+                });
+
+                builder.declare("Color Pass Target", desc);
 
                 data.output = builder.writeTexture(data.output, TextureUsage::COLOR_ATTACHMENT);
                 data.position = builder.writeTexture(data.position, TextureUsage::COLOR_ATTACHMENT);
@@ -110,17 +115,17 @@ void Example::drawFrame()
             [&](OnePassTwoSubPassDeferedShadingData& data, const RenderPassContext& context)
             {
                 //  context.renderTarget
-                std::vector<SubpassInfo> subpassInfos{};
-                SubpassInfo gBufferSubPassInfo = {
-                    .inputAttachments = {}, .outputAttachments = {2, 3, 4}
-                };
-                SubpassInfo LightingSubPassInfo = {
-                    .inputAttachments = {2, 3, 4}, .outputAttachments = {0}
-                };
+                // std::vector<SubpassInfo> subpassInfos{};
+                // SubpassInfo gBufferSubPassInfo = {
+                //     .inputAttachments = {}, .outputAttachments = {2, 3, 4}
+                // };
+                // SubpassInfo LightingSubPassInfo = {
+                //     .inputAttachments = {2, 3, 4}, .outputAttachments = {0}
+                // };
 
 
-                renderContext->beginRenderPass(commandBuffer, context.renderTarget,
-                                               {gBufferSubPassInfo, LightingSubPassInfo});
+                // renderContext->beginRenderPass(commandBuffer, context.renderTarget,
+                //                                {gBufferSubPassInfo, LightingSubPassInfo});
                 renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.gBuffer);
 
                 sponza->bindBuffer(commandBuffer);
@@ -165,12 +170,9 @@ void Example::drawFrame()
                 buffer.buffer->uploadData(&poses, buffer.size, buffer.offset);
                 renderContext->bindBuffer(0, *buffer.buffer, buffer.offset, buffer.size, 3, 0);
 
-                renderContext->bindInput(
-                    0, context.renderTarget.getHwTextures()[2]->getVkImageView(), 0, 0);
-                renderContext->bindInput(
-                    0, context.renderTarget.getHwTextures()[3]->getVkImageView(), 1, 0);
-                renderContext->bindInput(
-                    0, context.renderTarget.getHwTextures()[4]->getVkImageView(), 2, 0);
+                renderContext->bindInput(0, blackBoard.getImageView("albedo"), 0, 0);
+                renderContext->bindInput(0, blackBoard.getImageView("normal"), 1, 0);
+                renderContext->bindInput(0, blackBoard.getImageView("position"), 2, 0);
 
 
                 renderContext->getPipelineState().setRasterizationState({
@@ -225,7 +227,8 @@ void Example::drawFrame()
 
                                                  });
 
-                builder.declare("GBuffer Pass", {.color = {data.depth, data.albedo, data.position, data.normal}});
+                RenderGraphPassDescriptor desc{.textures = {data.depth, data.albedo, data.position, data.normal}};
+                builder.declare("GBuffer", desc);
 
 
                 data.normal = builder.writeTexture(data.normal, TextureUsage::COLOR_ATTACHMENT);
@@ -235,13 +238,13 @@ void Example::drawFrame()
                 data.depth = builder.readTexture(data.depth, TextureUsage::DEPTH_ATTACHMENT);
 
 
-                graph.getBlackBoard().put("albedo", data.albedo);
-                graph.getBlackBoard().put("normal", data.normal);
-                graph.getBlackBoard().put("position", data.position);
+                blackBoard.put("albedo", data.albedo);
+                blackBoard.put("normal", data.normal);
+                blackBoard.put("position", data.position);
             },
             [&](GBufferData& data, const RenderPassContext& context)
             {
-                renderContext->beginRenderPass(commandBuffer, context.renderTarget, {});
+                //   renderContext->beginRenderPass(commandBuffer, context.renderTarget, {});
                 renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.gBuffer);
                 sponza->bindBuffer(commandBuffer);
                 sponza->IteratePrimitives([&](gltfLoading::Primitive& primitive)
@@ -285,9 +288,9 @@ void Example::drawFrame()
         graph.addPass<LightingData>(
             "LightingPass", [&](RenderGraph::Builder& builder, LightingData& data)
             {
-                data.position = graph.getBlackBoard()["position"];
-                data.normal = graph.getBlackBoard()["normal"];
-                data.albedo = graph.getBlackBoard()["albedo"];
+                data.position = blackBoard["position"];
+                data.normal = blackBoard["normal"];
+                data.albedo = blackBoard["albedo"];
                 data.output = graph.importTexture("output", &renderContext->getCurHwtexture());
 
                 data.output = builder.writeTexture(data.output, TextureUsage::COLOR_ATTACHMENT);
@@ -297,22 +300,19 @@ void Example::drawFrame()
                 data.albedo = builder.readTexture(data.albedo, {});
                 data.position = builder.readTexture(data.position, {});
 
-                builder.declare("Lighting Pass", {.color = {data.output, data.albedo, data.position, data.normal}});
+                RenderGraphPassDescriptor desc{.textures = {data.output, data.albedo, data.position, data.normal}};
+                desc.addSubpass({
+                    .inputAttachments = {data.albedo, data.position, data.normal}, .outputAttachments = {data.output}
+                });
+                builder.declare("Lighting Pass", desc);
+                // builder.addSubPass();
             },
             [&](LightingData& data, const RenderPassContext& context)
             {
-                auto hwTextures = context.renderTarget.getHwTextures();
-                // hwTextures[1]->getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY,
-                //                                              hwTextures[1]->getVkImageView().getSubResourceRange());
-                // hwTextures[2]->getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY,
-                //                                              hwTextures[2]->getVkImageView().getSubResourceRange());
-                // hwTextures[3]->getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY,
-                //                                              hwTextures[3]->getVkImageView().getSubResourceRange());
-                //  context.renderTarget.getHwTextures()[2]->getVkImage().transitionLayout(commandBuffer,{});
-                // context.renderTarget.getHwTextures()[3]->getVkImage().transitionLayout(commandBuffer,{});
+                // SubpassInfo lightingSubpass = {.inputAttachments = {1, 2, 3}, .outputAttachments = {0}};
 
-                SubpassInfo lightingSubpass = {.inputAttachments = {1, 2, 3}, .outputAttachments = {0}};
-                renderContext->beginRenderPass(commandBuffer, context.renderTarget, {lightingSubpass});
+                // renderContext->beginRenderPass(commandBuffer, context.renderTarget, {lightingSubpass});
+
                 renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.lighting);
 
                 struct Poses
@@ -326,12 +326,10 @@ void Example::drawFrame()
                 buffer.buffer->uploadData(&poses, buffer.size, buffer.offset);
                 renderContext->bindBuffer(0, *buffer.buffer, buffer.offset, buffer.size, 3, 0);
 
-                renderContext->bindInput(
-                    0, context.renderTarget.getHwTextures()[1]->getVkImageView(), 0, 0);
-                renderContext->bindInput(
-                    0, context.renderTarget.getHwTextures()[2]->getVkImageView(), 1, 0);
-                renderContext->bindInput(
-                    0, context.renderTarget.getHwTextures()[3]->getVkImageView(), 2, 0);
+
+                renderContext->bindInput(0, blackBoard.getImageView("albedo"), 0, 0);
+                renderContext->bindInput(0, blackBoard.getImageView("normal"), 1, 0);
+                renderContext->bindInput(0, blackBoard.getImageView("position"), 2, 0);
 
 
                 renderContext->getPipelineState().setRasterizationState({
@@ -348,71 +346,10 @@ void Example::drawFrame()
     renderContext->submit(commandBuffer, fence);
 }
 
-void Example::prepareUniformBuffers()
-{
-    uniform_buffers.scene = std::make_unique<Buffer>(*device, sizeof(ubo_vs), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                                     VMA_MEMORY_USAGE_CPU_TO_GPU);
-    uniform_buffers.scene->uploadData(&ubo_vs, sizeof(ubo_vs));
-
-    // textures.texture1 = Texture::loadTexture(*device, FileUtils::getResourcePath() + "Window.png");
-}
-
-void Example::createDescriptorSet()
-{
-    // descriptorSet = std::make_unique<DescriptorSet>(*device, *descriptorPool, *descriptorLayout, 1);
-    // descriptorSet->updateBuffer({uniform_buffers.scene.get()}, 0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-    //
-    // //textures.texture1 = Texture::loadTexture(*device, FileUtils::getResourcePath() + "Window.png");
-    //
-    // auto imageDescriptorInfo = vkCommon::initializers::descriptorImageInfo(textures.texture1);
-    //
-    // descriptorSet->updateImage({imageDescriptorInfo}, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-}
-
-void Example::createDescriptorPool()
-{
-    std::vector<VkDescriptorPoolSize> poolSizes = {
-        vkCommon::initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2),
-        vkCommon::initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2)
-    };
-
-    descriptorPool = std::make_unique<DescriptorPool>(*device, poolSizes, 2);
-}
-
-void Example::updateUniformBuffers()
-{
-    static auto startTime = std::chrono::high_resolution_clock::now();
-
-    auto currentTime = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-    ubo_vs.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo_vs.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo_vs.proj = glm::perspective(glm::radians(45.0f), 1.f, 0.1f, 10.0f);
-    ubo_vs.proj[1][1] *= -1;
-
-    ubo_vs.view = camera->matrices.view;
-    ubo_vs.proj = camera->matrices.perspective;
-    // ubo_vs.model = glm::mat4::Ide
-    uniform_buffers.scene->uploadData(&ubo_vs, sizeof(ubo_vs));
-}
-
-void Example::createGraphicsPipeline()
-{
-    // todo handle shader complie
-}
 
 void Example::prepare()
 {
     Application::prepare();
-
-    prepareUniformBuffers();
-    //  createDescriptorSetLayout();
-    //   createDescriptorPool();
-    //   createDescriptorSet();
-
-    createGraphicsPipeline();
-
-    buildCommandBuffers();
 
     sponza = gltfLoading::Model::loadFromFile(*device, FileUtils::getResourcePath("sponza/sponza.gltf"));
 
@@ -428,13 +365,6 @@ void Example::prepare()
     pipelineLayouts.lighting = std::make_unique<PipelineLayout>(*device, shaders1);
 }
 
-void Example::createDescriptorSetLayout()
-{
-    descriptorLayout = std::make_unique<DescriptorLayout>(*device);
-    descriptorLayout->addBinding(VK_SHADER_STAGE_VERTEX_BIT, 0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0);
-    descriptorLayout->addBinding(VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0);
-    descriptorLayout->createLayout(0);
-}
 
 Example::Example() : Application("Drawing Triangle", 1024, 1024)
 {
@@ -445,40 +375,6 @@ Example::Example() : Application("Drawing Triangle", 1024, 1024)
     camera->setPerspective(60.0f, (float)width / (float)height, 0.1f, 256.0f);
 }
 
-void Example::bindUniformBuffers(CommandBuffer& commandBuffer)
-{
-    commandBuffer.bindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayOut, 0, {*descriptorSet.get()},
-                                     {});
-}
-
-void Example::buildCommandBuffers()
-{
-    // for (int i = commandBuffers.size() - 1; i >= 0; i--)
-    // {
-    //     auto& commandBuffer = *commandBuffers[i];
-    //     commandBuffer.beginRecord(0);
-    //     commandBuffer.bindPipeline(graphicsPipeline->getHandle());
-    //     renderContext->setActiveFrameIdx(i);
-    //     bindUniformBuffers(commandBuffer);
-    //     draw(commandBuffer);
-    //     commandBuffer.endRecord();
-    // }
-}
-
-void Example::draw(CommandBuffer& commandBuffer)
-{
-    bindUniformBuffers(commandBuffer);
-    renderPipeline->draw(commandBuffer);
-    commandBuffer.beginRenderPass(renderPipeline->getRenderPass(),
-                                  Default::clearValues(), VkSubpassContents{});
-    const VkViewport viewport = vkCommon::initializers::viewport((float)width, (float)height, 0.0f, 1.0f);
-    const VkRect2D scissor = vkCommon::initializers::rect2D(width, height, 0, 0);
-    vkCmdSetViewport(commandBuffer.getHandle(), 0, 1, &viewport);
-    vkCmdSetScissor(commandBuffer.getHandle(), 0, 1, &scissor);
-    gui->draw(commandBuffer.getHandle());
-
-    commandBuffer.endRenderPass();
-}
 
 void Example::onUpdateGUI()
 {

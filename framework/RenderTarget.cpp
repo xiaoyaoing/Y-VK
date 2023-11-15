@@ -26,7 +26,7 @@ void RenderTarget::setOutAttachment(const std::vector<uint32_t>& outAttachment)
     RenderTarget::outAttachment = outAttachment;
 }
 
-RenderTarget::RenderTarget(const std::vector<sg::SgImage*> hwTextures) : mHwTextures(hwTextures)
+RenderTarget::RenderTarget(const std::vector<SgImage*> hwTextures) : mHwTextures(hwTextures)
 {
     _extent = VkExtent2D{hwTextures.back()->getExtent().width, hwTextures.back()->getExtent().height};
 
@@ -40,7 +40,7 @@ RenderTarget::RenderTarget(const std::vector<sg::SgImage*> hwTextures) : mHwText
     }
 }
 
-RenderTarget::RenderTarget(const std::vector<sg::SgImage*>& hwTextures, const std::vector<Attachment>& attachments):
+RenderTarget::RenderTarget(const std::vector<SgImage*>& hwTextures, const std::vector<Attachment>& attachments):
     mHwTextures(hwTextures), mAttachments(attachments), _extent(hwTextures.back()->getExtent2D())
 {
 }
@@ -102,9 +102,19 @@ void RenderTarget::setAttachments(const std::vector<Attachment>& attachments)
     mAttachments = attachments;
 }
 
-const std::vector<sg::SgImage*>& RenderTarget::getHwTextures() const
+const std::vector<SgImage*>& RenderTarget::getHwTextures() const
 {
     return mHwTextures;
+}
+
+const ImageView& RenderTarget::getImageView(uint32_t index) const
+{
+    return mHwTextures[index]->getVkImageView();
+}
+
+const Image& RenderTarget::getImage(uint32_t index) const
+{
+    return mHwTextures[index]->getVkImage();
 }
 
 //

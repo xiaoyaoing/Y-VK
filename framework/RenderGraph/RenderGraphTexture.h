@@ -23,7 +23,7 @@ class PassNode;
  */
 class RenderGraphTexture : public RenderGraphNode
 {
-    sg::SgImage* mHwTexture{nullptr};
+    SgImage* mHwTexture{nullptr};
     //
     // Image* image{nullptr};
     // ImageView* imageView{nullptr};
@@ -46,13 +46,13 @@ public:
 
     RenderGraphTexture() = default;
 
-    RenderGraphTexture(const char* name, sg::SgImage* hwTexture);
+    RenderGraphTexture(const char* name, SgImage* hwTexture);
     RenderGraphTexture(const char* name, const Descriptor& descriptor);
 
 
-    void setHwTexture(sg::SgImage* hwTexture);
+    void setHwTexture(SgImage* hwTexture);
 
-    sg::SgImage* getHwTexture() const;
+    SgImage* getHwTexture() const;
 
     // const HwTexture& getHandle() const;
 

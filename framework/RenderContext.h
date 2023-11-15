@@ -122,7 +122,7 @@ public:
 
     PipelineState& getPipelineState();
 
-    sg::SgImage& getCurHwtexture();
+    SgImage& getCurHwtexture();
 
 
     void flushDescriptorState(CommandBuffer& commandBuffer, VkPipelineBindPoint pipeline_bind_point);
@@ -195,7 +195,7 @@ private:
 
     std::unique_ptr<RenderGraph> renderGraph;
 
-    std::vector<sg::SgImage> hwTextures;
+    std::vector<SgImage> hwTextures;
 
 
     std::unordered_map<uint32_t, ResourceSet> resourceSets;

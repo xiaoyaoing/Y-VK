@@ -12,13 +12,13 @@ struct SubpassInfo
 
     std::vector<uint32_t> outputAttachments{};
 
-    std::vector<uint32_t> colorResolveAttachments;
+    std::vector<uint32_t> colorResolveAttachments{};
 
-    bool disableDepthStencilAttachment;
+    bool disableDepthStencilAttachment{false};
 
-    uint32_t depthStencilResolveAttachment;
+    uint32_t depthStencilResolveAttachment{};
 
-    VkResolveModeFlagBits depthStencilResolveMode;
+    VkResolveModeFlagBits depthStencilResolveMode{};
 
     std::string debugName;
 };

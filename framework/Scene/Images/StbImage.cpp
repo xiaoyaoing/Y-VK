@@ -5,7 +5,7 @@
 //#include "StbImage.h"
 //#include "stb_image.h"
 //
-//sg::StbImage::StbImage(const std::string& path)
+//StbImage::StbImage(const std::string& path)
 //{
 //    int w, h, comp;
 //    auto rawData = stbi_load(path.c_str(), &w, &h, &comp, 4);

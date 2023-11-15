@@ -6,7 +6,7 @@
 //
 //#include <Scene/SgImage.h>
 //
-//class KtxImage : public sg::SgImage {
+//class KtxImage : public SgImage {
 //public:
 //    KtxImage(const std::string &path);
 //};

@@ -9,7 +9,7 @@
 //     return hwTexture;
 // }
 
-sg::SgImage* RenderGraphTexture::getHwTexture() const
+SgImage* RenderGraphTexture::getHwTexture() const
 {
     return mHwTexture;
 }
@@ -50,8 +50,8 @@ void RenderGraphTexture::resolveTextureUsage(CommandBuffer& commandBuffer)
     mHwTexture->getVkImage().transitionLayout(commandBuffer, newLayout, subResourceRange);
 }
 
-RenderGraphTexture::RenderGraphTexture(const char* name, sg::SgImage* hwTexture): mHwTexture(hwTexture), imported(true),
-    mName(name), mDescriptor({})
+RenderGraphTexture::RenderGraphTexture(const char* name, SgImage* hwTexture): mHwTexture(hwTexture), imported(true),
+                                                                              mName(name), mDescriptor({})
 {
 }
 
@@ -60,7 +60,7 @@ RenderGraphTexture::RenderGraphTexture(const char* name, const Descriptor& descr
 {
 }
 
-void RenderGraphTexture::setHwTexture(sg::SgImage* hwTexture)
+void RenderGraphTexture::setHwTexture(SgImage* hwTexture)
 {
     this->mHwTexture = hwTexture;
 }

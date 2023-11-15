@@ -10,21 +10,28 @@
 
 class RenderGraph;
 
+
+struct RenderGraphSubpassInfo
+{
+    std::vector<RenderGraphHandle> inputAttachments{};
+
+    std::vector<RenderGraphHandle> outputAttachments{};
+};
+
 struct RenderGraphPassDescriptor
 {
-    std::vector<RenderGraphHandle> color;
-    std::vector<LoadStoreInfo> loadStoreInfos;
-    RenderGraphHandle depth;
-    RenderGraphHandle stencil;
+    std::vector<RenderGraphHandle> textures;
+    std::vector<RenderGraphSubpassInfo> subpasses;
 
+    size_t getSubpassCount() const
+    {
+        return subpasses.size();
+    }
 
-    // std::vector<RenderGraphSubPassInfo> subpasses;
-    // Attachments attachments{};
-    // Viewport viewport{};
-    // math::float4 clearColor{};
-    // uint8_t samples = 0; // # of samples (0 = unset, default)
-    // backend::TargetBufferFlags clearFlags{};
-    // backend::TargetBufferFlags discardStart{};
+    void addSubpass(const RenderGraphSubpassInfo& subpassInfo)
+    {
+        subpasses.push_back(subpassInfo);
+    }
 };
 
 
@@ -44,16 +51,6 @@ public:
     void addTextureUsage(const RenderGraphTexture* texture, RenderGraphTexture::Usage usage);
 
 protected:
-    // struct hash
-    // {
-    //     size_t operator()(const RenderGraphHandle& texture) const
-    //     {
-    //         return texture.getHash();
-    //     }
-    // };
-
-    // friend class RenderGraph::Builder;
-    //    std::unordered_map<RenderGraphHandle, TextureUsage, hash> textureUsages;
     std::unordered_map<const RenderGraphTexture*, TextureUsage> textureUsages;
 };
 
@@ -88,10 +85,6 @@ private:
         bool imported = false;
 
         RenderGraphPassDescriptor desc;
-
-        //RenderGraphHandle attachmentInfo[ATTACHMENT_COUNT];
-
-
         void devirtualize(RenderGraph& renderGraph, const RenderPassNode& node);
 
         std::unique_ptr<RenderTarget> renderTarget;
@@ -99,7 +92,7 @@ private:
         RenderTarget& getRenderTarget();
     };
 
-    RenderPassData renderTargetData{};
+    RenderPassData renderPassData{};
     RenderGraphPassBase* mRenderPass{nullptr};
     const char* name;
 };

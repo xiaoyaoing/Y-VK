@@ -20,17 +20,13 @@ void RenderGraph::Builder::declare(const char* name, const RenderGraphPassDescri
 
 RenderGraph::RenderGraph(Device& device) : device(device)
 {
-    mBlackBoard = std::make_unique<Blackboard>();
+    mBlackBoard = std::make_unique<Blackboard>(*this);
 }
 
 RenderGraphHandle RenderGraph::Builder::readTexture(RenderGraphHandle input, RenderGraphTexture::Usage usage)
 {
     auto texture = renderGraph.getResource(input);
     renderGraph.edges.emplace_back(Edge{.pass = node, .texture = texture, .usage = usage, .read = true});
-    if (renderGraph.edges.size() == 10)
-    {
-        int k = 1;
-    }
     return input;
 }
 
@@ -38,12 +34,13 @@ RenderGraphHandle RenderGraph::Builder::writeTexture(RenderGraphHandle output, R
 {
     auto texture = renderGraph.getResource(output);
     renderGraph.edges.emplace_back(Edge{.pass = node, .texture = texture, .usage = usage, .read = false});
-    if (renderGraph.edges.size() == 10)
-    {
-        int k = 1;
-    }
     return output;
 }
+
+// void RenderGraph::Builder::addSubpass(const RenderGraphSubpassInfo&)
+// {
+//     static_cast<RenderPassNode*>(node)->declareRenderPass()
+// }
 
 RenderGraphHandle RenderGraph::createTexture(const char* name, const RenderGraphTexture::Descriptor& desc)
 {
@@ -302,7 +299,7 @@ Blackboard& RenderGraph::getBlackBoard() const
 }
 
 
-RenderGraphHandle RenderGraph::importTexture(const char* name, sg::SgImage* hwTexture)
+RenderGraphHandle RenderGraph::importTexture(const char* name, SgImage* hwTexture)
 {
     auto texture = new RenderGraphTexture(name, hwTexture);
     // VirtualResource* resource = new ImportedResource<RenderGraphTexture>(name, texture);

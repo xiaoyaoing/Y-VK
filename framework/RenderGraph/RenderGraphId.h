@@ -10,7 +10,16 @@ public:
     using Index = uint16_t;
     using Version = uint16_t;
 
-    std::size_t getHash() const;
+
+    struct Hash
+    {
+        std::size_t operator()(const RenderGraphHandle& handle) const noexcept
+        {
+            return handle.index << 16 | handle.version;
+        }
+    };
+
+    // std::size_t getHash() const;
 
     // private:
     explicit RenderGraphHandle(Index index) noexcept: index(index)
@@ -19,6 +28,7 @@ public:
 
     // index to the resource handle
     static constexpr uint16_t UNINITIALIZED = std::numeric_limits<Index>::max();
+
     Index index = UNINITIALIZED; // index to a ResourceSlot
     Version version = 0;
 
@@ -33,7 +43,13 @@ public:
 public:
     RenderGraphHandle(const RenderGraphHandle& rhs) noexcept = default;
 
-    RenderGraphHandle& operator=(const RenderGraphHandle& rhs) noexcept = default;
+    RenderGraphHandle& operator=(const RenderGraphHandle& rhs)
+    {
+        index = rhs.index;
+        version = rhs.version;
+        return *this;
+    }
+
 
     bool isInitialized() const noexcept { return index != UNINITIALIZED; }
 
@@ -61,23 +77,36 @@ public:
     }
 };
 
+//
+// namespace std
+// {
+//     template<>
+//     struct Re
+//     {
+//         std::size_t operator()(const RenderGraphHandle& handle) const noexcept
+//         {
+//             return handle.index << 16 | handle.version;
+//         }
+//     };
+// }
 
-/** A typed handle on a resource */
-template <typename RESOURCE>
-class RenderGraphId : public RenderGraphHandle
-{
-public:
-    using RenderGraphHandle::RenderGraphHandle;
 
-    RenderGraphId() noexcept
-    {
-    }
-
-    explicit RenderGraphId(RenderGraphHandle r) : RenderGraphHandle(r)
-    {
-    }
-};
-
+// /** A typed handle on a resource */
+// template <typename RESOURCE>
+// class RenderGraphId : public RenderGraphHandle
+// {
+// public:
+//     using RenderGraphHandle::RenderGraphHandle;
+//
+//     RenderGraphId() noexcept
+//     {
+//     }
+//
+//     explicit RenderGraphId(RenderGraphHandle r) : RenderGraphHandle(r)
+//     {
+//     }
+// };
+//
 // namespace std
 // {
 //     template <typename T>

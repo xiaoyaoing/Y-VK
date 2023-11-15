@@ -6,7 +6,7 @@
 //
 //#include <imgui.h>
 //
-//sg::TtfImage::TtfImage(const std::string &path) {
+//TtfImage::TtfImage(const std::string &path) {
 //    assert(FileUtils::getFileExt(path) == "ttf");
 //    ImGuiIO &io = ImGui::GetIO();
 //    io.Fonts->AddFontFromFileTTF(path.c_str(), 16.f);

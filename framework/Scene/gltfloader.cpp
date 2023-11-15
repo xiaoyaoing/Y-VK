@@ -291,7 +291,7 @@ namespace gltfLoading
     {
         if (node.extensions.find("KHR_lights_punctual") != node.extensions.end())
         {
-            // auto lights      = scene.get_components<sg::Light>();
+            // auto lights      = scene.get_components<Light>();
             // int  light_index = extension->Get("light").Get<int>();
             // assert(light_index < lights.size());
             // auto light = lights[light_index];

@@ -26,16 +26,16 @@ void ResourceCache::initCache(Device& device)
     cache = std::make_unique<ResourceCache>(device);
 }
 
-sg::SgImage& ResourceCache::requestSgImage(const std::string& path, VkImageViewType viewType)
+SgImage& ResourceCache::requestSgImage(const std::string& path, VkImageViewType viewType)
 {
     return requestResource(device, sgImageMutex, state.sgImages, path, viewType);
 }
 
-sg::SgImage& ResourceCache::requestSgImage(const std::string& name, const VkExtent3D& extent, VkFormat format,
-                                           VkImageUsageFlags image_usage, VmaMemoryUsage memory_usage,
-                                           VkImageViewType viewType,
-                                           VkSampleCountFlagBits sample_count, uint32_t mip_levels,
-                                           uint32_t array_layers, VkImageCreateFlags flags)
+SgImage& ResourceCache::requestSgImage(const std::string& name, const VkExtent3D& extent, VkFormat format,
+                                       VkImageUsageFlags image_usage, VmaMemoryUsage memory_usage,
+                                       VkImageViewType viewType,
+                                       VkSampleCountFlagBits sample_count, uint32_t mip_levels,
+                                       uint32_t array_layers, VkImageCreateFlags flags)
 {
     return requestResource(device, sgImageMutex, state.sgImages, name, extent, format, image_usage, memory_usage,
                            viewType,
@@ -50,8 +50,6 @@ RenderPass& ResourceCache::requestRenderPass(const std::vector<Attachment>& atta
 
 DescriptorLayout& ResourceCache::requestDescriptorLayout(std::vector<Shader>& shaders)
 {
-    // DescriptorLayout d(device);
-    //  return d;
     return requestResource(device, descriptorLayoutMutex, state.descriptor_set_layouts, shaders);
 }
 
@@ -65,16 +63,13 @@ DescriptorSet& ResourceCache::requestDescriptorSet(const DescriptorLayout& descr
                                                    const BindingMap<VkDescriptorBufferInfo>& bufferInfos,
                                                    const BindingMap<VkDescriptorImageInfo>& imageInfos)
 {
-    // DescriptorSet * set;
-    // return *set;
     return requestResource(device, descriptorSetMutex, state.descriptorSets, descriptorSetLayout, descriptorPool,
                            bufferInfos, imageInfos);
 }
 
 DescriptorPool& ResourceCache::requestDescriptorPool(const DescriptorLayout& layout, uint32_t poolSize)
 {
-    // DescriptorPool * pool;
-    // return *pool;
+
     return requestResource(device, descriptorPoolMutex, state.descriptor_pools, layout, poolSize);
 }
 

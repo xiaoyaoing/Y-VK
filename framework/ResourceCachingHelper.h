@@ -70,7 +70,7 @@ namespace std
     template <>
     struct hash<VkExtent3D>
     {
-        std::size_t operator()(const VkExtent3D extent3d) const
+        std::size_t operator()(const VkExtent3D extent3d) const noexcept
         {
             std::size_t result;
             hash_combine(result, extent3d.width);

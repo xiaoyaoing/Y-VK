@@ -68,7 +68,7 @@ class RenderTarget
 {
     //   std::vector<ImageView *> views;
 
-    std::vector<sg::SgImage*> mHwTextures;
+    std::vector<SgImage*> mHwTextures;
 
     std::vector<Image> _images;
     std::vector<ImageView> _views;
@@ -80,9 +80,9 @@ class RenderTarget
     // std::vector<VulkanAttachment> attachments;
 
 public:
-    RenderTarget(const std::vector<sg::SgImage*> hwTextures);
-    
-    RenderTarget( const std::vector<sg::SgImage*> & hwTextures,const  std::vector<Attachment> & attachments);
+    RenderTarget(const std::vector<SgImage*> hwTextures);
+
+    RenderTarget(const std::vector<SgImage*>& hwTextures, const std::vector<Attachment>& attachments);
 
 
     // using CreateFunc = std::function<std::unique_ptr<RenderTarget>(Image&&)>;
@@ -119,5 +119,9 @@ public:
 
     void setAttachments(const std::vector<Attachment>& attachments);
 
-    const std::vector<sg::SgImage*>& getHwTextures() const;
+    const std::vector<SgImage*>& getHwTextures() const;
+
+    const ImageView& getImageView(uint32_t index) const;
+
+    const Image& getImage(uint32_t index) const;
 };

@@ -340,7 +340,7 @@ PipelineState& RenderContext::getPipelineState()
     return pipelineState;
 }
 
-sg::SgImage& RenderContext::getCurHwtexture()
+SgImage& RenderContext::getCurHwtexture()
 {
     return hwTextures[activeFrameIndex];
 }

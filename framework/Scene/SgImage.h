@@ -8,106 +8,106 @@
 #include "Images/ImageView.h"
 #include "Images/Image.h"
 
-namespace sg {
-    struct Mipmap {
-        /// Mipmap level
-        uint32_t level = 0;
+struct Mipmap
+{
+    /// Mipmap level
+    uint32_t level = 0;
 
-        /// Byte offset used for uploading
-        uint32_t offset = 0;
+    /// Byte offset used for uploading
+    uint32_t offset = 0;
 
-        /// Width depth and height of the mipmap
-        VkExtent3D extent = {0, 0, 0};
-    };
+    /// Width depth and height of the mipmap
+    VkExtent3D extent = {0, 0, 0};
+};
 
-    class SgImage {
-    public:
-        static std::unique_ptr<SgImage> load(const std::string &path);
+class SgImage
+{
+public:
+    static std::unique_ptr<SgImage> load(const std::string& path);
 
-        void createVkImage(Device &device, VkImageViewType image_view_type = VK_IMAGE_VIEW_TYPE_2D,
-                           VkImageCreateFlags flags = 0);
-
-
-        /**
-         * \brief load from hardware texture
-         */
-        SgImage(Device &device, const std::string &path, VkImageViewType viewType);
-
-        /**
-         * \brief create from image attribute 
-         */
-        SgImage(Device &device,
-                const std::string &name,
-                const VkExtent3D &extent,
-                VkFormat format,
-                VkImageUsageFlags image_usage,
-                VmaMemoryUsage memory_usage,
-                VkImageViewType viewType,
-                VkSampleCountFlagBits sample_count = VK_SAMPLE_COUNT_1_BIT,
-                uint32_t mip_levels = 1,
-                uint32_t array_layers = 1,
-                VkImageCreateFlags flags = 0);
-
-        /**
-         * \brief load from existing image.Mainly from swapChainImage
-         */
-        SgImage(Device &device,
-                VkImage handle,
-                const VkExtent3D &extent,
-                VkFormat format,
-                VkImageUsageFlags image_usage,
-                VkSampleCountFlagBits sample_count = VK_SAMPLE_COUNT_1_BIT,
-                VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D);
+    void createVkImage(Device& device, VkImageViewType image_view_type = VK_IMAGE_VIEW_TYPE_2D,
+                       VkImageCreateFlags flags = 0);
 
 
-        std::vector<uint8_t> &getData();
+    /**
+     * \brief load from hardware texture
+     */
+    SgImage(Device& device, const std::string& path, VkImageViewType viewType);
 
-        uint64_t getBufferSize() const;
+    /**
+     * \brief create from image attribute 
+     */
+    SgImage(Device& device,
+            const std::string& name,
+            const VkExtent3D& extent,
+            VkFormat format,
+            VkImageUsageFlags image_usage,
+            VmaMemoryUsage memory_usage,
+            VkImageViewType viewType,
+            VkSampleCountFlagBits sample_count = VK_SAMPLE_COUNT_1_BIT,
+            uint32_t mip_levels = 1,
+            uint32_t array_layers = 1,
+            VkImageCreateFlags flags = 0);
 
-        VkExtent3D getExtent() const;
-        
-        VkExtent2D getExtent2D() const;
-
-        Image &getVkImage() const ;
-
-        ImageView &getVkImageView() const ;
-
-        VkFormat getFormat() const;
-
-        const std::vector<std::vector<VkDeviceSize>> &getOffsets() const;
-
-        const std::vector<Mipmap> &getMipMaps() const;
-
-        uint32_t getLayers() const;
-
-        void setLayers(uint32_t layers);
-
-        void generateMipMap();
-
-
-        void loadResources(const std::string &path);
-
-    private:
-
-    protected:
-        std::unique_ptr<Image> vkImage{nullptr};
-
-        std::unique_ptr<ImageView> vkImageView{nullptr};
-
-        std::vector<uint8_t> data;
-
-        VkFormat format;
-
-        VkExtent3D extent3D;
+    /**
+     * \brief load from existing image.Mainly from swapChainImage
+     */
+    SgImage(Device& device,
+            VkImage handle,
+            const VkExtent3D& extent,
+            VkFormat format,
+            VkImageUsageFlags image_usage,
+            VkSampleCountFlagBits sample_count = VK_SAMPLE_COUNT_1_BIT,
+            VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D);
 
 
-        std::vector<Mipmap> mipMaps{{}};
+    std::vector<uint8_t>& getData();
 
-        std::vector<std::vector<VkDeviceSize>> offsets;
+    uint64_t getBufferSize() const;
 
-        std::string name;
+    VkExtent3D getExtent() const;
 
-    protected:
-        uint32_t layers{1};
-    };
-}
+    VkExtent2D getExtent2D() const;
+
+    Image& getVkImage() const;
+
+    ImageView& getVkImageView() const;
+
+    VkFormat getFormat() const;
+
+    const std::vector<std::vector<VkDeviceSize>>& getOffsets() const;
+
+    const std::vector<Mipmap>& getMipMaps() const;
+
+    uint32_t getLayers() const;
+
+    void setLayers(uint32_t layers);
+
+    void generateMipMap();
+
+
+    void loadResources(const std::string& path);
+
+private:
+
+protected:
+    std::unique_ptr<Image> vkImage{nullptr};
+
+    std::unique_ptr<ImageView> vkImageView{nullptr};
+
+    std::vector<uint8_t> data;
+
+    VkFormat format;
+
+    VkExtent3D extent3D;
+
+
+    std::vector<Mipmap> mipMaps{{}};
+
+    std::vector<std::vector<VkDeviceSize>> offsets;
+
+    std::string name;
+
+protected:
+    uint32_t layers{1};
+};

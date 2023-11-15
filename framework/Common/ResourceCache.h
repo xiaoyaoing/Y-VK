@@ -39,7 +39,7 @@ struct ResourceCacheState
 
     std::unordered_map<std::size_t, RenderPass> render_passes;
 
-    std::unordered_map<std::size_t, sg::SgImage> sgImages;
+    std::unordered_map<std::size_t, SgImage> sgImages;
 
     std::unordered_map<std::size_t, FrameBuffer> frameBuffers;
 };
@@ -74,18 +74,18 @@ public:
 
     static void initCache(Device& device);
 
-    sg::SgImage& requestSgImage(const std::string& path, VkImageViewType viewType);
+    SgImage& requestSgImage(const std::string& path, VkImageViewType viewType);
 
-    sg::SgImage& requestSgImage(const std::string& name,
-                                const VkExtent3D& extent,
-                                VkFormat format,
-                                VkImageUsageFlags image_usage,
-                                VmaMemoryUsage memory_usage,
-                                VkImageViewType viewType,
-                                VkSampleCountFlagBits sample_count = VK_SAMPLE_COUNT_1_BIT,
-                                uint32_t mip_levels = 1,
-                                uint32_t array_layers = 1,
-                                VkImageCreateFlags flags = 0);
+    SgImage& requestSgImage(const std::string& name,
+                            const VkExtent3D& extent,
+                            VkFormat format,
+                            VkImageUsageFlags image_usage,
+                            VmaMemoryUsage memory_usage,
+                            VkImageViewType viewType,
+                            VkSampleCountFlagBits sample_count = VK_SAMPLE_COUNT_1_BIT,
+                            uint32_t mip_levels = 1,
+                            uint32_t array_layers = 1,
+                            VkImageCreateFlags flags = 0);
 
 
     RenderPass& requestRenderPass(const std::vector<Attachment>& attachments,

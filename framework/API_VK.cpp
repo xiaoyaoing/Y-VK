@@ -9,7 +9,7 @@
 #include <Common/VkCommon.h>
 #include <Images/Sampler.h>
 
-sg::SgImage& Texture::getImage()
+SgImage& Texture::getImage()
 {
     return *image;
 }
@@ -23,7 +23,7 @@ Sampler& Texture::getSampler()
 Texture Texture::loadTexture(Device& device, const std::string& path)
 {
     Texture texture{};
-    texture.image = std::make_unique<sg::SgImage>(device, path, VK_IMAGE_VIEW_TYPE_2D);
+    texture.image = std::make_unique<SgImage>(device, path, VK_IMAGE_VIEW_TYPE_2D);
     //  texture.image->createVkImage(device);
 
     auto imageBuffer = Buffer(device, texture.image->getBufferSize(),
@@ -87,7 +87,7 @@ Texture Texture::loadTexture(Device& device, const std::string& path)
 Texture Texture::loadTextureArray(Device& device, const std::string& path)
 {
     Texture texture{};
-    texture.image = sg::SgImage::load(path);
+    texture.image = SgImage::load(path);
     texture.image->createVkImage(device, VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
     auto imageBuffer = Buffer(device, texture.image->getBufferSize(),

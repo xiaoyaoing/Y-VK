@@ -25,53 +25,13 @@
 class CommandBuffer;
 
 
-struct RenderPassDesc
-{
-    std::vector<Attachment> colorAttachments;
-    Attachment depthAttachment;
-};
-
-
-// struct Attachments {
-//     union {
-//         RenderGraphHandle array[ATTACHMENT_COUNT] = {};
-//         struct {
-//             RenderGraphHandle color[backend::MRT::MAX_SUPPORTED_RENDER_TARGET_COUNT];
-//             RenderGraphHandle depth;
-//             RenderGraphHandle stencil;
-//         };
-//     };
-// struct RenderPassData
-// {
-//     VkViewport viewport{};
-//     VkClearValue clearColor{};
-//     uint8_t samples = 0; // # of samples (0 = unset, default)
-//     //  backend::TargetBufferFlags clearFlags{};
-//     //  backend::TargetBufferFlags discardStart{};
-// };
-
-struct RenderGraphSubpassInfo
-{
-    std::vector<RenderGraphHandle> inputAttachments{};
-
-    std::vector<RenderGraphHandle> outputAttachments{};
-};
-
-
 class RenderGraph
 {
 public:
     RenderGraph(Device& device);
 
 
-    // template <typename RESOURCE>
-    // RenderGraphId<RESOURCE> create(char* name, const typename RESOURCE::Descriptor& desc)
-    // {
-    //     VirtualResource* virtualResource = Resource<RESOURCE>(name, desc);
-    //     return RenderGraphId<RESOURCE>(addResource(virtualResource));
-    // }
-
-    RenderGraphHandle importTexture(const char* name, sg::SgImage* hwTexture);
+    RenderGraphHandle importTexture(const char* name, SgImage* hwTexture);
 
     class Builder
     {
@@ -87,6 +47,7 @@ public:
                                        RenderGraphTexture::Usage usage =
                                            RenderGraphTexture::DEFAULT_W_USAGE);
 
+        // void addSubpass(const RenderGraphSubpassInfo&);
 
         void declare(const char* name,
                      const RenderGraphPassDescriptor& desc);
