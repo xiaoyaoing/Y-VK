@@ -11,10 +11,13 @@
 #include "Scene/Images/KtxImage.h"
 #include <FIleUtils.h>
 
+
+// #include <ext/ktx/lib/vk_format.h>
 #include <ktx.h>
 #include <stb_image.h>
 
 #include "Gui.h"
+#include "KtxFormat.h"
 
 
 std::unique_ptr<SgImage> SgImage::load(const std::string& path)
@@ -218,11 +221,26 @@ void SgImage::loadResources(const std::string& path)
 
         mipMaps.resize(ktxTexture->numLevels);
         layers = ktxTexture->numLayers;
-        //  k//txTexture->
-        //   format = ktxTextureSize / (extent3D.width * extent3D.height * layers);
-        format = VK_FORMAT_R8G8B8A8_UNORM;
+
+         ktx_size_t  pixelsMulChannels;
+         result = ktxTexture_GetImageOffset(ktxTexture, 0, 0, 0, &pixelsMulChannels);
+        
+        
+        auto channels = pixelsMulChannels / (ktxTexture->baseWidth * ktxTexture->baseHeight);
+        // if(channels == 3 )
+        //     format = VK_FORMAT_R8G8B8_UNORM;
+        // else if(channels == 4)
+        //     format = VK_FORMAT_R8G8B8A8_UNORM;
+        // else
+        // {
+        //     LOGE("Image Chnnels is not 3 or 4 {}",path.c_str())
+        // }
+        
+        
         data = {ktxTextureData, ktxTextureData + ktxTextureSize};
 
+
+        format = GetFormatFromOpenGLInternalFormat(ktxTexture->glInternalformat);
 
         if (layers > 1)
         {

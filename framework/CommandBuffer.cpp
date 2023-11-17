@@ -37,7 +37,7 @@ void CommandBuffer::beginRenderPass(VkRenderPass renderPass, VkFramebuffer buffe
     vkCmdBeginRenderPass(_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void CommandBuffer::bindVertexBuffer(std::vector<const Buffer*>& buffers, const std::vector<VkDeviceSize>& offsets)
+void CommandBuffer::bindVertexBuffer(std::vector<const Buffer*>& buffers, const std::vector<VkDeviceSize>& offsets) const
 {
     std::vector<VkBuffer> bufferHandles(buffers.size());
     std::transform(buffers.begin(), buffers.end(), bufferHandles.begin(),
@@ -47,10 +47,22 @@ void CommandBuffer::bindVertexBuffer(std::vector<const Buffer*>& buffers, const 
                            offsets.data());
 }
 
+void CommandBuffer::bindVertexBuffer(uint32_t firstBinding, std::vector<const Buffer*>& buffers,
+    const std::vector<VkDeviceSize>& offsets) const
+{
+    std::vector<VkBuffer> bufferHandles(buffers.size());
+    std::transform(buffers.begin(), buffers.end(), bufferHandles.begin(),
+                   [](const Buffer*& buffer) { return buffer->getHandle(); });
+
+    vkCmdBindVertexBuffers(_buffer, firstBinding, static_cast<uint32_t>(bufferHandles.size()), bufferHandles.data(),
+                           offsets.data());
+
+}
+
 void CommandBuffer::bindIndicesBuffer(const Buffer& buffer, VkDeviceSize offset)
 {
     // auto bufferHandles = getHandles<Buffer,VkBuffer>(buffers);
-    vkCmdBindIndexBuffer(_buffer, buffer.getHandle(), offset, VK_INDEX_TYPE_UINT32);
+    vkCmdBindIndexBuffer(_buffer, buffer.getHandle(), offset, VK_INDEX_TYPE_UINT16);
 }
 
 void CommandBuffer::bindDescriptorSets(VkPipelineBindPoint bindPoint, VkPipelineLayout layout, uint32_t firstSet,

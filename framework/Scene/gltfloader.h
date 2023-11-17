@@ -12,7 +12,7 @@
 
 #include <filesystem>
 
-
+#include "Buffer.h"
 #include "API_VK.h"
 #include "Camera.h"
 //#include "Mesh.h"
@@ -66,13 +66,6 @@ namespace gltfLoading
 
         std::unordered_map<std::string, Texture*> textures{};
 
-        Texture* baseColorTexture = nullptr;
-        Texture* metallicRoughnessTexture = nullptr;
-        Texture* normalTexture = nullptr;
-        Texture* occlusionTexture = nullptr;
-        Texture* emissiveTexture = nullptr;
-        //  std::vector<Texture*> textures;
-        std::unique_ptr<DescriptorSet> descriptorSet;
 
         Material(Device& device);
     };
@@ -80,12 +73,12 @@ namespace gltfLoading
 
     struct Primitive
     {
-        uint32_t firstIndex;
-        uint32_t indexCount;
-        uint32_t firstVertex;
-        uint32_t vertexCount;
+        uint32_t firstIndex{};
+        uint32_t indexCount{};
+        uint32_t firstVertex{};
+        uint32_t vertexCount{};
         Material& material;
-        glm::mat4 matrix;
+        glm::mat4 matrix{};
 
         struct Dimensions
         {
@@ -98,12 +91,17 @@ namespace gltfLoading
 
         std::unordered_map<std::string, VertexAttribute> vertexAttributes;
 
+        std::unordered_map<std::string, std::unique_ptr<Buffer>> vertexBuffers;
+
+        std::unique_ptr<Buffer> indexBuffer;
+
         bool getVertexAttribute(const std::string& name, VertexAttribute& attribute) const;
 
         void setVertxAttribute(const std::string& name, VertexAttribute& attribute);
 
-        // const glm::mat4 & getMatrix();
-        // void  setMatrix(const glm::mat4 & matrix);
+        void setVertexBuffer(const std::string& name, std::unique_ptr<Buffer>& buffer);
+
+        Buffer& getVertexBuffer(const std::string& name) const;
 
         void setDimensions(glm::vec3 min, glm::vec3 max);
 
@@ -111,7 +109,7 @@ namespace gltfLoading
             indexCount(indexCount),
             material(material)
         {
-        };
+        }
     };
 
 

@@ -6,17 +6,14 @@
 #include "Shader.h"
 #include "../../framework/Common/VkCommon.h"
 #include "FIleUtils.h"
+#include "Scene/SceneUtil.h"
 
 void Example::drawFrame()
 {
     renderContext->camera = camera.get();
-    // auto& graph = renderContext->getRenderGraph();
-
-    // renderContext->getPipelineState().setViewportState(ViewportState{.})
     auto& commandBuffer = renderContext->beginFrame();
 
 
-    // commandBufffer
     RenderGraph graph(*device);
     auto& blackBoard = graph.getBlackBoard();
 
@@ -114,18 +111,6 @@ void Example::drawFrame()
             },
             [&](OnePassTwoSubPassDeferedShadingData& data, const RenderPassContext& context)
             {
-                //  context.renderTarget
-                // std::vector<SubpassInfo> subpassInfos{};
-                // SubpassInfo gBufferSubPassInfo = {
-                //     .inputAttachments = {}, .outputAttachments = {2, 3, 4}
-                // };
-                // SubpassInfo LightingSubPassInfo = {
-                //     .inputAttachments = {2, 3, 4}, .outputAttachments = {0}
-                // };
-
-
-                // renderContext->beginRenderPass(commandBuffer, context.renderTarget,
-                //                                {gBufferSubPassInfo, LightingSubPassInfo});
                 renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.gBuffer);
 
                 sponza->bindBuffer(commandBuffer);
@@ -134,8 +119,12 @@ void Example::drawFrame()
                         VertexInputState vertexInputState{};
                         vertexInputState.bindings = {Vertex::getBindingDescription()};
                         vertexInputState.attributes = Vertex::getAttributeDescriptions();
-                        renderContext->getPipelineState().setVertexInputState(vertexInputState);
-                        // renderContext->getPipelineState().setVertexInputState(vertexInputState);
+                        //renderContext->getPipelineState().setVertexInputState(vertexInputState);
+
+                        //vertexInputState = SceneUtil::getPrimitiveVertexInputState(primitive, renderContext->getPipelineState().getPipelineLayout());
+                        //   renderContext->getPipelineState().setVertexInputState(vertexInputState);
+                        renderContext->bindPrimitive(primitive);
+
 
                         const auto allocation = renderContext->allocateBuffer(
                             sizeof(GlobalUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
@@ -153,7 +142,7 @@ void Example::drawFrame()
                             0);
                         renderContext->bindMaterial(primitive.material);
                         renderContext->flushAndDrawIndexed(
-                            commandBuffer, primitive.indexCount, 1, primitive.firstIndex, 0, 0);
+                            commandBuffer, primitive.indexCount, 1, 0, 0, 0);
                     }
                 );
                 renderContext->nextSubpass(commandBuffer);
@@ -253,7 +242,6 @@ void Example::drawFrame()
                         vertexInputState.bindings = {Vertex::getBindingDescription()};
                         vertexInputState.attributes = Vertex::getAttributeDescriptions();
                         renderContext->getPipelineState().setVertexInputState(vertexInputState);
-                        // renderContext->getPipelineState().setVertexInputState(vertexInputState);
 
                         const auto allocation = renderContext->allocateBuffer(
                             sizeof(GlobalUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
@@ -342,7 +330,6 @@ void Example::drawFrame()
 
 
     graph.execute(commandBuffer);
-    //  commandBuffer->endRecord();
     renderContext->submit(commandBuffer, fence);
 }
 
@@ -390,21 +377,3 @@ int main()
     example->mainloop();
     return 0;
 }
-
-// Example *example{nullptr};
-// LRESULT __stdcall WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-// {
-//     if (example)
-//     {
-//         example->handleMessages(hWnd, uMsg, wParam, lParam);
-//     }
-//     return (DefWindowProcA(hWnd, uMsg, wParam, lParam));
-// }
-// int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int)
-// {
-//     example = new Example();
-//     example->prepare();
-//     example->mainloop();
-//     delete example();
-//     return 0;
-// }

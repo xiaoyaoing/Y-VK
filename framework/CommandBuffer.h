@@ -61,7 +61,9 @@ public:
                             const std::vector<DescriptorSet>& descriptorSets,
                             const std::vector<uint32_t>& dynamicOffsets);
 
-    void bindVertexBuffer(std::vector<const Buffer*>& buffers, const std::vector<VkDeviceSize>& offsets);
+    void bindVertexBuffer(std::vector<const Buffer*>& buffers, const std::vector<VkDeviceSize>& offsets) const;
+    
+    void bindVertexBuffer(uint32_t firstBinding,std::vector<const Buffer*>& buffers, const std::vector<VkDeviceSize>& offsets) const;
 
     void bindVertexBuffer(const Buffer& buffers, VkDeviceSize offset);
 

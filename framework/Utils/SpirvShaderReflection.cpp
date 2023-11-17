@@ -179,6 +179,27 @@ inline void readShaderResourceInputAttachment(const spirv_cross::CompilerReflect
 }
 
 
+inline void readShaderResourceInputResources(const spirv_cross::CompilerReflection& compiler,
+                                             VkShaderStageFlagBits stage,
+                                             std::vector<ShaderResource>& resources)
+{
+    auto subpass_resources = compiler.get_shader_resources().stage_inputs;
+
+    for (auto& resource : subpass_resources)
+    {
+        ShaderResource shader_resource{};
+        shader_resource.type = ShaderResourceType::Input;
+        shader_resource.stages = VK_SHADER_STAGE_VERTEX_BIT;
+        shader_resource.name = resource.name;
+
+        read_resource_arraySize(compiler, resource, shader_resource);
+        readResourceDecoration<spv::DecorationBinding>(compiler, resource, shader_resource);
+
+        resources.push_back(shader_resource);
+    }
+}
+
+
 bool SpirvShaderReflection::reflectShaderResources(const std::vector<uint32_t> sprivSource,
                                                    VkShaderStageFlagBits stage,
                                                    std::vector<ShaderResource>& shaderResources)
@@ -190,5 +211,6 @@ bool SpirvShaderReflection::reflectShaderResources(const std::vector<uint32_t> s
     readShaderResourceUniformBuffer(compiler, stage, shaderResources);
     readShaderResourceImageSampler(compiler, stage, shaderResources);
     readShaderResourceInputAttachment(compiler, stage, shaderResources);
+    readShaderResourceInput(compiler, stage, shaderResources);
     return true;
 }

@@ -34,6 +34,7 @@ FrameResource::FrameResource(Device& device)
     }
 }
 
+
 RenderContext::RenderContext(Device& device, VkSurfaceKHR surface, Window& window)
     : device(device)
 {
@@ -72,7 +73,6 @@ RenderContext::RenderContext(Device& device, VkSurfaceKHR surface, Window& windo
 
     VK_CHECK_RESULT(vkAllocateCommandBuffers(device.getHandle(), &allocateInfo, vkCommandBuffers.data()))
 
-    FrameResource r(device);
     for (uint32_t i = 0; i < getSwapChainImageCount(); i++)
     {
         frameResources.emplace_back(std::make_unique<FrameResource>(device));
@@ -113,7 +113,7 @@ CommandBuffer& RenderContext::beginFrame()
     frameResources[activeFrameIndex]->reset();
     clearResourceSets();
 
-    auto& commandBuffer = *frameResources[activeFrameIndex]->commandBuffer;
+    auto& commandBuffer = getCommandBuffer();
     commandBuffer.beginRecord(0);
 
 
@@ -374,6 +374,43 @@ void RenderContext::bindMaterial(const gltfLoading::Material& material)
             bindImage(0, texture.second->image->getVkImageView(), texture.second->getSampler(), binding.binding, 0);
         }
     }
+}
+
+void RenderContext::bindPrimitive(const gltfLoading::Primitive& primitive)
+{
+    VertexInputState vertexInputState;
+
+    for (const auto& inputResource : pipelineState.getPipelineLayout().getShaderResources(ShaderResourceType::Input,
+             VK_SHADER_STAGE_VERTEX_BIT))
+    {
+        gltfLoading::VertexAttribute attribute{};
+        if (!primitive.getVertexAttribute(inputResource.name, attribute))
+        {
+            continue;
+        }
+        VkVertexInputAttributeDescription vertex_attribute{};
+        vertex_attribute.binding = inputResource.location;
+        vertex_attribute.format = attribute.format;
+        vertex_attribute.location = inputResource.location;
+        vertex_attribute.offset = attribute.offset;
+
+        vertexInputState.attributes.push_back(vertex_attribute);
+
+        VkVertexInputBindingDescription vertex_binding{};
+        vertex_binding.binding = inputResource.location;
+        vertex_binding.stride = attribute.stride;
+
+        vertexInputState.bindings.push_back(vertex_binding);
+
+        if (primitive.vertexBuffers.contains(inputResource.name))
+        {
+            std::vector<const Buffer*> buffers = {&primitive.getVertexBuffer(inputResource.name)};
+            getCommandBuffer().bindVertexBuffer(inputResource.location, buffers, {0});
+            getCommandBuffer().bindIndicesBuffer(*primitive.indexBuffer,0);
+        }
+    }
+
+    pipelineState.setVertexInputState(vertexInputState);
 }
 
 
@@ -689,5 +726,5 @@ BufferAllocation RenderContext::allocateBuffer(VkDeviceSize allocateSize, VkBuff
 
 CommandBuffer& RenderContext::getCommandBuffer()
 {
-    return commandBuffers[activeFrameIndex];
+    return *frameResources[activeFrameIndex]->commandBuffer;
 }

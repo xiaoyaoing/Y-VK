@@ -41,6 +41,8 @@ struct FrameResource
 
     FrameResource(Device&);
 
+    ~FrameResource() = default;
+
     void reset();
 
     std::unique_ptr<CommandBuffer> commandBuffer{nullptr};
@@ -69,6 +71,8 @@ public:
     void bindInput(uint32_t setId, const ImageView& view, uint32_t binding, uint32_t array_element);
 
     void bindMaterial(const gltfLoading::Material& material);
+
+    void bindPrimitive(const gltfLoading::Primitive & primitive);
 
     void clearResourceSets();
 
