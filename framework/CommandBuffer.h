@@ -32,26 +32,21 @@ public:
         ResetIndividually,
         AlwaysAllocate,
     };
+    
 
     VkCommandBuffer getHandle() const { return _buffer; }
 
+    //Avoid right value can't be located.
+    const VkCommandBuffer * getHandlePointer() const { return &_buffer; }
+
+    
     explicit CommandBuffer(VkCommandBuffer buffer) : _buffer(buffer)
     {
     }
 
     void beginRecord(VkCommandBufferUsageFlags usage);
 
-    void beginRenderPass(VkRenderPass renderPass, VkFramebuffer buffer,
-                         const std::vector<VkClearValue>& clearValues, const VkExtent2D& extent2D);
 
-    //    void beginRenderPass(const RenderTarget &render_target,
-    //                         std::unique_ptr<Subpass> &render_pass,
-    //                         const FrameBuffer &framebuffer,
-    //                         const std::vector<VkClearValue> &clear_values,
-    //                         VkSubpassContents contents);
-
-    void beginRenderPass(RenderPass& render_pass, const std::vector<VkClearValue>& clear_values,
-                         VkSubpassContents contents);
 
     void beginRenderPass(RenderPass& render_pass, FrameBuffer& frameBuffer,
                          const std::vector<VkClearValue>& clear_values,

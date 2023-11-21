@@ -79,3 +79,14 @@ const std::vector<ShaderResource> PipelineLayout::getShaderResources(const Shade
 
     return found_resources;
 }
+
+VkShaderStageFlags PipelineLayout::getPushConstantRangeStage(uint32_t size) const
+{
+    VkShaderStageFlags stage{};
+    for(auto & resource : getShaderResources(ShaderResourceType::PushConstant))
+    {
+        if(resource.offset + resource.size <= size)
+            stage |= resource.stages;
+    }
+    return stage;
+}

@@ -25,7 +25,5 @@ protected:
 
 
     void onUpdateGUI() override;
-
-
     void drawFrame() override;
 };

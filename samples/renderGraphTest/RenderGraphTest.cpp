@@ -6,7 +6,6 @@
 #include "Shader.h"
 #include "../../framework/Common/VkCommon.h"
 #include "FIleUtils.h"
-#include "Scene/SceneUtil.h"
 
 void Example::drawFrame()
 {

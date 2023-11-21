@@ -59,14 +59,13 @@ Texture Texture::loadTexture(Device& device, const std::string& path)
     subresourceRange.levelCount = mipmaps.size();
     subresourceRange.layerCount = 1;
 
-    vkCommon::setImageLayout(commandBuffer.getHandle(), texture.image->getVkImage().getHandle(),
-                             VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                             subresourceRange);
+
+    texture.getImage().getVkImage().transitionLayout(commandBuffer,VulkanLayout::TRANSFER_DST,subresourceRange);
+    
     commandBuffer.copyBufferToImage(imageBuffer, texture.image->getVkImage(), imageCopyRegions);
-    vkCommon::setImageLayout(commandBuffer.getHandle(), texture.image->getVkImage().getHandle(),
-                             VK_FORMAT_R8G8B8A8_SRGB,
-                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                             subresourceRange);
+
+    texture.getImage().getVkImage().transitionLayout(commandBuffer,VulkanLayout::READ_ONLY,subresourceRange);
+    
 
     commandBuffer.endRecord();
 
@@ -131,14 +130,12 @@ Texture Texture::loadTextureArray(Device& device, const std::string& path)
     subresourceRange.levelCount = mipmaps.size();
     subresourceRange.layerCount = layers;
 
-    vkCommon::setImageLayout(commandBuffer.getHandle(), texture.image->getVkImage().getHandle(),
-                             VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                             subresourceRange);
+    texture.getImage().getVkImage().transitionLayout(commandBuffer,VulkanLayout::TRANSFER_DST,subresourceRange);
+
     commandBuffer.copyBufferToImage(imageBuffer, texture.image->getVkImage(), imageCopyRegions);
-    vkCommon::setImageLayout(commandBuffer.getHandle(), texture.image->getVkImage().getHandle(),
-                             VK_FORMAT_R8G8B8A8_SRGB,
-                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                             subresourceRange);
+    
+    texture.getImage().getVkImage().transitionLayout(commandBuffer,VulkanLayout::READ_ONLY,subresourceRange);
+
 
     commandBuffer.endRecord();
 
@@ -148,8 +145,8 @@ Texture Texture::loadTextureArray(Device& device, const std::string& path)
     submitInfo.commandBufferCount = 1;
 
     auto vkCmdBuffer = commandBuffer.getHandle();
-
     submitInfo.pCommandBuffers = &vkCmdBuffer;
+    
     queue.submit({submitInfo}, VK_NULL_HANDLE);
     texture.sampler = std::make_unique<Sampler>(device, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR,
                                                 mipmaps.size());

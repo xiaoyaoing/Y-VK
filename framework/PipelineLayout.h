@@ -24,6 +24,8 @@ public:
     const std::vector<ShaderResource> getShaderResources(const ShaderResourceType& type = ShaderResourceType::All,
                                                          VkShaderStageFlagBits stage = VK_SHADER_STAGE_ALL) const;
 
+    
+    VkShaderStageFlags getPushConstantRangeStage(uint32_t size) const;
 private:
     VkPipelineLayout layout;
     std::vector<DescriptorLayout*> descriptorLayouts;

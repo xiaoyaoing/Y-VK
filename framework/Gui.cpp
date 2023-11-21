@@ -7,6 +7,7 @@
 #include <Shader.h>
 #include "Device.h"
 #include "App/Application.h"
+#include "Common/ResourceCache.h"
 
 Gui::Gui(Device &device) : device(device) {
     ImGui::CreateContext();
@@ -32,6 +33,10 @@ Gui::Gui(Device &device) : device(device) {
     ImGuiIO &io = ImGui::GetIO();
     io.FontGlobalScale = scale;
 
+    std::vector<Shader> shaders{};
+    shaders.emplace_back(Shader(device,FileUtils::getShaderPath("gui.vert")));
+    shaders.emplace_back(Shader(device,FileUtils::getShaderPath("gui.frag")));
+    pipelineLayout = &device.getResourceCache().requestPipelineLayout(shaders);
 
 }
 
@@ -55,7 +60,7 @@ void Gui::prepare(const VkPipelineCache pipelineCache, const VkRenderPass render
 
     pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
     pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
-    VK_CHECK_RESULT(vkCreatePipelineLayout(device.getHandle(), &pipelineLayoutCreateInfo, nullptr, &pipelineLayout))
+    // VK_CHECK_RESULT(vkCreatePipelineLayout(device.getHandle(), &pipelineLayoutCreateInfo, nullptr, &pipelineLayout))
 
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyState =
             vkCommon::initializers::pipelineInputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0,
@@ -95,7 +100,7 @@ void Gui::prepare(const VkPipelineCache pipelineCache, const VkRenderPass render
     VkPipelineDynamicStateCreateInfo dynamicState =
             vkCommon::initializers::pipelineDynamicStateCreateInfo(dynamicStateEnables);
 
-    VkGraphicsPipelineCreateInfo pipelineCreateInfo = vkCommon::initializers::pipelineCreateInfo(pipelineLayout,
+    VkGraphicsPipelineCreateInfo pipelineCreateInfo = vkCommon::initializers::pipelineCreateInfo(pipelineLayout->getHandle(),
                                                                                                  renderPass);
 
     pipelineCreateInfo.pInputAssemblyState = &inputAssemblyState;
@@ -199,12 +204,12 @@ void Gui::draw(VkCommandBuffer commandBuffer) {
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
     VkDescriptorSet descriptors[] = {descriptorSet->getHandle()};
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, descriptors, 0, NULL);
+  //  vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, descriptors, 0, NULL);
 
     pushConstBlock.scale = glm::vec2(2.0f / io.DisplaySize.x, 2.0f / io.DisplaySize.y);
     pushConstBlock.translate = glm::vec2(-1.0f);
-    vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstBlock),
-                       &pushConstBlock);
+    // vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstBlock),
+    //                    &pushConstBlock);
 
     VkDeviceSize offsets[1] = {0};
 
@@ -227,6 +232,23 @@ void Gui::draw(VkCommandBuffer commandBuffer) {
         }
         vertexOffset += cmd_list->VtxBuffer.Size;
     }
+}
+
+void Gui::addGuiPass(RenderGraph& graph, RenderContext& renderContext)
+{
+    struct GuiPassData
+    {
+        RenderGraphHandle output;
+    };
+    graph.addPass<GuiPassData>("Gui Pass",
+        [&graph](RenderGraph::Builder& builder, GuiPassData& data)
+        {
+            data.output = graph.getBlackBoard()["output"];
+            data.output = builder.writeTexture(data.output,TextureUsage::COLOR_ATTACHMENT);
+        },
+        [&renderContext](GuiPassData& data,const RenderPassContext & context)
+        {
+        });
 }
 
 bool Gui::checkBox(const char *caption, bool *value) {

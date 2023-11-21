@@ -19,23 +19,23 @@ void CommandBuffer::beginRecord(VkCommandBufferUsageFlags usage)
 }
 
 
-void CommandBuffer::beginRenderPass(VkRenderPass renderPass, VkFramebuffer buffer,
-                                    const std::vector<VkClearValue>& clearValues,
-                                    const VkExtent2D& extent2D)
-{
-    VkRenderPassBeginInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = renderPass;
-    renderPassInfo.framebuffer = buffer;
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = extent2D;
-
-    renderPassInfo.clearValueCount = clearValues.size();
-    renderPassInfo.pClearValues = clearValues.data();
-
-
-    vkCmdBeginRenderPass(_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-}
+// void CommandBuffer::beginRenderPass(VkRenderPass renderPass, VkFramebuffer buffer,
+//                                     const std::vector<VkClearValue>& clearValues,
+//                                     const VkExtent2D& extent2D)
+// {
+//     VkRenderPassBeginInfo renderPassInfo{};
+//     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+//     renderPassInfo.renderPass = renderPass;
+//     renderPassInfo.framebuffer = buffer;
+//     renderPassInfo.renderArea.offset = {0, 0};
+//     renderPassInfo.renderArea.extent = extent2D;
+//
+//     renderPassInfo.clearValueCount = clearValues.size();
+//     renderPassInfo.pClearValues = clearValues.data();
+//
+//
+//     vkCmdBeginRenderPass(_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+// }
 
 void CommandBuffer::bindVertexBuffer(std::vector<const Buffer*>& buffers, const std::vector<VkDeviceSize>& offsets) const
 {
@@ -137,25 +137,25 @@ void CommandBuffer::imageMemoryBarrier(const ImageView& view, ImageMemoryBarrier
 //}
 
 
-void CommandBuffer::beginRenderPass(RenderPass& render_pass, const std::vector<VkClearValue>& clear_values,
-                                    VkSubpassContents contents)
-{
-    VkRenderPassBeginInfo renderPassInfo{};
-
-    const auto& frameBuffer = RenderContext::g_context->getFrameBuffer();
-
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = render_pass.getHandle();
-    renderPassInfo.framebuffer = frameBuffer.getHandle();
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = frameBuffer.getExtent();
-
-    renderPassInfo.clearValueCount = clear_values.size();
-    renderPassInfo.pClearValues = clear_values.data();
-
-
-    vkCmdBeginRenderPass(_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-}
+// void CommandBuffer::beginRenderPass(RenderPass& render_pass, const std::vector<VkClearValue>& clear_values,
+//                                     VkSubpassContents contents)
+// {
+//     VkRenderPassBeginInfo renderPassInfo{};
+//
+//     const auto& frameBuffer = RenderContext::g_context->getFrameBuffer();
+//
+//     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+//     renderPassInfo.renderPass = render_pass.getHandle();
+//     renderPassInfo.framebuffer = frameBuffer.getHandle();
+//     renderPassInfo.renderArea.offset = {0, 0};
+//     renderPassInfo.renderArea.extent = frameBuffer.getExtent();
+//
+//     renderPassInfo.clearValueCount = clear_values.size();
+//     renderPassInfo.pClearValues = clear_values.data();
+//
+//
+//     vkCmdBeginRenderPass(_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+// }
 
 void CommandBuffer::endRenderPass()
 {

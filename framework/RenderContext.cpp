@@ -61,7 +61,6 @@ RenderContext::RenderContext(Device& device, VkSurfaceKHR surface, Window& windo
     VK_CHECK_RESULT(
         vkCreateSemaphore(device.getHandle(), &semaphoreCreateInfo, nullptr, &semaphores.presentFinishedSem));
 
-    renderGraph = std::make_unique<RenderGraph>(device);
 
 
     VkCommandBufferAllocateInfo allocateInfo{};
@@ -80,26 +79,6 @@ RenderContext::RenderContext(Device& device, VkSurfaceKHR surface, Window& windo
     }
 }
 
-CommandBuffer& RenderContext::begin()
-{
-    assert(prepared && "RenderContext not prepared for rendering, call prepare()");
-
-    if (!frameActive)
-    {
-        beginFrame();
-    }
-
-    frameResources[activeFrameIndex].reset();
-
-    if (acquiredSem == VK_NULL_HANDLE)
-    {
-        throw std::runtime_error("Couldn't begin frame");
-    }
-    auto& queue = device.getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0);
-
-
-    // return getActiveRenderFrame().requestCommandBuffer(queue);
-}
 
 CommandBuffer& RenderContext::beginFrame()
 {
@@ -111,7 +90,7 @@ CommandBuffer& RenderContext::beginFrame()
     frameActive = true;
 
     frameResources[activeFrameIndex]->reset();
-    clearResourceSets();
+    clearPassResources();
 
     auto& commandBuffer = getCommandBuffer();
     commandBuffer.beginRecord(0);
@@ -127,7 +106,6 @@ CommandBuffer& RenderContext::beginFrame()
                              });
 
     return commandBuffer;
-    //   getActiveRenderFrame().reset();
 }
 
 void RenderContext::waitFrame()
@@ -142,27 +120,6 @@ void RenderContext::waitFrame()
 
 void RenderContext::prepare()
 {
-    if (swapchain)
-    {
-        surfaceExtent = swapchain->getExtent();
-
-        VkExtent3D extent{surfaceExtent.width, surfaceExtent.height, 1};
-
-        for (auto& image_handle : swapchain->getImages())
-        {
-            // auto swapchain_image = Image{
-            //         device, image_handle,
-            //         extent,
-            //         swapchain->getImageFormat(),
-            //         swapchain->getUseage()};
-            // auto render_target = RenderTarget::defaultRenderTargetCreateFunction(std::move(swapchain_image));
-            // frames.emplace_back(std::make_unique<RenderFrame>(device, std::move(render_target)));
-        }
-    }
-    else
-    {
-        swapchain = nullptr;
-    }
 }
 
 uint32_t RenderContext::getActiveFrameIndex() const
@@ -172,23 +129,12 @@ uint32_t RenderContext::getActiveFrameIndex() const
 
 void RenderContext::submit(CommandBuffer& buffer, VkFence fence)
 {
-    // ImageMemoryBarrier memory_barrier{};
-    // memory_barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    // memory_barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    // memory_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    // memory_barrier.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    // memory_barrier.dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-    // buffer.imageMemoryBarrier(
-    //     getCurHwtexture().getVkImageView(),
-    //     memory_barrier);
-
-
+    
     getCurHwtexture().getVkImage().transitionLayout(buffer, VulkanLayout::PRESENT,
                                                     getCurHwtexture().getVkImageView().getSubResourceRange());
     buffer.endRecord();
 
 
-    std::vector<VkCommandBuffer> cmdBufferHandles{buffer.getHandle()};
 
 
     auto queue = device.getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0);
@@ -204,7 +150,7 @@ void RenderContext::submit(CommandBuffer& buffer, VkFence fence)
     submitInfo.pSignalSemaphores = &semaphores.renderFinishedSem;
 
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = cmdBufferHandles.data();
+    submitInfo.pCommandBuffers = buffer.getHandlePointer();
 
     queue.submit({submitInfo}, fence);
 
@@ -222,7 +168,6 @@ void RenderContext::submit(CommandBuffer& buffer, VkFence fence)
 
 
         VK_CHECK_RESULT(queue.present(present_info));
-        // LOGE("Presented")
 
         frameActive = false;
     }
@@ -240,15 +185,8 @@ VkExtent2D RenderContext::getSwapChainExtent() const
     return swapchain->getExtent();
 }
 
-FrameBuffer& RenderContext::getFrameBuffer(uint32_t idx)
-{
-    return *frameBuffers[idx];
-}
 
-FrameBuffer& RenderContext::getFrameBuffer()
-{
-    return getFrameBuffer(this->activeFrameIndex);
-}
+
 
 VkSemaphore
 RenderContext::submit(const Queue& queue, const std::vector<CommandBuffer*>& commandBuffers, VkSemaphore /*waitSem*/,
@@ -292,25 +230,12 @@ RenderContext::submit(const Queue& queue, const std::vector<CommandBuffer*>& com
     return VK_NULL_HANDLE;
 }
 
-void RenderContext::createFrameBuffers(RenderPass& renderPass)
-{
-    if (!frameBuffers.empty())
-    {
-        return;
-    }
-    // for (auto &renderFrame: frames) {
-    //     frameBuffers.emplace_back(std::make_unique<FrameBuffer>(device, renderFrame->getRenderTarget(), renderPass));
-    // }
-}
 
 uint32_t RenderContext::getSwapChainImageCount() const
 {
     return swapchain->getImageCount();
 }
 
-// RenderFrame &RenderContext::getRenderFrame(int idx) {
-//     return *frames[idx];
-// }
 
 void RenderContext::setActiveFrameIdx(int idx)
 {
@@ -320,19 +245,6 @@ void RenderContext::setActiveFrameIdx(int idx)
 bool RenderContext::isPrepared() const
 {
     return prepared;
-}
-
-void RenderContext::draw(const Scene& scene)
-{
-    auto& commandBuffer = commandBuffers[activeFrameIndex];
-    auto& pipeline = device.getResourceCache().requestPipeline(pipelineState);
-
-    commandBuffer.bindPipeline(pipeline.getHandle());
-}
-
-RenderGraph& RenderContext::getRenderGraph() const
-{
-    return *renderGraph;
 }
 
 PipelineState& RenderContext::getPipelineState()
@@ -414,10 +326,6 @@ void RenderContext::bindPrimitive(const gltfLoading::Primitive& primitive)
 }
 
 
-// const std::unordered_map<uint32_t, ResourceSet>& RenderContext::getResourceSets() const
-// {
-//     return resourceSets;
-// }
 
 const std::unordered_map<uint32_t, ResourceSet>& RenderContext::getResourceSets() const
 {
@@ -534,19 +442,7 @@ void RenderContext::bindPipelineLayout(PipelineLayout& layout)
     pipelineState.setPipelineLayout(layout);
 }
 
-void RenderContext::draw(CommandBuffer& commandBuffer, gltfLoading::Model& model)
-{
-    model.bindBuffer(commandBuffer);
-    for (auto& node : model.linearNodes)
-        draw(commandBuffer, *node);
 
-    // VkDeviceSize offsets[1] = {0};
-    // VkBuffer vertexBuffer[] = {vertices->getHandle()};
-    // vkCmdBindVertexBuffers(commandBuffer.getHandle(), 0, 1, vertexBuffer, offsets);
-    // vkCmdBindIndexBuffer(commandBuffer.getHandle(), indices->getHandle(), 0, VK_INDEX_TYPE_UINT32);
-    // for (auto &node: linearNodes)
-    //     draw(*node, commandBuffer, renderFlags, pipelineLayout, bindImageSet);
-}
 
 void RenderContext::flushAndDrawIndexed(CommandBuffer& commandBuffer, uint32_t indexCount, uint32_t instanceCount,
                                         uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance)
@@ -563,71 +459,10 @@ void RenderContext::flushAndDraw(CommandBuffer& commandBuffer, uint32_t vertexCo
 }
 
 
-void RenderContext::drawLightingPass(CommandBuffer& commandBuffer)
-{
-    struct Poses
-    {
-        glm::vec3 lightPos, cameraPos;
-    };
-
-    auto buffer = allocateBuffer(sizeof(Poses), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-    Poses poses{.lightPos = {0.0f, 2.5f, 0.0f}, .cameraPos = camera->position};
-    buffer.buffer->uploadData(&poses, buffer.size, buffer.offset);
-    bindBuffer(0, *buffer.buffer, buffer.offset, buffer.size, 3, 0);
-
-    flushPipelineState(commandBuffer);
-    flushDescriptorState(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
-    commandBuffer.draw(3, 1, 0, 0);
-}
 
 void RenderContext::beginRenderPass(CommandBuffer& commandBuffer, RenderTarget& renderTarget,
                                     const std::vector<SubpassInfo>& subpassInfos)
 {
-    // auto hwTextures = renderTarget.getHwTextures();
-    //
-    // //转换图像布局
-    // {
-    //     // Image 0 is the swapchain
-    //     ImageMemoryBarrier memoryBarrier{};
-    //     memoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    //     memoryBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    //     memoryBarrier.srcAccessMask = 0;
-    //     memoryBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    //     memoryBarrier.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    //     memoryBarrier.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    //
-    //     ImageMemoryBarrier depthMemoryBarrier{};
-    //     depthMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    //     depthMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    //     depthMemoryBarrier.srcAccessMask = 0;
-    //     depthMemoryBarrier.dstAccessMask =
-    //         VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    //     depthMemoryBarrier.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    //     depthMemoryBarrier.dstStageMask =
-    //         VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-    //
-    //
-    //     // commandBuffer.imageMemoryBarrier(hwTextures[0]->getVkImageView(), memoryBarrier);
-    //
-    //     // Skip 1 as it is handled later as a depth-stencil attachment
-    //     for (size_t i = 0; i < renderTarget.getHwTextures().size(); ++i)
-    //     {
-    //         if (isDepthOrStencilFormat(hwTextures[i]->getFormat()))
-    //         {
-    //             commandBuffer.imageMemoryBarrier(hwTextures[i]->getVkImageView(), depthMemoryBarrier);
-    //         }
-    //         else
-    //         {
-    //             if (i > 1)
-    //             {
-    //                 memoryBarrier.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    //                 memoryBarrier.dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
-    //             }
-    //             commandBuffer.imageMemoryBarrier(hwTextures[i]->getVkImageView(), memoryBarrier);
-    //         }
-    //     }
-    // }
-
     auto& renderPass = device.getResourceCache().requestRenderPass(renderTarget.getAttachments(), subpassInfos);
     auto& framebuffer = device.getResourceCache().requestFrameBuffer(
         renderTarget, renderPass);
@@ -643,7 +478,7 @@ void RenderContext::beginRenderPass(CommandBuffer& commandBuffer, RenderTarget& 
 
 void RenderContext::nextSubpass(CommandBuffer& commandBuffer)
 {
-    clearResourceSets();
+    clearPassResources();
 
     uint32_t subpassIdx = pipelineState.getSubpassIndex();
     pipelineState.setSubpassIndex(subpassIdx + 1);
@@ -655,10 +490,17 @@ void RenderContext::nextSubpass(CommandBuffer& commandBuffer)
     vkCmdNextSubpass(commandBuffer.getHandle(), {});
 }
 
+void RenderContext::flushPushConstantStage(CommandBuffer& commandBuffer)
+{
+    // commandBuffer
+}
+
+
 void RenderContext::flush(CommandBuffer& commandBuffer)
 {
     flushPipelineState(commandBuffer);
     flushDescriptorState(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+    flushPushConstantStage(commandBuffer);
 }
 
 void RenderContext::endRenderPass(CommandBuffer& commandBuffer)
@@ -668,54 +510,24 @@ void RenderContext::endRenderPass(CommandBuffer& commandBuffer)
     pipelineState.reset();
 }
 
-void RenderContext::clearResourceSets()
+void RenderContext::clearPassResources()
 {
     resourceSets.clear();
+    storePushConstants.clear();
 }
 
-
-void RenderContext::draw(CommandBuffer& commandBuffer, gltfLoading::Node& node)
+void RenderContext::pushConstants(std::vector<uint8_t> pushConstants)
 {
-    auto& pipelineLayout = pipelineState.getPipelineLayout();
-    //fixme 
-    VertexInputState vertexInputState{};
-    vertexInputState.bindings = {Vertex::getBindingDescription()};
-    vertexInputState.attributes = Vertex::getAttributeDescriptions();
-
-
-    pipelineState.setVertexInputState(vertexInputState);
-
-    flushPipelineState(commandBuffer);
-
-
-    auto allocation = allocateBuffer(sizeof(GlobalUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-
-    //todo: use camera data here
-    GlobalUniform uniform{
-        .model = node.getMatrix(), .view = camera->matrices.view, .proj = camera->matrices.perspective
-    };
-    allocation.buffer->uploadData(&uniform, allocation.size, allocation.offset);
-    bindBuffer(0, *allocation.buffer, allocation.offset, allocation.size, 0, 0);
-
-    auto& descriptorLayout = pipelineLayout.getDescriptorLayout(0);
-
-    for (auto& prim : node.mesh->primitives)
+    auto size = pushConstants.size() + storePushConstants.size();
+    if(size>maxPushConstantSize)
     {
-        const auto& material = prim->material;
-        for (auto& texture : material.textures)
-        {
-            if (descriptorLayout.hasLayoutBinding(texture.first))
-            {
-                auto& binding = descriptorLayout.getLayoutBindingInfo(texture.first);
-                bindImage(0, texture.second->image->getVkImageView(), texture.second->getSampler(), binding.binding, 0);
-            }
-        }
-        flushDescriptorState(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
-        commandBuffer.drawIndexed(prim->indexCount, 1, prim->firstIndex, 0, 0);
+        LOGE("Push Constant Size is too large,device support {},but current size is {}",maxPushConstantSize,size);
     }
-    for (auto& child : node.children)
-        draw(commandBuffer, node);
+    storePushConstants.insert(storePushConstants.end(),pushConstants.begin(),pushConstants.end());
 }
+
+
+
 
 BufferAllocation RenderContext::allocateBuffer(VkDeviceSize allocateSize, VkBufferUsageFlags usage)
 {

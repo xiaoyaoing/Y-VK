@@ -10,6 +10,7 @@
 #include "Descriptor/DescriptorSet.h"
 //#include "App/Application.h"
 
+class RenderContext;
 class Image;
 
 class ImageView;
@@ -17,6 +18,8 @@ class ImageView;
 class Application;
 
 class CommandBuffer;
+
+class RenderGraph;
 
 class Gui {
 public:
@@ -29,6 +32,8 @@ public:
     bool update();
 
     void draw(VkCommandBuffer commandBuffer);
+
+    void addGuiPass(RenderGraph & graph,RenderContext & renderContext);
 
     bool checkBox(const char *caption, bool *value);
 
@@ -50,7 +55,7 @@ protected:
 //    VkDescriptorPool descriptorPool;
 //    VkDescriptorSetLayout descriptorSetLayout;
 //    VkDescriptorSet descriptorSet;
-    VkPipelineLayout pipelineLayout;
+  //  VkPipelineLayout pipelineLayout;
 
     std::unique_ptr<DescriptorSet> descriptorSet{nullptr};
     std::unique_ptr<DescriptorPool> descriptorPool{nullptr};
@@ -66,6 +71,9 @@ protected:
         glm::vec2 translate;
     } pushConstBlock;
 
+
+    PipelineLayout * pipelineLayout;
+    
 
     Texture fontTexture;
     uint32 subPass{0};

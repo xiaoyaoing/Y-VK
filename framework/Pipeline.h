@@ -185,31 +185,31 @@ protected:
 };
 
 
-class RenderPipeline
-{
-public:
-    explicit RenderPipeline(Device& device);
-
-    void draw(CommandBuffer& commandBuffer,
-              VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE);
-
-    void addSubPass(std::unique_ptr<Subpass>&& subpass);
-
-    void createRenderPass(RenderTarget& target, std::vector<LoadStoreInfo>& loadStoreOps);
-
-    void createRenderPass(VkRenderPass pass);
-
-    RenderPass& getRenderPass() const;
-
-private:
-    std::vector<std::unique_ptr<Subpass>> subPasses{};
-    std::unique_ptr<RenderPass> renderPass;
-
-    /// Default to two load store
-    std::vector<LoadStoreInfo> load_store = std::vector<LoadStoreInfo>(2);
-
-    /// Default to two clear values
-    std::vector<VkClearValue> clear_value = std::vector<VkClearValue>(2);
-
-    Device& device;
-};
+// class RenderPipeline
+// {
+// public:
+//     explicit RenderPipeline(Device& device);
+//
+//     void draw(CommandBuffer& commandBuffer,
+//               VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE);
+//
+//     void addSubPass(std::unique_ptr<Subpass>&& subpass);
+//
+//     void createRenderPass(RenderTarget& target, std::vector<LoadStoreInfo>& loadStoreOps);
+//
+//     void createRenderPass(VkRenderPass pass);
+//
+//     RenderPass& getRenderPass() const;
+//
+// private:
+//     std::vector<std::unique_ptr<Subpass>> subPasses{};
+//     std::unique_ptr<RenderPass> renderPass;
+//
+//     /// Default to two load store
+//     std::vector<LoadStoreInfo> load_store = std::vector<LoadStoreInfo>(2);
+//
+//     /// Default to two clear values
+//     std::vector<VkClearValue> clear_value = std::vector<VkClearValue>(2);
+//
+//     Device& device;
+// };

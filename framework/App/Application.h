@@ -66,37 +66,13 @@ public:
     void mainloop();
 
 protected:
-    // #ifdef _WIN32
-    //     HWND setupWindow(HINSTANCE hinstance, WNDPROC wndproc);
-    //     void handleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-    // #endif()
-    //* create functions
-    //    virtual std::unique_ptr<RenderTarget> createRenderTarget(Image &image) {}
-
-    virtual void draw(CommandBuffer& commandBuffer);
-
-    virtual void createCommandBuffer();
-
-    virtual void createCommandPool();
-
-    virtual void createFrameBuffers();
-
-    virtual void createRenderPass();
-
-    virtual void createDepthStencil();
-
+    
     void createRenderContext();
-
-    virtual VkPhysicalDevice createPhysicalDevice();
-
+    
     void createAllocator();
 
     virtual void update();
-
-    virtual void bindUniformBuffers(CommandBuffer& commandBuffer)
-    {
-    }
-
+    
     //*
     virtual void getRequiredInstanceExtensions();
 
@@ -113,9 +89,8 @@ protected:
 
     virtual void initVk();
 
-    virtual void drawFrame();
+    virtual void drawFrame() = 0;
 
-    void drawRenderPasses(CommandBuffer& buffer, RenderTarget& renderTarget);
 
     virtual void updateScene();
 
@@ -133,53 +108,32 @@ protected:
 
 protected:
     VmaAllocator _allocator{};
+    
     std::unique_ptr<Instance> _instance;
-    ptr<Queue> _graphicsQueue, _presentQueue;
-
+    
     std::vector<VkFramebuffer> _frameBuffers;
-
     // 指定怎么处理renderPass里面的attachment
-    std::vector<LoadStoreInfo> loadStoreInfos{};
 
     std::unordered_map<const char*, bool> deviceExtensions;
     std::unordered_map<const char*, bool> instanceExtensions;
     std::vector<const char*> validationLayers{"VK_LAYER_KHRONOS_validation"};
 
-    // std::unique_ptr<CommandPool> commandPool;
     std::vector<std::unique_ptr<CommandBuffer>> commandBuffers;
-    //    ptr<Image> _depthImage;
-    //    ptr<ImageView> _depthImageView;
-    //    ptr<RenderPass> _renderPass;
-    //
+
     std::unique_ptr<Window> window{nullptr};
-
-
-    std::unique_ptr<RenderPipeline> renderPipeline{nullptr};
-
+    
     std::unique_ptr<RenderContext> renderContext{nullptr};
 
     std::unique_ptr<Device> device{nullptr};
-
-    //    std::unique_ptr<RenderPass> renderPass;
-
+    
     VkSurfaceKHR surface{};
-
-    std::vector<uint32_t> colorIdx{};
-    std::vector<uint32_t> depthIdx{};
-
-    VkPipelineLayout pipelineLayOut{};
-    //    VkDescriptorSetLayout descriptorSetLayout{};
-    std::unique_ptr<DescriptorLayout> descriptorLayout;
-
-    std::unique_ptr<Scene> scene;
-
+    
     std::unique_ptr<Camera> camera;
 
     std::unique_ptr<Gui> gui;
 
     float frameTimer{1};
-
-
+    
     int width, height;
 
     //Camera related  variable begin
@@ -212,7 +166,6 @@ protected:
     const bool enableValidationLayers = true;
 #endif
 
-    void createRenderPipeline();
 
     void handleMouseMove(float x, float y);
 };

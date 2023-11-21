@@ -74,15 +74,20 @@ public:
 
     void bindPrimitive(const gltfLoading::Primitive & primitive);
 
-    void clearResourceSets();
+    void bindPipelineLayout(PipelineLayout& layout);
+
+    void pushConstants(std::vector<uint8_t> pushConstants);
+
+    void clearPassResources();
 
     void flushPipelineState(CommandBuffer& commandBuffer);
 
-    void bindPipelineLayout(PipelineLayout& layout);
+    
+    void flushPushConstantStage(CommandBuffer & commandBuffer);
+
 
     const std::unordered_map<uint32_t, ResourceSet>& getResourceSets() const;
 
-    // Resource Functions End
 
 
     RenderContext(Device& device, VkSurfaceKHR surface, Window& window);
@@ -97,7 +102,6 @@ public:
 
     void prepare();
 
-    CommandBuffer& begin();
 
     CommandBuffer& beginFrame();
 
@@ -107,9 +111,7 @@ public:
 
     void submit(CommandBuffer& buffer, VkFence fence = VK_NULL_HANDLE);
 
-    void createFrameBuffers(RenderPass& renderpass);
 
-    FrameBuffer& getFrameBuffer(uint32_t idx);
 
     FrameBuffer& getFrameBuffer();
 
@@ -120,7 +122,6 @@ public:
 
     bool isPrepared() const;
 
-    void draw(const Scene& scene);
 
     RenderGraph& getRenderGraph() const;
 
@@ -131,17 +132,13 @@ public:
 
     void flushDescriptorState(CommandBuffer& commandBuffer, VkPipelineBindPoint pipeline_bind_point);
 
-    void draw(CommandBuffer& commandBuffer, gltfLoading::Model& model);
-
-    void draw(CommandBuffer& commandBuffer, gltfLoading::Node& node);
-
+    
     void flushAndDrawIndexed(CommandBuffer& commandBuffer, uint32_t indexCount, uint32_t instanceCount,
                              uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance);
 
     void flushAndDraw(CommandBuffer& commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
                       uint32_t firstInstance);
 
-    void drawLightingPass(CommandBuffer& commandBuffer);
 
     void beginRenderPass(CommandBuffer& commandBuffer, RenderTarget& renderTarget,
                          const std::vector<SubpassInfo>& subpassInfos);
@@ -163,27 +160,15 @@ private:
     VkSemaphore acquiredSem;
     bool prepared{false};
     uint32_t activeFrameIndex{0};
-
-
-    VkInstance instance;
-    std::vector<const char*> instanceLayers;
-    std::vector<const char*> instanceExtensions;
-    std::vector<const char*> appDeviceExtensions;
-    std::vector<const char*> appInstanceExtensions;
-    VkPhysicalDeviceFeatures2* physicalDeviceFeatures2 = nullptr;
-
+    
     Device& device;
     std::unique_ptr<SwapChain> swapchain;
 
     uint32_t swapChainCount{0};
 
-    //  std::vector<std::unique_ptr<RenderFrame>> frames;
     std::vector<std::unique_ptr<FrameBuffer>> frameBuffers;
     VkExtent2D surfaceExtent;
-
-    // 交换链图像信号 acquire-next
-    //   VkSemaphore imageAcquireSem;
-
+    
     struct
     {
         VkSemaphore presentFinishedSem;
@@ -191,16 +176,12 @@ private:
     } semaphores;
 
     PipelineState pipelineState;
-
-
-    std::vector<CommandBuffer> commandBuffers{};
-
+    
     std::vector<std::unique_ptr<FrameResource>> frameResources{};
-
-    std::unique_ptr<RenderGraph> renderGraph;
-
+    
     std::vector<SgImage> hwTextures;
-
-
+    
     std::unordered_map<uint32_t, ResourceSet> resourceSets;
+    std::vector<uint8_t> storePushConstants;
+    uint32_t maxPushConstantSize;
 };
