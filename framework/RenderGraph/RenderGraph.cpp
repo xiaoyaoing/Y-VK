@@ -165,7 +165,23 @@ bool RenderGraph::isWrite(RenderGraphHandle handle, const RenderPassNode* passNo
     for (const auto& edge : edges)
     {
         if (edge.pass == passNode && edge.texture == getResource(handle))
-            return !edge.read;
+        {
+            if (!edge.read)
+                return true;
+        }
+    }
+    return false;
+}
+
+bool RenderGraph::isRead(RenderGraphHandle handle, const RenderPassNode* passNode) const
+{
+    for (const auto& edge : edges)
+    {
+        if (edge.pass == passNode && edge.texture == getResource(handle))
+        {
+            if (edge.read)
+                return true;
+        }
     }
     return false;
 }

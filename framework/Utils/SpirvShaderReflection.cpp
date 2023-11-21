@@ -135,27 +135,6 @@ inline void readShaderResourceImageSampler(const spirv_cross::CompilerReflection
 }
 
 
-inline void readShaderResourcePushConstant(const spirv_cross::CompilerReflection& compiler,
-                                           VkShaderStageFlagBits stage,
-                                           std::vector<ShaderResource>& resources)
-{
-    auto inputResources = compiler.get_shader_resources().uniform_buffers;
-    for (auto& spirvResource : inputResources)
-    {
-        ShaderResource resource{};
-        resource.type = ShaderResourceType::ImageSampler;
-        resource.stages = stage;
-        resource.name = spirvResource.name;
-
-        readResourceDecoration<spv::DecorationBinding>(compiler, spirvResource, resource);
-        read_resource_arraySize(compiler, spirvResource, resource);
-        readResourceDecoration<spv::DecorationDescriptorSet>(compiler, spirvResource, resource);
-        //   readResourceDecoration<spv::DecorationDescriptorSet>(compiler, resource, shaderResource);
-
-        resources.emplace_back(std::move(resource));
-    }
-}
-
 inline void readShaderResourceInputAttachment(const spirv_cross::CompilerReflection& compiler,
                                               VkShaderStageFlagBits stage,
                                               std::vector<ShaderResource>& resources)
@@ -200,6 +179,40 @@ inline void readShaderResourceInputResources(const spirv_cross::CompilerReflecti
 }
 
 
+inline void readShaderResourcePushConstants(const spirv_cross::CompilerReflection& compiler,
+                                            VkShaderStageFlagBits stage,
+                                            std::vector<ShaderResource>& resources)
+{
+    auto shader_resources = compiler.get_shader_resources();
+
+    for (auto& resource : shader_resources.push_constant_buffers)
+    {
+        const auto& spivr_type = compiler.get_type_from_variable(resource.id);
+
+        std::uint32_t offset = std::numeric_limits<std::uint32_t>::max();
+
+        for (auto i = 0U; i < spivr_type.member_types.size(); ++i)
+        {
+            auto mem_offset = compiler.get_member_decoration(spivr_type.self, i, spv::DecorationOffset);
+
+            offset = std::min(offset, mem_offset);
+        }
+
+        ShaderResource shader_resource{};
+        shader_resource.type = ShaderResourceType::PushConstant;
+        shader_resource.stages = stage;
+        shader_resource.name = resource.name;
+        shader_resource.offset = offset;
+
+        read_resource_size(compiler, resource, shader_resource);
+
+        shader_resource.size -= shader_resource.offset;
+
+        resources.push_back(shader_resource);
+    }
+}
+
+
 bool SpirvShaderReflection::reflectShaderResources(const std::vector<uint32_t> sprivSource,
                                                    VkShaderStageFlagBits stage,
                                                    std::vector<ShaderResource>& shaderResources)
@@ -212,5 +225,6 @@ bool SpirvShaderReflection::reflectShaderResources(const std::vector<uint32_t> s
     readShaderResourceImageSampler(compiler, stage, shaderResources);
     readShaderResourceInputAttachment(compiler, stage, shaderResources);
     readShaderResourceInput(compiler, stage, shaderResources);
+    readShaderResourcePushConstants(compiler, stage, shaderResources);
     return true;
 }

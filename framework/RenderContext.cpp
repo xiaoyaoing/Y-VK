@@ -62,7 +62,6 @@ RenderContext::RenderContext(Device& device, VkSurfaceKHR surface, Window& windo
         vkCreateSemaphore(device.getHandle(), &semaphoreCreateInfo, nullptr, &semaphores.presentFinishedSem));
 
 
-
     VkCommandBufferAllocateInfo allocateInfo{};
     allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocateInfo.commandPool = device.getCommandPool().getHandle();
@@ -129,12 +128,9 @@ uint32_t RenderContext::getActiveFrameIndex() const
 
 void RenderContext::submit(CommandBuffer& buffer, VkFence fence)
 {
-    
     getCurHwtexture().getVkImage().transitionLayout(buffer, VulkanLayout::PRESENT,
                                                     getCurHwtexture().getVkImageView().getSubResourceRange());
     buffer.endRecord();
-
-
 
 
     auto queue = device.getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0);
@@ -184,8 +180,6 @@ VkExtent2D RenderContext::getSwapChainExtent() const
 {
     return swapchain->getExtent();
 }
-
-
 
 
 VkSemaphore
@@ -318,13 +312,12 @@ void RenderContext::bindPrimitive(const gltfLoading::Primitive& primitive)
         {
             std::vector<const Buffer*> buffers = {&primitive.getVertexBuffer(inputResource.name)};
             getCommandBuffer().bindVertexBuffer(inputResource.location, buffers, {0});
-            getCommandBuffer().bindIndicesBuffer(*primitive.indexBuffer,0);
+            getCommandBuffer().bindIndicesBuffer(*primitive.indexBuffer, 0);
         }
     }
 
     pipelineState.setVertexInputState(vertexInputState);
 }
-
 
 
 const std::unordered_map<uint32_t, ResourceSet>& RenderContext::getResourceSets() const
@@ -368,6 +361,8 @@ void RenderContext::flushDescriptorState(CommandBuffer& commandBuffer, VkPipelin
                 auto& sampler = resourceInfo.sampler;
                 auto& imageView = resourceInfo.image_view;
 
+                if (!descriptorSetLayout.hasLayoutBinding(bindingIndex))
+                    continue;
                 auto& bindingInfo = descriptorSetLayout.getLayoutBindingInfo(bindingIndex);
 
                 if (buffer != nullptr)
@@ -443,7 +438,6 @@ void RenderContext::bindPipelineLayout(PipelineLayout& layout)
 }
 
 
-
 void RenderContext::flushAndDrawIndexed(CommandBuffer& commandBuffer, uint32_t indexCount, uint32_t instanceCount,
                                         uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance)
 {
@@ -459,13 +453,13 @@ void RenderContext::flushAndDraw(CommandBuffer& commandBuffer, uint32_t vertexCo
 }
 
 
-
 void RenderContext::beginRenderPass(CommandBuffer& commandBuffer, RenderTarget& renderTarget,
                                     const std::vector<SubpassInfo>& subpassInfos)
 {
     auto& renderPass = device.getResourceCache().requestRenderPass(renderTarget.getAttachments(), subpassInfos);
     auto& framebuffer = device.getResourceCache().requestFrameBuffer(
         renderTarget, renderPass);
+
     commandBuffer.beginRenderPass(renderPass, framebuffer, renderTarget.getDefaultClearValues(), {});
 
     ColorBlendState colorBlendState = pipelineState.getColorBlendState();
@@ -493,6 +487,16 @@ void RenderContext::nextSubpass(CommandBuffer& commandBuffer)
 void RenderContext::flushPushConstantStage(CommandBuffer& commandBuffer)
 {
     // commandBuffer
+    if (storePushConstants.empty())
+        return;
+
+
+    auto& pipelineLayout = pipelineState.getPipelineLayout();
+    auto pushConstantRange = pipelineLayout.getPushConstantRangeStage(storePushConstants.size());
+
+    vkCmdPushConstants(commandBuffer.getHandle(), pipelineLayout.getHandle(), pushConstantRange,
+                       0, storePushConstants.size(), storePushConstants.data());
+    storePushConstants.clear();
 }
 
 
@@ -516,17 +520,15 @@ void RenderContext::clearPassResources()
     storePushConstants.clear();
 }
 
-void RenderContext::pushConstants(std::vector<uint8_t> pushConstants)
+void RenderContext::pushConstants(std::vector<uint8_t>& pushConstants)
 {
     auto size = pushConstants.size() + storePushConstants.size();
-    if(size>maxPushConstantSize)
+    if (size > maxPushConstantSize)
     {
-        LOGE("Push Constant Size is too large,device support {},but current size is {}",maxPushConstantSize,size);
+        LOGE("Push Constant Size is too large,device support {},but current size is {}", maxPushConstantSize, size);
     }
-    storePushConstants.insert(storePushConstants.end(),pushConstants.begin(),pushConstants.end());
+    storePushConstants.insert(storePushConstants.end(), pushConstants.begin(), pushConstants.end());
 }
-
-
 
 
 BufferAllocation RenderContext::allocateBuffer(VkDeviceSize allocateSize, VkBufferUsageFlags usage)

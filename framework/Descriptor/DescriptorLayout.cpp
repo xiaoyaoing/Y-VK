@@ -166,3 +166,8 @@ bool DescriptorLayout::hasLayoutBinding(const std::string& name) const
 {
     return resourceLookUp.contains(name);
 }
+
+bool DescriptorLayout::hasLayoutBinding(int bindingIndex) const
+{
+    return bindingLookUp.contains(bindingIndex);
+}

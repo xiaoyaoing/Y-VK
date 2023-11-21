@@ -21,29 +21,30 @@ class CommandBuffer;
 
 class RenderGraph;
 
-class Gui {
+class Gui
+{
 public:
-    Gui(Device &device);
+    Gui(Device& device);
 
     void prepare(const VkPipelineCache pipelineCache, const VkRenderPass renderPass);
 
-    void prepareResoucrces(Application *app);
+    void prepareResoucrces(Application* app);
 
     bool update();
 
-    void draw(VkCommandBuffer commandBuffer);
+    void draw(CommandBuffer& commandBuffer);
 
-    void addGuiPass(RenderGraph & graph,RenderContext & renderContext);
+    void addGuiPass(RenderGraph& graph, RenderContext& renderContext);
 
-    bool checkBox(const char *caption, bool *value);
+    bool checkBox(const char* caption, bool* value);
 
-    void text(const char *formatstr, ...);
+    void text(const char* formatstr, ...);
 
-//是否有新的数据 需要更新
+    //是否有新的数据 需要更新
     bool updated{false};
     float scale{1.f};
-protected:
 
+protected:
     VkPipeline pipeline{};
 
     std::unique_ptr<Buffer> vertexBuffer{nullptr}, indexBuffer{nullptr};
@@ -52,10 +53,10 @@ protected:
 
     std::vector<VkPipelineShaderStageCreateInfo> shaders;
 
-//    VkDescriptorPool descriptorPool;
-//    VkDescriptorSetLayout descriptorSetLayout;
-//    VkDescriptorSet descriptorSet;
-  //  VkPipelineLayout pipelineLayout;
+    //    VkDescriptorPool descriptorPool;
+    //    VkDescriptorSetLayout descriptorSetLayout;
+    //    VkDescriptorSet descriptorSet;
+    //  VkPipelineLayout pipelineLayout;
 
     std::unique_ptr<DescriptorSet> descriptorSet{nullptr};
     std::unique_ptr<DescriptorPool> descriptorPool{nullptr};
@@ -64,18 +65,21 @@ protected:
 
     VkSampleCountFlagBits rasterSamples = VK_SAMPLE_COUNT_1_BIT;
 
-    Device &device;
+    Device& device;
 
-    struct PushConstBlock {
+    struct PushConstBlock
+    {
         glm::vec2 scale;
         glm::vec2 translate;
     } pushConstBlock;
 
 
-    PipelineLayout * pipelineLayout;
-    
+    PipelineLayout* pipelineLayout;
+
+    VertexInputState vertexInputState;
+
+    ColorBlendState colorBlendState;
 
     Texture fontTexture;
     uint32 subPass{0};
-
 };

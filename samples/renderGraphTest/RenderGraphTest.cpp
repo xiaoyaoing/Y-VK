@@ -34,7 +34,7 @@ void Example::drawFrame()
 
         RenderGraphHandle output;
     };
-
+    //  useSubpass = false
 
     if (useSubpass)
     {
@@ -115,15 +115,10 @@ void Example::drawFrame()
                 sponza->bindBuffer(commandBuffer);
                 sponza->IteratePrimitives([&](gltfLoading::Primitive& primitive)
                     {
-                        VertexInputState vertexInputState{};
-                        vertexInputState.bindings = {Vertex::getBindingDescription()};
-                        vertexInputState.attributes = Vertex::getAttributeDescriptions();
-                        //renderContext->getPipelineState().setVertexInputState(vertexInputState);
-
-                        //vertexInputState = SceneUtil::getPrimitiveVertexInputState(primitive, renderContext->getPipelineState().getPipelineLayout());
-                        //   renderContext->getPipelineState().setVertexInputState(vertexInputState);
                         renderContext->bindPrimitive(primitive);
-
+                        renderContext->getPipelineState().setRasterizationState({
+                            .cullMode = VK_CULL_MODE_NONE
+                        });
 
                         const auto allocation = renderContext->allocateBuffer(
                             sizeof(GlobalUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
@@ -168,6 +163,8 @@ void Example::drawFrame()
                 });
 
                 renderContext->flushAndDraw(commandBuffer, 3, 1, 0, 0);
+
+                //  gui->draw(commandBuffer);
 
                 renderContext->endRenderPass(commandBuffer);
             });
@@ -237,11 +234,6 @@ void Example::drawFrame()
                 sponza->bindBuffer(commandBuffer);
                 sponza->IteratePrimitives([&](gltfLoading::Primitive& primitive)
                     {
-                        VertexInputState vertexInputState{};
-                        vertexInputState.bindings = {Vertex::getBindingDescription()};
-                        vertexInputState.attributes = Vertex::getAttributeDescriptions();
-                        renderContext->getPipelineState().setVertexInputState(vertexInputState);
-
                         const auto allocation = renderContext->allocateBuffer(
                             sizeof(GlobalUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
@@ -256,9 +248,13 @@ void Example::drawFrame()
                         renderContext->bindBuffer(
                             0, *allocation.buffer, allocation.offset, allocation.size, 0,
                             0);
+
+                        renderContext->bindPrimitive(primitive);
+
+
                         renderContext->bindMaterial(primitive.material);
                         renderContext->flushAndDrawIndexed(
-                            commandBuffer, primitive.indexCount, 1, primitive.firstIndex, 0, 0);
+                            commandBuffer, primitive.indexCount, 1, 0, 0, 0);
                     }
                 );
                 renderContext->endRenderPass(commandBuffer);
@@ -280,6 +276,8 @@ void Example::drawFrame()
                 data.albedo = blackBoard["albedo"];
                 data.output = graph.importTexture("output", &renderContext->getCurHwtexture());
 
+                graph.getBlackBoard().put("output", data.output);
+
                 data.output = builder.writeTexture(data.output, TextureUsage::COLOR_ATTACHMENT);
                 data.output = builder.readTexture(data.output, TextureUsage::COLOR_ATTACHMENT);
 
@@ -296,10 +294,6 @@ void Example::drawFrame()
             },
             [&](LightingData& data, const RenderPassContext& context)
             {
-                // SubpassInfo lightingSubpass = {.inputAttachments = {1, 2, 3}, .outputAttachments = {0}};
-
-                // renderContext->beginRenderPass(commandBuffer, context.renderTarget, {lightingSubpass});
-
                 renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.lighting);
 
                 struct Poses
@@ -326,6 +320,9 @@ void Example::drawFrame()
                 renderContext->endRenderPass(commandBuffer);
             });
     }
+
+
+    gui->addGuiPass(graph, *renderContext);
 
 
     graph.execute(commandBuffer);

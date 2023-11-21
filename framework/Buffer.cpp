@@ -34,9 +34,9 @@ Buffer::Buffer(Device& device, uint64_t bufferSize, VkBufferUsageFlags bufferUsa
     VK_CHECK_RESULT(vmaCreateBuffer(_allocator, &bufferInfo, &bufferAllocInfo, &_buffer, &_bufferAllocation, nullptr))
 }
 
-Buffer::Buffer(Buffer&& buffer) noexcept: _buffer(buffer._buffer), _allocatedSize(buffer._allocatedSize),
-                                          _allocator(buffer._allocator), _bufferAllocation(buffer._bufferAllocation),
-                                          device(buffer.device)
+Buffer::Buffer(Buffer&& buffer) : _buffer(buffer._buffer), _allocatedSize(buffer._allocatedSize),
+                                  _allocator(buffer._allocator), _bufferAllocation(buffer._bufferAllocation),
+                                  device(buffer.device)
 {
     buffer._buffer = VK_NULL_HANDLE;
 }

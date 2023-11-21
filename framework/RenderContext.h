@@ -72,22 +72,21 @@ public:
 
     void bindMaterial(const gltfLoading::Material& material);
 
-    void bindPrimitive(const gltfLoading::Primitive & primitive);
+    void bindPrimitive(const gltfLoading::Primitive& primitive);
 
     void bindPipelineLayout(PipelineLayout& layout);
 
-    void pushConstants(std::vector<uint8_t> pushConstants);
+    void pushConstants(std::vector<uint8_t>& pushConstants);
 
     void clearPassResources();
 
     void flushPipelineState(CommandBuffer& commandBuffer);
 
-    
-    void flushPushConstantStage(CommandBuffer & commandBuffer);
+
+    void flushPushConstantStage(CommandBuffer& commandBuffer);
 
 
     const std::unordered_map<uint32_t, ResourceSet>& getResourceSets() const;
-
 
 
     RenderContext(Device& device, VkSurfaceKHR surface, Window& window);
@@ -112,7 +111,6 @@ public:
     void submit(CommandBuffer& buffer, VkFence fence = VK_NULL_HANDLE);
 
 
-
     FrameBuffer& getFrameBuffer();
 
     VkSemaphore submit(const Queue& queue, const std::vector<CommandBuffer*>& commandBuffers, VkSemaphore waitSem,
@@ -132,7 +130,7 @@ public:
 
     void flushDescriptorState(CommandBuffer& commandBuffer, VkPipelineBindPoint pipeline_bind_point);
 
-    
+
     void flushAndDrawIndexed(CommandBuffer& commandBuffer, uint32_t indexCount, uint32_t instanceCount,
                              uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance);
 
@@ -160,7 +158,7 @@ private:
     VkSemaphore acquiredSem;
     bool prepared{false};
     uint32_t activeFrameIndex{0};
-    
+
     Device& device;
     std::unique_ptr<SwapChain> swapchain;
 
@@ -168,7 +166,7 @@ private:
 
     std::vector<std::unique_ptr<FrameBuffer>> frameBuffers;
     VkExtent2D surfaceExtent;
-    
+
     struct
     {
         VkSemaphore presentFinishedSem;
@@ -176,11 +174,11 @@ private:
     } semaphores;
 
     PipelineState pipelineState;
-    
+
     std::vector<std::unique_ptr<FrameResource>> frameResources{};
-    
+
     std::vector<SgImage> hwTextures;
-    
+
     std::unordered_map<uint32_t, ResourceSet> resourceSets;
     std::vector<uint8_t> storePushConstants;
     uint32_t maxPushConstantSize;

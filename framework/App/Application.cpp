@@ -53,7 +53,6 @@ void Application::initVk()
     //  createDepthStencil();
 
 
-
     //  createFrameBuffers();
 
     VkFenceCreateInfo fenceInfo{};
@@ -111,7 +110,7 @@ void Application::updateGUI()
 
     if (gui->update() || gui->updated)
     {
-        buildCommandBuffers();
+        // buildCommandBuffers();
         gui->updated = false;
     }
 }
@@ -155,7 +154,6 @@ void Application::update()
 }
 
 
-
 void Application::createRenderContext()
 {
     auto surface_priority_list = std::vector<VkSurfaceFormatKHR>{
@@ -177,11 +175,9 @@ void Application::initWindow(const char* name, int width, int height)
 
 void Application::initGUI()
 {
-    // gui = std::make_unique<Gui>(*device);
-    // gui->prepare(pipelineCache, renderPipeline->getRenderPass().getHandle());
-    // gui->prepareResoucrces(this);
+    gui = std::make_unique<Gui>(*device);
+    gui->prepareResoucrces(this);
 }
-
 
 
 void Application::prepare()

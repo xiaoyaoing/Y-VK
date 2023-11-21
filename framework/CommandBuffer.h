@@ -32,20 +32,19 @@ public:
         ResetIndividually,
         AlwaysAllocate,
     };
-    
+
 
     VkCommandBuffer getHandle() const { return _buffer; }
 
     //Avoid right value can't be located.
-    const VkCommandBuffer * getHandlePointer() const { return &_buffer; }
+    const VkCommandBuffer* getHandlePointer() const { return &_buffer; }
 
-    
+
     explicit CommandBuffer(VkCommandBuffer buffer) : _buffer(buffer)
     {
     }
 
     void beginRecord(VkCommandBufferUsageFlags usage);
-
 
 
     void beginRenderPass(RenderPass& render_pass, FrameBuffer& frameBuffer,
@@ -57,8 +56,9 @@ public:
                             const std::vector<uint32_t>& dynamicOffsets);
 
     void bindVertexBuffer(std::vector<const Buffer*>& buffers, const std::vector<VkDeviceSize>& offsets) const;
-    
-    void bindVertexBuffer(uint32_t firstBinding,std::vector<const Buffer*>& buffers, const std::vector<VkDeviceSize>& offsets) const;
+
+    void bindVertexBuffer(uint32_t firstBinding, std::vector<const Buffer*>& buffers,
+                          const std::vector<VkDeviceSize>& offsets) const;
 
     void bindVertexBuffer(const Buffer& buffers, VkDeviceSize offset);
 
@@ -85,6 +85,7 @@ public:
     {
         vkCmdDrawIndexed(_buffer, index_count, instance_count, first_index, vertex_offset, first_instance);
     }
+
 
     void setViewport(uint32_t firstViewport, const std::vector<VkViewport>& viewports);
 

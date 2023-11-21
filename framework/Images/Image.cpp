@@ -151,7 +151,7 @@ void Image::transitionLayout(CommandBuffer& commandBuffer, VulkanLayout newLayou
                              VkImageSubresourceRange subresourceRange)
 {
     auto oldLayout = getLayout(subresourceRange);
-    oldLayout = VulkanLayout::UNDEFINED;
+    //oldLayout = VulkanLayout::UNDEFINED;
     auto [srcAccessMask, dstAccessMask, srcStage, dstStage, vkOldLayout, vkNewLayout]
         = ImageUtil::getVkTransition(oldLayout, newLayout);
 

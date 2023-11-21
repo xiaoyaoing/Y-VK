@@ -37,7 +37,8 @@ void CommandBuffer::beginRecord(VkCommandBufferUsageFlags usage)
 //     vkCmdBeginRenderPass(_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 // }
 
-void CommandBuffer::bindVertexBuffer(std::vector<const Buffer*>& buffers, const std::vector<VkDeviceSize>& offsets) const
+void CommandBuffer::bindVertexBuffer(std::vector<const Buffer*>& buffers,
+                                     const std::vector<VkDeviceSize>& offsets) const
 {
     std::vector<VkBuffer> bufferHandles(buffers.size());
     std::transform(buffers.begin(), buffers.end(), bufferHandles.begin(),
@@ -48,7 +49,7 @@ void CommandBuffer::bindVertexBuffer(std::vector<const Buffer*>& buffers, const 
 }
 
 void CommandBuffer::bindVertexBuffer(uint32_t firstBinding, std::vector<const Buffer*>& buffers,
-    const std::vector<VkDeviceSize>& offsets) const
+                                     const std::vector<VkDeviceSize>& offsets) const
 {
     std::vector<VkBuffer> bufferHandles(buffers.size());
     std::transform(buffers.begin(), buffers.end(), bufferHandles.begin(),
@@ -56,7 +57,6 @@ void CommandBuffer::bindVertexBuffer(uint32_t firstBinding, std::vector<const Bu
 
     vkCmdBindVertexBuffers(_buffer, firstBinding, static_cast<uint32_t>(bufferHandles.size()), bufferHandles.data(),
                            offsets.data());
-
 }
 
 void CommandBuffer::bindIndicesBuffer(const Buffer& buffer, VkDeviceSize offset)
@@ -180,6 +180,8 @@ void CommandBuffer::beginRenderPass(RenderPass& render_pass, FrameBuffer& frameB
 
     renderPassInfo.clearValueCount = clear_values.size();
     renderPassInfo.pClearValues = clear_values.data();
+
+    VkClearValue v{.color = {1, 0, 0}};
 
 
     vkCmdBeginRenderPass(_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);

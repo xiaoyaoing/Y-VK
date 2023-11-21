@@ -18,7 +18,7 @@ public:
     explicit Buffer(Device& device, uint64_t bufferSize, VkBufferUsageFlags bufferUsage,
                     VmaMemoryUsage memoryUsage);
 
-    Buffer(Buffer&& buffer) noexcept;
+    Buffer(Buffer&& buffer);
 
     void uploadData(const void* srcData, uint64_t size, uint64_t offset = 0);
 
@@ -28,6 +28,7 @@ public:
     {
         return _buffer;
     }
+
 
     inline VkDeviceSize getSize()
     {

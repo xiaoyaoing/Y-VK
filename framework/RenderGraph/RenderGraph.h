@@ -30,6 +30,9 @@ class RenderGraph
 public:
     RenderGraph(Device& device);
 
+    RenderGraph(RenderGraph& rhs) = delete;
+    RenderGraph(RenderGraph&& rhs) = delete;
+
 
     RenderGraphHandle importTexture(const char* name, SgImage* hwTexture);
 
@@ -73,6 +76,7 @@ public:
     RenderGraphHandle addTexture(RenderGraphTexture* texture);
 
     bool isWrite(RenderGraphHandle handle, const RenderPassNode* passNode) const;
+    bool isRead(RenderGraphHandle handle, const RenderPassNode* passNode) const;
 
     void setUp();
 

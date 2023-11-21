@@ -32,6 +32,8 @@ public:
     const VkDescriptorSetLayoutBinding& getLayoutBindingInfo(const std::string& name) const;
 
     bool hasLayoutBinding(const std::string& name) const;
+    bool hasLayoutBinding(int bindingIndex) const;
+
 
     std::vector<VkDescriptorSetLayoutBinding> getBindings() const;
 
