@@ -1,14 +1,14 @@
 #include "SwapChain.h"
 #include "Device.h"
 #include "Window.h"
+#include "App/ApiAPP.h"
 
-SwapChain::SwapChain(Device& device, VkSurfaceKHR surface, Window& window): _device(device), _surface(surface),
-                                                                            _window(window)
+
+SwapChain::SwapChain(Device& device, VkSurfaceKHR surface, const VkExtent2D& extent): _device(device), _surface(surface)
 {
     SwapChainSupportDetails swapChainSupport = querySwapChainSupport();
     auto surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
     auto presentMode = choosePresentMode(swapChainSupport.presentModes);
-    auto extent = chooseSwapExtent(swapChainSupport.capabilities);
 
 
     if (swapChainSupport.capabilities.maxImageCount > 0 &&
@@ -53,10 +53,12 @@ SwapChain::SwapChain(Device& device, VkSurfaceKHR surface, Window& window): _dev
 
     createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
     createInfo.presentMode = presentMode;
-    createInfo.clipped = VK_TRUE;
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
+    VkSwapchainKHR swapchainKhr;
+
     VK_CHECK_RESULT(vkCreateSwapchainKHR(_device.getHandle(), &createInfo, nullptr, &_swapChain));
+   // VK_CHECK_RESULT(vkCreateSwapchainKHR(_device.getHandle(), &createInfo, nullptr, &swapchainKhr));
     _format = surfaceFormat;
     _imageFormat = surfaceFormat.format;
     _extent = extent;
@@ -67,9 +69,15 @@ SwapChain::SwapChain(Device& device, VkSurfaceKHR surface, Window& window): _dev
     VK_CHECK_RESULT(vkGetSwapchainImagesKHR(_device.getHandle(), _swapChain, &imageCount, images.data()));
 }
 
-bool SwapChain::initialize(Device& device, VkSurfaceKHR surface, Window& window)
+SwapChain::SwapChain(SwapChain& oldSwapChain, const VkExtent2D& newExtent): SwapChain(
+    oldSwapChain._device, oldSwapChain._surface, newExtent)
 {
-    return false;
+}
+
+SwapChain::~SwapChain()
+{
+    if(_swapChain!=VK_NULL_HANDLE)
+        vkDestroySwapchainKHR(_device.getHandle(),_swapChain,nullptr);
 }
 
 
@@ -112,27 +120,6 @@ VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfac
     return availableFormats[0];
 }
 
-VkExtent2D SwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
-{
-    if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
-    {
-        return capabilities.currentExtent;
-    }
-    else
-    {
-        int width, height;
-        glfwGetFramebufferSize(_window.getHandle(), &width, &height);
-        VkExtent2D actualExtent = {
-            static_cast<uint32_t>(width),
-            static_cast<uint32_t>(height)
-        };
-        actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width,
-                                        capabilities.maxImageExtent.width);
-        actualExtent.height = std::clamp(actualExtent.height,
-                                         capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
-        return actualExtent;
-    }
-}
 
 VkPresentModeKHR SwapChain::choosePresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
 {

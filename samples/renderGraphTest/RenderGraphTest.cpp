@@ -9,9 +9,7 @@
 
 void Example::drawFrame()
 {
-    renderContext->camera = camera.get();
     auto& commandBuffer = renderContext->beginFrame();
-
 
     RenderGraph graph(*device);
     auto& blackBoard = graph.getBlackBoard();

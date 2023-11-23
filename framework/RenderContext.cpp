@@ -12,6 +12,7 @@
 #include <Buffer.h>
 
 #include "VertexData.h"
+#include "Window.h"
 #include "Common/ResourceCache.h"
 #include "Common/VkCommon.h"
 #include "Images/Sampler.h"
@@ -38,7 +39,7 @@ FrameResource::FrameResource(Device& device)
 RenderContext::RenderContext(Device& device, VkSurfaceKHR surface, Window& window)
     : device(device)
 {
-    swapchain = std::make_unique<SwapChain>(device, surface, window);
+    swapchain = std::make_unique<SwapChain>(device, surface, window.getExtent());
     if (swapchain)
     {
         surfaceExtent = swapchain->getExtent();
@@ -47,10 +48,6 @@ RenderContext::RenderContext(Device& device, VkSurfaceKHR surface, Window& windo
 
         for (auto& image_handle : swapchain->getImages())
         {
-            auto swapChainImage = Image(device, image_handle,
-                                        extent,
-                                        swapchain->getImageFormat(),
-                                        swapchain->getUseage());
             hwTextures.emplace_back(device, image_handle, extent, swapchain->getImageFormat(), swapchain->getUseage());
         }
     }
@@ -163,7 +160,10 @@ void RenderContext::submit(CommandBuffer& buffer, VkFence fence)
         present_info.pImageIndices = &activeFrameIndex;
 
 
-        VK_CHECK_RESULT(queue.present(present_info));
+        if (queue.present(present_info) == VK_ERROR_OUT_OF_DATE_KHR)
+        {
+            handleSurfaceChanges();
+        }
 
         frameActive = false;
     }
@@ -541,4 +541,50 @@ BufferAllocation RenderContext::allocateBuffer(VkDeviceSize allocateSize, VkBuff
 CommandBuffer& RenderContext::getCommandBuffer()
 {
     return *frameResources[activeFrameIndex]->commandBuffer;
+}
+
+void RenderContext::handleSurfaceChanges()
+{
+    VkSurfaceCapabilitiesKHR surface_properties;
+    VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device.getPhysicalDevice(),
+        swapchain->getSurface(),
+        &surface_properties))
+
+    if (surfaceExtent.width != surface_properties.currentExtent.width || surfaceExtent.height != surface_properties.
+        currentExtent.height)
+    {
+        device.waitIdle();
+        surfaceExtent = surface_properties.currentExtent;
+        recrateSwapChain(surfaceExtent);
+    }
+    {
+    }
+}
+
+void RenderContext::recrateSwapChain(VkExtent2D extent)
+{
+    device.getResourceCache().clearFrameBuffers();
+
+    hwTextures.clear();
+
+    auto surface = swapchain->getSurface();
+    swapchain = nullptr;
+    swapchain = std::make_unique<SwapChain>(device,surface, extent);
+
+    if (swapchain)
+    {
+        surfaceExtent = swapchain->getExtent();
+
+        VkExtent3D extent3d{surfaceExtent.width, surfaceExtent.height, 1};
+
+        for (auto& image_handle : swapchain->getImages())
+        {
+            auto swapChainImage = Image(device, image_handle,
+                                        extent3d,
+                                        swapchain->getImageFormat(),
+                                        swapchain->getUseage());
+            hwTextures.emplace_back(device, image_handle, extent3d, swapchain->getImageFormat(),
+                                    swapchain->getUseage());
+        }
+    }
 }

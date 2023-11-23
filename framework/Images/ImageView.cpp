@@ -81,6 +81,11 @@ const VkImageSubresourceRange& ImageView::getSubResourceRange() const
     return subResourceRange;
 }
 
+ImageView::~ImageView()
+{
+    vkDestroyImageView(_device.getHandle(), _view, nullptr);
+}
+
 ImageView::ImageView(ImageView&& other) : image(other.image), _device(other._device), _format(other._format),
                                           subResourceRange(other.subResourceRange)
 {

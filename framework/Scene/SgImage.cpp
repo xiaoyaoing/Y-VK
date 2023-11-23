@@ -55,6 +55,22 @@ SgImage::SgImage(Device& device, const std::string& path, VkImageViewType viewTy
     createVkImage(device, viewType);
 }
 
+SgImage::~SgImage()
+{
+    // if(vkImage)delete vkImage.get();
+    // if(vkImageView) delete vkImageView.get();
+}
+
+SgImage::SgImage(SgImage&& other): vkImage(std::move(other.vkImage)), vkImageView(std::move(other.vkImageView)),
+                                   data(std::move(other.data)),
+                                   format(other.format), extent3D(other.extent3D),
+                                   mipMaps(std::move(other.mipMaps)), offsets(std::move(other.offsets)),
+                                   layers(other.layers)
+{
+    other.vkImage = nullptr;
+    other.vkImageView = nullptr;
+}
+
 SgImage::SgImage(Device& device, const std::string& name, const VkExtent3D& extent, VkFormat format,
                  VkImageUsageFlags image_usage, VmaMemoryUsage memory_usage, VkImageViewType viewType,
                  VkSampleCountFlagBits sample_count, uint32_t mip_levels, uint32_t array_layers,
@@ -222,10 +238,10 @@ void SgImage::loadResources(const std::string& path)
         mipMaps.resize(ktxTexture->numLevels);
         layers = ktxTexture->numLayers;
 
-         ktx_size_t  pixelsMulChannels;
-         result = ktxTexture_GetImageOffset(ktxTexture, 0, 0, 0, &pixelsMulChannels);
-        
-        
+        ktx_size_t pixelsMulChannels;
+        result = ktxTexture_GetImageOffset(ktxTexture, 0, 0, 0, &pixelsMulChannels);
+
+
         auto channels = pixelsMulChannels / (ktxTexture->baseWidth * ktxTexture->baseHeight);
         // if(channels == 3 )
         //     format = VK_FORMAT_R8G8B8_UNORM;
@@ -235,8 +251,8 @@ void SgImage::loadResources(const std::string& path)
         // {
         //     LOGE("Image Chnnels is not 3 or 4 {}",path.c_str())
         // }
-        
-        
+
+
         data = {ktxTextureData, ktxTextureData + ktxTextureSize};
 
 

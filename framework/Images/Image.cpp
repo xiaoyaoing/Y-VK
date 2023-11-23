@@ -112,6 +112,13 @@ Image::Image(Device& device, VkImage handle, const VkExtent3D& extent, VkFormat 
     subresource.arrayLayer = 1;
 }
 
+Image::~Image()
+{
+    //只有memory也有意义的时候 这个image才是我们自己分配的 
+    if (image != VK_NULL_HANDLE && memory != VK_NULL_HANDLE)
+        vmaDestroyImage(device.getMemoryAllocator(), image, memory);
+}
+
 Image::Image(Image&& other) : subresource{other.subresource},
                               device(other.device),
                               image(other.image),
@@ -126,6 +133,7 @@ Image::Image(Image&& other) : subresource{other.subresource},
                               mapped{other.mapped},
                               views(std::exchange(other.views, {}))
 {
+    other.image = VK_NULL_HANDLE;
 }
 
 VkImageSubresource Image::getSubresource() const

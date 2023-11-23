@@ -59,6 +59,8 @@ public:
 
     ResourceCache& getResourceCache();
 
+    void waitIdle();
+
 protected:
     VmaAllocator allocator;
     VkPhysicalDevice _physicalDevice;

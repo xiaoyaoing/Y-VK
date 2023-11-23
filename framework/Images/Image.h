@@ -35,6 +35,8 @@ public:
 
     Image(const Image&) = delete;
 
+    ~Image();
+
 
     Image(Image&& other);
 
@@ -102,7 +104,7 @@ public:
 protected:
     Device& device;
     VkImage image;
-    VmaAllocation memory;
+    VmaAllocation memory{};
 
     VkExtent3D extent{};
 

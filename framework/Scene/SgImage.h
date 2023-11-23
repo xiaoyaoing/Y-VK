@@ -34,6 +34,11 @@ public:
      */
     SgImage(Device& device, const std::string& path, VkImageViewType viewType);
 
+    ~SgImage();
+    SgImage(SgImage&& other);
+
+    SgImage(SgImage& other) = delete;
+
     /**
      * \brief create from image attribute 
      */

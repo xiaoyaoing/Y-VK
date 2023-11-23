@@ -65,6 +65,7 @@ T& requestResource(Device& device, std::unordered_map<std::size_t, T>& resources
     // return resources[hash]->second;
 }
 
+
 class ResourceCache
 {
 public:
@@ -109,6 +110,51 @@ public:
     ResourceCache(Device& device);
 
     Pipeline& requestPipeline(const PipelineState& state);
+
+    void clearFrameBuffers()
+    {
+        state.frameBuffers.clear();
+    }
+
+    void clearShaderModules()
+    {
+        state.shader_modules.clear();
+    }
+
+    void clearPipelineLayouts()
+    {
+        state.pipeline_layouts.clear();
+    }
+
+    void clearPipelines()
+    {
+        state.pipelines.clear();
+    }
+
+    void clearDescriptorSetLayouts()
+    {
+        state.descriptor_set_layouts.clear();
+    }
+
+    void clearDescriptorPools()
+    {
+        state.descriptor_pools.clear();
+    }
+
+    void clearDescriptorSets()
+    {
+        state.descriptorSets.clear();
+    }
+
+    void clearRenderPasses()
+    {
+        state.render_passes.clear();
+    }
+
+    void clearSgImages()
+    {
+        state.sgImages.clear();
+    }
 
 private:
     static std::unique_ptr<ResourceCache> cache;

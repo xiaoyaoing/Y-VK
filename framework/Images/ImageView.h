@@ -14,6 +14,8 @@ public:
         return _view;
     }
 
+    ~ImageView();
+
     inline Image& getImage() const
     {
         return image;

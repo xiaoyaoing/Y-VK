@@ -110,9 +110,7 @@ public:
 
     void submit(CommandBuffer& buffer, VkFence fence = VK_NULL_HANDLE);
 
-
-    FrameBuffer& getFrameBuffer();
-
+    
     VkSemaphore submit(const Queue& queue, const std::vector<CommandBuffer*>& commandBuffers, VkSemaphore waitSem,
                        VkPipelineStageFlags waitPiplineStage);
 
@@ -151,8 +149,8 @@ public:
 
     CommandBuffer& getCommandBuffer();
 
-    const Camera* camera;
-
+    void handleSurfaceChanges();
+    void recrateSwapChain(VkExtent2D extent);
 private:
     bool frameActive = false;
     VkSemaphore acquiredSem;

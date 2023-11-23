@@ -14,20 +14,28 @@ public:
         uint32_t width;
         uint32_t height;
     };
+
     struct WindowProp
     {
         std::string title = "";
         Extent extent = {1280, 720};
     };
-    inline GLFWwindow *getHandle()
+
+    inline GLFWwindow* getHandle()
     {
         return handle;
     }
 
-    VkSurfaceKHR createSurface(Instance &instance);
+    VkSurfaceKHR createSurface(Instance& instance);
 
-    Window(const WindowProp &prop, Application *app);
+    Window(const WindowProp& prop, Application* app);
+
+    VkExtent2D getExtent() const
+    {
+        return {prop.extent.width, prop.extent.height};
+    }
 
 protected:
-    GLFWwindow *handle;
+    WindowProp prop{};
+    GLFWwindow* handle;
 };

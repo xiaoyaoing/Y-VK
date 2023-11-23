@@ -178,6 +178,11 @@ ResourceCache& Device::getResourceCache()
     return *cache;
 }
 
+void Device::waitIdle()
+{
+    vkDeviceWaitIdle(_device);
+}
+
 bool Device::isExtensionSupported(const std::string& extensionName)
 {
     return std::find_if(deviceExtensions.begin(), deviceExtensions.end(),
