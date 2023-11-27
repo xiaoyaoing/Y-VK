@@ -29,10 +29,10 @@ const std::vector<uint32_t> indices = {
     4, 5, 6, 6, 7, 4,
     8, 9, 10, 10, 11, 8
 };
-
-Scene::Scene(Device& device)
-{
-    // meshes.push_back(std::make_unique<Mesh>("E:\\code\\VulkanTutorial\\resources\\viking_room.obj"));
-    // meshes.push_back(std::make_unique<Mesh>(vertices, indices));
-    // meshes[0]->createBuffer(device);
-}
+//
+// Scene::Scene(Device& device)
+// {
+//     // meshes.push_back(std::make_unique<Mesh>("E:\\code\\VulkanTutorial\\resources\\viking_room.obj"));
+//     // meshes.push_back(std::make_unique<Mesh>(vertices, indices));
+//     // meshes[0]->createBuffer(device);
+// }

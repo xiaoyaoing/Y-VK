@@ -11,7 +11,7 @@ class RenderPassExecutor
 {
 public:
     RenderPassExecutor() = default;
-    virtual void draw(CommandBuffer& commandBuffer, RenderContext& renderContext, gltfLoading::Model& model);
+    // virtual void draw(CommandBuffer& commandBuffer, RenderContext& renderContext, gltfLoading::GLTFLoadingImpl& model);
     virtual void updateUniformBuffer();
     virtual ~RenderPassExecutor() = default;
 };

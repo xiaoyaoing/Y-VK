@@ -32,7 +32,6 @@ void Example::drawFrame()
 
         RenderGraphHandle output;
     };
-    //  useSubpass = false
 
     if (useSubpass)
     {
@@ -110,8 +109,7 @@ void Example::drawFrame()
             {
                 renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.gBuffer);
 
-                sponza->bindBuffer(commandBuffer);
-                sponza->IteratePrimitives([&](gltfLoading::Primitive& primitive)
+                scene->IteratePrimitives([&](const Primitive& primitive)
                     {
                         renderContext->bindPrimitive(primitive);
                         renderContext->getPipelineState().setRasterizationState({
@@ -229,8 +227,7 @@ void Example::drawFrame()
             {
                 //   renderContext->beginRenderPass(commandBuffer, context.renderTarget, {});
                 renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.gBuffer);
-                sponza->bindBuffer(commandBuffer);
-                sponza->IteratePrimitives([&](gltfLoading::Primitive& primitive)
+                scene->IteratePrimitives([&](const Primitive& primitive)
                     {
                         const auto allocation = renderContext->allocateBuffer(
                             sizeof(GlobalUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
@@ -332,7 +329,8 @@ void Example::prepare()
 {
     Application::prepare();
 
-    sponza = gltfLoading::Model::loadFromFile(*device, FileUtils::getResourcePath("sponza/sponza.gltf"));
+    scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/sponza.gltf"));
+
 
     std::vector<Shader> shaders{
         Shader(*device, FileUtils::getShaderPath("defered.vert")),

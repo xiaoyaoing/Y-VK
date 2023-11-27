@@ -268,7 +268,7 @@ void RenderContext::bindInput(uint32_t setId, const ImageView& view, uint32_t bi
     resourceSets[setId].bindInput(view, binding, array_element);
 }
 
-void RenderContext::bindMaterial(const gltfLoading::Material& material)
+void RenderContext::bindMaterial(const Material& material)
 {
     auto& descriptorLayout = pipelineState.getPipelineLayout().getDescriptorLayout(0);
 
@@ -277,19 +277,19 @@ void RenderContext::bindMaterial(const gltfLoading::Material& material)
         if (descriptorLayout.hasLayoutBinding(texture.first))
         {
             auto& binding = descriptorLayout.getLayoutBindingInfo(texture.first);
-            bindImage(0, texture.second->image->getVkImageView(), texture.second->getSampler(), binding.binding, 0);
+            bindImage(0, texture.second.image->getVkImageView(), texture.second.getSampler(), binding.binding, 0);
         }
     }
 }
 
-void RenderContext::bindPrimitive(const gltfLoading::Primitive& primitive)
+void RenderContext::bindPrimitive(const Primitive& primitive)
 {
     VertexInputState vertexInputState;
 
     for (const auto& inputResource : pipelineState.getPipelineLayout().getShaderResources(ShaderResourceType::Input,
              VK_SHADER_STAGE_VERTEX_BIT))
     {
-        gltfLoading::VertexAttribute attribute{};
+        VertexAttribute attribute{};
         if (!primitive.getVertexAttribute(inputResource.name, attribute))
         {
             continue;
@@ -569,7 +569,7 @@ void RenderContext::recrateSwapChain(VkExtent2D extent)
 
     auto surface = swapchain->getSurface();
     swapchain = nullptr;
-    swapchain = std::make_unique<SwapChain>(device,surface, extent);
+    swapchain = std::make_unique<SwapChain>(device, surface, extent);
 
     if (swapchain)
     {

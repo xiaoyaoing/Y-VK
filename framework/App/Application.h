@@ -66,13 +66,12 @@ public:
     void mainloop();
 
 protected:
-    
     void createRenderContext();
-    
+
     void createAllocator();
 
     virtual void update();
-    
+
     //*
     virtual void getRequiredInstanceExtensions();
 
@@ -108,9 +107,9 @@ protected:
 
 protected:
     VmaAllocator _allocator{};
-    
+
     std::unique_ptr<Instance> _instance;
-    
+
     std::vector<VkFramebuffer> _frameBuffers;
     // 指定怎么处理renderPass里面的attachment
 
@@ -121,19 +120,21 @@ protected:
     std::vector<std::unique_ptr<CommandBuffer>> commandBuffers;
 
     std::unique_ptr<Window> window{nullptr};
-    
+
     std::unique_ptr<RenderContext> renderContext{nullptr};
 
     std::unique_ptr<Device> device{nullptr};
-    
+
     VkSurfaceKHR surface{};
-    
+
     std::unique_ptr<Camera> camera;
+
+    std::unique_ptr<Scene> scene;
 
     std::unique_ptr<Gui> gui;
 
     float frameTimer{1};
-    
+
     int width, height;
 
     //Camera related  variable begin

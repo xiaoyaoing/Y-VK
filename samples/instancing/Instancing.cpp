@@ -30,10 +30,10 @@ void Example::loadResources()
         gltfLoading::FileLoadingFlags::PreMultiplyVertexColors |
         gltfLoading::FileLoadingFlags::FlipY;
 
-    models.planets = std::make_unique<gltfLoading::Model>(*device);
+    models.planets = std::make_unique<gltfLoading::GLTFLoadingImpl>(*device);
     models.planets->loadFromFile(FileUtils::getResourcePath("models/lavaplanet.gltf"), glTFLoadingFlags);
 
-    models.rockets = std::make_unique<gltfLoading::Model>(*device);
+    models.rockets = std::make_unique<gltfLoading::GLTFLoadingImpl>(*device);
     models.rockets->loadFromFile(FileUtils::getResourcePath("models/rock01.gltf"), glTFLoadingFlags);
 }
 
@@ -315,7 +315,7 @@ Example::Example() : Application("Instancing", 1280, 720)
     camera->setRotation(glm::vec3(-17.2f, -4.7f, 0.0f));
     camera->setPerspective(60.0f, (float)width / (float)height, 1.0f, 256.0f);
 
-    sponza = std::make_unique<gltfLoading::Model>(*device);
+    sponza = std::make_unique<gltfLoading::GLTFLoadingImpl>(*device);
     sponza->loadFromFile(FileUtils::getResourcePath("sponza/sponza.gltf"));
 }
 

@@ -10,8 +10,7 @@
 #include "Descriptor/DescriptorSet.h"
 #include "Buffer.h"
 
-namespace gltfLoading
-{
+
     inline VkFormat getAttributeFormat(const tinygltf::Model* model, uint32_t accessorId)
     {
         assert(accessorId < model->accessors.size());
@@ -150,6 +149,144 @@ namespace gltfLoading
         return format;
     };
 
+    struct Skin;
+
+
+    struct Mesh
+    {
+        std::string name;
+        Device& device;
+
+        struct
+        {
+            std::unique_ptr<Buffer> buffer{nullptr};
+            std::unique_ptr<DescriptorSet> descriptorSet{nullptr};
+        } uniformBuffer;
+
+        struct UniformBlock
+        {
+            glm::mat4 matrix;
+            glm::mat4 jointMatrix[64]{};
+            float jointcount{0};
+        } uniformBlock;
+
+        Mesh(Device& device, glm::mat4 matrix);
+        std::vector<std::unique_ptr<Primitive>> primitives;
+    };
+
+
+    struct Node
+    {
+        Node* parent;
+        uint32_t index;
+        std::vector<Node*> children;
+        glm::mat4 matrix;
+        std::string name;
+        Mesh* mesh;
+        Skin* skin;
+        int32_t skinIndex = -1;
+        glm::vec3 translation{};
+        glm::vec3 scale{1.0f};
+        glm::quat rotation{};
+
+        glm::mat4 localMatrix();
+
+        glm::mat4 getMatrix();
+
+        void update();
+
+        ~Node();
+    };
+
+
+    struct Skin
+    {
+        std::string name;
+        Node* skeletonRoot = nullptr;
+        std::vector<glm::mat4> inverseBindMatrices;
+        std::vector<Node*> joints;
+    };
+
+    struct AnimationChannel
+    {
+        enum PathType
+        {
+            TRANSLATION,
+            ROTATION,
+            SCALE
+        };
+
+        PathType path;
+        Node* node;
+        uint32_t samplerIndex;
+    };
+
+    /*
+        glTF animation sampler
+    */
+    struct AnimationSampler
+    {
+        enum InterpolationType
+        {
+            LINEAR,
+            STEP,
+            CUBICSPLINE
+        };
+
+        InterpolationType interpolation;
+        std::vector<float> inputs;
+        std::vector<glm::vec4> outputsVec4;
+    };
+
+    /*
+    glTF animation
+*/
+    struct Animation
+    {
+        std::string name;
+        std::vector<AnimationSampler> samplers;
+        std::vector<AnimationChannel> channels;
+        float start = std::numeric_limits<float>::max();
+        float end = std::numeric_limits<float>::min();
+    };
+
+
+    struct GLTFLoadingImpl
+    {
+        std::vector<std::unique_ptr<Primitive>> primitives;
+
+        Device& device;
+        Queue& queue;
+        //        Mesh *mesh;
+        std::vector<Node*> nodes;
+        std::vector<Node*> linearNodes;
+
+
+        std::vector<Texture> textures;
+        std::vector<Light> lights;
+        std::vector<Material> materials;
+
+        bool metallicRoughnessWorkflow;
+
+        GLTFLoadingImpl(Device& device, const std::string& path, uint32_t fileLoadingFlags = 0, float scale = 1.0f);
+
+        ~GLTFLoadingImpl();
+
+
+        const Texture* getTexture(uint32_t idx) const;
+
+        void loadImages(const std::filesystem::path& modelPath, const tinygltf::Model& model);
+
+        void
+        loadNode(Node* parent, const tinygltf::Node& node, uint32_t nodeIndex, const tinygltf::Model& model,
+                 float globalscale);
+
+        void loadFromFile(const std::string& path, uint32_t fileLoadingFlags = 0, float scale = 1.0f);
+
+        void loadMaterials(tinygltf::Model& gltfModel);
+    };
+
+
     bool loadImageDataFunc(tinygltf::Image* image, const int imageIndex, std::string* error, std::string* warning,
                            int req_width, int req_height, const unsigned char* bytes, int size, void* userData)
     {
@@ -165,16 +302,10 @@ namespace gltfLoading
         return tinygltf::LoadImageData(image, imageIndex, error, warning, req_width, req_height, bytes, size, userData);
     }
 
-    void Model::loadFromFile(const std::string& path, uint32_t fileLoadingFlags, float scale)
+    void GLTFLoadingImpl::loadFromFile(const std::string& path, uint32_t fileLoadingFlags, float scale)
     {
-        this->modelPath = path;
-
         tinygltf::Model gltfModel;
         tinygltf::TinyGLTF gltfContext;
-        //    if (fileLoadingFlags & FileLoadingFlags::DontLoadImages) {
-        //        gltfContext.SetImageLoader(loadImageDataFuncEmpty, nullptr);
-        //    } else {
-        //    }
         std::string error, warning;
 
         gltfContext.SetImageLoader(loadImageDataFunc, nullptr);
@@ -186,30 +317,26 @@ namespace gltfLoading
         }
 
         std::vector<uint32_t> indexData;
-        std::vector<Vertex> vertexData;
 
-        if (!(fileLoadingFlags & FileLoadingFlags::DontLoadImages))
+        if (!(fileLoadingFlags & GltfLoading::FileLoadingFlags::DontLoadImages))
         {
-            loadImages(gltfModel, device, queue);
+            loadImages(path, gltfModel);
         }
         loadMaterials(gltfModel);
         const tinygltf::Scene& scene = gltfModel.scenes[gltfModel.defaultScene > -1 ? gltfModel.defaultScene : 0];
         for (size_t i = 0; i < scene.nodes.size(); i++)
         {
             const tinygltf::Node node = gltfModel.nodes[scene.nodes[i]];
-            loadNode(nullptr, node, scene.nodes[i], gltfModel, indexData, vertexData, scale);
+            loadNode(nullptr, node, scene.nodes[i], gltfModel, scale);
         }
-        // if (gltfModel.animations.size() > 0) {
-        //     // loadAnimations(gltfModel);
-        // }
-        //loadSkins(gltfModel);
+
 
         for (auto node : linearNodes)
         {
             // Assign skins
             if (node->skinIndex > -1)
             {
-                node->skin = skins[node->skinIndex];
+                //node->skin = skins[node->skinIndex];
             }
             // Initial pose
             if (node->mesh)
@@ -219,76 +346,27 @@ namespace gltfLoading
         }
 
 
-        if ((fileLoadingFlags & FileLoadingFlags::PreTransformVertices) ||
-            (fileLoadingFlags & FileLoadingFlags::PreMultiplyVertexColors) ||
-            (fileLoadingFlags & FileLoadingFlags::FlipY))
-        {
-            const bool preTransform = fileLoadingFlags & FileLoadingFlags::PreTransformVertices;
-            const bool preMultiplyColor = fileLoadingFlags & FileLoadingFlags::PreMultiplyVertexColors;
-            const bool flipY = fileLoadingFlags & FileLoadingFlags::FlipY;
-            for (Node* node : linearNodes)
-            {
-                if (node->mesh)
-                {
-                    const glm::mat4 localMatrix = node->getMatrix();
-                    for (auto& primitive : node->mesh->primitives)
-                    {
-                        for (uint32_t i = 0; i < primitive->vertexCount; i++)
-                        {
-                            Vertex& vertex = vertexData[primitive->firstVertex + i];
-                            // Pre-transform vertex positions by node-hierarchy
-                            if (preTransform)
-                            {
-                                vertex.pos = glm::vec3(localMatrix * glm::vec4(vertex.pos, 1.0f));
-                                vertex.normal = glm::normalize(glm::mat3(localMatrix) * vertex.normal);
-                            }
-                            // Flip Y-Axis of vertex positions
-                            if (flipY)
-                            {
-                                vertex.pos.y *= -1.0f;
-                                vertex.normal.y *= -1.0f;
-                            }
-                            // Pre-Multiply vertex colors with material base color
-                            if (preMultiplyColor)
-                            {
-                                // vertex.color = primitive->material.baseColorFactor * vertex.color;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
         for (auto extension : gltfModel.extensionsUsed)
         {
             if (extension == "KHR_materials_pbrSpecularGlossiness")
             {
-                std::cout << "Required extension: " << extension;
                 metallicRoughnessWorkflow = false;
             }
         }
-        vertexCount = vertexData.size();
-        indexCount = indexData.size();
-        vertices = std::make_unique<Buffer>(device, DATA_SIZE(vertexData), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                                            VMA_MEMORY_USAGE_CPU_TO_GPU);
-        vertices->uploadData(vertexData.data(), DATA_SIZE(vertexData));
-        indices = std::make_unique<Buffer>(device, DATA_SIZE(indexData), VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                                           VMA_MEMORY_USAGE_CPU_TO_GPU);
-        indices->uploadData(indexData.data(), DATA_SIZE(indexData));
     }
 
-    void Model::loadMaterials(tinygltf::Model& gltfModel)
+    void GLTFLoadingImpl::loadMaterials(tinygltf::Model& gltfModel)
     {
         //   materials.resize(gltfModel.materials.size());
         for (auto mat : gltfModel.materials)
         {
-            Material material(device);
+            Material material{};
 
             for (auto& tex : mat.values)
             {
                 if (tex.first.find("Texture") != std::string::npos)
                     material.textures.emplace(
-                        tex.first, getTexture(gltfModel.textures[tex.second.TextureIndex()].source));
+                        tex.first, *getTexture(gltfModel.textures[tex.second.TextureIndex()].source));
             }
 
 
@@ -327,73 +405,25 @@ namespace gltfLoading
         }
     }
 
-    void Model::draw(CommandBuffer& commandBuffer, uint32_t renderFlags, VkPipelineLayout pipelineLayout,
-                     uint32_t bindImageSet)
-    {
-        VkDeviceSize offsets[1] = {0};
-        VkBuffer vertexBuffer[] = {vertices->getHandle()};
-        vkCmdBindVertexBuffers(commandBuffer.getHandle(), 0, 1, vertexBuffer, offsets);
-        vkCmdBindIndexBuffer(commandBuffer.getHandle(), indices->getHandle(), 0, VK_INDEX_TYPE_UINT32);
-        for (auto& node : linearNodes)
-            draw(*node, commandBuffer, renderFlags, pipelineLayout, bindImageSet);
-    }
-
-    void Model::draw(Node& node, CommandBuffer& commandBuffer, uint32_t renderFlags, VkPipelineLayout pipelineLayout,
-                     uint32_t bindImageSet)
-    {
-        if (node.mesh)
-        {
-            for (auto& primitive : node.mesh->primitives)
-            {
-                bool skip = false;
-                const Material& material = primitive->material;
-                if (renderFlags & RenderFlags::RenderOpaqueNodes)
-                {
-                    skip = (material.alphaMode != Material::ALPHAMODE_OPAQUE);
-                }
-                if (renderFlags & RenderFlags::RenderAlphaMaskedNodes)
-                {
-                    skip = (material.alphaMode != Material::ALPHAMODE_MASK);
-                }
-                if (renderFlags & RenderFlags::RenderAlphaBlendedNodes)
-                {
-                    skip = (material.alphaMode != Material::ALPHAMODE_BLEND);
-                }
-                if (!skip)
-                {
-                    if (renderFlags & RenderFlags::BindImages)
-                    {
-                    }
-                }
-            }
-        }
-        for (auto child : node.children)
-        {
-            draw(*child, commandBuffer, renderFlags, pipelineLayout, bindImageSet);
-        }
-    }
-
-    Model::~Model()
+    GLTFLoadingImpl::~GLTFLoadingImpl()
     {
         for (auto node : nodes)
             delete node;
     }
 
-    void Model::loadImages(tinygltf::Model gltfModel, Device& device, Queue& queue)
+    void GLTFLoadingImpl::loadImages(const std::filesystem::path& modelPath, const tinygltf::Model& gltfModel)
     {
-        auto parentDir = modelPath.parent_path().string() + "/";
-        for (tinygltf::Image& image : gltfModel.images)
+        auto parentDir = modelPath.parent_path();
+        for (const auto& image : gltfModel.images)
         {
-            Texture texture = Texture::loadTexture(device, parentDir + image.uri);
+            Texture texture = Texture::loadTexture(device, parentDir.string() + "/" + image.uri);
             textures.push_back(std::move(texture));
         }
-        // Create an empty texture to be used for empty material images
-        //        createEmptyTexture(transferQueue);
-        // tinygltf::Model
     }
 
-    void Model::loadNode(Node* parent, const tinygltf::Node& node, uint32_t nodeIndex, const tinygltf::Model& model,
-                         std::vector<uint32_t>& indexBuffer, std::vector<Vertex>& vertexBuffer, float globalscale)
+    void GLTFLoadingImpl::loadNode(Node* parent, const tinygltf::Node& node, uint32_t nodeIndex,
+                                   const tinygltf::Model& model,
+                                   float globalscale)
     {
         auto newNode = new Node();
         newNode->index = nodeIndex;
@@ -435,7 +465,7 @@ namespace gltfLoading
         {
             for (auto i = 0; i < node.children.size(); i++)
             {
-                loadNode(newNode, model.nodes[node.children[i]], node.children[i], model, indexBuffer, vertexBuffer,
+                loadNode(newNode, model.nodes[node.children[i]], node.children[i], model,
                          globalscale);
             }
         }
@@ -453,14 +483,12 @@ namespace gltfLoading
                 {
                     continue;
                 }
-                uint32_t indexStart = static_cast<uint32_t>(indexBuffer.size());
-                uint32_t vertexStart = static_cast<uint32_t>(vertexBuffer.size());
                 uint32_t indexCount = 0;
                 uint32_t vertexCount = 0;
                 glm::vec3 posMin{};
                 glm::vec3 posMax{};
 
-                auto newPrimitive = std::make_unique<Primitive>(indexStart, indexCount,
+                auto newPrimitive = std::make_unique<Primitive>(0, indexCount,
                                                                 primitive.material > -1
                                                                     ? materials[primitive.material]
                                                                     : materials.back());
@@ -517,12 +545,11 @@ namespace gltfLoading
                         std::vector<uint8_t> data(model.buffers[view.buffer].data.begin() + startByte,
                                                   model.buffers[view.buffer].data.begin() + endByte);
                         newPrimitive->indexBuffer = std::make_unique<Buffer>(device,DATA_SIZE(data),
-                                                               VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                                                               VMA_MEMORY_USAGE_CPU_TO_GPU);
+                                                                             VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                                                                             VMA_MEMORY_USAGE_CPU_TO_GPU);
                         newPrimitive->indexBuffer->uploadData(data.data(),DATA_SIZE(data));
-
                     }
-                    
+
 
                     // Position attribute is required
                     assert(primitive.attributes.find("POSITION") != primitive.attributes.end());
@@ -537,97 +564,19 @@ namespace gltfLoading
 
 
                     vertexCount = static_cast<uint32_t>(posAccessor.count);
-
-                    for (size_t v = 0; v < posAccessor.count; v++)
-                    {
-                        Vertex vert{};
-                        vert.pos = glm::vec4(glm::make_vec3(&bufferPos[v * 3]), 1.0f);
-                        vert.normal = glm::normalize(
-                            glm::vec3(bufferNormals ? glm::make_vec3(&bufferNormals[v * 3]) : glm::vec3(0.0f)));
-                        vert.uv = bufferTexCoords ? glm::make_vec2(&bufferTexCoords[v * 2]) : glm::vec3(0.0f);
-                        if (bufferColors)
-                        {
-                            switch (numColorComponents)
-                            {
-                            case 3:
-                            //   vert.color = glm::vec4(glm::make_vec3(&bufferColors[v * 3]), 1.0f);
-                            case 4: ;
-                            // vert.color = glm::make_vec4(&bufferColors[v * 4]);
-                            }
-                        }
-                        else
-                        {
-                            // vert.color = glm::vec4(1.0f);
-                        }
-                        // vert.tangent = bufferTangents
-                        //                    ? glm::vec4(glm::make_vec4(&bufferTangents[v * 4]))
-                        //                    : glm::vec4(
-                        //                        0.0f);
-                        // vert.joint0 = hasSkin ? glm::vec4(glm::make_vec4(&bufferJoints[v * 4])) : glm::vec4(0.0f);
-                        // vert.weight0 = hasSkin ? glm::make_vec4(&bufferWeights[v * 4]) : glm::vec4(0.0f);
-                        vertexBuffer.push_back(vert);
-                    }
                 }
-                // Indices
-                {
-                    const tinygltf::Accessor& accessor = model.accessors[primitive.indices];
-                    const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
-                    const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
+                const tinygltf::Accessor& accessor = model.accessors[primitive.indices];
+                const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
+                const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
 
-                    newPrimitive->indexCount = static_cast<uint32_t>(accessor.count);
+                newPrimitive->indexCount = static_cast<uint32_t>(accessor.count);
 
-                    switch (accessor.componentType)
-                    {
-                    case TINYGLTF_PARAMETER_TYPE_UNSIGNED_INT:
-                        {
-                            auto buf = new uint32_t[accessor.count];
-                            memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset],
-                                   accessor.count * sizeof(uint32_t));
-                            for (size_t index = 0; index < accessor.count; index++)
-                            {
-                                indexBuffer.push_back(buf[index] + vertexStart);
-                            }
-                            delete[] buf;
-                            break;
-                        }
-                    case TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT:
-                        {
-                            auto buf = new uint16_t[accessor.count];
-                            memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset],
-                                   accessor.count * sizeof(uint16_t));
-                            for (size_t index = 0; index < accessor.count; index++)
-                            {
-                                indexBuffer.push_back(buf[index] + vertexStart);
-                            }
-                            delete[] buf;
-                            break;
-                        }
-                    case TINYGLTF_PARAMETER_TYPE_UNSIGNED_BYTE:
-                        {
-                            auto buf = new uint8_t[accessor.count];
-                            memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset],
-                                   accessor.count * sizeof(uint8_t));
-                            for (size_t index = 0; index < accessor.count; index++)
-                            {
-                                indexBuffer.push_back(buf[index] + vertexStart);
-                            }
-                            delete[] buf;
-                            break;
-                        }
-                    default:
-                        std::cerr << "Index component type " << accessor.componentType << " not supported!"
-                            << std::endl;
-                        return;
-                    }
-                }
-
-                newPrimitive->firstVertex = vertexStart;
+                newPrimitive->firstVertex = 0;
                 newPrimitive->vertexCount = vertexCount;
                 newPrimitive->setDimensions(posMin, posMax);
                 newPrimitive->matrix = newNode->getMatrix();
 
-                prims.push_back(std::move(newPrimitive));
-                //    newMesh->primitives.push_back(std::move(newPrimitive));
+                primitives.push_back(std::move(newPrimitive));
             }
             newNode->mesh = newMesh;
         }
@@ -642,7 +591,7 @@ namespace gltfLoading
         linearNodes.push_back(newNode);
     }
 
-    Texture* Model::getTexture(int index)
+    const Texture* GLTFLoadingImpl::getTexture(uint32_t index) const
     {
         if (index < textures.size())
         {
@@ -651,34 +600,21 @@ namespace gltfLoading
         return nullptr;
     }
 
-    std::unique_ptr<Model> Model::loadFromFile(Device& device, const std::string& path)
+
+    std::unique_ptr<Scene> GltfLoading::LoadSceneFromGLTFFile(Device& device, const std::string& path,
+                                                              uint32_t fileLoadingFlags, float scale)
     {
-        auto model = std::make_unique<Model>(device);
-        model->loadFromFile(path);
-        return model;
+        auto model = std::make_unique<GLTFLoadingImpl>(device, path);
+        return std::make_unique<Scene>(std::move(model->primitives), std::move(model->textures),
+                                       std::move(model->materials), std::move(model->lights));
     }
 
-    void Model::IteratePrimitives(PrimitiveCallBack primitiveCallBack)
+    GLTFLoadingImpl::GLTFLoadingImpl(Device& device, const std::string& path, uint32_t fileLoadingFlags, float scale) :
+        device(device), queue(device.getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0))
     {
-        for (auto& prim : prims)
-        {
-            primitiveCallBack(*prim);
-        }
+        loadFromFile(path, fileLoadingFlags, scale);
     }
 
-    Model::Model(Device& device) : device(device), queue(device.getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0))
-    {
-    }
-
-    void Model::bindBuffer(CommandBuffer& commandBuffer)
-    {
-        // commandBuffer.bindVertexBuffer(*vertices, 0);
-        //commandBuffer.bindIndicesBuffer(*indices, 0);
-    }
-
-    Material::Material(Device& device) : device(device)
-    {
-    }
 
     glm::mat4 Node::localMatrix()
     {
@@ -714,33 +650,6 @@ namespace gltfLoading
         }
     }
 
-    bool Primitive::getVertexAttribute(const std::string& name, VertexAttribute& attribute) const
-    {
-        if (vertexAttributes.contains(name))
-        {
-            attribute = vertexAttributes.at(name);
-            return true;
-        }
-        return false;
-    }
-
-    void Primitive::setVertxAttribute(const std::string& name, VertexAttribute& attribute)
-    {
-        vertexAttributes.emplace(name, attribute);
-    }
-
-    void Primitive::setVertexBuffer(const std::string& name, std::unique_ptr<Buffer>& buffer)
-    {
-        vertexBuffers.emplace(name, std::move(buffer));
-    }
-
-    Buffer& Primitive::getVertexBuffer(const std::string& name) const
-    {
-        if (vertexBuffers.contains(name))
-            return *vertexBuffers.at(name);
-        LOGE("Primitive has no such buffer {}", name);
-    }
-
 
     Mesh::Mesh(Device& device, glm::mat4 matrix) : device(device)
     {
@@ -749,4 +658,4 @@ namespace gltfLoading
     void Primitive::setDimensions(glm::vec3 min, glm::vec3 max)
     {
     }
-}
+

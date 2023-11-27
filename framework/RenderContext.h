@@ -70,9 +70,9 @@ public:
 
     void bindInput(uint32_t setId, const ImageView& view, uint32_t binding, uint32_t array_element);
 
-    void bindMaterial(const gltfLoading::Material& material);
+    void bindMaterial(const Material& material);
 
-    void bindPrimitive(const gltfLoading::Primitive& primitive);
+    void bindPrimitive(const Primitive& primitive);
 
     void bindPipelineLayout(PipelineLayout& layout);
 
@@ -110,7 +110,7 @@ public:
 
     void submit(CommandBuffer& buffer, VkFence fence = VK_NULL_HANDLE);
 
-    
+
     VkSemaphore submit(const Queue& queue, const std::vector<CommandBuffer*>& commandBuffers, VkSemaphore waitSem,
                        VkPipelineStageFlags waitPiplineStage);
 
@@ -151,6 +151,7 @@ public:
 
     void handleSurfaceChanges();
     void recrateSwapChain(VkExtent2D extent);
+
 private:
     bool frameActive = false;
     VkSemaphore acquiredSem;

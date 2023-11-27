@@ -13,8 +13,8 @@ struct Texture
     std::unique_ptr<SgImage> image;
     std::unique_ptr<Sampler> sampler;
     std::string name;
-    Sampler& getSampler();
-    SgImage& getImage();
+    const Sampler& getSampler() const;
+    const SgImage& getImage() const;
     static Texture loadTexture(Device& device, const std::string& path);
     static Texture loadTextureArray(Device& device, const std::string& path);
 };

@@ -31,13 +31,13 @@ protected:
         std::unique_ptr<Buffer> scene;
     } uniform_buffers;
 
-    std::unique_ptr<gltfLoading::Model> sponza;
+    std::unique_ptr<gltfLoading::GLTFLoadingImpl> sponza;
 
 
     struct
     {
-        std::unique_ptr<gltfLoading::Model> planets;
-        std::unique_ptr<gltfLoading::Model> rockets;
+        std::unique_ptr<gltfLoading::GLTFLoadingImpl> planets;
+        std::unique_ptr<gltfLoading::GLTFLoadingImpl> rockets;
     } models;
 
     struct

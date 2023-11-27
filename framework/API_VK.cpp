@@ -9,12 +9,12 @@
 #include <Common/VkCommon.h>
 #include <Images/Sampler.h>
 
-SgImage& Texture::getImage()
+const SgImage& Texture::getImage() const
 {
     return *image;
 }
 
-Sampler& Texture::getSampler()
+const Sampler& Texture::getSampler() const
 {
     return *sampler;
 }
@@ -60,12 +60,12 @@ Texture Texture::loadTexture(Device& device, const std::string& path)
     subresourceRange.layerCount = 1;
 
 
-    texture.getImage().getVkImage().transitionLayout(commandBuffer,VulkanLayout::TRANSFER_DST,subresourceRange);
-    
+    texture.getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::TRANSFER_DST, subresourceRange);
+
     commandBuffer.copyBufferToImage(imageBuffer, texture.image->getVkImage(), imageCopyRegions);
 
-    texture.getImage().getVkImage().transitionLayout(commandBuffer,VulkanLayout::READ_ONLY,subresourceRange);
-    
+    texture.getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY, subresourceRange);
+
 
     commandBuffer.endRecord();
 
@@ -130,11 +130,11 @@ Texture Texture::loadTextureArray(Device& device, const std::string& path)
     subresourceRange.levelCount = mipmaps.size();
     subresourceRange.layerCount = layers;
 
-    texture.getImage().getVkImage().transitionLayout(commandBuffer,VulkanLayout::TRANSFER_DST,subresourceRange);
+    texture.getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::TRANSFER_DST, subresourceRange);
 
     commandBuffer.copyBufferToImage(imageBuffer, texture.image->getVkImage(), imageCopyRegions);
-    
-    texture.getImage().getVkImage().transitionLayout(commandBuffer,VulkanLayout::READ_ONLY,subresourceRange);
+
+    texture.getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY, subresourceRange);
 
 
     commandBuffer.endRecord();
@@ -146,7 +146,7 @@ Texture Texture::loadTextureArray(Device& device, const std::string& path)
 
     auto vkCmdBuffer = commandBuffer.getHandle();
     submitInfo.pCommandBuffers = &vkCmdBuffer;
-    
+
     queue.submit({submitInfo}, VK_NULL_HANDLE);
     texture.sampler = std::make_unique<Sampler>(device, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR,
                                                 mipmaps.size());

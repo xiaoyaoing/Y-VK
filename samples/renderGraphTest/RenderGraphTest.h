@@ -16,8 +16,6 @@ protected:
     bool useSubpass{true};
 
 
-    std::unique_ptr<gltfLoading::Model> sponza;
-
     struct
     {
         std::unique_ptr<PipelineLayout> gBuffer, lighting;
