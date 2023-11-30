@@ -3,8 +3,9 @@
 //
 
 #include "VkCommon.h"
-#include "API_VK.h"
-#include "Images/ImageView.h"
+#include "Core/Texture.h"
+#include "Core/Images/ImageView.h"
+
 
 namespace vkCommon {
 }

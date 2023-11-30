@@ -4,31 +4,29 @@
 
 #include <random>
 #include "Instancing.h"
-#include "Shader.h"
+#include "Core/Shader/Shader.h"
 #include "../../framework/Common/VkCommon.h"
-#include "FIleUtils.h"
+#include "Common/FIleUtils.h"
 
 #define VERTEX_BUFFER_BIND_ID 0
 #define INSTANCE_BUFFER_BIND_ID 1
 #define INSTANCE_NUM 8192
 #define M_PI 3.14159265358979323846
 
-void Example::prepareUniformBuffers()
-{
+void Example::prepareUniformBuffers() {
     uniform_buffers.scene = std::make_unique<Buffer>(*device, sizeof(ubo_vs), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                                      VMA_MEMORY_USAGE_CPU_TO_GPU);
     uniform_buffers.scene->uploadData(&ubo_vs, sizeof(ubo_vs));
 }
 
-void Example::loadResources()
-{
+void Example::loadResources() {
     textures.rocketTexture = Texture::loadTextureArray(*device, FileUtils::getResourcePath(
-                                                           "textures/texturearray_rocks_rgba.ktx"));
+            "textures/texturearray_rocks_rgba.ktx"));
     textures.planetTexture = Texture::loadTexture(*device,
                                                   FileUtils::getResourcePath("textures/lavaplanet_rgba.ktx"));
     const uint32_t glTFLoadingFlags = gltfLoading::FileLoadingFlags::PreTransformVertices |
-        gltfLoading::FileLoadingFlags::PreMultiplyVertexColors |
-        gltfLoading::FileLoadingFlags::FlipY;
+                                      gltfLoading::FileLoadingFlags::PreMultiplyVertexColors |
+                                      gltfLoading::FileLoadingFlags::FlipY;
 
     models.planets = std::make_unique<gltfLoading::GLTFLoadingImpl>(*device);
     models.planets->loadFromFile(FileUtils::getResourcePath("models/lavaplanet.gltf"), glTFLoadingFlags);
@@ -37,8 +35,7 @@ void Example::loadResources()
     models.rockets->loadFromFile(FileUtils::getResourcePath("models/rock01.gltf"), glTFLoadingFlags);
 }
 
-void Example::createDescriptorSet()
-{
+void Example::createDescriptorSet() {
     descriptors.planetDescriptor = std::make_unique<DescriptorSet>(*device, *descriptorPool, *descriptorLayout, 1);
     descriptors.planetDescriptor->updateBuffer({uniform_buffers.scene.get()}, 0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     descriptors.planetDescriptor->updateImage({vkCommon::initializers::descriptorImageInfo(textures.planetTexture)}, 1,
@@ -50,18 +47,16 @@ void Example::createDescriptorSet()
                                             VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 }
 
-void Example::createDescriptorPool()
-{
+void Example::createDescriptorPool() {
     std::vector<VkDescriptorPoolSize> poolSizes = {
-        vkCommon::initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2),
-        vkCommon::initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2)
+            vkCommon::initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2),
+            vkCommon::initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2)
     };
 
     descriptorPool = std::make_unique<DescriptorPool>(*device, poolSizes, 2);
 }
 
-void Example::updateUniformBuffers()
-{
+void Example::updateUniformBuffers() {
     // if ()
     {
         ubo_vs.projection = camera->matrices.perspective;
@@ -77,27 +72,26 @@ void Example::updateUniformBuffers()
     uniform_buffers.scene->uploadData(&ubo_vs, sizeof(ubo_vs));
 }
 
-void Example::createGraphicsPipeline()
-{
+void Example::createGraphicsPipeline() {
     // todo handle shader complie
 
     VkPipelineShaderStageCreateInfo shaderStages[2];
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+            VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
     std::vector<VkVertexInputBindingDescription> bindingDescriptions;
     std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
 
     bindingDescriptions = {
-        vkCommon::initializers::vertexInputBindingDescription(VERTEX_BUFFER_BIND_ID,
-                                                              sizeof(gltfLoading::Vertex),
-                                                              VK_VERTEX_INPUT_RATE_VERTEX),
-        // 每个顶点属性的数据在一组顶点之间跨越。每个实例之间使用相同的顶点属性数据。
-        vkCommon::initializers::vertexInputBindingDescription(INSTANCE_BUFFER_BIND_ID,
-                                                              sizeof(InstanceData),
-                                                              VK_VERTEX_INPUT_RATE_INSTANCE)
+            vkCommon::initializers::vertexInputBindingDescription(VERTEX_BUFFER_BIND_ID,
+                                                                  sizeof(gltfLoading::Vertex),
+                                                                  VK_VERTEX_INPUT_RATE_VERTEX),
+            // 每个顶点属性的数据在一组顶点之间跨越。每个实例之间使用相同的顶点属性数据。
+            vkCommon::initializers::vertexInputBindingDescription(INSTANCE_BUFFER_BIND_ID,
+                                                                  sizeof(InstanceData),
+                                                                  VK_VERTEX_INPUT_RATE_INSTANCE)
     };
 
     // Vertex attribute bindings
@@ -107,33 +101,33 @@ void Example::createGraphicsPipeline()
     //	...
     //	layout (location = 4) in vec3 instancePos;	Per-Instance
     attributeDescriptions = {
-        // Per-vertex attributes
-        // These are advanced for each vertex fetched by the vertex shader
-        vkCommon::initializers::vertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 0,
-                                                                VK_FORMAT_R32G32B32_SFLOAT,
-                                                                0), // Location 0: Position
-        vkCommon::initializers::vertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 1,
-                                                                VK_FORMAT_R32G32B32_SFLOAT,
-                                                                sizeof(float) * 3), // Location 1: Normal
-        vkCommon::initializers::vertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 2, VK_FORMAT_R32G32_SFLOAT,
-                                                                sizeof(float) *
-                                                                6), // Location 2: Texture coordinates
-        vkCommon::initializers::vertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 3,
-                                                                VK_FORMAT_R32G32B32_SFLOAT,
-                                                                sizeof(float) * 8), // Location 3: Color
-        // Per-Instance attributes
-        // These are fetched for each instance rendered
-        vkCommon::initializers::vertexInputAttributeDescription(INSTANCE_BUFFER_BIND_ID, 4,
-                                                                VK_FORMAT_R32G32B32_SFLOAT,
-                                                                0), // Location 4: Position
-        vkCommon::initializers::vertexInputAttributeDescription(INSTANCE_BUFFER_BIND_ID, 5,
-                                                                VK_FORMAT_R32G32B32_SFLOAT,
-                                                                sizeof(float) * 3), // Location 5: Rotation
-        vkCommon::initializers::vertexInputAttributeDescription(INSTANCE_BUFFER_BIND_ID, 6, VK_FORMAT_R32_SFLOAT,
-                                                                sizeof(float) * 6), // Location 6: Scale
-        vkCommon::initializers::vertexInputAttributeDescription(INSTANCE_BUFFER_BIND_ID, 7, VK_FORMAT_R32_SINT,
-                                                                sizeof(float) *
-                                                                7), // Location 7: Texture array layer index
+            // Per-vertex attributes
+            // These are advanced for each vertex fetched by the vertex shader
+            vkCommon::initializers::vertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 0,
+                                                                    VK_FORMAT_R32G32B32_SFLOAT,
+                                                                    0), // Location 0: Position
+            vkCommon::initializers::vertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 1,
+                                                                    VK_FORMAT_R32G32B32_SFLOAT,
+                                                                    sizeof(float) * 3), // Location 1: Normal
+            vkCommon::initializers::vertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 2, VK_FORMAT_R32G32_SFLOAT,
+                                                                    sizeof(float) *
+                                                                    6), // Location 2: Texture coordinates
+            vkCommon::initializers::vertexInputAttributeDescription(VERTEX_BUFFER_BIND_ID, 3,
+                                                                    VK_FORMAT_R32G32B32_SFLOAT,
+                                                                    sizeof(float) * 8), // Location 3: Color
+            // Per-Instance attributes
+            // These are fetched for each instance rendered
+            vkCommon::initializers::vertexInputAttributeDescription(INSTANCE_BUFFER_BIND_ID, 4,
+                                                                    VK_FORMAT_R32G32B32_SFLOAT,
+                                                                    0), // Location 4: Position
+            vkCommon::initializers::vertexInputAttributeDescription(INSTANCE_BUFFER_BIND_ID, 5,
+                                                                    VK_FORMAT_R32G32B32_SFLOAT,
+                                                                    sizeof(float) * 3), // Location 5: Rotation
+            vkCommon::initializers::vertexInputAttributeDescription(INSTANCE_BUFFER_BIND_ID, 6, VK_FORMAT_R32_SFLOAT,
+                                                                    sizeof(float) * 6), // Location 6: Scale
+            vkCommon::initializers::vertexInputAttributeDescription(INSTANCE_BUFFER_BIND_ID, 7, VK_FORMAT_R32_SINT,
+                                                                    sizeof(float) *
+                                                                    7), // Location 7: Texture array layer index
     };
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
@@ -144,8 +138,8 @@ void Example::createGraphicsPipeline()
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)renderContext->getSwapChainExtent().width;
-    viewport.height = (float)renderContext->getSwapChainExtent().height;
+    viewport.width = (float) renderContext->getSwapChainExtent().width;
+    viewport.height = (float) renderContext->getSwapChainExtent().height;
     viewport.minDepth = 0;
     viewport.maxDepth = 1.0;
 
@@ -177,7 +171,7 @@ void Example::createGraphicsPipeline()
 
     VkPipelineMultisampleStateCreateInfo multisampling{};
     multisampling.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+            VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampling.sampleShadingEnable = VK_FALSE;
     multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     multisampling.minSampleShading = 1.0f; // Optional
@@ -187,13 +181,13 @@ void Example::createGraphicsPipeline()
 
     VkPipelineColorBlendAttachmentState colorBlendAttachment{};
     colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
-        VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
-        VK_COLOR_COMPONENT_A_BIT;
+                                          VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
+                                          VK_COLOR_COMPONENT_A_BIT;
     colorBlendAttachment.blendEnable = VK_FALSE;
 
     VkPipelineColorBlendStateCreateInfo colorBlending{};
     colorBlending.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+            VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlending.logicOpEnable = VK_FALSE;
     colorBlending.logicOp = VK_LOGIC_OP_COPY;
     colorBlending.attachmentCount = 1;
@@ -262,8 +256,8 @@ void Example::createGraphicsPipeline()
     vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
     VK_CHECK_RESULT(
-        vkCreateGraphicsPipelines(device->getHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
-            &pipelines.instancedRockPipeline))
+            vkCreateGraphicsPipelines(device->getHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
+                                      &pipelines.instancedRockPipeline))
 
     // init planet pipeline
 
@@ -275,12 +269,11 @@ void Example::createGraphicsPipeline()
     // pos normal uv color
     vertexInputInfo.vertexAttributeDescriptionCount = 4;
     VK_CHECK_RESULT(
-        vkCreateGraphicsPipelines(device->getHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
-            &pipelines.planetPipeline))
+            vkCreateGraphicsPipelines(device->getHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
+                                      &pipelines.planetPipeline))
 }
 
-void Example::prepare()
-{
+void Example::prepare() {
     Application::prepare();
 
     loadResources();
@@ -296,16 +289,14 @@ void Example::prepare()
     buildCommandBuffers();
 }
 
-void Example::createDescriptorSetLayout()
-{
+void Example::createDescriptorSetLayout() {
     descriptorLayout = std::make_unique<DescriptorLayout>(*device);
     descriptorLayout->addBinding(VK_SHADER_STAGE_VERTEX_BIT, 0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0);
     descriptorLayout->addBinding(VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0);
     descriptorLayout->createLayout(0);
 }
 
-Example::Example() : Application("Instancing", 1280, 720)
-{
+Example::Example() : Application("Instancing", 1280, 720) {
     camera = std::make_unique<Camera>();
     camera->flipY = true;
     camera->setPerspective(45.f, 1.f, 0.1f, 10.0f);
@@ -313,23 +304,20 @@ Example::Example() : Application("Instancing", 1280, 720)
     camera->setTranslation(glm::vec3(0.f, 0.f, -2.f));
     camera->setTranslation(glm::vec3(5.5f, -1.85f, -18.5f));
     camera->setRotation(glm::vec3(-17.2f, -4.7f, 0.0f));
-    camera->setPerspective(60.0f, (float)width / (float)height, 1.0f, 256.0f);
+    camera->setPerspective(60.0f, (float) width / (float) height, 1.0f, 256.0f);
 
     sponza = std::make_unique<gltfLoading::GLTFLoadingImpl>(*device);
     sponza->loadFromFile(FileUtils::getResourcePath("sponza/sponza.gltf"));
 }
 
-void Example::bindUniformBuffers(CommandBuffer& commandBuffer)
-{
+void Example::bindUniformBuffers(CommandBuffer &commandBuffer) {
     // commandBuffer.bindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayOut, 0, {descriptorSet.get()},
     //                                  {});
 }
 
-void Example::buildCommandBuffers()
-{
-    for (int i = commandBuffers.size() - 1; i >= 0; i--)
-    {
-        auto& commandBuffer = *commandBuffers[i];
+void Example::buildCommandBuffers() {
+    for (int i = commandBuffers.size() - 1; i >= 0; i--) {
+        auto &commandBuffer = *commandBuffers[i];
         commandBuffer.beginRecord(0);
         //    commandBuffer.bindPipeline(graphicsPipeline->getHandle());
         renderContext->setActiveFrameIdx(i);
@@ -339,15 +327,13 @@ void Example::buildCommandBuffers()
     }
 }
 
-void Example::onUpdateGUI()
-{
+void Example::onUpdateGUI() {
     gui->text("Hello");
     gui->text("Hello IMGUI");
     gui->text("Hello imgui");
 }
 
-void Example::prepareInstanceData()
-{
+void Example::prepareInstanceData() {
     std::vector<InstanceData> instanceData;
     instanceData.resize(INSTANCE_NUM);
 
@@ -356,8 +342,7 @@ void Example::prepareInstanceData()
     std::uniform_int_distribution<uint32_t> rndTextureIndex(0, textures.rocketTexture.image->getLayers());
 
     // Distribute rocks randomly on two different rings
-    for (auto i = 0; i < INSTANCE_NUM / 2; i++)
-    {
+    for (auto i = 0; i < INSTANCE_NUM / 2; i++) {
         glm::vec2 ring0{7.0f, 11.0f};
         glm::vec2 ring1{14.0f, 18.0f};
 
@@ -394,15 +379,14 @@ void Example::prepareInstanceData()
     instanceBuffer.buffer->uploadData(instanceData.data(), DATA_SIZE(instanceData));
 }
 
-void Example::draw(CommandBuffer& commandBuffer)
-{
+void Example::draw(CommandBuffer &commandBuffer) {
     bindUniformBuffers(commandBuffer);
     //    renderPipeline->draw(commandBuffer, renderFrame);
 
     commandBuffer.beginRenderPass(renderPipeline->getRenderPass(),
                                   Default::clearValues(), VkSubpassContents{});
 
-    const VkViewport viewport = vkCommon::initializers::viewport((float)width, (float)height, 0.0f, 1.0f);
+    const VkViewport viewport = vkCommon::initializers::viewport((float) width, (float) height, 0.0f, 1.0f);
     const VkRect2D scissor = vkCommon::initializers::rect2D(width, height, 0, 0);
     vkCmdSetViewport(commandBuffer.getHandle(), 0, 1, &viewport);
     vkCmdSetScissor(commandBuffer.getHandle(), 0, 1, &scissor);
@@ -439,8 +423,7 @@ void Example::draw(CommandBuffer& commandBuffer)
     commandBuffer.endRenderPass();
 }
 
-int main()
-{
+int main() {
     auto example = new Example();
     example->prepare();
     example->mainloop();

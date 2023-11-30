@@ -18,16 +18,17 @@
 // #include "FrameBuffer.h"
 // #include "RenderPass.h"
 // #include "Device.h"
-// #include <Images/Image.h>
+// #include "Core/Images/Image.h"
 // #include "Queue.h"
 // #include "Window.h"
 // #include <Command/CommandPool.h>
-// #include "Instance.h"
+// #include <Core/Device/Instance.h>
 // #include "SwapChain.h"
 //
 //
 // #include "ext/stb_image/stb_image.h"
-// #include "Images/ImageView.h"
+// #include "Core/Images/ImageView.h"
+
 // #include "Images/Sampler.h"
 // #include "Mesh.h"
 //

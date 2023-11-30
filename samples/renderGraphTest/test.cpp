@@ -10,24 +10,25 @@
 #include <vector>
 #include <optional>
 
-#include "Vulkan.h"
+#include "Core/Vulkan.h"
 #include "VertexData.h"
-#include "Buffer.h"
-#include "CommandBuffer.h"
-#include "Pipeline.h"
-#include "FrameBuffer.h"
-#include "RenderPass.h"
-#include "Device.h"
-#include <Images/Image.h>
-#include "Queue.h"
-#include "Window.h"
-#include <Command/CommandPool.h>
-#include "Instance.h"
-#include "SwapChain.h"
+#include "Core/Buffer.h"
+#include "Core/CommandBuffer.h"
+#include "Core/Pipeline.h"
+#include "Core/FrameBuffer.h"
+#include "Core/RenderPass.h"
+#include "Core/Device/Device.h"
+#include "Core/Images/Image.h"
+#include "Core/Queue.h"
+#include "PlatForm/Window.h"
+#include "Core/CommandPool.h"
+#include <Core/Device/Instance.h>
+#include "Core/SwapChain.h"
 
 
 #include "ext/stb_image/stb_image.h"
-#include "Images/ImageView.h"
+#include "Core/Images/ImageView.h"
+
 #include "Images/Sampler.h"
 #include "Mesh.h"
 

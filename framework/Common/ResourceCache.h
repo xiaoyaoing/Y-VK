@@ -2,8 +2,8 @@
 
 #include <unordered_map>
 
-#include "Shader.h"
-#include "RenderPass.h"
+#include "Core/Shader/Shader.h"
+#include "Core/RenderPass.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 
@@ -11,12 +11,12 @@
 
 #include <mutex>
 
-#include "FrameBuffer.h"
-#include "Pipeline.h"
-#include "RenderTarget.h"
-#include "Descriptor/DescriptorLayout.h"
-#include "Descriptor/DescriptorPool.h"
-#include "Descriptor/DescriptorSet.h"
+#include "Core/FrameBuffer.h"
+#include "Core/Pipeline.h"
+#include "Core/RenderTarget.h"
+#include "Core/Descriptor/DescriptorLayout.h"
+#include "Core/Descriptor/DescriptorPool.h"
+#include "Core/Descriptor/DescriptorSet.h"
 
 
 //A resource cache  system

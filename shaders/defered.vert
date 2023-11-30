@@ -39,4 +39,5 @@ void main(void)
     o_normal = mat3(global_uniform.model) * normal;
 
     gl_Position =global_uniform.proj *  global_uniform.view * o_pos;
+    //gl_Position.z = 1.f / gl_Position.z;
 }

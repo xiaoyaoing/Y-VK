@@ -3,9 +3,9 @@
 //
 
 #include "RenderGraphTest.h"
-#include "Shader.h"
+#include "Core/Shader/Shader.h"
 #include "../../framework/Common/VkCommon.h"
-#include "FIleUtils.h"
+#include "Common/FIleUtils.h"
 
 void Example::drawFrame()
 {
@@ -83,7 +83,11 @@ void Example::drawFrame()
                 };
                 desc.addSubpass({.outputAttachments = {data.albedo, data.position, data.normal, data.depth}});
                 desc.addSubpass({
-                    .inputAttachments = {data.albedo, data.position, data.normal}, .outputAttachments = {data.output}
+                    .inputAttachments = {
+                        data.albedo, data.position,
+                        data.normal
+                    },
+                    .outputAttachments = {data.output}
                 });
 
                 builder.declare("Color Pass Target", desc);
@@ -108,20 +112,20 @@ void Example::drawFrame()
             [&](OnePassTwoSubPassDeferedShadingData& data, const RenderPassContext& context)
             {
                 renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.gBuffer);
-
+                auto state = renderContext->getPipelineState().getDepthStencilState();
+                // state.depthCompareOp = VK_COMPARE_OP_GREATER;
+                renderContext->getPipelineState().setDepthStencilState(state);
                 scene->IteratePrimitives([&](const Primitive& primitive)
                     {
                         renderContext->bindPrimitive(primitive);
-                        renderContext->getPipelineState().setRasterizationState({
-                            .cullMode = VK_CULL_MODE_NONE
-                        });
 
                         const auto allocation = renderContext->allocateBuffer(
                             sizeof(GlobalUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
+                        auto view = camera->matrices.view;
                         //todo: use camera data here
                         GlobalUniform uniform{
-                            .model = primitive.matrix, .view = camera->matrices.view,
+                            .model = primitive.matrix, .view = view,
                             .proj = camera->matrices.perspective
                         };
                         allocation.buffer->uploadData(
@@ -137,6 +141,7 @@ void Example::drawFrame()
                 );
                 renderContext->nextSubpass(commandBuffer);
                 renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.lighting);
+                renderContext->getPipelineState().setDepthStencilState({.depthTestEnable = false});
 
                 struct Poses
                 {
@@ -150,8 +155,9 @@ void Example::drawFrame()
                 renderContext->bindBuffer(0, *buffer.buffer, buffer.offset, buffer.size, 3, 0);
 
                 renderContext->bindInput(0, blackBoard.getImageView("albedo"), 0, 0);
-                renderContext->bindInput(0, blackBoard.getImageView("normal"), 1, 0);
-                renderContext->bindInput(0, blackBoard.getImageView("position"), 2, 0);
+                renderContext->bindInput(0, blackBoard.getImageView("position"), 1, 0);
+                renderContext->bindInput(0, blackBoard.getImageView("normal"), 2, 0);
+                renderContext->bindLight<DeferredLights>(scene->getLights(), 0, 4);
 
 
                 renderContext->getPipelineState().setRasterizationState({
@@ -282,7 +288,11 @@ void Example::drawFrame()
 
                 RenderGraphPassDescriptor desc{.textures = {data.output, data.albedo, data.position, data.normal}};
                 desc.addSubpass({
-                    .inputAttachments = {data.albedo, data.position, data.normal}, .outputAttachments = {data.output}
+                    .inputAttachments = {
+                        data.albedo, data.position,
+                        data.normal
+                    },
+                    .outputAttachments = {data.output}
                 });
                 builder.declare("Lighting Pass", desc);
                 // builder.addSubPass();
@@ -304,8 +314,10 @@ void Example::drawFrame()
 
 
                 renderContext->bindInput(0, blackBoard.getImageView("albedo"), 0, 0);
-                renderContext->bindInput(0, blackBoard.getImageView("normal"), 1, 0);
-                renderContext->bindInput(0, blackBoard.getImageView("position"), 2, 0);
+                renderContext->bindInput(0, blackBoard.getImageView("position"), 1, 0);
+                renderContext->bindInput(0, blackBoard.getImageView("normal"), 2, 0);
+
+                renderContext->bindLight<DeferredLights>(scene->getLights(), 0, 4);
 
 
                 renderContext->getPipelineState().setRasterizationState({
@@ -329,9 +341,39 @@ void Example::prepare()
 {
     Application::prepare();
 
-    scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/sponza.gltf"));
+    //  scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("space_module/SpaceModule.gltf"));
+    scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"));
 
+    auto light_pos = glm::vec3(0.0f, 128.0f, -225.0f);
+    auto light_color = glm::vec3(1.0, 1.0, 1.0);
 
+    // Magic numbers used to offset lights in the Sponza scene
+    for (int i = -4; i < 4; ++i)
+    {
+        for (int j = 0; j < 2; ++j)
+        {
+            glm::vec3 pos = light_pos;
+            pos.x += i * 400;
+            pos.z += j * (225 + 140);
+            pos.y = 8;
+
+            for (int k = 0; k < 3; ++k)
+            {
+                pos.y = pos.y + (k * 100);
+
+                light_color.x = static_cast<float>(rand()) / (RAND_MAX);
+                light_color.y = static_cast<float>(rand()) / (RAND_MAX);
+                light_color.z = static_cast<float>(rand()) / (RAND_MAX);
+
+                LightProperties props;
+                props.color = light_color;
+                props.intensity = 0.2f;
+                props.position = pos;
+
+                scene->addLight(Light{.type = LIGHT_TYPE::Point, .lightProperties = props});
+            }
+        }
+    }
     std::vector<Shader> shaders{
         Shader(*device, FileUtils::getShaderPath("defered.vert")),
         Shader(*device, FileUtils::getShaderPath("defered.frag"))
@@ -350,8 +392,10 @@ Example::Example() : Application("Drawing Triangle", 1024, 1024)
     camera = std::make_unique<Camera>();
     camera->flipY = true;
     camera->setTranslation(glm::vec3(0.0f, 1.0f, 0.0f));
+    camera->setTranslation(glm::vec3(-705.f, 195.f, -119.f));
     camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
-    camera->setPerspective(60.0f, (float)width / (float)height, 0.1f, 256.0f);
+    camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
+    camera->setPerspective(60.0f, (float)width / (float)height, 0.1f, 4000.f);
 }
 
 

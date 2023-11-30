@@ -16,6 +16,16 @@ Scene::Scene(std::vector<std::unique_ptr<Primitive>>&& primitives, std::vector<T
 {
 }
 
+void Scene::addLight(const Light& light)
+{
+    lights.emplace_back(light);
+}
+
+const std::vector<Light>& Scene::getLights() const
+{
+    return lights;
+}
+
 
 bool Primitive::getVertexAttribute(const std::string& name, VertexAttribute& attribute) const
 {

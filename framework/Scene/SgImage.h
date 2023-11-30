@@ -3,13 +3,14 @@
 //
 #pragma once
 
-#include "Vulkan.h"
+#include "Core/Vulkan.h"
 
-#include "Images/ImageView.h"
-#include "Images/Image.h"
+#include "Core/Images/ImageView.h"
 
-struct Mipmap
-{
+#include "Core/Images/Image.h"
+
+
+struct Mipmap {
     /// Mipmap level
     uint32_t level = 0;
 
@@ -20,31 +21,29 @@ struct Mipmap
     VkExtent3D extent = {0, 0, 0};
 };
 
-class SgImage
-{
+class SgImage {
 public:
-    static std::unique_ptr<SgImage> load(const std::string& path);
-
-    void createVkImage(Device& device, VkImageViewType image_view_type = VK_IMAGE_VIEW_TYPE_2D,
+    void createVkImage(Device &device, VkImageViewType image_view_type = VK_IMAGE_VIEW_TYPE_2D,
                        VkImageCreateFlags flags = 0);
 
 
     /**
      * \brief load from hardware texture
      */
-    SgImage(Device& device, const std::string& path, VkImageViewType viewType);
+    SgImage(Device &device, const std::string &path, VkImageViewType viewType);
 
     ~SgImage();
-    SgImage(SgImage&& other);
 
-    SgImage(SgImage& other) = delete;
+    SgImage(SgImage &&other);
+
+    SgImage(SgImage &other) = delete;
 
     /**
      * \brief create from image attribute 
      */
-    SgImage(Device& device,
-            const std::string& name,
-            const VkExtent3D& extent,
+    SgImage(Device &device,
+            const std::string &name,
+            const VkExtent3D &extent,
             VkFormat format,
             VkImageUsageFlags image_usage,
             VmaMemoryUsage memory_usage,
@@ -57,16 +56,16 @@ public:
     /**
      * \brief load from existing image.Mainly from swapChainImage
      */
-    SgImage(Device& device,
+    SgImage(Device &device,
             VkImage handle,
-            const VkExtent3D& extent,
+            const VkExtent3D &extent,
             VkFormat format,
             VkImageUsageFlags image_usage,
             VkSampleCountFlagBits sample_count = VK_SAMPLE_COUNT_1_BIT,
             VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D);
 
 
-    std::vector<uint8_t>& getData();
+    std::vector<uint8_t> &getData();
 
     uint64_t getBufferSize() const;
 
@@ -74,15 +73,15 @@ public:
 
     VkExtent2D getExtent2D() const;
 
-    Image& getVkImage() const;
+    Image &getVkImage() const;
 
-    ImageView& getVkImageView() const;
+    ImageView &getVkImageView() const;
 
     VkFormat getFormat() const;
 
-    const std::vector<std::vector<VkDeviceSize>>& getOffsets() const;
+    const std::vector<std::vector<VkDeviceSize>> &getOffsets() const;
 
-    const std::vector<Mipmap>& getMipMaps() const;
+    const std::vector<Mipmap> &getMipMaps() const;
 
     uint32_t getLayers() const;
 
@@ -91,11 +90,13 @@ public:
     void generateMipMap();
 
 
-    void loadResources(const std::string& path);
+    void loadResources(const std::string &path);
 
 private:
 
 protected:
+    friend class AstcImageHelper;
+
     std::unique_ptr<Image> vkImage{nullptr};
 
     std::unique_ptr<ImageView> vkImageView{nullptr};
@@ -112,6 +113,8 @@ protected:
     std::vector<std::vector<VkDeviceSize>> offsets;
 
     std::string name;
+
+    Device &device;
 
 protected:
     uint32_t layers{1};

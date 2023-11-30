@@ -17,6 +17,33 @@
  */
 precision highp float;
 
+
+struct Light
+{
+    vec4 color;// color.w represents light intensity
+    vec4 position;// position.w represents type of light
+    vec4 direction;// direction.w represents range
+    vec2 info;// (only used for spot lights) info.x represents light inner cone angle, info.y represents light outer cone angle
+};
+
+vec3 apply_directional_light(Light light, vec3 normal)
+{
+    vec3 world_to_light = -light.direction.xyz;
+    world_to_light      = normalize(world_to_light);\
+    float ndotl         = clamp(dot(normal, world_to_light), 0.0, 1.0);
+    return ndotl * light.color.w * light.color.rgb;
+}
+
+vec3 apply_point_light(Light light, vec3 pos, vec3 normal)
+{
+    vec3  world_to_light = light.position.xyz - pos;
+    float dist           = length(world_to_light) * 0.005f;
+    float atten          = 1.0 / (dist * dist);
+    world_to_light       = normalize(world_to_light);
+    float ndotl          = clamp((dot(normal, world_to_light)), 0.0, 1.0);
+    return ndotl * light.color.w * atten * light.color.rgb;
+}
+
 layout(input_attachment_index = 0, binding = 0) uniform subpassInput i_albedo;
 layout(input_attachment_index = 1, binding = 1) uniform subpassInput i_position;
 layout(input_attachment_index = 2, binding = 2) uniform subpassInput i_normal;
@@ -36,15 +63,15 @@ layout(location = 0) out vec4 o_color;
 // }
 // global_uniform;
 
-// #include "lighting.h"
+//#include "lighting.h"
 
-// layout(set = 0, binding = 4) uniform LightsInfo
-// {
-// 	Light directional_lights[MAX_LIGHT_COUNT];
-// 	Light point_lights[MAX_LIGHT_COUNT];
-// 	Light spot_lights[MAX_LIGHT_COUNT];
-// }
-// lights_info;
+layout(set = 0, binding = 4) uniform LightsInfo
+{
+    Light directional_lights[32];
+    Light point_lights[32];
+    Light spot_lights[32];
+}
+lights_info;
 
 // layout(constant_id = 0) const uint DIRECTIONAL_LIGHT_COUNT = 0U;
 // layout(constant_id = 1) const uint POINT_LIGHT_COUNT       = 0U;
@@ -57,33 +84,37 @@ void main()
     // highp vec4 world_w = global_uniform.inv_view_proj * clip;
     // highp vec3 pos     = world_w.xyz / world_w.w;
     vec4 albedo = subpassLoad(i_albedo);
-    vec4 pos = subpassLoad(i_position);
+    vec4 pos = subpassLoad(i_position) * 20000.f - 10000.f;
     // Transform from [0,1] to [-1,1]
     vec3 normal = subpassLoad(i_normal).xyz;
     normal      = normalize(2.0 * normal - 1.0);
+
+    vec3 L = vec3(0.0);
+
     // Calculate lighting
-    // for (uint i = 0U; i < DIRECTIONAL_LIGHT_COUNT; ++i)
-    // {
-    // 	L += apply_directional_light(lights_info.directional_lights[i], normal);
-    // }
-    // for (uint i = 0U; i < POINT_LIGHT_COUNT; ++i)
-    // {
-    // 	L += apply_point_light(lights_info.point_lights[i], pos, normal);
-    // }
-    // for (uint i = 0U; i < SPOT_LIGHT_COUNT; ++i)
-    // {
-    // 	L += apply_spot_light(lights_info.spot_lights[i], pos, normal);
-    // }
+    //     for (uint i = 0U; i < DIRECTIONAL_LIGHT_COUNT; ++i)
+    //     {
+    //     	L += apply_directional_light(lights_info.directional_lights[i], normal);
+    //     }
+    for (uint i = 0U; i < 32; ++i)
+    {
+        L += apply_point_light(lights_info.point_lights[i], pos.xyz, normal);
+    }
+    //     for (uint i = 0U; i < SPOT_LIGHT_COUNT; ++i)
+    //     {
+    //     	L += apply_spot_light(lights_info.spot_lights[i], pos, normal);
+    //     }
 
     vec3 ambient_color = vec3(0.2) * albedo.xyz;
 
+    o_color = vec4(ambient_color + L * albedo.xyz, albedo.a);
 
-    vec3 L = normalize(poses.lightPos-pos.xyz);
-    vec3 V = normalize(poses.viewPos-pos.xyz);
-    vec3 H = normalize(L+V);
-
-    vec3 diffuse = max(dot(normal, L), 0.1f).rrr;
-    float specular = pow(max(dot(H, normal), 0.f), 32);
-
-    o_color = vec4(albedo.xyz * diffuse + specular, albedo.a);
+    //    vec3 L = normalize(poses.lightPos-pos.xyz);
+    //    vec3 V = normalize(poses.viewPos-pos.xyz);
+    //    vec3 H = normalize(L+V);
+    //
+    //    vec3 diffuse = max(dot(normal, L), 0.1f).rrr;
+    //    float specular = pow(max(dot(H, normal), 0.f), 32);
+    //
+    //    o_color = vec4(albedo.xyz * diffuse + specular, albedo.a);
 }

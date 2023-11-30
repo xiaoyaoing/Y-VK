@@ -2,11 +2,11 @@
 
 #include "PassNode.h"
 #include "VirtualResource.h"
-#include "RenderTarget.h"
+#include "Core/RenderTarget.h"
 #include "RenderGraphId.h"
 #include "RenderGraphPass.h"
 #include "RenderGraphTexture.h"
-#include "RenderPass.h"
+#include "Core/RenderPass.h"
 #include "BlackBoard.h"
 /**render Graph **/
 /*
@@ -25,19 +25,18 @@
 class CommandBuffer;
 
 
-class RenderGraph
-{
+class RenderGraph {
 public:
-    RenderGraph(Device& device);
+    RenderGraph(Device &device);
 
-    RenderGraph(RenderGraph& rhs) = delete;
-    RenderGraph(RenderGraph&& rhs) = delete;
+    RenderGraph(RenderGraph &rhs) = delete;
+
+    RenderGraph(RenderGraph &&rhs) = delete;
 
 
-    RenderGraphHandle importTexture(const char* name, SgImage* hwTexture);
+    RenderGraphHandle importTexture(const char *name, SgImage *hwTexture);
 
-    class Builder
-    {
+    class Builder {
     public:
         // RenderGraphHandle read(RenderGraphHandle resource, PassNode* node,);
         //
@@ -45,48 +44,48 @@ public:
 
         RenderGraphHandle readTexture(RenderGraphHandle input,
                                       RenderGraphTexture::Usage usage =
-                                          RenderGraphTexture::DEFAULT_R_USAGE);
+                                      RenderGraphTexture::DEFAULT_R_USAGE);
+
         RenderGraphHandle writeTexture(RenderGraphHandle output,
                                        RenderGraphTexture::Usage usage =
-                                           RenderGraphTexture::DEFAULT_W_USAGE);
+                                       RenderGraphTexture::DEFAULT_W_USAGE);
 
         // void addSubpass(const RenderGraphSubpassInfo&);
 
-        void declare(const char* name,
-                     const RenderGraphPassDescriptor& desc);
+        void declare(const char *name,
+                     const RenderGraphPassDescriptor &desc);
 
 
-        Builder(PassNode* node, RenderGraph& renderGraph)
-            : node(node),
-              renderGraph(renderGraph)
-        {
+        Builder(PassNode *node, RenderGraph &renderGraph)
+                : node(node),
+                  renderGraph(renderGraph) {
         }
 
     protected:
-        PassNode* node;
-        RenderGraph& renderGraph;
+        PassNode *node;
+        RenderGraph &renderGraph;
     };
 
 
-    RenderGraphHandle createTexture(const char* name, const RenderGraphTexture::Descriptor& desc = {});
+    RenderGraphHandle createTexture(const char *name, const RenderGraphTexture::Descriptor &desc = {});
 
 
-    RenderGraphHandle addResource(VirtualResource* resource);
+    RenderGraphHandle addResource(VirtualResource *resource);
 
-    RenderGraphHandle addTexture(RenderGraphTexture* texture);
+    RenderGraphHandle addTexture(RenderGraphTexture *texture);
 
-    bool isWrite(RenderGraphHandle handle, const RenderPassNode* passNode) const;
-    bool isRead(RenderGraphHandle handle, const RenderPassNode* passNode) const;
+    bool isWrite(RenderGraphHandle handle, const RenderPassNode *passNode) const;
+
+    bool isRead(RenderGraphHandle handle, const RenderPassNode *passNode) const;
 
     void setUp();
 
-    void execute(CommandBuffer& commandBuffer);
+    void execute(CommandBuffer &commandBuffer);
 
-    Blackboard& getBlackBoard() const;
+    Blackboard &getBlackBoard() const;
 
 
-    PassNode* addPassInternal(const char* name, RenderGraphPassBase* base)
-    {
+    PassNode *addPassInternal(const char *name, RenderGraphPassBase *base) {
         //auto node = ;
         auto node = new RenderPassNode(*this, name, base);
         mPassNodes.emplace_back(node);
@@ -95,9 +94,8 @@ public:
     }
 
 
-    template <typename Data, typename Setup, typename Execute>
-    void addPass(const char* name, Setup setup, Execute&& execute)
-    {
+    template<typename Data, typename Setup, typename Execute>
+    void addPass(const char *name, Setup setup, Execute &&execute) {
         auto pass = new RenderGraphPass<Data, Execute>(std::forward<Execute>(execute));
         Builder builder(addPassInternal(name, pass), *this);
         setup(builder, pass->getData());
@@ -105,26 +103,25 @@ public:
 
     void addPresentPass(RenderGraphHandle textureId);
 
-    RenderGraphTexture* getResource(RenderGraphHandle handle) const;
+    RenderGraphTexture *getResource(RenderGraphHandle handle) const;
 
     void compile();
 
-    Device& getDevice() const;
+    Device &getDevice() const;
 
-    ~RenderGraph()
-    {
-        for (const auto& passNode : mPassNodes)
+    ~RenderGraph() {
+        for (const auto &passNode: mPassNodes)
             delete passNode;
-        for (const auto& resource : mVirtualResources)
+        for (const auto &resource: mVirtualResources)
             delete resource;
     }
 
 private:
-    std::vector<RenderGraphNode*> getInComingNodes(RenderGraphNode* node) const;
-    std::vector<RenderGraphNode*> getOutComingNodes(RenderGraphNode* node) const;
+    std::vector<RenderGraphNode *> getInComingNodes(RenderGraphNode *node) const;
 
-    struct ResourceSlot
-    {
+    std::vector<RenderGraphNode *> getOutComingNodes(RenderGraphNode *node) const;
+
+    struct ResourceSlot {
         using Version = RenderGraphHandle::Version;
         using Index = int16_t;
         Index rid = 0; // VirtualResource* index in mResources
@@ -134,25 +131,24 @@ private:
     };
 
 
-    struct Edge
-    {
-        PassNode* pass{nullptr};
-        RenderGraphTexture* texture{nullptr};
+    struct Edge {
+        PassNode *pass{nullptr};
+        RenderGraphTexture *texture{nullptr};
         RenderGraphTexture::Usage usage{};
         bool read{true};
     };
 
-    std::vector<const Edge*> getEdges(RenderGraphNode* node) const;
+    std::vector<const Edge *> getEdges(RenderGraphNode *node) const;
 
 
     std::unique_ptr<Blackboard> mBlackBoard{};
-    std::vector<PassNode*> mPassNodes{};
-    std::vector<VirtualResource*> mVirtualResources{};
-    std::vector<RenderGraphTexture*> mTextures{};
-    std::vector<PassNode*>::iterator mActivePassNodesEnd;
+    std::vector<PassNode *> mPassNodes{};
+    std::vector<VirtualResource *> mVirtualResources{};
+    std::vector<RenderGraphTexture *> mTextures{};
+    std::vector<PassNode *>::iterator mActivePassNodesEnd;
 
     std::vector<ResourceSlot> mResourceSlots{};
-    Device& device;
+    Device &device;
 
 
     std::vector<Edge> edges;

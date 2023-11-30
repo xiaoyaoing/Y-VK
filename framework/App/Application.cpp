@@ -2,15 +2,13 @@
 // Created by 打工人 on 2023/3/19.
 //
 #include "Application.h"
-#include "Instance.h"
-#include "Scene.h"
+#include <Core/Device/Instance.h>
 #include "../Common/VkCommon.h"
-#include "Gui.h"
-#include <RenderTarget.h>
-#include <Shader.h>
-#include <Subpass.h>
-#include <API_VK.h>
-#include <Camera.h>
+#include "Gui/Gui.h"
+#include "Core/RenderTarget.h"
+#include "Core/Shader/Shader.h"
+#include "Core/Texture.h"
+#include "Scene/Compoments/Camera.h"
 
 
 void Application::initVk()

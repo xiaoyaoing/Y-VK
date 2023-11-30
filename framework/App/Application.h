@@ -1,31 +1,26 @@
 #pragma once
 
-#include <VertexData.h>
-#include <Buffer.h>
-#include <CommandBuffer.h>
-#include <Pipeline.h>
-#include <FrameBuffer.h>
-#include <RenderPass.h>
-#include <Device.h>
-#include <Images/Image.h>
-#include <Queue.h>
-#include <Window.h>
-#include <Command/CommandPool.h>
-#include <Instance.h>
-#include <SwapChain.h>
-#include <RenderTarget.h>
-#include <RenderContext.h>
-#include <Descriptor/DescriptorPool.h>
-#include <Descriptor/DescriptorLayout.h>
-#include <Descriptor/DescriptorSet.h>
-#include <Images/ImageView.h>
-#include <Images/Sampler.h>
-#include <Mesh.h>
-#include <Scene.h>
-#include <API_VK.h>
-#include <Camera.h>
-#include <InputEvent.h>
-#include <Gui.h>
+#include "Core/Buffer.h"
+#include "Core/CommandBuffer.h"
+#include "Core/Pipeline.h"
+#include "Core/FrameBuffer.h"
+#include "Core/RenderPass.h"
+#include "Core/Device/Device.h"
+#include <Core/Images/Image.h>
+#include "Core/Queue.h"
+#include "PlatForm/Window.h"
+#include "Core/CommandPool.h"
+#include "Core/SwapChain.h"
+#include "Core/RenderTarget.h"
+#include "Core/RenderContext.h"
+#include <Core/Descriptor/DescriptorPool.h>
+#include <Core/Descriptor/DescriptorLayout.h>
+#include <Core/Descriptor/DescriptorSet.h>
+#include "Core/Images/ImageView.h"
+#include "Core/Texture.h"
+#include "Scene/Compoments/Camera.h"
+#include "Gui/InputEvent.h"
+#include "Gui/Gui.h"
 
 #include <stb_image.h>
 #include <glm/ext/matrix_clip_space.hpp>
@@ -55,7 +50,7 @@ class Application
 public:
     Application(const char* name, int width, int height);
 
-    Application(): Application("Vulkan", 512, 512)
+    Application() : Application("Vulkan", 512, 512)
     {
     }
 

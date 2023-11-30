@@ -51,12 +51,11 @@ void main(void)
     vec4 base_color = vec4(1.0, 0.0, 0.0, 1.0);
 
     //    #ifdef HAS_baseColorTexture
-       base_color = texture(baseColorTexture, in_uv);
+    base_color = texture(baseColorTexture, in_uv);
     //    #else
     //    base_color = pbr_material_uniform.base_color_factor;
     //    #endif
 
     o_albedo = base_color;
-    o_normal = o_normal;
-    o_position = in_pos;
+    o_position = vec4(((in_pos.xyz + 10000.f) / 20000.f), 1.f);
 }
