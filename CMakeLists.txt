@@ -10,15 +10,14 @@ add_definitions(-DVK_RESOURCES_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/resources/\")
 add_definitions(-DVK_SHADERS_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/shaders/\")
 
 add_subdirectory(ext)
-add_subdirectory(framework)
+add_subdirectory(src/framework)
+add_subdirectory(src/RayTracer)
 
-add_subdirectory(samples/sample1)
-add_subdirectory(samples/instancing)
-add_subdirectory(samples/defered)
-add_subdirectory(samples/shaderreFlection)
-add_subdirectory(samples/renderGraphTest)
+#add_subdirectory(src/samples/sample1)
+#add_subdirectory(src/samples/instancing)
+#add_subdirectory(src/samples/defered)
+#add_subdirectory(src/samples/shaderreFlection)
+add_subdirectory(src/samples/renderGraphTest)
 
-add_dependencies(sample1 framework)
-add_dependencies(instancing framework)
 
 file(COPY shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

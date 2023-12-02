@@ -45,23 +45,23 @@ vec3 apply_point_light(Light light, vec3 pos, vec3 normal)
 }
 
 layout(input_attachment_index = 0, binding = 0) uniform subpassInput i_albedo;
-layout(input_attachment_index = 1, binding = 1) uniform subpassInput i_position;
+layout(input_attachment_index = 1, binding = 1) uniform subpassInput i_depth;
 layout(input_attachment_index = 2, binding = 2) uniform subpassInput i_normal;
 
-layout(set = 0, binding = 3) uniform GlobalUniform {
-    vec3 viewPos;
-    vec3 lightPos;
-} poses;
+//layout(set = 0, binding = 3) uniform GlobalUniform {
+//    vec3 viewPos;
+//    vec3 lightPos;
+//} poses;
 
 layout(location = 0) in vec2 in_uv;
 layout(location = 0) out vec4 o_color;
 
-// layout(set = 0, binding = 3) uniform GlobalUniform
-// {
-//     mat4 inv_view_proj;
-//     vec2 inv_resolution;
-// }
-// global_uniform;
+layout(set = 0, binding = 3) uniform GlobalUniform
+{
+    mat4 inv_view_proj;
+    vec2 inv_resolution;
+}
+global_uniform;
 
 //#include "lighting.h"
 
@@ -80,11 +80,12 @@ lights_info;
 void main()
 {
     //Retrieve position from depth
-    // vec4  clip         = vec4(in_uv * 2.0 - 1.0, subpassLoad(i_depth).x, 1.0);
-    // highp vec4 world_w = global_uniform.inv_view_proj * clip;
-    // highp vec3 pos     = world_w.xyz / world_w.w;
+    vec4  clip         = vec4(in_uv * 2.0 - 1.0, subpassLoad(i_depth).x, 1.0);
+    highp vec4 world_w = global_uniform.inv_view_proj * clip;
+    highp vec3 pos     = world_w.xyz / world_w.w;
+
     vec4 albedo = subpassLoad(i_albedo);
-    vec4 pos = subpassLoad(i_position) * 20000.f - 10000.f;
+    //    vec4 pos = subpassLoad(i_position) * 20000.f - 10000.f;
     // Transform from [0,1] to [-1,1]
     vec3 normal = subpassLoad(i_normal).xyz;
     normal      = normalize(2.0 * normal - 1.0);
@@ -98,7 +99,7 @@ void main()
     //     }
     for (uint i = 0U; i < 32; ++i)
     {
-        L += apply_point_light(lights_info.point_lights[i], pos.xyz, normal);
+        L += apply_point_light(lights_info.point_lights[i], pos, normal);
     }
     //     for (uint i = 0U; i < SPOT_LIGHT_COUNT; ++i)
     //     {
@@ -107,7 +108,8 @@ void main()
 
     vec3 ambient_color = vec3(0.2) * albedo.xyz;
 
-    o_color = vec4(ambient_color + L * albedo.xyz, albedo.a);
+    o_color = vec4(L * albedo.xyz + ambient_color, albedo.a);
+    //o_color = vec4(pos/1000.f, albedo.a);
 
     //    vec3 L = normalize(poses.lightPos-pos.xyz);
     //    vec3 V = normalize(poses.viewPos-pos.xyz);
