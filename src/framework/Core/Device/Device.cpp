@@ -114,10 +114,13 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,VkInstance 
     createInfo.ppEnabledExtensionNames = enabled_extensions.data();
 
     auto enableExtension = [this](const char *extensionName) {
-        return std::find(enabled_extensions.begin(), enabled_extensions.end(), extensionName) !=
-               enabled_extensions.end();
+    	return std::find_if(enabled_extensions.begin(), enabled_extensions.end(), [extensionName](const char* extension) {
+			return strcmp(extensionName, extension) == 0;
+		}) != enabled_extensions.end();
     };
-	if(enableExtension(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))
+	bool enableRayTracing = enableExtension(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+
+	if(enableRayTracing)
 	{
 		VkPhysicalDeviceFeatures2 device_features2{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2};
     	VkPhysicalDeviceVulkan12Features features12 = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};

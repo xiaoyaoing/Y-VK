@@ -214,11 +214,6 @@ Pipeline::Pipeline(Device& device, const PipelineState& pipelineState) : device(
 	pipeline_CI.layout  = pipelineState.getPipelineLayout().getHandle();
 	pipeline_CI.flags = 0;
 	VK_CHECK_RESULT(vkCreateRayTracingPipelinesKHR(device.getHandle(), {}, {}, 1, &pipeline_CI, nullptr, &pipeline));
-	// sbt_wrapper.setup(ctx, ctx->indices.gfx_family.value(), ctx->rt_props);
-	// sbt_wrapper.create(handle, pipeline_CI);
-	// if (!name.empty()) {
-	// 	DebugMarker::set_resource_name(ctx->device, (uint64_t)handle, name.c_str(), VK_OBJECT_TYPE_PIPELINE);
-	// }
     }
 
     else if(type == PIPELINE_TYPE::E_COMPUTE)

@@ -4,7 +4,7 @@
 #include "Core/Descriptor/DescriptorSet.h"
 
 
-PipelineLayout::PipelineLayout(Device& device, std::vector<Shader>& shaders) : shaders(std::move(shaders))
+PipelineLayout::PipelineLayout(Device& device, std::vector<Shader>& shaders_) : shaders(std::move(shaders_))
 {
     VkPipelineLayoutCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;

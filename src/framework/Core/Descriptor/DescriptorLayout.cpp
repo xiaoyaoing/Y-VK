@@ -32,6 +32,8 @@ inline VkDescriptorType find_descriptor_type(ShaderResourceType resourceType, bo
                 return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
             }
             break;
+        case ShaderResourceType::AccelerationStructure:
+            return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
         default:
             throw std::runtime_error("No conversion possible for the shader resource type.");
             break;
@@ -43,9 +45,11 @@ DescriptorLayout::DescriptorLayout(Device &device) : _deivce(device) {
 
 DescriptorLayout::DescriptorLayout(Device &device, std::vector<Shader> &shaders) : _deivce(device) {
     VkDescriptorSetLayoutCreateInfo createInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
-    std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
     std::vector<VkDescriptorBindingFlags> bindingFlags;
 
+
+    std::unordered_map<uint32_t,VkDescriptorSetLayoutBinding> bindingInfoMap{};
+    
     for (auto &shader: shaders) {
         for (const auto &resource: shader.getShaderResources()) {
             // Skip shader resources whitout a binding point
@@ -55,6 +59,14 @@ DescriptorLayout::DescriptorLayout(Device &device, std::vector<Shader> &shaders)
                 resource.type == ShaderResourceType::SpecializationConstant) {
                 continue;
             }
+            auto binding = resource.binding;
+            auto desc_type = find_descriptor_type(resource.type, false);
+            if(bindingInfoMap.contains(binding))
+            {
+                CHECK_RESULT(bindingInfoMap[binding].descriptorType==desc_type)
+                bindingInfoMap[binding].stageFlags |= resource.stages;
+                continue;
+            }
             VkDescriptorSetLayoutBinding bindingInfo{};
             bindingInfo.stageFlags = resource.stages;
             bindingInfo.binding = resource.binding;
@@ -62,14 +74,16 @@ DescriptorLayout::DescriptorLayout(Device &device, std::vector<Shader> &shaders)
             bindingInfo.descriptorType = find_descriptor_type(resource.type, false);
 
             bindingFlags.emplace_back(0);
-            layoutBindings.emplace_back(bindingInfo);
+            bindingInfoMap.emplace(binding,bindingInfo);
             resourceLookUp.emplace(resource.name, resource.binding);
-            bindingLookUp.emplace(bindingInfo.binding, layoutBindings.size() - 1);
         }
     }
 
+    for(auto& [_,bindingInfo]:bindingInfoMap)
+    {
+        layoutBindings.emplace_back(bindingInfo);
+    }
 
-    bindings = layoutBindings;
     VkDescriptorSetLayoutCreateInfo descSetLayoutInfo = {};
     descSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     descSetLayoutInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
@@ -126,7 +140,7 @@ const VkDescriptorSetLayoutBinding &DescriptorLayout::getLayoutBindingInfo(int b
     if (!bindingLookUp.contains(bindingIndex)) {
         spdlog::error("No such binding {}", bindingIndex);
     }
-    return {bindings[bindingLookUp.at(bindingIndex)]};
+    return {layoutBindings[bindingLookUp.at(bindingIndex)]};
 }
 
 const VkDescriptorSetLayoutBinding &DescriptorLayout::getLayoutBindingInfo(const std::string &name) const {
@@ -138,7 +152,7 @@ const VkDescriptorSetLayoutBinding &DescriptorLayout::getLayoutBindingInfo(const
 
 
 std::vector<VkDescriptorSetLayoutBinding> DescriptorLayout::getBindings() const {
-    return bindings;
+    return layoutBindings;
 }
 
 bool DescriptorLayout::hasLayoutBinding(const std::string &name) const {

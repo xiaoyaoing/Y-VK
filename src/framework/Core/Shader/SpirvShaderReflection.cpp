@@ -141,6 +141,24 @@ inline void readShaderResourceUniformBuffer(const spirv_cross::CompilerReflectio
     }
 }
 
+inline void readShaderResource(spirv_cross::CompilerReflection & compiler,VkShaderStageFlagBits stage,std::vector<ShaderResource>& resources,const spirv_cross::SmallVector<spirv_cross::Resource> & inputResources)
+{
+    for (auto& spirvResource : inputResources)
+    {
+        ShaderResource resource{};
+        //resource.type = 
+        resource.stages = stage;
+        resource.name = spirvResource.name;
+
+        read_resource_arraySize(compiler, spirvResource, resource);
+        read_resource_size(compiler, spirvResource, resource);
+        readResourceDecoration<spv::DecorationLocation>(compiler, spirvResource, resource);
+        readResourceDecoration<spv::DecorationBinding>(compiler, spirvResource, resource);
+        resources.emplace_back(std::move(resource));
+    }
+}
+
+
 inline void readShaderResourceImageSampler(const spirv_cross::CompilerReflection& compiler,
                                            VkShaderStageFlagBits stage,
                                            std::vector<ShaderResource>& resources)
@@ -243,7 +261,20 @@ inline void readShaderResourcePushConstants(const spirv_cross::CompilerReflectio
 inline void readShaderResourceAccelerationStructure(const spirv_cross::CompilerReflection& compiler,
                                             VkShaderStageFlagBits stage,
                                             std::vector<ShaderResource>& resources){
+    auto acceleration_resources = compiler.get_shader_resources().acceleration_structures;
+
+    for (auto& resource : acceleration_resources)
+    {
+        ShaderResource shader_resource{};
+        shader_resource.type = ShaderResourceType::AccelerationStructure;
+        shader_resource.stages = stage;
+        shader_resource.name = resource.name;
+
+        read_resource_arraySize(compiler, resource, shader_resource);
+        readResourceDecoration<spv::DecorationBinding>(compiler, resource, shader_resource);
     
+        resources.push_back(shader_resource);
+    }
 }
 bool SpirvShaderReflection::reflectShaderResources(const std::vector<uint32_t> sprivSource,
                                                    VkShaderStageFlagBits & stage,
@@ -259,6 +290,8 @@ bool SpirvShaderReflection::reflectShaderResources(const std::vector<uint32_t> s
     readShaderResourceInputAttachment(compiler, stage, shaderResources);
     readShaderResourceInput(compiler, stage, shaderResources);
     readShaderResourcePushConstants(compiler, stage, shaderResources);
+
+    readShaderResource(compiler,stage,shaderResources,compiler.get_shader_resources().storage_images);
 
     //For Ray Tracing
     readShaderResourceAccelerationStructure(compiler, stage, shaderResources);

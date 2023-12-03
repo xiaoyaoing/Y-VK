@@ -39,7 +39,7 @@ public:
 private:
     VkDescriptorSetLayout _layout;
     std::vector<std::pair<VkDescriptorSetLayoutBinding, VkDescriptorBindingFlags>> _descBindingInfos{};
-    std::vector<VkDescriptorSetLayoutBinding> bindings;
+    std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
     std::unordered_map<std::string, uint32_t> resourceLookUp;
     std::unordered_map<uint32_t, uint32_t> bindingLookUp;
 

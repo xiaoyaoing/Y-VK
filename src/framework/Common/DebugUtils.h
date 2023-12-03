@@ -9,7 +9,14 @@
     if (res != VK_SUCCESS)                                                                                \
     {                                                                                                    \
         std::cout << "Fatal : VkResult is \"" << DebugUtils::errorString(res) << "\" in " << __FILE__ << " at line " << __LINE__ << "\n"; \
-        assert(res == VK_SUCCESS);                                                                        \
+    }                                                                                                    \
+}
+
+#define CHECK_RESULT(f)                                                                                \
+{                                                                                                                                                                                          \
+    if (!f)                                                                                               \
+    {                                                                                                    \
+        std::cout << "Fatal \"" << "\" in " << __FILE__ << " at line " << __LINE__ << "\n"; \
     }                                                                                                    \
 }
 

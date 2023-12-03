@@ -19,6 +19,7 @@ enum class ShaderResourceType {
     BufferStorage,
     PushConstant,
     SpecializationConstant,
+    AccelerationStructure,
     All
 };
 
@@ -33,7 +34,7 @@ struct ShaderResource {
     uint32_t columns;
     uint32_t arraySize;
     uint32_t offset;
-    uint32_t size;
+    // uint32_t size;
     uint32_t constantId;
     uint32_t qualifiers;
     std::string name;
