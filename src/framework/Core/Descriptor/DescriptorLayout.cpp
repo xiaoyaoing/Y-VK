@@ -136,7 +136,7 @@ void DescriptorLayout::createLayout(VkDescriptorSetLayoutCreateFlags flags) {
     VK_CHECK_RESULT(vkCreateDescriptorSetLayout(_deivce.getHandle(), &descSetLayoutInfo, nullptr, &_layout));
 }
 
-const VkDescriptorSetLayoutBinding &DescriptorLayout::getLayoutBindingInfo(int bindingIndex) const {
+const VkDescriptorSetLayoutBinding &DescriptorLayout::getLayoutBindingInfo(uint32_t bindingIndex) const {
     if (!bindingLookUp.contains(bindingIndex)) {
         spdlog::error("No such binding {}", bindingIndex);
     }

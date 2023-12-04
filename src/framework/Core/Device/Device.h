@@ -15,17 +15,19 @@ class ResourceCache;
 
 class Device {
 public:
-    
-    bool isImageFormatSupported(VkFormat format);
-    Device(Device &other) = delete;
-    Device operator=(Device other) = delete;
+
     Device(VkPhysicalDevice physicalDevice,
            VkSurfaceKHR surface,
            VkInstance instance,
            std::unordered_map<const char *, bool> requested_extensions = {});
+    Device(Device &other) = delete;
+    Device operator=(Device other) = delete;
+    ~Device() = default;
+    
+    bool isImageFormatSupported(VkFormat format);
+    
     Queue &getQueueByFlag(VkQueueFlagBits requiredFlag, uint32_t queueIndex);
     const Queue &getPresentQueue(uint32_t queueIndex);
-    ~Device() = default;
     
     inline VmaAllocator getMemoryAllocator() const {  return allocator;}
     inline CommandPool & getCommandPool() { return *commandPool;}
@@ -35,23 +37,21 @@ public:
     inline VkDevice getHandle() const { return _device; }
     inline VkPhysicalDevice getPhysicalDevice() { return _physicalDevice; }
     inline void waitIdle(){     vkDeviceWaitIdle(_device); }
+    inline VkPhysicalDeviceRayTracingPipelinePropertiesKHR & getVkPhysicalDeviceRayTracingPipelineProperties(){return rayTracingPipelineProperties;}
 
 protected:
-    VmaAllocator allocator;
-    
-    VkPhysicalDevice _physicalDevice;
-    
     VkDevice _device;
+    VkPhysicalDevice _physicalDevice;
+    VmaAllocator allocator;
+    VkPhysicalDeviceProperties properties{};
+    VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR};
+
+    
     std::vector<std::vector<std::unique_ptr<Queue>>> queues{};
-
     std::vector<VkExtensionProperties> deviceExtensions{};
-
-    std::unique_ptr<CommandPool> commandPool;
-
     std::vector<const char *> enabled_extensions{};
 
-    VkPhysicalDeviceProperties properties{};
-
+    std::unique_ptr<CommandPool> commandPool;
     ResourceCache *cache;
 
     bool isExtensionSupported(const std::string &extensionName);

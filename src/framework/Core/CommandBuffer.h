@@ -68,7 +68,7 @@ public:
         vkCmdBindPipeline(_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     }
 
-    void bindPipeline(const Pipeline &pipeline) const;
+    void bindPipeline(const Pipeline &pipeline,VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS) const;
 
 
     inline void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) {

@@ -189,9 +189,9 @@ void CommandBuffer::beginRenderPass(RenderPass& render_pass, FrameBuffer& frameB
 }
 
 
-void CommandBuffer::bindPipeline(const Pipeline& pipeline) const
+void CommandBuffer::bindPipeline(const Pipeline& pipeline,VkPipelineBindPoint bindPoint) const
 {
-    vkCmdBindPipeline(_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.getHandle());
+    vkCmdBindPipeline(_buffer,bindPoint, pipeline.getHandle());
 }
 
 void CommandBuffer::setViewport(uint32_t firstViewport, const std::vector<VkViewport>& viewports)

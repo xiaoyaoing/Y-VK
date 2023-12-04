@@ -3,6 +3,7 @@
 #include "RenderContext.h"
 #include "RenderPass.h"
 #include "Core/Device/Device.h"
+#include "RayTracing/SbtWarpper.h"
 #include <array>
 
 
@@ -193,16 +194,6 @@ Pipeline::Pipeline(Device& device, const PipelineState& pipelineState) : device(
 		stage_idx++;
 	}
 
-	// VkSpecializationInfo specialization_info = {};
-	// if (!settings.specialization_data.empty()) {
-	// 	specialization_info.dataSize = settings.specialization_data.size() * sizeof(uint32_t);
-	// 	specialization_info.mapEntryCount = (uint32_t)settings.specialization_data.size();
-	// 	specialization_info.pMapEntries = entries.data();
-	// 	specialization_info.pData = settings.specialization_data.data();
-	// 	for (auto& stage : stages) {
-	// 		stage.pSpecializationInfo = &specialization_info;
-	// 	}
-	// }
 	VkRayTracingPipelineCreateInfoKHR pipeline_CI = {VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR};
 
     	
@@ -214,7 +205,10 @@ Pipeline::Pipeline(Device& device, const PipelineState& pipelineState) : device(
 	pipeline_CI.layout  = pipelineState.getPipelineLayout().getHandle();
 	pipeline_CI.flags = 0;
 	VK_CHECK_RESULT(vkCreateRayTracingPipelinesKHR(device.getHandle(), {}, {}, 1, &pipeline_CI, nullptr, &pipeline));
-    }
+
+    mSbtWarpper = std::make_unique<SbtWarpper>(device);
+    mSbtWarpper->create(pipeline, pipeline_CI);
+ }
 
     else if(type == PIPELINE_TYPE::E_COMPUTE)
     {

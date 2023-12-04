@@ -15,6 +15,8 @@
 #include "Common/ResourceCache.h"
 #include "Common/VkCommon.h"
 #include "Images/Sampler.h"
+#include "RayTracing/Accel.h"
+#include "RayTracing/SbtWarpper.h"
 
 RenderContext* RenderContext::g_context = nullptr;
 
@@ -250,24 +252,36 @@ SgImage& RenderContext::getCurHwtexture()
     return hwTextures[activeFrameIndex];
 }
 
-void RenderContext::bindBuffer(uint32_t setId, const Buffer& buffer, VkDeviceSize offset, VkDeviceSize range,
+RenderContext & RenderContext::bindBuffer(uint32_t setId, const Buffer& buffer, VkDeviceSize offset, VkDeviceSize range,
                                uint32_t binding, uint32_t array_element)
 {
     resourceSets[setId].bindBuffer(buffer, offset, range, binding, array_element);
+    return *this;
 }
 
-void RenderContext::bindImage(uint32_t setId, const ImageView& view, const Sampler& sampler, uint32_t binding,
-                              uint32_t array_element)
+RenderContext& RenderContext::bindAcceleration(uint32_t setId, const Accel& acceleration, uint32_t binding,
+    uint32_t array_element)
+{
+    resourceSets[setId].bindAccel(acceleration,binding,array_element);
+    return *this;
+}
+
+RenderContext & RenderContext::bindImage(uint32_t setId, const ImageView& view, const Sampler& sampler, uint32_t binding,
+                                         uint32_t array_element)
 {
     resourceSets[setId].bindImage(view, sampler, binding, array_element);
+    return *this;
+
 }
 
-void RenderContext::bindInput(uint32_t setId, const ImageView& view, uint32_t binding, uint32_t array_element)
+RenderContext & RenderContext::bindInput(uint32_t setId, const ImageView& view, uint32_t binding, uint32_t array_element)
 {
     resourceSets[setId].bindInput(view, binding, array_element);
+    return *this;
+
 }
 
-void RenderContext::bindMaterial(const Material& material)
+RenderContext & RenderContext::bindMaterial(const Material& material)
 {
     auto& descriptorLayout = pipelineState.getPipelineLayout().getDescriptorLayout(0);
 
@@ -279,9 +293,11 @@ void RenderContext::bindMaterial(const Material& material)
             bindImage(0, texture.second.image->getVkImageView(), texture.second.getSampler(), binding.binding, 0);
         }
     }
+    return *this;
+
 }
 
-void RenderContext::bindPrimitive(const Primitive& primitive)
+RenderContext & RenderContext::bindPrimitive(const Primitive& primitive)
 {
     VertexInputState vertexInputState;
 
@@ -318,12 +334,31 @@ void RenderContext::bindPrimitive(const Primitive& primitive)
     
 
     pipelineState.setVertexInputState(vertexInputState);
+
+    return *this;
+
 }
 
 
 const std::unordered_map<uint32_t, ResourceSet>& RenderContext::getResourceSets() const
 {
     return resourceSets;
+}
+
+VkPipelineBindPoint RenderContext::getPipelineBindPoint() const
+{
+    switch (pipelineState.getPipelineType())
+    {
+        case PIPELINE_TYPE::E_GRAPHICS:
+            return VK_PIPELINE_BIND_POINT_GRAPHICS;
+        case PIPELINE_TYPE::E_COMPUTE:
+            return VK_PIPELINE_BIND_POINT_COMPUTE;
+        case PIPELINE_TYPE::E_RAY_TRACING:
+            return VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
+        default:
+            LOGE("pipeline bind point not support");
+    }
+    return VK_PIPELINE_BIND_POINT_GRAPHICS;
 }
 
 
@@ -333,7 +368,7 @@ void RenderContext::flushDescriptorState(CommandBuffer& commandBuffer, VkPipelin
     for (auto& resourceSetIt : resourceSets)
     {
         //setId -> pair(binding,arrayElement)
-        BindingMap<VkDescriptorBufferInfo> buffer_infos;
+        BindingMap<VkDescriptorBufferInfo> bufferInfos;
         BindingMap<VkDescriptorImageInfo> imageInfos;
         BindingMap<VkWriteDescriptorSetAccelerationStructureKHR> accelerationInfos;
 
@@ -363,6 +398,7 @@ void RenderContext::flushDescriptorState(CommandBuffer& commandBuffer, VkPipelin
                 auto& buffer = resourceInfo.buffer;
                 auto& sampler = resourceInfo.sampler;
                 auto& imageView = resourceInfo.image_view;
+                auto& accel = resourceInfo.accel;
 
                 if (!descriptorSetLayout.hasLayoutBinding(bindingIndex))
                     continue;
@@ -374,7 +410,7 @@ void RenderContext::flushDescriptorState(CommandBuffer& commandBuffer, VkPipelin
                         .buffer = buffer->getHandle(), .offset = resourceInfo.offset, .range = resourceInfo.range
                     };
 
-                    buffer_infos[bindingIndex][arrayElement] = bufferInfo;
+                    bufferInfos[bindingIndex][arrayElement] = bufferInfo;
                 }
 
                 if (imageView != nullptr || sampler != nullptr)
@@ -417,12 +453,22 @@ void RenderContext::flushDescriptorState(CommandBuffer& commandBuffer, VkPipelin
 
                     imageInfos[bindingIndex][arrayElement] = imageInfo;
                 }
+
+                if(accel!=nullptr)
+                {
+                    VkWriteDescriptorSetAccelerationStructureKHR accelInfo{
+                        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR,
+                        .accelerationStructureCount = 1,
+                        .pAccelerationStructures = &accel->accel
+                    };
+                    accelerationInfos[bindingIndex][arrayElement] = accelInfo;
+                }
             }
         }
 
         auto descriptorPool = device.getResourceCache().requestDescriptorPool(descriptorSetLayout);
         auto descriptorSet = device.getResourceCache().requestDescriptorSet(
-            descriptorSetLayout, descriptorPool, buffer_infos, imageInfos);
+            descriptorSetLayout, descriptorPool, bufferInfos, imageInfos,accelerationInfos);
 
         commandBuffer.bindDescriptorSets(pipeline_bind_point, pipelineLayout.getHandle(), descriptorSetID,
                                          {descriptorSet}, dynamic_offsets);
@@ -432,12 +478,15 @@ void RenderContext::flushDescriptorState(CommandBuffer& commandBuffer, VkPipelin
 
 void RenderContext::flushPipelineState(CommandBuffer& commandBuffer)
 {
-    commandBuffer.bindPipeline(device.getResourceCache().requestPipeline(this->getPipelineState()));
+    commandBuffer.bindPipeline(device.getResourceCache().requestPipeline(this->getPipelineState()),
+                               getPipelineBindPoint());
 }
 
-void RenderContext::bindPipelineLayout(PipelineLayout& layout)
+RenderContext & RenderContext::bindPipelineLayout(PipelineLayout& layout)
 {
     pipelineState.setPipelineLayout(layout);
+    return *this;
+
 }
 
 
@@ -453,6 +502,17 @@ void RenderContext::flushAndDraw(CommandBuffer& commandBuffer, uint32_t vertexCo
 {
     flush(commandBuffer);
     commandBuffer.draw(vertexCount, instanceCount, firstVertex, firstInstance);
+}
+
+void RenderContext::traceRay(CommandBuffer& commandBuffer)
+{
+    CHECK_RESULT((getPipelineState().getPipelineType() == PIPELINE_TYPE::E_RAY_TRACING));
+    auto & pipeline = device.getResourceCache().requestPipeline(this->getPipelineState());
+    auto & sbtWarpper = pipeline.getSbtWarpper();
+    auto & shaderBindingTable = sbtWarpper.getRegions();
+    auto dims = getPipelineState().getRtPassSettings().dims;
+    vkCmdTraceRaysKHR(commandBuffer.getHandle(), &shaderBindingTable[0], &shaderBindingTable[1],
+                      &shaderBindingTable[2], &shaderBindingTable[3], dims.width, dims.height, dims.depth);
 }
 
 
@@ -506,7 +566,7 @@ void RenderContext::flushPushConstantStage(CommandBuffer& commandBuffer)
 void RenderContext::flush(CommandBuffer& commandBuffer)
 {
     flushPipelineState(commandBuffer);
-    flushDescriptorState(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+    flushDescriptorState(commandBuffer, getPipelineBindPoint());
     flushPushConstantStage(commandBuffer);
 }
 
@@ -523,7 +583,7 @@ void RenderContext::clearPassResources()
     storePushConstants.clear();
 }
 
-void RenderContext::pushConstants(std::vector<uint8_t>& pushConstants)
+RenderContext & RenderContext::bindPushConstants(std::vector<uint8_t>& pushConstants)
 {
     auto size = pushConstants.size() + storePushConstants.size();
     if (size > maxPushConstantSize)
@@ -531,6 +591,7 @@ void RenderContext::pushConstants(std::vector<uint8_t>& pushConstants)
         LOGE("Push Constant Size is too large,device support {},but current size is {}", maxPushConstantSize, size);
     }
     storePushConstants.insert(storePushConstants.end(), pushConstants.begin(), pushConstants.end());
+    return *this;
 }
 
 

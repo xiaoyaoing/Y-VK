@@ -25,7 +25,7 @@ public:
     void createLayout(VkDescriptorSetLayoutCreateFlags flags);
 
 
-    const VkDescriptorSetLayoutBinding &getLayoutBindingInfo(int bindingIndex) const;
+    const VkDescriptorSetLayoutBinding &getLayoutBindingInfo(uint32_t bindingIndex) const;
 
     const VkDescriptorSetLayoutBinding &getLayoutBindingInfo(const std::string &name) const;
 

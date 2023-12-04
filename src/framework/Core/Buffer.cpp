@@ -36,9 +36,7 @@ Buffer::Buffer(Device &device, uint64_t bufferSize, VkBufferUsageFlags bufferUsa
     bufferAllocInfo.usage = memoryUsage;
 
     VK_CHECK_RESULT(vmaCreateBuffer(_allocator, &bufferInfo, &bufferAllocInfo, &_buffer, &_bufferAllocation, nullptr))
-
     
-
     if(data)
     {
         uploadData(data, bufferSize);

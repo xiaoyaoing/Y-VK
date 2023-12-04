@@ -7,6 +7,7 @@
 
 #include "Core/Shader/Shader.h"
 #include "PipelineLayout.h"
+#include "RayTracing/SbtWarpper.h"
 
 
 class Device;
@@ -17,6 +18,8 @@ class RenderPass;
 
 class FrameBuffer;
 
+// class SbtWarpper;
+
 
 class Pipeline {
 public:
@@ -24,8 +27,12 @@ public:
 
     Pipeline(Device &device, const PipelineState &pipelineState);
 
+    SbtWarpper &getSbtWarpper() { return *mSbtWarpper; }
 protected:
     VkPipeline pipeline;
     Device &device;
+    
+    //For ray tracing pipeline 
+    std::unique_ptr<SbtWarpper> mSbtWarpper{nullptr};
 };
 

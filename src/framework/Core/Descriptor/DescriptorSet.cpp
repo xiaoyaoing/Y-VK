@@ -46,9 +46,11 @@ void DescriptorSet::updateImage(const std::vector<VkDescriptorImageInfo> &imageI
 DescriptorSet::~DescriptorSet() {
 }
 
-DescriptorSet::DescriptorSet(Device &device, const DescriptorLayout &descriptorSetLayout,
-                             DescriptorPool &descriptorPool, const BindingMap<VkDescriptorBufferInfo> &bufferInfos,
-                             const BindingMap<VkDescriptorImageInfo> &imageInfos) : _device(device) {
+DescriptorSet::DescriptorSet(Device &device, const DescriptorLayout &descriptorSetLayout,DescriptorPool &descriptorPool,
+                             const BindingMap<VkDescriptorBufferInfo> &bufferInfos,
+                             const BindingMap<VkDescriptorImageInfo> &imageInfos,
+                            const BindingMap<VkWriteDescriptorSetAccelerationStructureKHR> & accelInfos
+                             ) : _device(device) {
     const VkDescriptorSetLayout setLayout = descriptorSetLayout.getHandle();
     // VkDescriptorSetAllocateInfo descSetAllocInfo{};
     // descSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -59,7 +61,6 @@ DescriptorSet::DescriptorSet(Device &device, const DescriptorLayout &descriptorS
     // VK_CHECK_RESULT(vkAllocateDescriptorSets(device.getHandle(), &descSetAllocInfo, &_descriptorSet))
 
     _descriptorSet = descriptorPool.allocate();
-
     std::vector<VkWriteDescriptorSet> writeSets;
     for (auto &bufferIt: bufferInfos) {
         auto bindingIndex = bufferIt.first;
@@ -104,6 +105,31 @@ DescriptorSet::DescriptorSet(Device &device, const DescriptorLayout &descriptorS
                     .descriptorType = bindingInfo.descriptorType,
                     .pImageInfo = &imageInfo,
             };
+
+            writeSets.push_back(writeSet);
+        }
+    }
+
+
+    for (auto &accelIt:accelInfos) {
+        auto bindingIndex = accelIt.first;
+        auto &accelBindings = accelIt.second;
+
+        auto &bindingInfo = descriptorSetLayout.getLayoutBindingInfo(bindingIndex);
+
+
+        for (auto &elementIt: accelBindings) {
+            auto &accelInfo = elementIt.second;
+
+            VkWriteDescriptorSet writeSet{
+                .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                .pNext =  &accelInfo,
+                .dstSet = _descriptorSet,
+                .dstBinding = bindingIndex,
+                .dstArrayElement = elementIt.first,
+                .descriptorCount = 1,
+                .descriptorType = bindingInfo.descriptorType,
+        };
 
             writeSets.push_back(writeSet);
         }

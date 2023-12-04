@@ -62,40 +62,43 @@ class RenderContext
 {
 public:
     // Resource Functions Begin
-
-    void bindBuffer(uint32_t setId, const Buffer& buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t binding,
-                    uint32_t array_element);
-
-    void bindImage(uint32_t setId, const ImageView& view, const Sampler& sampler, uint32_t binding,
-                   uint32_t array_element);
-
-    void bindInput(uint32_t setId, const ImageView& view, uint32_t binding, uint32_t array_element);
-
-    void bindMaterial(const Material& material);
-
-    void bindPrimitive(const Primitive& primitive);
-
-    void bindPipelineLayout(PipelineLayout& layout);
-
-    template <typename T>
-    void bindLight(const std::vector<Light>& lights, uint32_t setId, uint32_t binding);
-
-    void pushConstants(std::vector<uint8_t>& pushConstants);
-
-    void clearPassResources();
-
-    void flushPipelineState(CommandBuffer& commandBuffer);
-
-
-    void flushPushConstantStage(CommandBuffer& commandBuffer);
-
-
-    const std::unordered_map<uint32_t, ResourceSet>& getResourceSets() const;
-
-
+    
     RenderContext(Device& device, VkSurfaceKHR surface, Window& window);
 
     static RenderContext* g_context;
+    
+
+    RenderContext & bindBuffer(uint32_t setId, const Buffer& buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t binding,
+                    uint32_t array_element);
+
+    RenderContext & bindAcceleration(uint32_t setId, const Accel& acceleration, uint32_t binding,
+                          uint32_t array_element);
+
+    RenderContext & bindImage(uint32_t setId, const ImageView& view, const Sampler& sampler, uint32_t binding,
+                   uint32_t array_element);
+
+    RenderContext & bindInput(uint32_t setId, const ImageView& view, uint32_t binding, uint32_t array_element);
+
+    RenderContext & bindMaterial(const Material& material);
+
+    RenderContext & bindPrimitive(const Primitive& primitive);
+
+    RenderContext & bindPipelineLayout(PipelineLayout& layout);
+
+    template <typename T>
+    RenderContext & bindLight(const std::vector<Light>& lights, uint32_t setId, uint32_t binding);
+
+    RenderContext & bindPushConstants(std::vector<uint8_t>& pushConstants);
+
+    void flushPipelineState(CommandBuffer& commandBuffer);
+    
+    void flushPushConstantStage(CommandBuffer& commandBuffer);
+
+    void clearPassResources();
+    
+    const std::unordered_map<uint32_t, ResourceSet>& getResourceSets() const;
+
+    VkPipelineBindPoint getPipelineBindPoint() const;
 
     VkFormat getSwapChainFormat() const;
 
@@ -139,6 +142,7 @@ public:
     void flushAndDraw(CommandBuffer& commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
                       uint32_t firstInstance);
 
+    void traceRay(CommandBuffer& commandBuffer);
 
     void beginRenderPass(CommandBuffer& commandBuffer, RenderTarget& renderTarget,
                          const std::vector<SubpassInfo>& subpassInfos);
@@ -189,7 +193,7 @@ private:
 };
 
 template <typename T>
-void RenderContext::bindLight(const std::vector<Light>& lights, uint32_t setId, uint32_t binding)
+RenderContext & RenderContext::bindLight(const std::vector<Light>& lights, uint32_t setId, uint32_t binding)
 {
     const auto buffer = allocateBuffer(sizeof(T), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
@@ -223,4 +227,6 @@ void RenderContext::bindLight(const std::vector<Light>& lights, uint32_t setId, 
     buffer.buffer->uploadData(&lightUbos, sizeof(T), buffer.offset);
 
     bindBuffer(setId, *buffer.buffer, buffer.offset, buffer.size, binding, 0);
+
+    return *this;
 }

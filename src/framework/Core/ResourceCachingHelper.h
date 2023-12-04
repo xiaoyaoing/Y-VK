@@ -285,6 +285,22 @@ namespace std
         }
     };
 
+    template<>
+    struct hash<VkWriteDescriptorSetAccelerationStructureKHR>
+    {
+        std::size_t operator()(const VkWriteDescriptorSetAccelerationStructureKHR& write_descriptor_set) const
+        {
+            std::size_t result = 0;
+
+            hash_combine(result, write_descriptor_set.accelerationStructureCount);
+            for(size_t i = 0; i < write_descriptor_set.accelerationStructureCount; i++)
+            {
+                hash_combine(result, write_descriptor_set.pAccelerationStructures[i]);
+            }
+            return result;
+        }
+    };
+
     template <>
     struct hash<SpecializationConstantState>
     {
@@ -499,6 +515,8 @@ namespace std
             {
                 hash_combine(result, attachment);
             }
+
+            hash_combine(result,pipelineState.getPipelineType());
 
             return result;
         }

@@ -241,7 +241,7 @@ void Gui::draw(CommandBuffer &commandBuffer) {
 
     const auto blockPtr = reinterpret_cast<const uint8_t *>(&pushConstBlock);
     std::vector<uint8_t> pushConstants(blockPtr, blockPtr + sizeof(PushConstBlock));
-    renderContext.pushConstants(pushConstants);
+    renderContext.bindPushConstants(pushConstants);
 
     renderContext.bindImage(0, fontTexture.getImage().getVkImageView(),
                             fontTexture.getSampler(), 0, 0);
@@ -311,7 +311,7 @@ void Gui::addGuiPass(RenderGraph &graph, RenderContext &renderContext) {
 
                                    const auto blockPtr = reinterpret_cast<const uint8_t *>(&pushConstBlock);
                                    std::vector<uint8_t> pushConstants(blockPtr, blockPtr + sizeof(PushConstBlock));
-                                   renderContext.pushConstants(pushConstants);
+                                   renderContext.bindPushConstants(pushConstants);
 
                                    renderContext.bindImage(0, fontTexture.getImage().getVkImageView(),
                                                            fontTexture.getSampler(), 0, 0);

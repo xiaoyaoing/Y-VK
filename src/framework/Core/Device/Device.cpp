@@ -12,6 +12,7 @@
 
 const std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
 
+
 bool Device::isImageFormatSupported(VkFormat format) {
     VkImageFormatProperties format_properties;
 
@@ -176,6 +177,13 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,VkInstance 
     	device_features2.pNext = &features12;
 
     	createInfo.pNext = &device_features2;
+	}
+
+	if(enableRayTracing)
+	{
+		VkPhysicalDeviceProperties2 device_properties{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2};
+		device_properties.pNext = &rayTracingPipelineProperties;
+		vkGetPhysicalDeviceProperties2(physicalDevice, &device_properties);
 	}
     
     VK_CHECK_RESULT(vkCreateDevice(_physicalDevice, &createInfo, nullptr, &_device));

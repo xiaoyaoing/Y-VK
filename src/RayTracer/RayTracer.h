@@ -7,13 +7,11 @@
 
 #include "App/Application.h"
 
+#include <Core/RayTracing/Accel.h>
+
 struct RayTracerSettings{};
 
-struct Accel
-{
-    VkAccelerationStructureKHR accel = VK_NULL_HANDLE;
-    std::unique_ptr<Buffer> buffer;
-};
+
 
 
 class RayTracer : public Application {

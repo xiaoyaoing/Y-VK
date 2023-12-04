@@ -101,7 +101,8 @@ public:
     DescriptorSet& requestDescriptorSet(const DescriptorLayout& descriptorSetLayout,
                                         DescriptorPool& descriptorPool,
                                         const BindingMap<VkDescriptorBufferInfo>& bufferInfos,
-                                        const BindingMap<VkDescriptorImageInfo>& imageInfos);
+                                        const BindingMap<VkDescriptorImageInfo>& imageInfos,
+                                        const BindingMap<VkWriteDescriptorSetAccelerationStructureKHR> & accelerations);
 
     DescriptorPool& requestDescriptorPool(const DescriptorLayout& layout,
                                           uint32_t poolSize = DescriptorPool::MAX_SETS_PER_POOL);

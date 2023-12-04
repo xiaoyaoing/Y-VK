@@ -30,6 +30,13 @@ void ResourceSet::bindInput(const ImageView& view, uint32_t binding, uint32_t ar
     dirty = true;
 }
 
+void ResourceSet::bindAccel(const Accel& accel, uint32_t binding, uint32_t array_element)
+{
+    resourceBindings[binding][array_element].dirty = true;
+    resourceBindings[binding][array_element].accel = &accel;
+    dirty = true;
+}
+
 
 bool ResourceSet::isDirty() const
 {

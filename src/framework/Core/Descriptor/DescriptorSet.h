@@ -21,7 +21,9 @@ public:
                   const DescriptorLayout &descriptorSetLayout,
                   DescriptorPool &descriptorPool,
                   const BindingMap<VkDescriptorBufferInfo> &bufferInfos = {},
-                  const BindingMap<VkDescriptorImageInfo> &imageInfos = {});
+                  const BindingMap<VkDescriptorImageInfo> &imageInfos = {},
+                  const BindingMap<VkWriteDescriptorSetAccelerationStructureKHR> & accelerations = {}
+                   );
 
     void updateBuffer(const std::vector<Buffer *> &buffers,
                       const uint32_t dstBinding,

@@ -34,12 +34,21 @@ struct ShaderResource {
     uint32_t columns;
     uint32_t arraySize;
     uint32_t offset;
-    // uint32_t size;
+    uint32_t size;
     uint32_t constantId;
     uint32_t qualifiers;
     std::string name;
 };
 
+struct ShaderResourceQualifiers
+{
+    enum : uint32_t
+    {
+        None        = 0,
+        NonReadable = 1,
+        NonWritable = 2,
+    };
+};
 
 class Shader {
 public:

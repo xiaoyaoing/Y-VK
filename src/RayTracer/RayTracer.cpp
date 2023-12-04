@@ -65,17 +65,6 @@ static TlasInput toVkInstance(const Primitive & primitive,VkDeviceAddress blasAd
     return instance;
 }
 
-
-class A
-{
-	void dosomething();
-};
-
-class B
-{
-	
-};
-
 Accel RayTracer::createAccel(VkAccelerationStructureCreateInfoKHR& accel)
 {
     Accel result_accel;
@@ -109,20 +98,22 @@ RayTracer::RayTracer(const RayTracerSettings& settings)
         addDeviceExtension(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
         addDeviceExtension(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
         addDeviceExtension(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
-
-     
+        addDeviceExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
 }
 
 void RayTracer::drawFrame(RenderGraph& renderGraph, CommandBuffer& commandBuffer)
 {
-    renderContext->getPipelineState().setPipelineType(PIPELINE_TYPE::E_RAY_TRACING).setPipelineLayout(*layout);
+    renderContext->getPipelineState().setPipelineType(PIPELINE_TYPE::E_RAY_TRACING).setPipelineLayout(*layout).setRtPassSettings({.maxDepth = 5,.dims = {100,100,100}});
+    renderContext->bindPipelineLayout(*layout).bindAcceleration(0,tlas,0,0);
     renderContext->flush(commandBuffer);
+    renderContext->traceRay(commandBuffer);
+    renderContext->submit(commandBuffer,fence);
+    // vkCmdTraceRaysKHR()
 }
 
 void RayTracer::prepare()
 {
     Application::prepare();
-
     GlslCompiler::setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_5);
 
     //
@@ -144,6 +135,10 @@ void RayTracer::prepare()
         Shader(*device,FileUtils::getShaderPath("Raytracing/closesthit.rchit"))
     };
     layout = &device->getResourceCache().requestPipelineLayout(shaders);
+
+  //  scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"));
+    scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));
+
 
 }
 

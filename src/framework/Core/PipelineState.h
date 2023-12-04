@@ -120,6 +120,7 @@ struct RTPassSettings
     std::vector<Shader> shaders;
     VkAccelerationStructureKHR accel;
     uint32_t maxDepth;
+    VkExtent3D dims;
 };
 
 struct ColorBlendState {

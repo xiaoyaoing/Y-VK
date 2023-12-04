@@ -53,9 +53,10 @@ FrameBuffer &ResourceCache::requestFrameBuffer(RenderTarget &renderTarget, Rende
 DescriptorSet &ResourceCache::requestDescriptorSet(const DescriptorLayout &descriptorSetLayout,
                                                    DescriptorPool &descriptorPool,
                                                    const BindingMap<VkDescriptorBufferInfo> &bufferInfos,
-                                                   const BindingMap<VkDescriptorImageInfo> &imageInfos) {
+                                                   const BindingMap<VkDescriptorImageInfo> &imageInfos,
+                                                   const BindingMap<VkWriteDescriptorSetAccelerationStructureKHR> & accelerations) {
     return requestResource(device, descriptorSetMutex, state.descriptorSets, descriptorSetLayout, descriptorPool,
-                           bufferInfos, imageInfos);
+                           bufferInfos, imageInfos,accelerations);
 }
 
 DescriptorPool &ResourceCache::requestDescriptorPool(const DescriptorLayout &layout, uint32_t poolSize) {

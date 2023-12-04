@@ -56,6 +56,23 @@ inline void readResourceDecoration<spv::DecorationLocation>(const spirv_cross::C
 
 
 template <>
+inline void readResourceDecoration<spv::DecorationNonWritable>(const spirv_cross::Compiler &compiler,
+                                                                 const spirv_cross::Resource &resource,
+                                                                 ShaderResource &             shader_resource)
+{
+    shader_resource.qualifiers |= ShaderResourceQualifiers::NonWritable;
+}
+
+template <>
+inline void readResourceDecoration<spv::DecorationNonReadable>(const spirv_cross::Compiler &compiler,
+                                                                 const spirv_cross::Resource &resource,
+                                                                 ShaderResource &             shader_resource)
+{
+    shader_resource.qualifiers |= ShaderResourceQualifiers::NonReadable;
+}
+
+
+template <>
 inline void readResourceDecoration<spv::DecorationDescriptorSet>(const spirv_cross::Compiler& compiler,
                                                                  const spirv_cross::Resource& resource,
                                                                  ShaderResource& shaderResource)
@@ -84,7 +101,7 @@ inline void read_resource_vecSize(const spirv_cross::Compiler& compiler,
     shaderResource.columns = sprivType.columns;
 }
 
-inline void read_resource_arraySize(const spirv_cross::Compiler& compiler,
+inline void readResourceArraySize(const spirv_cross::Compiler& compiler,
                                     const spirv_cross::Resource& resource,
                                     ShaderResource& shaderResource)
 {
@@ -93,7 +110,7 @@ inline void read_resource_arraySize(const spirv_cross::Compiler& compiler,
     shaderResource.arraySize = sprivType.array.size() ? sprivType.array[0] : 1;
 }
 
-inline void read_resource_size(const spirv_cross::Compiler& compiler,
+inline void readResourceSize(const spirv_cross::Compiler& compiler,
                                const spirv_cross::Resource& resource,
                                ShaderResource& shaderResource)
 {
@@ -114,9 +131,10 @@ inline void readShaderResourceInput(const spirv_cross::CompilerReflection& compi
         resource.type = ShaderResourceType::Input;
         resource.stages = stage;
         resource.name = spirvResource.name;
-        // readResourceDecoration<spv::DecorationBinding>(compiler,spirvResource,resource);
-        read_resource_arraySize(compiler, spirvResource, resource);
+        readResourceArraySize(compiler, spirvResource, resource);
+        readResourceDecoration<spv::DecorationBinding>(compiler,spirvResource,resource);
         readResourceDecoration<spv::DecorationLocation>(compiler, spirvResource, resource);
+        readResourceDecoration<spv::DecorationDescriptorSet>(compiler, spirvResource, resource);
         resources.emplace_back(std::move(resource));
     }
 }
@@ -133,25 +151,26 @@ inline void readShaderResourceUniformBuffer(const spirv_cross::CompilerReflectio
         resource.stages = stage;
         resource.name = spirvResource.name;
 
-        read_resource_arraySize(compiler, spirvResource, resource);
-        read_resource_size(compiler, spirvResource, resource);
+        readResourceArraySize(compiler, spirvResource, resource);
+        readResourceSize(compiler, spirvResource, resource);
         readResourceDecoration<spv::DecorationLocation>(compiler, spirvResource, resource);
         readResourceDecoration<spv::DecorationBinding>(compiler, spirvResource, resource);
         resources.emplace_back(std::move(resource));
     }
 }
 
-inline void readShaderResource(spirv_cross::CompilerReflection & compiler,VkShaderStageFlagBits stage,std::vector<ShaderResource>& resources,const spirv_cross::SmallVector<spirv_cross::Resource> & inputResources)
+inline void readShaderResource(spirv_cross::CompilerReflection & compiler,VkShaderStageFlagBits stage,std::vector<ShaderResource>& resources,const spirv_cross::SmallVector<spirv_cross::Resource> & inputResources
+    ,ShaderResourceType type)
 {
     for (auto& spirvResource : inputResources)
     {
         ShaderResource resource{};
-        //resource.type = 
+        //resource.type =
+        resource.type = type;
         resource.stages = stage;
         resource.name = spirvResource.name;
 
-        read_resource_arraySize(compiler, spirvResource, resource);
-        read_resource_size(compiler, spirvResource, resource);
+        readResourceArraySize(compiler, spirvResource, resource);
         readResourceDecoration<spv::DecorationLocation>(compiler, spirvResource, resource);
         readResourceDecoration<spv::DecorationBinding>(compiler, spirvResource, resource);
         resources.emplace_back(std::move(resource));
@@ -172,7 +191,7 @@ inline void readShaderResourceImageSampler(const spirv_cross::CompilerReflection
         resource.name = spirvResource.name;
 
         readResourceDecoration<spv::DecorationBinding>(compiler, spirvResource, resource);
-        read_resource_arraySize(compiler, spirvResource, resource);
+        readResourceArraySize(compiler, spirvResource, resource);
         readResourceDecoration<spv::DecorationDescriptorSet>(compiler, spirvResource, resource);
         //   readResourceDecoration<spv::DecorationDescriptorSet>(compiler, resource, shaderResource);
 
@@ -194,7 +213,7 @@ inline void readShaderResourceInputAttachment(const spirv_cross::CompilerReflect
         shader_resource.stages = VK_SHADER_STAGE_FRAGMENT_BIT;
         shader_resource.name = resource.name;
 
-        read_resource_arraySize(compiler, resource, shader_resource);
+        readResourceArraySize(compiler, resource, shader_resource);
         readResourceDecoration<spv::DecorationInputAttachmentIndex>(compiler, resource, shader_resource);
         readResourceDecoration<spv::DecorationDescriptorSet>(compiler, resource, shader_resource);
         readResourceDecoration<spv::DecorationBinding>(compiler, resource, shader_resource);
@@ -217,7 +236,7 @@ inline void readShaderResourceInputResources(const spirv_cross::CompilerReflecti
         shader_resource.stages = VK_SHADER_STAGE_VERTEX_BIT;
         shader_resource.name = resource.name;
 
-        read_resource_arraySize(compiler, resource, shader_resource);
+        readResourceArraySize(compiler, resource, shader_resource);
         readResourceDecoration<spv::DecorationBinding>(compiler, resource, shader_resource);
 
         resources.push_back(shader_resource);
@@ -249,7 +268,7 @@ inline void readShaderResourcePushConstants(const spirv_cross::CompilerReflectio
         shader_resource.name = resource.name;
         shader_resource.offset = offset;
 
-        read_resource_size(compiler, resource, shader_resource);
+        readResourceSize(compiler, resource, shader_resource);
 
         shader_resource.size -= shader_resource.offset;
 
@@ -261,7 +280,7 @@ inline void readShaderResourcePushConstants(const spirv_cross::CompilerReflectio
 inline void readShaderResourceAccelerationStructure(const spirv_cross::CompilerReflection& compiler,
                                             VkShaderStageFlagBits stage,
                                             std::vector<ShaderResource>& resources){
-    auto acceleration_resources = compiler.get_shader_resources().acceleration_structures;
+    const auto &  acceleration_resources = compiler.get_shader_resources().acceleration_structures;
 
     for (auto& resource : acceleration_resources)
     {
@@ -270,9 +289,117 @@ inline void readShaderResourceAccelerationStructure(const spirv_cross::CompilerR
         shader_resource.stages = stage;
         shader_resource.name = resource.name;
 
-        read_resource_arraySize(compiler, resource, shader_resource);
+        readResourceArraySize(compiler, resource, shader_resource);
         readResourceDecoration<spv::DecorationBinding>(compiler, resource, shader_resource);
     
+        resources.push_back(shader_resource);
+    }
+}
+
+inline void readShaderResourceOutput(const spirv_cross::CompilerReflection& compiler,
+                                            VkShaderStageFlagBits stage,
+                                            std::vector<ShaderResource>& resources)
+{
+    const auto & outputResources = compiler.get_shader_resources().stage_outputs;
+    for (auto & spirvResource : outputResources)
+    {
+        ShaderResource resource{};
+        resource.type = ShaderResourceType::Output;
+        resource.stages = stage;
+        resource.name = spirvResource.name;
+        readResourceArraySize(compiler, spirvResource, resource);
+        readResourceDecoration<spv::DecorationLocation>(compiler, spirvResource, resource);
+        readResourceDecoration<spv::DecorationDescriptorSet>(compiler, spirvResource, resource);
+        readResourceDecoration<spv::DecorationBinding>(compiler, spirvResource, resource);
+        resources.emplace_back(std::move(resource));
+    }
+}
+inline void readShaderResourceImage(const spirv_cross::CompilerReflection& compiler,
+                                            VkShaderStageFlagBits stage,
+                                            std::vector<ShaderResource>& resources)
+{
+    auto image_resources = compiler.get_shader_resources().separate_images;
+
+    for (auto &resource : image_resources)
+    {
+        ShaderResource shader_resource{};
+        shader_resource.type   = ShaderResourceType::Image;
+        shader_resource.stages = stage;
+        shader_resource.name   = resource.name;
+
+        readResourceArraySize(compiler, resource, shader_resource);
+        readResourceDecoration<spv::DecorationDescriptorSet>(compiler, resource, shader_resource);
+        readResourceDecoration<spv::DecorationBinding>(compiler, resource, shader_resource);
+
+        resources.push_back(shader_resource);
+    }
+}
+
+
+
+inline void readShaderResourceImageStorge(const spirv_cross::CompilerReflection& compiler,
+                                            VkShaderStageFlagBits stage,
+                                            std::vector<ShaderResource>& resources)
+{
+    auto storage_resources = compiler.get_shader_resources().storage_images;
+
+    for (auto &resource : storage_resources)
+    {
+        ShaderResource shader_resource{};
+        shader_resource.type   = ShaderResourceType::ImageStorage;
+        shader_resource.stages = stage;
+        shader_resource.name   = resource.name;
+
+        readResourceArraySize(compiler, resource, shader_resource);
+        readResourceDecoration<spv::DecorationNonReadable>(compiler, resource, shader_resource);
+        readResourceDecoration<spv::DecorationNonWritable>(compiler, resource, shader_resource);
+        readResourceDecoration<spv::DecorationDescriptorSet>(compiler, resource, shader_resource);
+        readResourceDecoration<spv::DecorationBinding>(compiler, resource, shader_resource);
+
+        resources.push_back(shader_resource);
+    }  
+}
+inline void readShaderResourceStorgeBuffer(const spirv_cross::CompilerReflection& compiler,
+                                            VkShaderStageFlagBits stage,
+                                            std::vector<ShaderResource>& resources)
+{
+    auto storage_resources = compiler.get_shader_resources().storage_buffers;
+
+    for (auto &resource : storage_resources)
+    {
+        ShaderResource shader_resource;
+        shader_resource.type   = ShaderResourceType::BufferStorage;
+        shader_resource.stages = stage;
+        shader_resource.name   = resource.name;
+
+        readResourceSize(compiler, resource, shader_resource);
+        readResourceArraySize(compiler, resource, shader_resource);
+        readResourceDecoration<spv::DecorationNonReadable>(compiler, resource, shader_resource);
+        readResourceDecoration<spv::DecorationNonWritable>(compiler, resource, shader_resource);
+        readResourceDecoration<spv::DecorationDescriptorSet>(compiler, resource, shader_resource);
+        readResourceDecoration<spv::DecorationBinding>(compiler, resource, shader_resource);
+
+        resources.push_back(shader_resource);
+    } 
+}
+
+inline void readShaderResourceSampler(const spirv_cross::CompilerReflection& compiler,
+                                            VkShaderStageFlagBits stage,
+                                            std::vector<ShaderResource>& resources)
+{
+    auto sampler_resources = compiler.get_shader_resources().separate_samplers;
+
+    for (auto &resource : sampler_resources)
+    {
+        ShaderResource shader_resource{};
+        shader_resource.type   = ShaderResourceType::Sampler;
+        shader_resource.stages = stage;
+        shader_resource.name   = resource.name;
+
+        readResourceArraySize(compiler, resource, shader_resource);
+        readResourceDecoration<spv::DecorationDescriptorSet>(compiler, resource, shader_resource);
+        readResourceDecoration<spv::DecorationBinding>(compiler, resource, shader_resource);
+
         resources.push_back(shader_resource);
     }
 }
@@ -284,15 +411,21 @@ bool SpirvShaderReflection::reflectShaderResources(const std::vector<uint32_t> s
 
    // stage = getShaderStage(compiler.get_execution_model());
     // readShaderResourceInput(compiler, stage, shaderResources);
-    //todo handle more 
-    readShaderResourceUniformBuffer(compiler, stage, shaderResources);
-    readShaderResourceImageSampler(compiler, stage, shaderResources);
-    readShaderResourceInputAttachment(compiler, stage, shaderResources);
+
     readShaderResourceInput(compiler, stage, shaderResources);
+    readShaderResourceInputAttachment(compiler, stage, shaderResources);
+    readShaderResourceOutput(compiler, stage, shaderResources);
+    
+    readShaderResourceImage(compiler, stage, shaderResources);
+    readShaderResourceImageSampler(compiler, stage, shaderResources);
+    readShaderResourceImageStorge(compiler, stage, shaderResources);
+    readShaderResourceSampler(compiler, stage, shaderResources);
+    
+    readShaderResourceUniformBuffer(compiler, stage, shaderResources);
+    readShaderResourceStorgeBuffer(compiler, stage, shaderResources);
+    
     readShaderResourcePushConstants(compiler, stage, shaderResources);
-
-    readShaderResource(compiler,stage,shaderResources,compiler.get_shader_resources().storage_images);
-
+    
     //For Ray Tracing
     readShaderResourceAccelerationStructure(compiler, stage, shaderResources);
     return true;
