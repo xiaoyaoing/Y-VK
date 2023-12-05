@@ -266,4 +266,13 @@ namespace vkCommon {
 
     void setImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageLayout oldLayout,
                         VkImageLayout newLayout, VkImageSubresourceRange subresourceRange);
+
+    void set_image_layout(
+   VkCommandBuffer         command_buffer,
+   VkImage                 image,
+   VkImageLayout           old_layout,
+   VkImageLayout           new_layout,
+   VkImageSubresourceRange subresource_range,
+   VkPipelineStageFlags    src_mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+    VkPipelineStageFlags    dst_mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 };

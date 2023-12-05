@@ -50,17 +50,18 @@ DescriptorSet::DescriptorSet(Device &device, const DescriptorLayout &descriptorS
                              const BindingMap<VkDescriptorBufferInfo> &bufferInfos,
                              const BindingMap<VkDescriptorImageInfo> &imageInfos,
                             const BindingMap<VkWriteDescriptorSetAccelerationStructureKHR> & accelInfos
-                             ) : _device(device) {
-    const VkDescriptorSetLayout setLayout = descriptorSetLayout.getHandle();
+                             ) : _device(device),_descriptorSet(descriptorPool.allocate()) {
+    // const VkDescriptorSetLayout setLayout = descriptorSetLayout.getHandle();
     // VkDescriptorSetAllocateInfo descSetAllocInfo{};
     // descSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     // descSetAllocInfo.pNext = nullptr;
-    // descSetAllocInfo.descriptorPool = descriptorPool.getHandle();
+    // descSetAllocInfo.descriptorPool = descriptorPool.;
     // descSetAllocInfo.descriptorSetCount = 1;
     // descSetAllocInfo.pSetLayouts = &setLayout;
     // VK_CHECK_RESULT(vkAllocateDescriptorSets(device.getHandle(), &descSetAllocInfo, &_descriptorSet))
 
-    _descriptorSet = descriptorPool.allocate();
+   // _descriptorSet = descriptorPool.allocate();
+    
     std::vector<VkWriteDescriptorSet> writeSets;
     for (auto &bufferIt: bufferInfos) {
         auto bindingIndex = bufferIt.first;

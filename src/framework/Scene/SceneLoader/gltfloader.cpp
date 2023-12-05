@@ -538,7 +538,10 @@ void GLTFLoadingImpl::loadNode(Node* parent, const tinygltf::Node& node, uint32_
                     std::vector<uint8_t> data(model.buffers[view.buffer].data.begin() + startByte,
                                               model.buffers[view.buffer].data.begin() + endByte);
                     auto buffer = std::make_unique<Buffer>(device, DATA_SIZE(data),
-                                                           VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                                                           VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
+                                                           | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR
+                                                           ,
+                                                           //todo fix this 
                                                            VMA_MEMORY_USAGE_CPU_TO_GPU);
                     buffer->uploadData(data.data(), DATA_SIZE(data));
 
@@ -581,7 +584,10 @@ void GLTFLoadingImpl::loadNode(Node* parent, const tinygltf::Node& node, uint32_
                     }
 
                     newPrimitive->indexBuffer = std::make_unique<Buffer>(device, DATA_SIZE(data),
-                                                                         VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                                                                         VK_BUFFER_USAGE_INDEX_BUFFER_BIT
+                                                                         | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
+                                                                         | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR
+                                                                         ,
                                                                          VMA_MEMORY_USAGE_CPU_TO_GPU);
                     newPrimitive->indexBuffer->uploadData(data.data(), DATA_SIZE(data));
                 }

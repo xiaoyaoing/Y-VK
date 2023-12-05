@@ -60,13 +60,7 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,VkInstance 
     VK_CHECK_RESULT(vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &device_extension_count,
                                                          deviceExtensions.data()));
 
-    // Display supported extensions
-    if (deviceExtensions.size() > 0) {
-        LOGI("Device supports the following extensions:");
-        for (auto &extension: deviceExtensions) {
-            LOGI("  \t{}", extension.extensionName);
-        }
-    }
+    
 
     std::vector<const char *> unsupported_extensions{};
     for (auto &extension: requiredExtensions) {
@@ -113,6 +107,15 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,VkInstance 
     // enable the device extensions todo checkExtension supported
     createInfo.enabledExtensionCount = static_cast<uint32_t>(enabled_extensions.size());
     createInfo.ppEnabledExtensionNames = enabled_extensions.data();
+
+
+	// Display supported extensions
+	if (!enabled_extensions.empty()) {
+		LOGI("Device use the following extensions:");
+		for (auto &extension: enabled_extensions) {
+			LOGI("  \t{}", extension);
+		}
+	}
 
     auto enableExtension = [this](const char *extensionName) {
     	return std::find_if(enabled_extensions.begin(), enabled_extensions.end(), [extensionName](const char* extension) {

@@ -161,6 +161,7 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
                     renderContext->bindInput(0, blackBoard.getImageView("albedo"), 0, 0);
                     renderContext->bindInput(0, blackBoard.getImageView("depth"), 1, 0);
                     renderContext->bindInput(0, blackBoard.getImageView("normal"), 2, 0);
+                        
                     renderContext->bindLight<DeferredLights>(scene->getLights(), 0, 4);
 
 
@@ -375,16 +376,19 @@ void Example::prepare() {
             Shader(*device, FileUtils::getShaderPath("lighting.frag"))
     };
     pipelineLayouts.lighting = std::make_unique<PipelineLayout>(*device, shaders1);
+
+        camera->flipY = true;
+        camera->setTranslation(glm::vec3(0.0f, 1.0f, 0.0f));
+        camera->setTranslation(glm::vec3(-705.f, 200.f, -119.f));
+        camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
+        camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
+        camera->setPerspective(60.0f, (float) width / (float) height, 0.1f, 4000.f);
 }
 
 
 Example::Example() : Application("Drawing Triangle", 1024, 1024) {
-    camera->flipY = true;
-    camera->setTranslation(glm::vec3(0.0f, 1.0f, 0.0f));
-    camera->setTranslation(glm::vec3(-705.f, 200.f, -119.f));
-    camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
-    camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
-    camera->setPerspective(60.0f, (float) width / (float) height, 0.1f, 4000.f);
+        addDeviceExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+
 }
 
 

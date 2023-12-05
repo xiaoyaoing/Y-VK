@@ -68,7 +68,9 @@ public:
     uint32_t getArrayLayerCount() const;
 
     void transitionLayout(CommandBuffer &commandBuffer, VulkanLayout newLayout,
-                          VkImageSubresourceRange subresourceRange = {.baseMipLevel = 0, .baseArrayLayer = 0,});
+                          VkImageSubresourceRange subresourceRange = {
+        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,.baseMipLevel = 0,.levelCount =  1, .baseArrayLayer = 0,.layerCount = 1,
+                          });
 
     VulkanLayout getLayout(const VkImageSubresourceRange &subresourceRange);
 

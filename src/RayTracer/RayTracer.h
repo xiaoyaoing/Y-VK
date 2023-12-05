@@ -27,6 +27,14 @@ protected:
     PipelineLayout * layout;
     std::vector<Accel> blases;
     Accel tlas;
+
+    std::unique_ptr<SgImage> storageImage;
+
+    struct 
+    {
+        glm::mat4 viewInverse;
+        glm::mat4 projInverse;
+    } cameraUbo;
 };
 
 

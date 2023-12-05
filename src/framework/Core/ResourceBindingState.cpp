@@ -4,6 +4,9 @@
 
 #include "ResourceBindingState.h"
 
+#include "Images/Image.h"
+#include "Images/ImageView.h"
+
 void ResourceSet::bindBuffer(const Buffer& buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t binding,
                              uint32_t array_element)
 {
@@ -20,6 +23,8 @@ void ResourceSet::bindImage(const ImageView& view, const Sampler& sampler, uint3
     resourceBindings[binding][array_element].dirty = true;
     resourceBindings[binding][array_element].image_view = &view;
     resourceBindings[binding][array_element].sampler = &sampler;
+    resourceBindings[binding][array_element].layout = ImageUtil::getVkImageLayout(view.getImage().getLayout(view.getSubResourceRange()));
+    resourceBindings[binding][array_element].layout = VK_IMageLayout_
     dirty = true;
 }
 
@@ -27,6 +32,7 @@ void ResourceSet::bindInput(const ImageView& view, uint32_t binding, uint32_t ar
 {
     resourceBindings[binding][array_element].dirty = true;
     resourceBindings[binding][array_element].image_view = &view;
+    resourceBindings[binding][array_element].layout = ImageUtil::getVkImageLayout(view.getImage().getLayout(view.getSubResourceRange()));
     dirty = true;
 }
 

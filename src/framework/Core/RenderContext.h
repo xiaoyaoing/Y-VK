@@ -83,7 +83,6 @@ public:
 
     RenderContext & bindPrimitive(const Primitive& primitive);
 
-    RenderContext & bindPipelineLayout(PipelineLayout& layout);
 
     template <typename T>
     RenderContext & bindLight(const std::vector<Light>& lights, uint32_t setId, uint32_t binding);

@@ -128,6 +128,12 @@ void RenderContext::submit(CommandBuffer& buffer, VkFence fence)
 {
     getCurHwtexture().getVkImage().transitionLayout(buffer, VulkanLayout::PRESENT,
                                                     getCurHwtexture().getVkImageView().getSubResourceRange());
+    vkCommon::set_image_layout(
+            buffer.getHandle(),
+            getCurHwtexture().getVkImage().getHandle(),
+            VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+            VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+             VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
     buffer.endRecord();
 
 
@@ -271,7 +277,6 @@ RenderContext & RenderContext::bindImage(uint32_t setId, const ImageView& view, 
 {
     resourceSets[setId].bindImage(view, sampler, binding, array_element);
     return *this;
-
 }
 
 RenderContext & RenderContext::bindInput(uint32_t setId, const ImageView& view, uint32_t binding, uint32_t array_element)
@@ -445,12 +450,12 @@ void RenderContext::flushDescriptorState(CommandBuffer& commandBuffer, VkPipelin
                         case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
                             imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
                             break;
-
+                        
                         default:
                             continue;
                         }
                     }
-
+                    // imageInfo.imageLayout = resourceInfo.layout;
                     imageInfos[bindingIndex][arrayElement] = imageInfo;
                 }
 
@@ -464,9 +469,9 @@ void RenderContext::flushDescriptorState(CommandBuffer& commandBuffer, VkPipelin
                     accelerationInfos[bindingIndex][arrayElement] = accelInfo;
                 }
             }
-        }
 
-        auto descriptorPool = device.getResourceCache().requestDescriptorPool(descriptorSetLayout);
+
+        }        auto descriptorPool = device.getResourceCache().requestDescriptorPool(descriptorSetLayout);
         auto descriptorSet = device.getResourceCache().requestDescriptorSet(
             descriptorSetLayout, descriptorPool, bufferInfos, imageInfos,accelerationInfos);
 
@@ -482,12 +487,6 @@ void RenderContext::flushPipelineState(CommandBuffer& commandBuffer)
                                getPipelineBindPoint());
 }
 
-RenderContext & RenderContext::bindPipelineLayout(PipelineLayout& layout)
-{
-    pipelineState.setPipelineLayout(layout);
-    return *this;
-
-}
 
 
 void RenderContext::flushAndDrawIndexed(CommandBuffer& commandBuffer, uint32_t indexCount, uint32_t instanceCount,

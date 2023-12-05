@@ -20,6 +20,8 @@ DescriptorPool::DescriptorPool(Device &device, const DescriptorLayout &layout, u
     }
 }
 
+
+
 VkDescriptorSet DescriptorPool::allocate() {
     if (pools.size() <= curPoolIdx || poolCounts[curPoolIdx - 1] < maxPoolSets) {
         VkDescriptorPoolCreateInfo poolInfo{};
@@ -44,6 +46,10 @@ VkDescriptorSet DescriptorPool::allocate() {
 
     VkDescriptorSet descriptor;
     VK_CHECK_RESULT(vkAllocateDescriptorSets(device.getHandle(), &allocInfo, &descriptor))
+    if(descriptor == VK_NULL_HANDLE)
+    {
+        LOGE("Allocate  descriptor set failed");
+    }
     return descriptor;
 }
 

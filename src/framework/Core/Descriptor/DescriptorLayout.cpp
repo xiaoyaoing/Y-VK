@@ -74,15 +74,12 @@ DescriptorLayout::DescriptorLayout(Device &device, std::vector<Shader> &shaders)
             bindingInfo.descriptorType = find_descriptor_type(resource.type, false);
 
             bindingFlags.emplace_back(0);
-            bindingInfoMap.emplace(binding,bindingInfo);
             resourceLookUp.emplace(resource.name, resource.binding);
+            layoutBindings.emplace_back(bindingInfo);
+             bindingLookUp.emplace(bindingInfo.binding, layoutBindings.size() - 1);
         }
     }
-
-    for(auto& [_,bindingInfo]:bindingInfoMap)
-    {
-        layoutBindings.emplace_back(bindingInfo);
-    }
+    
 
     VkDescriptorSetLayoutCreateInfo descSetLayoutInfo = {};
     descSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;

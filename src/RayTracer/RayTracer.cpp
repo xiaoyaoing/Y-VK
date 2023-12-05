@@ -5,6 +5,7 @@
 #include "RayTracer.h"
 
 #include "Common/ResourceCache.h"
+#include "Common/VkCommon.h"
 #include "Core/Shader/GlslCompiler.h"
 
 struct BlasInput
@@ -35,9 +36,9 @@ static BlasInput toVkGeometry(const Primitive & primitive)
         accelerationStructureGeometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
         accelerationStructureGeometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
         accelerationStructureGeometry.geometry.triangles.vertexData.deviceAddress = primitive.vertexBuffers.at("position")->getDeviceAddress();
-        accelerationStructureGeometry.geometry.triangles.maxVertex = 3;
+        accelerationStructureGeometry.geometry.triangles.maxVertex = primitive.vertexCount;
         accelerationStructureGeometry.geometry.triangles.vertexStride = sizeof(glm::vec3);
-        accelerationStructureGeometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
+        accelerationStructureGeometry.geometry.triangles.indexType = primitive.indexType;
         accelerationStructureGeometry.geometry.triangles.indexData.deviceAddress = primitive.indexBuffer->getDeviceAddress();
         accelerationStructureGeometry.geometry.triangles.transformData.deviceAddress = 0;
         accelerationStructureGeometry.geometry.triangles.transformData.hostAddress = nullptr;
@@ -77,7 +78,7 @@ Accel RayTracer::createAccel(VkAccelerationStructureCreateInfoKHR& accel)
                   VMA_MEMORY_USAGE_GPU_ONLY);
     accel.buffer = result_accel.buffer->getHandle();
     // Create the acceleration structure
-    vkCreateAccelerationStructureKHR(device->getHandle(), &accel, nullptr, &result_accel.accel);
+    VK_CHECK_RESULT(vkCreateAccelerationStructureKHR(device->getHandle(), &accel, nullptr, &result_accel.accel));
     return result_accel;
 }
 
@@ -103,10 +104,64 @@ RayTracer::RayTracer(const RayTracerSettings& settings)
 
 void RayTracer::drawFrame(RenderGraph& renderGraph, CommandBuffer& commandBuffer)
 {
-    renderContext->getPipelineState().setPipelineType(PIPELINE_TYPE::E_RAY_TRACING).setPipelineLayout(*layout).setRtPassSettings({.maxDepth = 5,.dims = {100,100,100}});
-    renderContext->bindPipelineLayout(*layout).bindAcceleration(0,tlas,0,0);
+    
+    storageImage->getVkImage().transitionLayout(commandBuffer,VulkanLayout::READ_WRITE);    
+
+    auto buffer = renderContext->allocateBuffer(sizeof(cameraUbo),VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    cameraUbo.projInverse = glm::inverse(camera->matrices.perspective);
+    cameraUbo.viewInverse = glm::inverse(camera->matrices.view);
+    buffer.buffer->uploadData(&cameraUbo,sizeof(cameraUbo));
+    
+    renderContext->getPipelineState().setPipelineType(PIPELINE_TYPE::E_RAY_TRACING).setPipelineLayout(*layout).setRtPassSettings({.maxDepth = 5,.dims = {width,height,1}});
+    renderContext->bindAcceleration(0,tlas,0,0).bindInput(0,storageImage->getVkImageView(),1,0).bindBuffer(0,*buffer.buffer,0,sizeof(cameraUbo),2,0);
     renderContext->flush(commandBuffer);
-    renderContext->traceRay(commandBuffer);
+  //  renderContext->traceRay(commandBuffer);
+
+    renderContext->getCurHwtexture().getVkImage().transitionLayout(commandBuffer,VulkanLayout::TRANSFER_DST);
+    storageImage->getVkImage().transitionLayout(commandBuffer,VulkanLayout::TRANSFER_SRC);
+    
+    VkImageCopy copy_region{};
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.srcOffset      = {0, 0, 0};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstOffset      = {0, 0, 0};
+    copy_region.extent         = {width, height, 1};
+    
+    vkCmdCopyImage(commandBuffer.getHandle(),storageImage->getVkImage().getHandle(),VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                    renderContext->getCurHwtexture().getVkImage().getHandle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
+
+ //   renderContext->getCurHwtexture().getVkImage().transitionLayout(commandBuffer,VulkanLayout::PRESENT);
+    storageImage->getVkImage().transitionLayout(commandBuffer,VulkanLayout::READ_WRITE);
+    // //copy image to swapchain image
+    // vkCommon::setImageLayout(commandBuffer.getHandle(),storageImage->getVkImage().getHandle(),VK_IMAGE_LAYOUT_GENERAL,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    // // vkb::set_image_layout(
+    // //         draw_cmd_buffers[i],
+    // //         storage_image.image,
+    // //         VK_IMAGE_LAYOUT_GENERAL,
+    // //         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+    // //         subresource_range);
+    //
+    
+    // vkCmdCopyImage(draw_cmd_buffers[i], storage_image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+    //                get_render_context().get_swapchain().get_images()[i], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
+    //
+    // // Transition swap chain image back for presentation
+    // vkb::set_image_layout(
+    //     draw_cmd_buffers[i],
+    //     get_render_context().get_swapchain().get_images()[i],
+    //     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+    //     VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+    //     subresource_range);
+    //
+    // // Transition ray tracing output image back to general layout
+    // vkb::set_image_layout(
+    //     draw_cmd_buffers[i],
+    //     storage_image.image,
+    //     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+    //     VK_IMAGE_LAYOUT_GENERAL,
+    //     subresource_range);
+
+    
     renderContext->submit(commandBuffer,fence);
     // vkCmdTraceRaysKHR()
 }
@@ -116,31 +171,25 @@ void RayTracer::prepare()
     Application::prepare();
     GlslCompiler::setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_5);
 
-    //
-    // vkGetBufferDeviceAddressKHR = reinterpret_cast<PFN_vkGetBufferDeviceAddressKHR>(vkGetDeviceProcAddr(device, "vkGetBufferDeviceAddressKHR"));
-    // vkCmdBuildAccelerationStructuresKHR = reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresKHR>(vkGetDeviceProcAddr(device, "vkCmdBuildAccelerationStructuresKHR"));
-    // vkBuildAccelerationStructuresKHR = reinterpret_cast<PFN_vkBuildAccelerationStructuresKHR>(vkGetDeviceProcAddr(device, "vkBuildAccelerationStructuresKHR"));
-    // vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(vkGetDeviceProcAddr(device, "vkCreateAccelerationStructureKHR"));
-    // vkDestroyAccelerationStructureKHR = reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(vkGetDeviceProcAddr(device, "vkDestroyAccelerationStructureKHR"));
-    // vkGetAccelerationStructureBuildSizesKHR = reinterpret_cast<PFN_vkGetAccelerationStructureBuildSizesKHR>(vkGetDeviceProcAddr(device, "vkGetAccelerationStructureBuildSizesKHR"));
-    // vkGetAccelerationStructureDeviceAddressKHR = reinterpret_cast<PFN_vkGetAccelerationStructureDeviceAddressKHR>(vkGetDeviceProcAddr(device, "vkGetAccelerationStructureDeviceAddressKHR"));
-    // vkCmdTraceRaysKHR = reinterpret_cast<PFN_vkCmdTraceRaysKHR>(vkGetDeviceProcAddr(device, "vkCmdTraceRaysKHR"));
-    // vkGetRayTracingShaderGroupHandlesKHR = reinterpret_cast<PFN_vkGetRayTracingShaderGroupHandlesKHR>(vkGetDeviceProcAddr(device, "vkGetRayTracingShaderGroupHandlesKHR"));
-    // vkCreateRayTracingPipelinesKHR = reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(vkGetDeviceProcAddr(device, "vkCreateRayTracingPipelinesKHR"));
 
     std::vector<Shader> shaders= {
-        Shader(*device,FileUtils::getShaderPath("Raytracing/raygen.rgen")),
-        Shader{*device,FileUtils::getShaderPath("Raytracing/miss.rmiss")},
-        Shader{*device,FileUtils::getShaderPath("Raytracing/shadow.rmiss")},
-        Shader(*device,FileUtils::getShaderPath("Raytracing/closesthit.rchit"))
+        // Shader(*device,FileUtils::getShaderPath("Raytracing/raygen.rgen")),
+        // Shader{*device,FileUtils::getShaderPath("Raytracing/miss.rmiss")},
+        // Shader{*device,FileUtils::getShaderPath("Raytracing/shadow.rmiss")},
+        // Shader(*device,FileUtils::getShaderPath("Raytracing/closesthit.rchit"))
+        Shader(*device,FileUtils::getShaderPath("Raytracing/khr_ray_tracing_basic/raygen.rgen")),
+        Shader(*device,FileUtils::getShaderPath("Raytracing/khr_ray_tracing_basic/miss.rmiss")),
+        Shader(*device,FileUtils::getShaderPath("Raytracing/khr_ray_tracing_basic/closesthit.rchit"))
     };
     layout = &device->getResourceCache().requestPipelineLayout(shaders);
 
-  //  scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"));
+  // scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"));
     scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));
-
-
+    buildBLAS();
+    buildTLAS();
+    storageImage = std::make_unique<SgImage>(*device,"",VkExtent3D{width,height,1},VK_FORMAT_B8G8R8A8_UNORM,VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,VMA_MEMORY_USAGE_GPU_ONLY,VK_IMAGE_VIEW_TYPE_2D);
 }
+
 
 void RayTracer::buildBLAS()
 {
@@ -154,8 +203,8 @@ void RayTracer::buildBLAS()
     uint32_t nBlas  = blasInputs.size();
     
     std::vector<VkAccelerationStructureBuildGeometryInfoKHR> buildGeometryInfos(nBlas,{VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR});
-    std::vector<VkAccelerationStructureBuildSizesInfoKHR> sizeInfos;
-    std::vector<Accel> accels;
+    std::vector<VkAccelerationStructureBuildSizesInfoKHR> sizeInfos(nBlas,{VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR});
+    std::vector<Accel> accels(nBlas);
 
     VkDeviceSize maxScratchBufferSize = 0;
     for(uint32_t i =0 ; i < nBlas ; i++)
@@ -218,8 +267,24 @@ void RayTracer::buildBLAS()
             indices.clear();
         }
     }
+     commandBuffer.endRecord();
+    auto queue = device->getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0);
 
-     blases = std::move(accels);
+    VkSubmitInfo submitInfo{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+    submitInfo.commandBufferCount = 1;
+
+    auto vkCmdBuffer = commandBuffer.getHandle();
+
+    submitInfo.pCommandBuffers = &vkCmdBuffer;
+    VkFence fence;
+    VkFenceCreateInfo fenceInfo{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+    vkCreateFence(device->getHandle(), &fenceInfo, nullptr, &fence);
+    queue.submit({submitInfo}, fence);
+    queue.wait();
+    vkWaitForFences(device->getHandle(),1, &fence, VK_TRUE, 100000000000);
+    vkDestroyFence(device->getHandle(),fence,nullptr);
+
+    blases = std::move(accels);
 } 
 
 
@@ -390,16 +455,34 @@ void RayTracer::buildTLAS()
         	VkDeviceAddress scratchAddress = vkGetBufferDeviceAddress(device->getHandle(), &bufferInfo);
         
         // Update build information
-        build_info.srcAccelerationStructure =  VK_NULL_HANDLE;
-        build_info.dstAccelerationStructure = tlas.accel;
-        build_info.scratchData.deviceAddress = scratchAddress;
-    
+    build_info.srcAccelerationStructure =  VK_NULL_HANDLE;
+    build_info.dstAccelerationStructure = tlas.accel;
+    build_info.scratchData.deviceAddress = scratchAddress;
+        
         // Build Offsets info: n instances
-        VkAccelerationStructureBuildRangeInfoKHR buildOffsetInfo{instanceCount, 0, 0, 0};
-        const VkAccelerationStructureBuildRangeInfoKHR* pBuildOffsetInfo = &buildOffsetInfo;
+    VkAccelerationStructureBuildRangeInfoKHR buildOffsetInfo{instanceCount, 0, 0, 0};
+    const VkAccelerationStructureBuildRangeInfoKHR* pBuildOffsetInfo = &buildOffsetInfo;
     
         // Build the TLAS
-        vkCmdBuildAccelerationStructuresKHR(cmdBuffer.getHandle(), 1, &build_info, &pBuildOffsetInfo);									
+    vkCmdBuildAccelerationStructuresKHR(cmdBuffer.getHandle(), 1, &build_info, &pBuildOffsetInfo);
+
+    cmdBuffer.endRecord();
+    auto queue = device->getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0);
+
+    VkSubmitInfo submitInfo{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+    submitInfo.commandBufferCount = 1;
+
+    auto vkCmdBuffer = cmdBuffer.getHandle();
+
+    submitInfo.pCommandBuffers = &vkCmdBuffer;
+    VkFence fence;
+    VkFenceCreateInfo fenceInfo{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+    vkCreateFence(device->getHandle(), &fenceInfo, nullptr, &fence);
+    queue.submit({submitInfo}, fence);
+    queue.wait();
+    vkWaitForFences(device->getHandle(),1, &fence, VK_TRUE, 100000000000);
+    vkDestroyFence(device->getHandle(),fence,nullptr);
+    
 }
 
 

@@ -120,7 +120,7 @@ protected:
 
     float frameTimer{1};
 
-    int width, height;
+    uint32_t width, height;
 
     //Camera related  variable begin
     struct {

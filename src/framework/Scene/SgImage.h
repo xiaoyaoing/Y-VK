@@ -23,39 +23,32 @@ struct Mipmap {
 
 class SgImage {
 public:
-    void createVkImage(Device &device, VkImageViewType image_view_type = VK_IMAGE_VIEW_TYPE_2D,
-                       VkImageCreateFlags flags = 0);
-
-
+    
     /**
      * \brief load from hardware texture
      */
     SgImage(Device &device, const std::string &path, VkImageViewType viewType);
 
-    ~SgImage();
-
-    SgImage(SgImage &&other);
-
-    SgImage(SgImage &other) = delete;
-
     /**
      * \brief create from image attribute 
      */
     SgImage(Device &device,
-            const std::string &name,
-            const VkExtent3D &extent,
-            VkFormat format,
-            VkImageUsageFlags image_usage,
-            VmaMemoryUsage memory_usage,
-            VkImageViewType viewType,
-            VkSampleCountFlagBits sample_count = VK_SAMPLE_COUNT_1_BIT,
-            uint32_t mip_levels = 1,
-            uint32_t array_layers = 1,
-            VkImageCreateFlags flags = 0);
+           const std::string &name,
+           const VkExtent3D &extent,
+           VkFormat format,
+           VkImageUsageFlags image_usage,
+           VmaMemoryUsage memory_usage,
+           VkImageViewType viewType,
+           VkSampleCountFlagBits sample_count = VK_SAMPLE_COUNT_1_BIT,
+           uint32_t mip_levels = 1,
+           uint32_t array_layers = 1,
+           VkImageCreateFlags flags = 0);
 
     /**
      * \brief load from existing image.Mainly from swapChainImage
      */
+
+    
     SgImage(Device &device,
             VkImage handle,
             const VkExtent3D &extent,
@@ -64,6 +57,16 @@ public:
             VkSampleCountFlagBits sample_count = VK_SAMPLE_COUNT_1_BIT,
             VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D);
 
+    ~SgImage();
+
+    SgImage(SgImage &&other);
+
+    SgImage(SgImage &other) = delete;
+
+    
+   
+    void createVkImage(Device &device, VkImageViewType image_view_type = VK_IMAGE_VIEW_TYPE_2D,
+                       VkImageCreateFlags flags = 0);
 
     std::vector<uint8_t> &getData();
 

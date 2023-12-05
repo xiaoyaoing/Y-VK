@@ -85,6 +85,55 @@ setAttachmentLayouts(std::vector<VkSubpassDescription> subpassDescs,
             }
         }
     }
+
+    {
+        
+            auto &subpass = subpassDescs.back();
+
+            for (size_t k = 0U; k < subpass.colorAttachmentCount; ++k)
+            {
+                const auto &reference = subpass.pColorAttachments[k];
+
+               attachments[reference.attachment].finalLayout = reference.layout;
+            }
+
+            for (size_t k = 0U; k < subpass.inputAttachmentCount; ++k)
+            {
+                const auto &reference = subpass.pInputAttachments[k];
+
+                attachments[reference.attachment].finalLayout = reference.layout;
+
+                // Do not use depth attachment if used as input
+                if (isDepthOrStencilFormat(attachments[reference.attachment].format))
+                {
+                    subpass.pDepthStencilAttachment = nullptr;
+                }
+            }
+
+            if (subpass.pDepthStencilAttachment)
+            {
+                const auto &reference = *subpass.pDepthStencilAttachment;
+
+                attachments[reference.attachment].finalLayout = reference.layout;
+            }
+
+            if (subpass.pResolveAttachments)
+            {
+                for (size_t k = 0U; k < subpass.colorAttachmentCount; ++k)
+                {
+                    const auto &reference = subpass.pResolveAttachments[k];
+
+                    attachments[reference.attachment].finalLayout = reference.layout;
+                }
+            }
+
+            // if (const auto depth_resolve = get(subpass))
+            // {
+            //     attachments[depth_resolve->attachment].finalLayout = depth_resolve->layout;
+            // }
+        }
+    
+    
 }
 
 std::vector<VkSubpassDependency> getSubpassDependency(const size_t subpassCount) {

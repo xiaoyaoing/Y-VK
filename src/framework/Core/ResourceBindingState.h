@@ -31,6 +31,8 @@ struct ResourceInfo {
     const Sampler *sampler{nullptr};
 
     const Accel * accel{nullptr};
+
+    VkImageLayout layout;
 };
 
 struct ResourceSet {

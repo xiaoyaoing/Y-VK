@@ -81,10 +81,7 @@ public:
 
     Blackboard &getBlackBoard() const;
 
-
- 
-
-
+    
     template<typename Data, typename Setup, typename Execute>
     void addPass(const char *name, Setup setup, Execute &&execute) {
         auto pass = new RenderGraphPass<Data, Execute>(std::forward<Execute>(execute));
