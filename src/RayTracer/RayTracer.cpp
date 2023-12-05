@@ -40,7 +40,7 @@ static BlasInput toVkGeometry(const Primitive & primitive)
         accelerationStructureGeometry.geometry.triangles.vertexStride = sizeof(glm::vec3);
         accelerationStructureGeometry.geometry.triangles.indexType = primitive.indexType;
         accelerationStructureGeometry.geometry.triangles.indexData.deviceAddress = primitive.indexBuffer->getDeviceAddress();
-        accelerationStructureGeometry.geometry.triangles.transformData.deviceAddress = 0;
+        accelerationStructureGeometry.geometry.triangles.transformData.deviceAddress = primitive.vertexBuffers.at("transform")->getDeviceAddress();
         accelerationStructureGeometry.geometry.triangles.transformData.hostAddress = nullptr;
 
         VkAccelerationStructureBuildRangeInfoKHR accelerationStructureBuildRangeInfo{};
@@ -70,8 +70,8 @@ Accel RayTracer::createAccel(VkAccelerationStructureCreateInfoKHR& accel)
 {
     Accel result_accel;
     // Allocating the buffer to hold the acceleration structure
-    Buffer buffer(*device,accel.size, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                  VMA_MEMORY_USAGE_GPU_ONLY );
+    // Buffer buffer(*device,accel.size, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+    //               VMA_MEMORY_USAGE_GPU_ONLY );
     
     // Setting the buffer
     result_accel.buffer = std::make_unique<Buffer>(*device,accel.size, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
@@ -100,11 +100,14 @@ RayTracer::RayTracer(const RayTracerSettings& settings)
         addDeviceExtension(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
         addDeviceExtension(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
         addDeviceExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+
+    //Application::g_App = this;
 }
 
 void RayTracer::drawFrame(RenderGraph& renderGraph, CommandBuffer& commandBuffer)
 {
-    
+    // renderContext->submit(commandBuffer,fence);
+    // return ;
     storageImage->getVkImage().transitionLayout(commandBuffer,VulkanLayout::READ_WRITE);    
 
     auto buffer = renderContext->allocateBuffer(sizeof(cameraUbo),VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
@@ -115,7 +118,7 @@ void RayTracer::drawFrame(RenderGraph& renderGraph, CommandBuffer& commandBuffer
     renderContext->getPipelineState().setPipelineType(PIPELINE_TYPE::E_RAY_TRACING).setPipelineLayout(*layout).setRtPassSettings({.maxDepth = 5,.dims = {width,height,1}});
     renderContext->bindAcceleration(0,tlas,0,0).bindInput(0,storageImage->getVkImageView(),1,0).bindBuffer(0,*buffer.buffer,0,sizeof(cameraUbo),2,0);
     renderContext->flush(commandBuffer);
-  //  renderContext->traceRay(commandBuffer);
+    renderContext->traceRay(commandBuffer);
 
     renderContext->getCurHwtexture().getVkImage().transitionLayout(commandBuffer,VulkanLayout::TRANSFER_DST);
     storageImage->getVkImage().transitionLayout(commandBuffer,VulkanLayout::TRANSFER_SRC);
@@ -183,11 +186,23 @@ void RayTracer::prepare()
     };
     layout = &device->getResourceCache().requestPipelineLayout(shaders);
 
-  // scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"));
-    scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));
+   scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"));
+// scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));
     buildBLAS();
     buildTLAS();
-    storageImage = std::make_unique<SgImage>(*device,"",VkExtent3D{width,height,1},VK_FORMAT_B8G8R8A8_UNORM,VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,VMA_MEMORY_USAGE_GPU_ONLY,VK_IMAGE_VIEW_TYPE_2D);
+   storageImage = std::make_unique<SgImage>(*device,"",VkExtent3D{width,height,1},VK_FORMAT_B8G8R8A8_UNORM,VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,VMA_MEMORY_USAGE_GPU_ONLY,VK_IMAGE_VIEW_TYPE_2D);
+
+    camera->setTranslation(glm::vec3(0.0f, 0.0f, -28.f));
+    camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
+    camera->setPerspective(60.0f, (float) width / (float) height, 0.1f, 4000.f);
+    camera->flipY = true;
+    camera->setTranslation(glm::vec3(0.0f, 1.0f, 0.0f));
+    camera->setTranslation(glm::vec3(-705.f, 200.f, -119.f));
+    camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
+    camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
+    camera->setPerspective(60.0f, (float) width / (float) height, 0.1f, 4000.f);
+    
+
 }
 
 
@@ -201,10 +216,12 @@ void RayTracer::buildBLAS()
     });
 
     uint32_t nBlas  = blasInputs.size();
+    // nBlas = 8;
     
     std::vector<VkAccelerationStructureBuildGeometryInfoKHR> buildGeometryInfos(nBlas,{VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR});
     std::vector<VkAccelerationStructureBuildSizesInfoKHR> sizeInfos(nBlas,{VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR});
     std::vector<Accel> accels(nBlas);
+    std::vector<std::unique_ptr<Buffer>> scratchBuffers(nBlas);
 
     VkDeviceSize maxScratchBufferSize = 0;
     for(uint32_t i =0 ; i < nBlas ; i++)
@@ -223,14 +240,14 @@ void RayTracer::buildBLAS()
         }
         
         vkGetAccelerationStructureBuildSizesKHR(device->getHandle(),VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,&buildGeometryInfos[i],maxPrimCount.data(),&sizeInfos[i]);
-
+        scratchBuffers[i] = std::make_unique<Buffer>(*device,sizeInfos[i].buildScratchSize,VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,VMA_MEMORY_USAGE_GPU_ONLY);
         
-        maxScratchBufferSize = std::max(maxScratchBufferSize,sizeInfos[i].buildScratchSize);
+        
     }
 
 
-    Buffer scratchBuffer(*device,maxScratchBufferSize,VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,VMA_MEMORY_USAGE_GPU_ONLY);
-    VkDeviceSize scratchAddress = scratchBuffer.getDeviceAddress();
+    // Buffer scratchBuffer(*device,maxScratchBufferSize,VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,VMA_MEMORY_USAGE_GPU_ONLY);
+    // VkDeviceSize scratchAddress = scratchBuffer.getDeviceAddress();
 
     
     std::vector<uint32_t> indices;	// Indices of the BLAS to create
@@ -253,7 +270,7 @@ void RayTracer::buildBLAS()
 
                 accels[blasIdx] = createAccel(createInfo);
                 buildGeometryInfos[blasIdx].dstAccelerationStructure = accels[blasIdx].accel;
-                buildGeometryInfos[blasIdx].scratchData.deviceAddress = scratchAddress;
+                buildGeometryInfos[blasIdx].scratchData.deviceAddress = scratchBuffers[blasIdx]->getDeviceAddress();
                 // BuildInfo #2 part
                 // buildAs[idx].build_info.dstAccelerationStructure = buildAs[idx].as.accel;  // Setting where the build lands
                 // buildAs[idx].build_info.scratchData.deviceAddress =
@@ -261,6 +278,7 @@ void RayTracer::buildBLAS()
                 // Building the bottom-level-acceleration-structure
                const VkAccelerationStructureBuildRangeInfoKHR* range_info =  blasInputs[blasIdx].range.data();
                 vkCmdBuildAccelerationStructuresKHR(commandBuffer.getHandle(), 1, &buildGeometryInfos[blasIdx], &range_info );
+                //break;
             }   
             
             batchSize = 0;

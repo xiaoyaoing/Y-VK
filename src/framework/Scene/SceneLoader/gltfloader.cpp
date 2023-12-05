@@ -512,7 +512,6 @@ void GLTFLoadingImpl::loadNode(Node* parent, const tinygltf::Node& node, uint32_
 
             // Vertices
             {
-                const float* bufferPos = nullptr;
                 const float* bufferNormals = nullptr;
                 const float* bufferTexCoords = nullptr;
                 const float* bufferColors = nullptr;
@@ -599,8 +598,7 @@ void GLTFLoadingImpl::loadNode(Node* parent, const tinygltf::Node& node, uint32_
                 const tinygltf::Accessor& posAccessor = model.accessors[primitive.attributes.find(
                     "POSITION")->second];
                 const tinygltf::BufferView& posView = model.bufferViews[posAccessor.bufferView];
-                bufferPos = reinterpret_cast<const float*>(&(model.buffers[posView.buffer].data[
-                    posAccessor.byteOffset + posView.byteOffset]));
+                
                 posMin = glm::vec3(posAccessor.minValues[0], posAccessor.minValues[1], posAccessor.minValues[2]);
                 posMax = glm::vec3(posAccessor.maxValues[0], posAccessor.maxValues[1], posAccessor.maxValues[2]);
 
@@ -617,6 +615,15 @@ void GLTFLoadingImpl::loadNode(Node* parent, const tinygltf::Node& node, uint32_
             newPrimitive->vertexCount = vertexCount;
             newPrimitive->setDimensions(posMin, posMax);
             newPrimitive->matrix = newNode->getMatrix();
+
+            auto transformBuffer = std::make_unique<Buffer>(device, sizeof(glm::mat4),
+                                                            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
+                                                            | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
+                                                            | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR
+                                                            ,
+                                                            VMA_MEMORY_USAGE_CPU_TO_GPU,&newPrimitive->matrix);
+            
+            newPrimitive->vertexBuffers.emplace("transform", std::move(transformBuffer));
 
             primitives.push_back(std::move(newPrimitive));
         }
@@ -647,6 +654,8 @@ std::unique_ptr<Scene> GltfLoading::LoadSceneFromGLTFFile(Device& device, const 
                                                           uint32_t fileLoadingFlags, float scale)
 {
     auto model = std::make_unique<GLTFLoadingImpl>(device, path);
+   // model->primitives[0] = std::move(model->primitives[1]);
+    // model->primitives.resize(2);
     return std::make_unique<Scene>(std::move(model->primitives), std::move(model->textures),
                                    std::move(model->materials), std::move(model->lights));
 }

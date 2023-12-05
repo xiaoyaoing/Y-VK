@@ -158,6 +158,9 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
                     renderContext->bindBuffer(0, *viewBuffer.buffer, viewBuffer.offset, viewBuffer.size, 3, 0);
 
 
+                    // blackBoard.getImage("albedo").transitionLayout(commandBuffer,VulkanLayout::READ_ONLY);    
+                    // blackBoard.getImage("depth").transitionLayout(commandBuffer,VulkanLayout::READ_ONLY);    
+                    // blackBoard.getImage("normal").transitionLayout(commandBuffer,VulkanLayout::READ_ONLY);    
                     renderContext->bindInput(0, blackBoard.getImageView("albedo"), 0, 0);
                     renderContext->bindInput(0, blackBoard.getImageView("depth"), 1, 0);
                     renderContext->bindInput(0, blackBoard.getImageView("normal"), 2, 0);

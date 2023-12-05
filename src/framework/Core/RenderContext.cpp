@@ -455,7 +455,8 @@ void RenderContext::flushDescriptorState(CommandBuffer& commandBuffer, VkPipelin
                             continue;
                         }
                     }
-                    // imageInfo.imageLayout = resourceInfo.layout;
+                    // if( resourceInfo.layout != VK_IMAGE_LAYOUT_UNDEFINED)
+                 imageInfo.imageLayout =  ImageUtil::getVkImageLayout(imageView->getImage().getLayout());
                     imageInfos[bindingIndex][arrayElement] = imageInfo;
                 }
 
@@ -619,8 +620,6 @@ void RenderContext::handleSurfaceChanges()
         device.waitIdle();
         surfaceExtent = surface_properties.currentExtent;
         recrateSwapChain(surfaceExtent);
-    }
-    {
     }
 }
 

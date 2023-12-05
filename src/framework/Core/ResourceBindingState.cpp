@@ -24,7 +24,6 @@ void ResourceSet::bindImage(const ImageView& view, const Sampler& sampler, uint3
     resourceBindings[binding][array_element].image_view = &view;
     resourceBindings[binding][array_element].sampler = &sampler;
     resourceBindings[binding][array_element].layout = ImageUtil::getVkImageLayout(view.getImage().getLayout(view.getSubResourceRange()));
-    resourceBindings[binding][array_element].layout = VK_IMageLayout_
     dirty = true;
 }
 

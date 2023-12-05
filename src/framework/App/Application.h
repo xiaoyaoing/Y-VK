@@ -39,8 +39,9 @@
 // #include <windef.h>
 // #endif
 
+
 class Application {
-    void initWindow(const char *name, int width, int height);
+    void initWindow(const char *name,  uint32_t width, uint32_t height);
 
     virtual void initGUI();
 
@@ -48,9 +49,12 @@ class Application {
     bool frameBufferResized{};
 
 public:
-    Application(const char *name, int width, int height);
 
-    Application() : Application("Vulkan", 512, 512) {
+    // static  Application * g_App{nullptr};
+    
+    Application(const char *name,  uint32_t width, uint32_t height);
+
+    Application() : Application("Vulkan", 1920, 1080) {
     }
 
     virtual void prepare();

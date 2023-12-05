@@ -140,11 +140,11 @@ void Application::createRenderContext() {
 }
 
 
-void Application::initWindow(const char *name, int width, int height) {
+void Application::initWindow(const char *name, uint32_t width, uint32_t height) {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-    window = std::make_unique<Window>(Window::WindowProp{"title"}, this);
+    window = std::make_unique<Window>(Window::WindowProp{"title",{width,height}}, this);
 }
 
 void Application::initGUI() {
@@ -160,7 +160,7 @@ void Application::prepare() {
     camera = std::make_unique<Camera>();
 }
 
-Application::Application(const char *name, int width, int height) : width(width), height(height) {
+Application::Application(const char *name,  uint32_t width, uint32_t height) : width(width), height(height) {
     initWindow(name, width, height);
 }
 

@@ -34,7 +34,7 @@ public:
 
     RenderGraphHandle getHandle(std::string_view name) const noexcept;
 
-    const Image& getImage(std::string_view name) const noexcept;
+    Image& getImage(std::string_view name) const noexcept;
 
     const ImageView& getImageView(std::string_view name) const noexcept;
 

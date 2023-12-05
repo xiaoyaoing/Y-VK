@@ -32,7 +32,7 @@ struct ResourceInfo {
 
     const Accel * accel{nullptr};
 
-    VkImageLayout layout;
+    VkImageLayout layout{VK_IMAGE_LAYOUT_UNDEFINED};
 };
 
 struct ResourceSet {

@@ -29,7 +29,7 @@ RenderGraphHandle Blackboard::getHandle(std::string_view name) const noexcept
     return mMap.at(name);
 }
 
-const Image& Blackboard::getImage(std::string_view name) const noexcept
+ Image& Blackboard::getImage(std::string_view name) const noexcept
 {
     return getHwImage(name).getVkImage();
 }
