@@ -30,35 +30,24 @@ public:
     VkRenderPass getHandle() const {
         return _pass;
     }
-
-    void setHandle(VkRenderPass pass) {
-        _pass = pass;
-    }
-
-    //    RenderPass(const ptr<Device>& device,
-    //               const std::vector<VkAttachmentDescription>& attachmentDescs,
-    //               const std::vector<VkSubpassDependency>& subpassDependencies,
-    //               const std::vector<VkSubpassDescription>& subpassDesc);
-
-    //    static std::vector<VkClearValue> getClearValues(const std::vector<Attachment>& attachments);
-
-    RenderPass(Device &device, VkRenderPass pass) : _pass(pass), device(device) {
-    }
+    
 
     RenderPass(Device &device,
                const std::vector<Attachment> &attachments,
                const std::vector<SubpassInfo> &subpasses);
 
-    //    RenderPass(const VkRenderPass pass) : _pass(pass) {
-    //
-    //    }
     const uint32_t getColorOutputCount(uint32_t subpass_index) const;
+
+    const std::vector<VulkanLayout> & getAttachmentFinalLayouts() const;
 
     ~RenderPass();
 
+    std::vector<std::vector<std::pair<uint32_t,VulkanLayout>>> subpassInputLayouts;
+
+
 protected:
-    int temp = 231;
     VkRenderPass _pass;
     Device &device;
     std::vector<uint32_t> colorOutputCount;
+    std::vector<VulkanLayout> attachmentFinalLayouts;
 };

@@ -8,7 +8,7 @@ void Scene::IteratePrimitives(PrimitiveCallBack primitiveCallBack) const
     }
 }
 
-Scene::Scene(std::vector<std::unique_ptr<Primitive>>&& primitives, std::vector<Texture>&& textures,
+Scene::Scene(std::vector<std::unique_ptr<Primitive>>&& primitives, std::vector<std::unique_ptr<Texture>>&& textures,
              std::vector<Material> materials, std::vector<Light> lights): materials(std::move(materials)),
                                                                           lights(std::move(lights)),
                                                                           primitives(std::move(primitives)),

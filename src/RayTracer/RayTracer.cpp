@@ -165,7 +165,7 @@ void RayTracer::drawFrame(RenderGraph& renderGraph, CommandBuffer& commandBuffer
     //     subresource_range);
 
     
-    renderContext->submit(commandBuffer,fence);
+    renderContext->submitAndPresent(commandBuffer,fence);
     // vkCmdTraceRaysKHR()
 }
 
@@ -186,8 +186,8 @@ void RayTracer::prepare()
     };
     layout = &device->getResourceCache().requestPipelineLayout(shaders);
 
-   scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"));
-// scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));
+   // scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"));
+scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));
     buildBLAS();
     buildTLAS();
    storageImage = std::make_unique<SgImage>(*device,"",VkExtent3D{width,height,1},VK_FORMAT_B8G8R8A8_UNORM,VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,VMA_MEMORY_USAGE_GPU_ONLY,VK_IMAGE_VIEW_TYPE_2D);
@@ -197,7 +197,7 @@ void RayTracer::prepare()
     camera->setPerspective(60.0f, (float) width / (float) height, 0.1f, 4000.f);
     camera->flipY = true;
     camera->setTranslation(glm::vec3(0.0f, 1.0f, 0.0f));
-    camera->setTranslation(glm::vec3(-705.f, 200.f, -119.f));
+    // camera->setTranslation(glm::vec3(-705.f, 200.f, -119.f));
     camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
     camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
     camera->setPerspective(60.0f, (float) width / (float) height, 0.1f, 4000.f);
@@ -288,19 +288,7 @@ void RayTracer::buildBLAS()
      commandBuffer.endRecord();
     auto queue = device->getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0);
 
-    VkSubmitInfo submitInfo{VK_STRUCTURE_TYPE_SUBMIT_INFO};
-    submitInfo.commandBufferCount = 1;
-
-    auto vkCmdBuffer = commandBuffer.getHandle();
-
-    submitInfo.pCommandBuffers = &vkCmdBuffer;
-    VkFence fence;
-    VkFenceCreateInfo fenceInfo{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
-    vkCreateFence(device->getHandle(), &fenceInfo, nullptr, &fence);
-    queue.submit({submitInfo}, fence);
-    queue.wait();
-    vkWaitForFences(device->getHandle(),1, &fence, VK_TRUE, 100000000000);
-    vkDestroyFence(device->getHandle(),fence,nullptr);
+    renderContext->submit(commandBuffer);
 
     blases = std::move(accels);
 } 
@@ -485,21 +473,10 @@ void RayTracer::buildTLAS()
     vkCmdBuildAccelerationStructuresKHR(cmdBuffer.getHandle(), 1, &build_info, &pBuildOffsetInfo);
 
     cmdBuffer.endRecord();
-    auto queue = device->getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0);
+   
 
-    VkSubmitInfo submitInfo{VK_STRUCTURE_TYPE_SUBMIT_INFO};
-    submitInfo.commandBufferCount = 1;
+    renderContext->submit(cmdBuffer);
 
-    auto vkCmdBuffer = cmdBuffer.getHandle();
-
-    submitInfo.pCommandBuffers = &vkCmdBuffer;
-    VkFence fence;
-    VkFenceCreateInfo fenceInfo{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
-    vkCreateFence(device->getHandle(), &fenceInfo, nullptr, &fence);
-    queue.submit({submitInfo}, fence);
-    queue.wait();
-    vkWaitForFences(device->getHandle(),1, &fence, VK_TRUE, 100000000000);
-    vkDestroyFence(device->getHandle(),fence,nullptr);
     
 }
 

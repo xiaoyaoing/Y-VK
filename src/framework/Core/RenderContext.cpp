@@ -124,7 +124,7 @@ uint32_t RenderContext::getActiveFrameIndex() const
     return activeFrameIndex;
 }
 
-void RenderContext::submit(CommandBuffer& buffer, VkFence fence)
+void RenderContext::submitAndPresent(CommandBuffer& buffer, VkFence fence)
 {
     getCurHwtexture().getVkImage().transitionLayout(buffer, VulkanLayout::PRESENT,
                                                     getCurHwtexture().getVkImageView().getSubResourceRange());
@@ -176,6 +176,31 @@ void RenderContext::submit(CommandBuffer& buffer, VkFence fence)
     }
 
     queue.wait();
+}
+
+void RenderContext::submit(CommandBuffer& commandBuffer, bool waiteFence)
+{
+    auto queue = device.getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0);
+
+    VkSubmitInfo submitInfo{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = commandBuffer.getHandlePointer();
+
+    VkFence fence = VK_NULL_HANDLE;
+    if(waiteFence)
+    {
+        VkFenceCreateInfo fenceInfo{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+        vkCreateFence(device.getHandle(), &fenceInfo, nullptr, &fence);
+    }
+
+    queue.submit({submitInfo}, fence);
+    queue.wait();
+    if(waiteFence)
+    {
+        vkWaitForFences(device.getHandle(),1, &fence, VK_TRUE, UINT64_MAX);
+    }
 }
 
 VkFormat RenderContext::getSwapChainFormat() const
@@ -340,8 +365,7 @@ RenderContext & RenderContext::bindPrimitive(const Primitive& primitive)
 
     pipelineState.setVertexInputState(vertexInputState);
 
-    return *this;
-
+    return bindMaterial(primitive.material);
 }
 
 
@@ -456,7 +480,7 @@ void RenderContext::flushDescriptorState(CommandBuffer& commandBuffer, VkPipelin
                         }
                     }
                     // if( resourceInfo.layout != VK_IMAGE_LAYOUT_UNDEFINED)
-                 imageInfo.imageLayout =  ImageUtil::getVkImageLayout(imageView->getImage().getLayout());
+                 // imageInfo.imageLayout =  ImageUtil::getVkImageLayout(imageView->getImage().getLayout());
                     imageInfos[bindingIndex][arrayElement] = imageInfo;
                 }
 
@@ -545,6 +569,8 @@ void RenderContext::nextSubpass(CommandBuffer& commandBuffer)
     pipelineState.setColorBlendState(colorBlendState);
 
     vkCmdNextSubpass(commandBuffer.getHandle(), {});
+
+    
 }
 
 void RenderContext::flushPushConstantStage(CommandBuffer& commandBuffer)
@@ -570,10 +596,17 @@ void RenderContext::flush(CommandBuffer& commandBuffer)
     flushPushConstantStage(commandBuffer);
 }
 
-void RenderContext::endRenderPass(CommandBuffer& commandBuffer)
+void RenderContext::endRenderPass(CommandBuffer& commandBuffer,RenderTarget& renderTarget)
 {
     commandBuffer.endPass();
     resourceSets.clear();
+
+    auto & finalLayouts = pipelineState.getRenderPass()->getAttachmentFinalLayouts();
+    for(uint32_t i = 0; i<finalLayouts.size();i++ )
+    {
+        renderTarget.getImage(i).setLayout(finalLayouts[i]);
+    }
+    
     pipelineState.reset();
 }
 

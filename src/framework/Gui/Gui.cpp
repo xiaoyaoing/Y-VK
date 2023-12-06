@@ -39,103 +39,117 @@ Gui::Gui(Device &device) : device(device) {
     pipelineLayout = &device.getResourceCache().requestPipelineLayout(shaders);
 }
 
-void Gui::prepare(const VkPipelineCache pipelineCache, const VkRenderPass renderPass) {
-    // descriptorLayout = std::make_unique<DescriptorLayout>(device);
-    // descriptorLayout->addBinding(VK_SHADER_STAGE_FRAGMENT_BIT, 0, 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0);
-    // descriptorLayout->createLayout(0);
-    //
-    //
-    // Shader vertexShader(device, FileUtils::getShaderPath() + "gui.vert"), fragShader(device,
-    //                                                                                  FileUtils::getShaderPath() +
-    //                                                                                  "gui.frag");
-    // shaders = {vertexShader.PipelineShaderStageCreateInfo(),
-    //            fragShader.PipelineShaderStageCreateInfo()};
-    //
-    // auto pushConstantRange = vkCommon::initializers::pushConstantRange(VK_SHADER_STAGE_VERTEX_BIT,
-    //                                                                    sizeof(PushConstBlock), 0);
-    //
-    // std::vector<VkDescriptorSetLayout> layout{descriptorLayout->getHandle()};
-    // auto pipelineLayoutCreateInfo = vkCommon::initializers::pipelineLayoutCreateInfo(layout);
-    //
-    // pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
-    // pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
-    // VK_CHECK_RESULT(vkCreatePipelineLayout(device.getHandle(), &pipelineLayoutCreateInfo, nullptr, &pipelineLayout))
-    //
-    // VkPipelineInputAssemblyStateCreateInfo inputAssemblyState =
-    //         vkCommon::initializers::pipelineInputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0,
-    //                                                                      VK_FALSE);
-    //
-    // VkPipelineRasterizationStateCreateInfo rasterizationState =
-    //         vkCommon::initializers::pipelineRasterizationStateCreateInfo(VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE,
-    //                                                                      VK_FRONT_FACE_COUNTER_CLOCKWISE);
-    //
-    // // Enable blending
-    // VkPipelineColorBlendAttachmentState blendAttachmentState{};
-    // blendAttachmentState.blendEnable = VK_TRUE;
-    // blendAttachmentState.colorWriteMask =
-    //         VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    // blendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-    // blendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    // blendAttachmentState.colorBlendOp = VK_BLEND_OP_ADD;
-    // blendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    // blendAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-    // blendAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
-    //
-    // VkPipelineColorBlendStateCreateInfo colorBlendState =
-    //         vkCommon::initializers::pipelineColorBlendStateCreateInfo(1, &blendAttachmentState);
-    //
-    // VkPipelineDepthStencilStateCreateInfo depthStencilState =
-    //         vkCommon::initializers::pipelineDepthStencilStateCreateInfo(VK_FALSE, VK_FALSE, VK_COMPARE_OP_ALWAYS);
-    //
-    // VkPipelineViewportStateCreateInfo viewportState =
-    //         vkCommon::initializers::pipelineViewportStateCreateInfo(1, 1, 0);
-    //
-    // VkPipelineMultisampleStateCreateInfo multisampleState =
-    //         vkCommon::initializers::pipelineMultisampleStateCreateInfo(rasterSamples);
-    //
-    // std::vector<VkDynamicState> dynamicStateEnables = {
-    //         VK_DYNAMIC_STATE_VIEWPORT,
-    //         VK_DYNAMIC_STATE_SCISSOR};
-    // VkPipelineDynamicStateCreateInfo dynamicState =
-    //         vkCommon::initializers::pipelineDynamicStateCreateInfo(dynamicStateEnables);
-    //
-    // VkGraphicsPipelineCreateInfo pipelineCreateInfo = vkCommon::initializers::pipelineCreateInfo(pipelineLayout,
-    //                                                                                              renderPass);
-    //
-    // pipelineCreateInfo.pInputAssemblyState = &inputAssemblyState;
-    // pipelineCreateInfo.pRasterizationState = &rasterizationState;
-    // pipelineCreateInfo.pColorBlendState = &colorBlendState;
-    // pipelineCreateInfo.pMultisampleState = &multisampleState;
-    // pipelineCreateInfo.pViewportState = &viewportState;
-    // pipelineCreateInfo.pDepthStencilState = &depthStencilState;
-    // pipelineCreateInfo.pDynamicState = &dynamicState;
-    // pipelineCreateInfo.stageCount = static_cast<uint32_t>(shaders.size());
-    // pipelineCreateInfo.pStages = shaders.data();
-    // pipelineCreateInfo.subpass = subPass;
-    //
-    // // Vertex bindings an attributes based on ImGui vertex definition
-    // std::vector<VkVertexInputBindingDescription> vertexInputBindings = {
-    //         vkCommon::initializers::vertexInputBindingDescription(0, sizeof(ImDrawVert), VK_VERTEX_INPUT_RATE_VERTEX),
-    // };
-    // std::vector<VkVertexInputAttributeDescription> vertexInputAttributes = {
-    //         vkCommon::initializers::vertexInputAttributeDescription(0, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(ImDrawVert,
-    //                                                                                                         pos)), // Location 0: Position
-    //         vkCommon::initializers::vertexInputAttributeDescription(0, 1, VK_FORMAT_R32G32_SFLOAT,
-    //                                                                 offsetof(ImDrawVert, uv)), // Location 1: UV
-    //         vkCommon::initializers::vertexInputAttributeDescription(0, 2, VK_FORMAT_R8G8B8A8_UNORM,
-    //                                                                 offsetof(ImDrawVert, col)), // Location 0: Color
-    // };
-    // VkPipelineVertexInputStateCreateInfo vertexInputState = vkCommon::initializers::pipelineVertexInputStateCreateInfo();
-    // vertexInputState.vertexBindingDescriptionCount = static_cast<uint32_t>(vertexInputBindings.size());
-    // vertexInputState.pVertexBindingDescriptions = vertexInputBindings.data();
-    // vertexInputState.vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexInputAttributes.size());
-    // vertexInputState.pVertexAttributeDescriptions = vertexInputAttributes.data();
-    //
-    // pipelineCreateInfo.pVertexInputState = &vertexInputState;
-    //
-    // VK_CHECK_RESULT(vkCreateGraphicsPipelines(device.getHandle(), pipelineCache, 1, &pipelineCreateInfo, nullptr,
-    //                                           &pipeline));
+bool Gui::inputEvent(const InputEvent& input_event)
+{
+    auto &io                 = ImGui::GetIO();
+	auto  capture_move_event = false;
+
+	if (input_event.getSource() == EventSource::KeyBoard)
+	{
+		const auto &key_event = static_cast<const KeyInputEvent &>(input_event);
+
+		if (key_event.getAction() == KeyAction::Down)
+		{
+			io.KeysDown[static_cast<int>(key_event.getCode())] = true;
+		}
+		else if (key_event.getAction() == KeyAction::Up)
+		{
+			io.KeysDown[static_cast<int>(key_event.getCode())] = false;
+		}
+	}
+	else if (input_event.getSource() == EventSource::Mouse)
+	{
+		const auto &mouse_button = static_cast<const MouseButtonInputEvent &>(input_event);
+
+		io.MousePos = ImVec2{mouse_button.getPosX() * contentScaleFactor,
+		                     mouse_button.getPosY() * contentScaleFactor};
+
+		auto button_id = static_cast<int>(mouse_button.getButton());
+
+		if (mouse_button.getAction() == MouseAction::Down)
+		{
+			io.MouseDown[button_id] = true;
+		}
+		else if (mouse_button.getAction() == MouseAction::Up)
+		{
+			io.MouseDown[button_id] = false;
+		}
+		else if (mouse_button.getAction() == MouseAction::Move)
+		{
+			capture_move_event = io.WantCaptureMouse;
+		}
+	}
+	else if (input_event.getSource() == EventSource::TouchScreen)
+	{
+		const auto &touch_event = static_cast<const TouchInputEvent &>(input_event);
+
+		io.MousePos = ImVec2{touch_event.getPosX(), touch_event.getPosY()};
+
+		if (touch_event.getAction() == TouchAction::Down)
+		{
+			io.MouseDown[touch_event.getPointerId()] = true;
+		}
+		else if (touch_event.getAction() == TouchAction::Up)
+		{
+			io.MouseDown[touch_event.getPointerId()] = false;
+		}
+		else if (touch_event.getAction() == TouchAction::Move)
+		{
+			capture_move_event = io.WantCaptureMouse;
+		}
+	}
+
+	// // Toggle debug UI view when tap or clicking outside the GUI windows
+	// if (!io.WantCaptureMouse)
+	// {
+	// 	bool press_down = (input_event.getSource() == EventSource::Mouse && static_cast<const MouseButtonInputEvent &>(input_event).getAction() == MouseAction::Down) || (input_event.getSource() == EventSource::Touchscreen && static_cast<const TouchInputEvent &>(input_event).getAction() == TouchAction::Down);
+	// 	bool press_up   = (input_event.getSource() == EventSource::Mouse && static_cast<const MouseButtonInputEvent &>(input_event).getAction() == MouseAction::Up) || (input_event.getSource() == EventSource::Touchscreen && static_cast<const TouchInputEvent &>(input_event).getAction() == TouchAction::Up);
+	//
+	// 	if (press_down)
+	// 	{
+	// 		timer.start();
+	// 		if (input_event.getSource() == EventSource::Touchscreen)
+	// 		{
+	// 			const auto &touch_event = static_cast<const TouchInputEvent &>(input_event);
+	// 			if (touch_event.get_touch_points() == 2)
+	// 			{
+	// 				two_finger_tap = true;
+	// 			}
+	// 		}
+	// 	}
+	// 	if (press_up)
+	// 	{
+	// 		auto press_delta = timer.stop<Timer::Milliseconds>();
+	// 		if (press_delta < press_time_ms)
+	// 		{
+	// 			if (input_event.getSource() == EventSource::Mouse)
+	// 			{
+	// 				const auto &mouse_button = static_cast<const MouseButtonInputEvent &>(input_event);
+	// 				if (mouse_button.get_button() == MouseButton::Right)
+	// 				{
+	// 					debug_view.active = !debug_view.active;
+	// 				}
+	// 			}
+	// 			else if (input_event.getSource() == EventSource::Touchscreen)
+	// 			{
+	// 				const auto &touch_event = static_cast<const TouchInputEvent &>(input_event);
+	// 				if (two_finger_tap && touch_event.get_touch_points() == 2)
+	// 				{
+	// 					debug_view.active = !debug_view.active;
+	// 				}
+	// 				else
+	// 				{
+	// 					two_finger_tap = false;
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
+
+	return capture_move_event;
 }
+
+
 
 void Gui::prepareResoucrces(Application *app) {
     fontTexture = Texture::loadTexture(device, FileUtils::getResourcePath() + "Roboto-Medium.ttf");
@@ -243,8 +257,8 @@ void Gui::draw(CommandBuffer &commandBuffer) {
     std::vector<uint8_t> pushConstants(blockPtr, blockPtr + sizeof(PushConstBlock));
     renderContext.bindPushConstants(pushConstants);
 
-    renderContext.bindImage(0, fontTexture.getImage().getVkImageView(),
-                            fontTexture.getSampler(), 0, 0);
+    renderContext.bindImage(0, fontTexture->getImage().getVkImageView(),
+                            fontTexture->getSampler(), 0, 0);
 
 
     std::vector<const Buffer *> vertexBuffers = {vertexBuffer.get()};
@@ -292,8 +306,6 @@ void Gui::addGuiPass(RenderGraph &graph, RenderContext &renderContext) {
                                    int32_t vertexOffset = 0;
                                    int32_t indexOffset = 0;
                                    if ((!imDrawData) || (imDrawData->CmdListsCount == 0)) {
-                                       renderContext.endRenderPass(context.commandBuffer);
-
                                        return;
                                    }
                                    const ImGuiIO &io = ImGui::GetIO();
@@ -313,8 +325,8 @@ void Gui::addGuiPass(RenderGraph &graph, RenderContext &renderContext) {
                                    std::vector<uint8_t> pushConstants(blockPtr, blockPtr + sizeof(PushConstBlock));
                                    renderContext.bindPushConstants(pushConstants);
 
-                                   renderContext.bindImage(0, fontTexture.getImage().getVkImageView(),
-                                                           fontTexture.getSampler(), 0, 0);
+                                   renderContext.bindImage(0, fontTexture->getImage().getVkImageView(),
+                                                           fontTexture->getSampler(), 0, 0);
 
 
                                    std::vector<const Buffer *> vertexBuffers = {vertexBuffer.get()};
@@ -340,7 +352,6 @@ void Gui::addGuiPass(RenderGraph &graph, RenderContext &renderContext) {
                                        }
                                        vertexOffset += cmd_list->VtxBuffer.Size;
                                    }
-                                   renderContext.endRenderPass(context.commandBuffer);
                                }
     );
 }

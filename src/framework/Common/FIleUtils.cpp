@@ -4,6 +4,12 @@
 
 #include "FIleUtils.h"
 
+#include <chrono>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <ctime>
+#include <filesystem>
+
 namespace FileUtils {
 
     std::vector<uint8_t> read_binary_file(const std::string &filename, const uint32_t count) {
@@ -29,6 +35,21 @@ namespace FileUtils {
         file.close();
 
         return data;
+    }
+
+    std::string getFileTimeStr(const std::string& path, const std::string& format)
+    {
+        const auto fileTime = std::filesystem::last_write_time(path);
+        const auto systemTime = std::chrono::clock_cast<std::chrono::system_clock>(fileTime);
+        const auto time = std::chrono::system_clock::to_time_t(systemTime);
+
+        struct tm stime;
+        localtime_s(&stime, &time);
+
+        char tmp[32] = { NULL };
+        strftime(tmp, sizeof(tmp), format.c_str(), &stime);
+
+        return tmp;
     }
 
 

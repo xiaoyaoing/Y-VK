@@ -114,7 +114,8 @@ public:
 
     uint32_t getActiveFrameIndex() const;
 
-    void submit(CommandBuffer& buffer, VkFence fence = VK_NULL_HANDLE);
+    void submitAndPresent(CommandBuffer& buffer, VkFence fence = VK_NULL_HANDLE);
+    void submit(CommandBuffer& commandBuffer, bool waiteFence = true);
 
 
     VkSemaphore submit(const Queue& queue, const std::vector<CommandBuffer*>& commandBuffers, VkSemaphore waitSem,
@@ -150,7 +151,7 @@ public:
 
     void flush(CommandBuffer& commandBuffer);
 
-    void endRenderPass(CommandBuffer& commandBuffer);
+    void endRenderPass(CommandBuffer& commandBuffer,RenderTarget& renderTarget);
 
     BufferAllocation allocateBuffer(VkDeviceSize allocateSize, VkBufferUsageFlags usage);
 

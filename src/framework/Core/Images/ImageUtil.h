@@ -6,111 +6,42 @@ class ImageUtil
 {
 public:
     static VkImageLayout getVkImageLayout(VulkanLayout layout);
-   
+    // static VulkanLayout ImageUtil::getVulkanLayout(VkImageLayout layout)
+    // {
+    //     switch (layout)
+    //     {
+    //     case VK_IMAGE_LAYOUT_UNDEFINED:
+    //         return VulkanLayout::UNDEFINED;
+    //     case VK_IMAGE_LAYOUT_GENERAL:
+    //         return VulkanLayout::READ_WRITE;
+    //     case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+    //         return VulkanLayout::READ_ONLY;
+    //     case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+    //         return VulkanLayout::TRANSFER_SRC;
+    //     case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+    //         return VulkanLayout::TRANSFER_DST;
+    //     case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+    //         return VulkanLayout::DEPTH_ATTACHMENT;
+    //     case VK_IMAGE_LAYOUT_GENERAL:
+    //         return VulkanLayout::DEPTH_SAMPLER;
+    //     case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
+    //         return VulkanLayout::DEPTH_READ_ONLY;
+    //     case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
+    //         return VulkanLayout::PRESENT;
+    //     case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+    //         return VulkanLayout::COLOR_ATTACHMENT;
+    //     }
+    //
+    //     // 默认情况，可以根据需要返回特定的默认值或抛出异常
+    //     return VulkanLayout::UNDEFINED;
+    // }
+
 
     static std::tuple<VkAccessFlags, VkAccessFlags, VkPipelineStageFlags, VkPipelineStageFlags,
                       VkImageLayout, VkImageLayout>
-    getVkTransition(VulkanLayout oldLayout, VulkanLayout newLayout)
-    {
-        VkAccessFlags srcAccessMask, dstAccessMask;
-        VkPipelineStageFlags srcStage, dstStage;
+    getVkTransition(VulkanLayout oldLayout, VulkanLayout newLayout);
 
-        switch (oldLayout)
-        {
-        case VulkanLayout::UNDEFINED:
-            srcAccessMask = 0;
-            srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            break;
-        case VulkanLayout::COLOR_ATTACHMENT:
-            srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT
-                | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
-                | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            srcStage = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-                | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            break;
-        case VulkanLayout::READ_WRITE:
-            srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
-            srcStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-            break;
-        case VulkanLayout::READ_ONLY:
-            srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-            srcStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-            break;
-        case VulkanLayout::TRANSFER_SRC:
-            srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-            srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            break;
-        case VulkanLayout::TRANSFER_DST:
-            srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            break;
-        case VulkanLayout::DEPTH_ATTACHMENT:
-            srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT
-                | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-            srcStage = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-            break;
-        case VulkanLayout::DEPTH_SAMPLER:
-            srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-            srcStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-            break;
-        case VulkanLayout::COLOR_ATTACHMENT_RESOLVE:
-            srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-            srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            break;
-        case VulkanLayout::PRESENT:
-            srcAccessMask = VK_ACCESS_NONE;
-            srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            break;
-        }
-
-        switch (newLayout)
-        {
-        case VulkanLayout::COLOR_ATTACHMENT:
-            dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT
-                | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
-                | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            dstStage = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-                | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            break;
-        case VulkanLayout::READ_WRITE:
-            dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
-            dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-            break;
-        case VulkanLayout::READ_ONLY:
-            dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-            dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-            break;
-        case VulkanLayout::TRANSFER_SRC:
-            dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-            dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            break;
-        case VulkanLayout::TRANSFER_DST:
-            dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            break;
-        case VulkanLayout::DEPTH_ATTACHMENT:
-            dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT
-                | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-            dstStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-            break;
-        case VulkanLayout::DEPTH_SAMPLER:
-            dstAccessMask
-                = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-            dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-                | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-            break;
-        case VulkanLayout::PRESENT:
-        case VulkanLayout::COLOR_ATTACHMENT_RESOLVE:
-        case VulkanLayout::UNDEFINED:
-            dstAccessMask = 0;
-            dstStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            break;
-        }
-
-        return std::make_tuple(srcAccessMask, dstAccessMask, srcStage, dstStage,
-                               getVkImageLayout(oldLayout), getVkImageLayout(newLayout));
-    }
-
+    static VulkanLayout chooseVulkanLayout(VulkanLayout layout,VulkanLayout defaultLayout);
 
     inline static VulkanLayout getDefaultLayout(TextureUsage usage)
     {
@@ -130,7 +61,9 @@ public:
         {
             return VulkanLayout::COLOR_ATTACHMENT;
         }
-        // Finally, the layout for an immutable texture is optimal read-only.        
+        // Finally, the layout for an immutable texture is optimal read-only.
+        if(any(usage & TextureUsage::DEPTH_READ_ONLY))
+            return VulkanLayout::DEPTH_READ_ONLY;
         return VulkanLayout::READ_ONLY;
     }
 

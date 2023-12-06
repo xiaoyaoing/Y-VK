@@ -2,39 +2,61 @@
 #include "Core/Device/Device.h"
 #include "RenderTarget.h"
 
-void
-setAttachmentLayouts(std::vector<VkSubpassDescription> subpassDescs,
-                     std::vector<VkAttachmentDescription> &attachments) {
-    for (auto subpass: subpassDescs) {
+struct AttachmentReference
+{
+    uint32_t attachment;
+    VulkanLayout layout;
+};
+
+VulkanLayout getVulkanLayout(VkImageLayout layout,VkFormat format)
+{
+    switch (layout)
+    {
+    case VK_IMAGE_LAYOUT_UNDEFINED:
+        return VulkanLayout::UNDEFINED;
+    case VK_IMAGE_LAYOUT_GENERAL:
+        return isDepthOrStencilFormat(format)?VulkanLayout::READ_WRITE :VulkanLayout::DEPTH_SAMPLER;
+    case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+        return VulkanLayout::READ_ONLY;
+    case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+        return VulkanLayout::TRANSFER_SRC;
+    case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+        return VulkanLayout::TRANSFER_DST;
+    case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+        return VulkanLayout::DEPTH_ATTACHMENT;
+    case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
+        return VulkanLayout::DEPTH_READ_ONLY;
+    case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
+        return VulkanLayout::PRESENT;
+    case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+        return VulkanLayout::COLOR_ATTACHMENT;
+    }
+
+    // 默认情况，可以根据需要返回特定的默认值或抛出异常
+    return VulkanLayout::UNDEFINED;
+}
+
+
+void setAttachmentLayouts(std::vector<VkSubpassDescription> subpassDescs,
+                         std::vector<VkAttachmentDescription> &attachments) {
+    for (const auto &subpass : subpassDescs) {
         for (int i = 0; i < subpass.colorAttachmentCount; i++) {
-            auto reference = subpass.pColorAttachments[i];
-            if (attachments[reference.attachment].initialLayout ==         ImageUtil::getVkImageLayout(VulkanLayout::UNDEFINED)
-) {
+            auto &reference = subpass.pColorAttachments[i];
+            if (attachments[reference.attachment].initialLayout == ImageUtil::getVkImageLayout(VulkanLayout::UNDEFINED)) {
                 attachments[reference.attachment].initialLayout = reference.layout;
             }
         }
 
         for (int i = 0; i < subpass.inputAttachmentCount; i++) {
             auto &reference = subpass.pInputAttachments[i];
-            if (attachments[reference.attachment].initialLayout ==         ImageUtil::getVkImageLayout(VulkanLayout::UNDEFINED)
-) {
-                attachments[reference.attachment].initialLayout = reference.layout;
-            }
-        }
-
-
-        for (int i = 0; i < subpass.colorAttachmentCount; i++) {
-            auto &reference = subpass.pColorAttachments[i];
-            if (attachments[reference.attachment].initialLayout ==         ImageUtil::getVkImageLayout(VulkanLayout::UNDEFINED)
-) {
+            if (attachments[reference.attachment].initialLayout == ImageUtil::getVkImageLayout(VulkanLayout::UNDEFINED)) {
                 attachments[reference.attachment].initialLayout = reference.layout;
             }
         }
 
         if (subpass.pDepthStencilAttachment) {
             auto &reference = *subpass.pDepthStencilAttachment;
-            if (attachments[reference.attachment].initialLayout ==         ImageUtil::getVkImageLayout(VulkanLayout::UNDEFINED)
-) {
+            if (attachments[reference.attachment].initialLayout == ImageUtil::getVkImageLayout(VulkanLayout::UNDEFINED)) {
                 attachments[reference.attachment].initialLayout = reference.layout;
             }
         }
@@ -42,45 +64,31 @@ setAttachmentLayouts(std::vector<VkSubpassDescription> subpassDescs,
         if (subpass.pResolveAttachments) {
             for (int i = 0; i < subpass.colorAttachmentCount; i++) {
                 auto &reference = subpass.pResolveAttachments[i];
-                if (attachments[reference.attachment].initialLayout ==    ImageUtil::getVkImageLayout(VulkanLayout::UNDEFINED)
-) {
+                if (attachments[reference.attachment].initialLayout == ImageUtil::getVkImageLayout(VulkanLayout::UNDEFINED)) {
                     attachments[reference.attachment].initialLayout = reference.layout;
                 }
             }
         }
     }
 
-
-    for (auto subpass: subpassDescs) {
+    for (const auto &subpass : subpassDescs) {
         for (int i = 0; i < subpass.colorAttachmentCount; i++) {
-            auto reference = subpass.pColorAttachments[i];
-            if (attachments[reference.attachment].finalLayout ==         ImageUtil::getVkImageLayout(VulkanLayout::UNDEFINED)
-) {
+            auto &reference = subpass.pColorAttachments[i];
+            if (attachments[reference.attachment].finalLayout == ImageUtil::getVkImageLayout(VulkanLayout::UNDEFINED)) {
                 attachments[reference.attachment].finalLayout = reference.layout;
             }
         }
 
         for (int i = 0; i < subpass.inputAttachmentCount; i++) {
             auto &reference = subpass.pInputAttachments[i];
-            if (attachments[reference.attachment].finalLayout ==         ImageUtil::getVkImageLayout(VulkanLayout::UNDEFINED)
-) {
-                attachments[reference.attachment].finalLayout = reference.layout;
-            }
-        }
-
-
-        for (int i = 0; i < subpass.colorAttachmentCount; i++) {
-            auto &reference = subpass.pColorAttachments[i];
-            if (attachments[reference.attachment].finalLayout ==         ImageUtil::getVkImageLayout(VulkanLayout::UNDEFINED)
-) {
+            if (attachments[reference.attachment].finalLayout == ImageUtil::getVkImageLayout(VulkanLayout::UNDEFINED)) {
                 attachments[reference.attachment].finalLayout = reference.layout;
             }
         }
 
         if (subpass.pDepthStencilAttachment) {
             auto &reference = *subpass.pDepthStencilAttachment;
-            if (attachments[reference.attachment].finalLayout ==         ImageUtil::getVkImageLayout(VulkanLayout::UNDEFINED)
-) {
+            if (attachments[reference.attachment].finalLayout == ImageUtil::getVkImageLayout(VulkanLayout::UNDEFINED)) {
                 attachments[reference.attachment].finalLayout = reference.layout;
             }
         }
@@ -88,8 +96,7 @@ setAttachmentLayouts(std::vector<VkSubpassDescription> subpassDescs,
         if (subpass.pResolveAttachments) {
             for (int i = 0; i < subpass.colorAttachmentCount; i++) {
                 auto &reference = subpass.pResolveAttachments[i];
-                if (attachments[reference.attachment].finalLayout ==         ImageUtil::getVkImageLayout(VulkanLayout::UNDEFINED)
-) {
+                if (attachments[reference.attachment].finalLayout == ImageUtil::getVkImageLayout(VulkanLayout::UNDEFINED)) {
                     attachments[reference.attachment].finalLayout = reference.layout;
                 }
             }
@@ -97,54 +104,36 @@ setAttachmentLayouts(std::vector<VkSubpassDescription> subpassDescs,
     }
 
     {
-        
-            auto &subpass = subpassDescs.back();
+        auto &subpass = subpassDescs.back();
 
-            for (size_t k = 0U; k < subpass.colorAttachmentCount; ++k)
-            {
-                const auto &reference = subpass.pColorAttachments[k];
-
-               attachments[reference.attachment].finalLayout = reference.layout;
-            }
-
-            for (size_t k = 0U; k < subpass.inputAttachmentCount; ++k)
-            {
-                const auto &reference = subpass.pInputAttachments[k];
-
-                attachments[reference.attachment].finalLayout = reference.layout;
-
-                // Do not use depth attachment if used as input
-                if (isDepthOrStencilFormat(attachments[reference.attachment].format))
-                {
-                    subpass.pDepthStencilAttachment = nullptr;
-                }
-            }
-
-            if (subpass.pDepthStencilAttachment)
-            {
-                const auto &reference = *subpass.pDepthStencilAttachment;
-
-                attachments[reference.attachment].finalLayout = reference.layout;
-            }
-
-            if (subpass.pResolveAttachments)
-            {
-                for (size_t k = 0U; k < subpass.colorAttachmentCount; ++k)
-                {
-                    const auto &reference = subpass.pResolveAttachments[k];
-
-                    attachments[reference.attachment].finalLayout = reference.layout;
-                }
-            }
-
-            // if (const auto depth_resolve = get(subpass))
-            // {
-            //     attachments[depth_resolve->attachment].finalLayout = depth_resolve->layout;
-            // }
+        for (size_t k = 0U; k < subpass.colorAttachmentCount; ++k) {
+            const auto &reference = subpass.pColorAttachments[k];
+            attachments[reference.attachment].finalLayout = reference.layout;
         }
-    
-    
+
+        for (size_t k = 0U; k < subpass.inputAttachmentCount; ++k) {
+            const auto &reference = subpass.pInputAttachments[k];
+            attachments[reference.attachment].finalLayout = reference.layout;
+
+            if (isDepthOrStencilFormat(attachments[reference.attachment].format)) {
+                subpass.pDepthStencilAttachment = nullptr;
+            }
+        }
+
+        if (subpass.pDepthStencilAttachment) {
+            const auto &reference = *subpass.pDepthStencilAttachment;
+            attachments[reference.attachment].finalLayout = reference.layout;
+        }
+
+        if (subpass.pResolveAttachments) {
+            for (size_t k = 0U; k < subpass.colorAttachmentCount; ++k) {
+                const auto &reference = subpass.pResolveAttachments[k];
+                attachments[reference.attachment].finalLayout = reference.layout;
+            }
+        }
+    }
 }
+
 
 std::vector<VkSubpassDependency> getSubpassDependency(const size_t subpassCount) {
     std::vector<VkSubpassDependency> dependencies(subpassCount - 1);
@@ -166,57 +155,17 @@ std::vector<VkSubpassDependency> getSubpassDependency(const size_t subpassCount)
 }
 
 
-std::vector<VkAttachmentDescription> get_attachment_descriptions(const std::vector<Attachment> &attachments,
-                                                                 const std::vector<LoadStoreInfo> &load_store_infos) {
-    std::vector<VkAttachmentDescription> attachment_descriptions;
 
-    for (size_t i = 0U; i < attachments.size(); ++i) {
-        VkAttachmentDescription attachment{};
-
-        attachment.format = attachments[i].format;
-        attachment.samples = attachments[i].samples;
-        attachment.initialLayout = attachments[i].initial_layout;
-        attachment.finalLayout = isDepthOrStencilFormat(attachment.format)
-                                 ? ImageUtil::getVkImageLayout(VulkanLayout::DEPTH_ATTACHMENT)
-                                 :         ImageUtil::getVkImageLayout(VulkanLayout::COLOR_ATTACHMENT)
-;
-
-        if (i < load_store_infos.size()) {
-            attachment.loadOp = load_store_infos[i].load_op;
-            attachment.storeOp = load_store_infos[i].store_op;
-            attachment.stencilLoadOp = load_store_infos[i].load_op;
-            attachment.stencilStoreOp = load_store_infos[i].store_op;
-        }
-
-        attachment_descriptions.push_back(std::move(attachment));
-    }
-
-    return attachment_descriptions;
-}
-
-
-//RenderPass::RenderPass(const ptr<Device> &device,
-//                       const std::vector<VkAttachmentDescription> &attachmentDescs,
-//                       const std::vector<VkSubpassDependency> &subpassDependencies,
-//                       const std::vector<VkSubpassDescription> &subpassDesc) {
-//    VkRenderPassCreateInfo renderPassInfo{};
-//    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-//    renderPassInfo.attachmentCount = attachmentDescs.size();
-//    renderPassInfo.pAttachments = attachmentDescs.data();
-//    renderPassInfo.subpassCount = subpassDesc.size();
-//    renderPassInfo.pSubpasses = subpassDesc.data();
-//    renderPassInfo.dependencyCount = subpassDependencies.size();
-//    renderPassInfo.pDependencies = subpassDependencies.data();
-//    VK_CHECK_RESULT(vkCreateRenderPass(device->getHandle(), &renderPassInfo, nullptr, &_pass))
-//    device = device;
-//}
 
 RenderPass::~RenderPass() {
     vkDestroyRenderPass(device.getHandle(), _pass, nullptr);
 }
 
 RenderPass::RenderPass(RenderPass &&other) : _pass(other._pass), device(other.device),
-                                             colorOutputCount(other.colorOutputCount) {
+                                             colorOutputCount(other.colorOutputCount),
+                                             subpassInputLayouts(other.subpassInputLayouts),
+                                             attachmentFinalLayouts(other.attachmentFinalLayouts)   
+                                {
     other._pass = VK_NULL_HANDLE;
 }
 
@@ -229,12 +178,14 @@ RenderPass::RenderPass(Device &device, const std::vector<Attachment> &attachment
         VkAttachmentDescription attachmentDescription{};
         attachmentDescription.format = attachments[i].format;
         attachmentDescription.samples = attachments[i].samples;
-        attachmentDescription.initialLayout = attachments[i].initial_layout;
+        attachmentDescription.initialLayout = ImageUtil::getVkImageLayout(attachments[i].initial_layout);
         //todo fix this 
         attachmentDescription.finalLayout = isDepthOrStencilFormat(attachmentDescription.format)
                                             ? ImageUtil::getVkImageLayout(VulkanLayout::DEPTH_ATTACHMENT)
-                                            :         ImageUtil::getVkImageLayout(VulkanLayout::COLOR_ATTACHMENT)
-;
+                                            :         ImageUtil::getVkImageLayout(VulkanLayout::COLOR_ATTACHMENT);     
+        // attachmentFinalLayouts[i] = attachments[i].initial_layout;
+        //
+        // attachmentFinalLayouts[i] = attachments[i].initial_layout;
 
         attachmentDescription.loadOp = attachments[i].loadOp;
         attachmentDescription.storeOp = attachments[i].storeOp;
@@ -247,7 +198,7 @@ RenderPass::RenderPass(Device &device, const std::vector<Attachment> &attachment
 
     auto subpass_count = std::max<size_t>(1, subpasses.size());
 
-
+    subpassInputLayouts.resize(subpass_count);
     std::vector<std::vector<VkAttachmentReference>> inputAttachments{subpass_count};
     std::vector<std::vector<VkAttachmentReference>> colorAttachments{subpass_count};
     std::vector<std::vector<VkAttachmentReference>> depthStencilAttachments{subpass_count};
@@ -267,7 +218,7 @@ RenderPass::RenderPass(Device &device, const std::vector<Attachment> &attachment
                 }
                 continue;
             }
-            VkAttachmentReference reference{k,         ImageUtil::getVkImageLayout(VulkanLayout::COLOR_ATTACHMENT)
+            VkAttachmentReference reference{k,      ImageUtil::getVkImageLayout( VulkanLayout::COLOR_ATTACHMENT)
 };
             colorAttachments[0].push_back(reference);
         }
@@ -276,10 +227,7 @@ RenderPass::RenderPass(Device &device, const std::vector<Attachment> &attachment
         subpass_description.colorAttachmentCount = toUint32(colorAttachments[0].size());
 
         if (default_depth_stencilAttachment != VK_ATTACHMENT_UNUSED) {
-            VkAttachmentReference reference{
-                    default_depth_stencilAttachment,
-                    ImageUtil::getVkImageLayout(VulkanLayout::DEPTH_ATTACHMENT)
-            };
+            VkAttachmentReference reference{default_depth_stencilAttachment,ImageUtil::getVkImageLayout(VulkanLayout::DEPTH_ATTACHMENT)};
 
             depthStencilAttachments[0].push_back(reference);
 
@@ -292,35 +240,28 @@ RenderPass::RenderPass(Device &device, const std::vector<Attachment> &attachment
             auto &subPass = subpasses[i];
             for (auto &inputAttachment: subPass.inputAttachments) {
                 auto defaultLayout = isDepthOrStencilFormat(attachmentDescriptions[inputAttachment].format)
-                                     ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
-                                     : ImageUtil::getVkImageLayout(VulkanLayout::READ_ONLY);
+                                     ? VulkanLayout::DEPTH_READ_ONLY
+                                     :VulkanLayout::READ_ONLY;
                 // : VK_IMAGE_LAYOUT_GENERAL;
-                auto initialLayout =
-                        attachments[inputAttachment].initial_layout ==         ImageUtil::getVkImageLayout(VulkanLayout::UNDEFINED)
+                // auto initialLayout = ImageUtil::getVkImageLayout()
+                auto initialLayout = defaultLayout;
+                auto initialLayVkout = ImageUtil::getVkImageLayout(initialLayout);
+                // initialLayout = VK_IMAGE_LAYOUT_GENERAL; //todo fix this
 
-                        ? defaultLayout
-                        : attachments[inputAttachment].initial_layout;
-
-                initialLayout = VK_IMAGE_LAYOUT_GENERAL; //todo fix this
-
-                VkAttachmentReference ref{inputAttachment, initialLayout};
-                inputAttachments[i].push_back(ref);
+                inputAttachments[i].emplace_back(VkAttachmentReference{inputAttachment, initialLayVkout});
+                subpassInputLayouts[i].emplace_back(std::pair{inputAttachment,defaultLayout});
             }
 
             for (auto &outputAttachment: subPass.outputAttachments) {
                 if (!isDepthOrStencilFormat(attachmentDescriptions[outputAttachment].format)) {
-                    auto initialLayout = attachments[outputAttachment].initial_layout ==         ImageUtil::getVkImageLayout(VulkanLayout::UNDEFINED)
-
-                                         ?         ImageUtil::getVkImageLayout(VulkanLayout::COLOR_ATTACHMENT)
-
-                                         : attachments[outputAttachment].initial_layout;
+                    auto initialLayout = ImageUtil::getVkImageLayout(ImageUtil::chooseVulkanLayout(attachments[outputAttachment].initial_layout, VulkanLayout::COLOR_ATTACHMENT));
                     VkAttachmentReference ref{outputAttachment, initialLayout};
                     colorAttachments[i].push_back(ref);
                 }
             }
 
             for (auto &colorResolveAttachment: subPass.colorResolveAttachments) {
-                VkAttachmentReference ref{colorResolveAttachment, attachments[colorResolveAttachment].initial_layout};
+                VkAttachmentReference ref{colorResolveAttachment, ImageUtil::getVkImageLayout(attachments[colorResolveAttachment].initial_layout)};
                 colorResolveAttachments[i].push_back(ref);
             }
             // 如果有深度测试
@@ -329,11 +270,12 @@ RenderPass::RenderPass(Device &device, const std::vector<Attachment> &attachment
                     return isDepthOrStencilFormat(attachment.format);
                 });
                 if (it != attachments.end()) {
+                        
+                    
                     uint32_t iDepthStencil = std::distance(attachments.begin(), it);
-                    auto initialLayout = it->initial_layout ==         ImageUtil::getVkImageLayout(VulkanLayout::UNDEFINED)
 
-                                         ? ImageUtil::getVkImageLayout(VulkanLayout::DEPTH_ATTACHMENT)
-                                         : it->initial_layout;
+                    bool depthAsOutput = std::find(subPass.outputAttachments.begin(), subPass.outputAttachments.end(), iDepthStencil) != subPass.outputAttachments.end();
+                    auto initialLayout = ImageUtil::getVkImageLayout(depthAsOutput? VulkanLayout::DEPTH_ATTACHMENT : VulkanLayout::DEPTH_READ_ONLY);
                     depthStencilAttachments[i].push_back(VkAttachmentReference{iDepthStencil, initialLayout});
                 }
             }
@@ -364,6 +306,14 @@ RenderPass::RenderPass(Device &device, const std::vector<Attachment> &attachment
     }
     setAttachmentLayouts(subpassDescriptions, attachmentDescriptions);
 
+    for(int i = 0 ;i<subpass_count;i++)
+    {
+        VkSubpassDescription subpassDescription{};
+        subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpassDescription.inputAttachmentCount = inputAttachments[i].size();
+        subpassDescription.pInputAttachments = inputAttachments[i].empty() ? nullptr : inputAttachments[i].data();
+    }
+    
     colorOutputCount.reserve(subpass_count);
     for (size_t i = 0; i < subpass_count; i++) {
         colorOutputCount.push_back(toUint32(colorAttachments[i].size()));
@@ -380,11 +330,21 @@ RenderPass::RenderPass(Device &device, const std::vector<Attachment> &attachment
     renderPassInfo.pSubpasses = subpassDescriptions.data();
     renderPassInfo.dependencyCount = subpassDependencies.size();
     renderPassInfo.pDependencies = subpassDependencies.data();
-    //  auto result = ieRenderPass(device.getHandle(), &renderPassInfo, nullptr, &_pass);
 
+
+    for(const auto & attachmentDesc :attachmentDescriptions)
+    {
+        attachmentFinalLayouts.push_back(getVulkanLayout(attachmentDesc.finalLayout,attachmentDesc.format));
+    }
+    
     VK_CHECK_RESULT(vkCreateRenderPass(device.getHandle(), &renderPassInfo, nullptr, &_pass))
 }
 
 const uint32_t RenderPass::getColorOutputCount(uint32_t subpass_index) const {
     return colorOutputCount[subpass_index];
+}
+
+const std::vector<VulkanLayout>& RenderPass::getAttachmentFinalLayouts() const
+{
+    return attachmentFinalLayouts;
 }

@@ -24,6 +24,7 @@ target_link_libraries(${target_name} PUBLIC
         ktx
         astc
         volk
+        ctpl
 
         glslang
         glslang-default-resource-limits
@@ -32,7 +33,6 @@ target_link_libraries(${target_name} PUBLIC
         spirv-cross-cpp
         spirv-cross-glsl
         spirv-cross-reflect
-
 
         Vulkan::Vulkan)
 

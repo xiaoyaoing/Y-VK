@@ -16,7 +16,7 @@ struct Attachment {
 
     VkImageUsageFlags usage{VK_IMAGE_USAGE_SAMPLED_BIT};
 
-    VkImageLayout initial_layout{VK_IMAGE_LAYOUT_UNDEFINED};
+    VulkanLayout initial_layout{VulkanLayout::UNDEFINED};
 
     VkAttachmentLoadOp loadOp{VK_ATTACHMENT_LOAD_OP_LOAD};
 
@@ -72,5 +72,5 @@ public:
 
     const ImageView &getImageView(uint32_t index) const;
 
-    const Image &getImage(uint32_t index) const;
+     Image &getImage(uint32_t index) const;
 };

@@ -23,20 +23,20 @@ RenderGraph::RenderGraph(Device &device) : device(device) {
 
 RenderGraphHandle RenderGraph::Builder::readTexture(RenderGraphHandle input, RenderGraphTexture::Usage usage) {
     auto texture = renderGraph.getResource(input);
-    renderGraph.edges.emplace_back(Edge{.pass = node, .texture = texture, .usage = usage, .read = true});
+    if(usage == RenderGraphTexture::Usage::NONE)
+        usage = texture->isDepthStencilTexture()?RenderGraphTexture::Usage::DEPTH_READ_ONLY:RenderGraphTexture::Usage::READ_ONLY;
+     renderGraph.edges.emplace_back(Edge{.pass = node, .texture = texture, .usage = usage, .read = true});
     return input;
 }
 
 RenderGraphHandle RenderGraph::Builder::writeTexture(RenderGraphHandle output, RenderGraphTexture::Usage usage) {
     auto texture = renderGraph.getResource(output);
+    if(usage == RenderGraphTexture::Usage::NONE)
+        usage = texture->isDepthStencilTexture()?RenderGraphTexture::Usage::DEPTH_ATTACHMENT:RenderGraphTexture::Usage::COLOR_ATTACHMENT;
     renderGraph.edges.emplace_back(Edge{.pass = node, .texture = texture, .usage = usage, .read = false});
     return output;
 }
 
-// void RenderGraph::Builder::addSubpass(const RenderGraphSubpassInfo&)
-// {
-//     static_cast<RenderPassNode*>(node)->declareRenderPass()
-// }
 
 RenderGraphHandle RenderGraph::createTexture(const char *name, const RenderGraphTexture::Descriptor &desc) {
     auto texture = new RenderGraphTexture(name, desc);

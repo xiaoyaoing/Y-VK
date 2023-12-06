@@ -6,6 +6,8 @@
 #include "Core/Vulkan.h"
 #include "Core/Buffer.h"
 #include <glm/vec2.hpp>
+
+#include "InputEvent.h"
 #include "Core/Texture.h"
 #include "Core/Descriptor/DescriptorSet.h"
 //#include "App/Application.h"
@@ -27,8 +29,9 @@ class Gui
 public:
     Gui(Device& device);
 
-    void prepare(const VkPipelineCache pipelineCache, const VkRenderPass renderPass);
 
+    bool inputEvent(const InputEvent & event);
+    
     void prepareResoucrces(Application* app);
 
     bool update();
@@ -63,6 +66,8 @@ protected:
     std::unique_ptr<DescriptorPool> descriptorPool{nullptr};
     std::unique_ptr<DescriptorLayout> descriptorLayout{nullptr};
 
+    float contentScaleFactor{1.f};
+
 
     VkSampleCountFlagBits rasterSamples = VK_SAMPLE_COUNT_1_BIT;
 
@@ -81,6 +86,6 @@ protected:
 
     ColorBlendState colorBlendState;
 
-    Texture fontTexture;
+    std::unique_ptr<Texture> fontTexture;
     uint32 subPass{0};
 };

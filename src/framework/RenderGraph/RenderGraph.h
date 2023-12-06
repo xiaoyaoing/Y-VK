@@ -41,11 +41,11 @@ public:
 
         RenderGraphHandle readTexture(RenderGraphHandle input,
                                       RenderGraphTexture::Usage usage =
-                                      RenderGraphTexture::DEFAULT_R_USAGE);
+                                      RenderGraphTexture::Usage::NONE);
 
         RenderGraphHandle writeTexture(RenderGraphHandle output,
                                        RenderGraphTexture::Usage usage =
-                                       RenderGraphTexture::DEFAULT_W_USAGE);
+                                       RenderGraphTexture::Usage::NONE);
 
         // void addSubpass(const RenderGraphSubpassInfo&);
 

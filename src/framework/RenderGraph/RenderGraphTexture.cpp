@@ -55,6 +55,13 @@ RenderGraphTexture::RenderGraphTexture(const char *name, const Descriptor &descr
                                                                                          mDescriptor({descriptor}) {
 }
 
+bool RenderGraphTexture::isDepthStencilTexture() const
+{
+    if(imported)
+        return isDepthOrStencilFormat(getHwTexture()->getFormat());
+    return isDepthOrStencilFormat(ImageUtil::getFormat(mDescriptor.useage));
+}
+
 void RenderGraphTexture::setHwTexture(SgImage *hwTexture) {
     this->mHwTexture = hwTexture;
 }

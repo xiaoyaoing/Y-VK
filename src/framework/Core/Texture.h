@@ -9,15 +9,22 @@
 #include "Images/Sampler.h"
 
 struct Texture {
-    std::unique_ptr<SgImage> image;
-    std::unique_ptr<Sampler> sampler;
+    std::unique_ptr<SgImage> image{nullptr};
+    std::unique_ptr<Sampler> sampler{nullptr};
     std::string name;
 
     const Sampler &getSampler() const;
 
     const SgImage &getImage() const;
 
-    static Texture loadTexture(Device &device, const std::string &path);
-
+    static std::unique_ptr<Texture> loadTexture(Device &device, const std::string &path);
     static Texture loadTextureArray(Device &device, const std::string &path);
+
+    Texture & operator = (Texture&&);
+    Texture(Texture & texture);
+    Texture() =default;
+
+    
 };
+
+

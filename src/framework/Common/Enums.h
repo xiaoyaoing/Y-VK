@@ -17,6 +17,8 @@ enum class VulkanLayout : uint8_t
     TRANSFER_DST,
     // For using a depth texture as an attachment.
     DEPTH_ATTACHMENT,
+
+    DEPTH_READ_ONLY,
     // For using a depth texture both as an attachment and as a sampler.
     DEPTH_SAMPLER,
     // For swapchain images that will be presented.
@@ -29,7 +31,7 @@ enum class VulkanLayout : uint8_t
 };
 
 
-enum class TextureUsage : uint8_t
+enum class TextureUsage : uint16_t
 {
     NONE = 0x0,
     COLOR_ATTACHMENT = 0x1,
@@ -43,6 +45,10 @@ enum class TextureUsage : uint8_t
     SAMPLEABLE = 0x10,
     //!< Texture can be sampled (default)
     SUBPASS_INPUT = 0x20,
+    
+    READ_ONLY = 0x40,
+    
+    DEPTH_READ_ONLY = 0x80,
     //!< Texture can be used as a subpass input
     DEFAULT = UPLOADABLE | SAMPLEABLE //!< Default texture usage
 };

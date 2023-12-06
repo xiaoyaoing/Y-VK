@@ -142,7 +142,7 @@ uint32_t Image::getArrayLayerCount() const {
 }
 
 void Image::transitionLayout(CommandBuffer &commandBuffer, VulkanLayout newLayout,
-                             VkImageSubresourceRange subresourceRange) {
+                             const VkImageSubresourceRange & subresourceRange ) {
     auto oldLayout = getLayout(subresourceRange);
     //oldLayout = VulkanLayout::UNDEFINED;
     auto [srcAccessMask, dstAccessMask, srcStage, dstStage, vkOldLayout, vkNewLayout]
@@ -163,6 +163,11 @@ void Image::transitionLayout(CommandBuffer &commandBuffer, VulkanLayout newLayou
     vkCmdPipelineBarrier(commandBuffer.getHandle(), srcStage, dstStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     
    layouts.insert_or_assign(subresourceRange.baseArrayLayer << 16 | subresourceRange.baseMipLevel, newLayout);
+}
+
+void Image::setLayout(VulkanLayout newLayout, const VkImageSubresourceRange & subresourceRange )
+{
+    layouts.insert_or_assign(subresourceRange.baseArrayLayer << 16 | subresourceRange.baseMipLevel, newLayout);
 }
 
 VulkanLayout Image::getLayout(const VkImageSubresourceRange &subresourceRange) {

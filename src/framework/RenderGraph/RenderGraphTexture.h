@@ -33,23 +33,23 @@ public:
 
     struct Descriptor
     {
-        //Device &device;
         VkExtent2D extent{};
         Usage useage;
-        // VkFormat format = VK_FORMAT_UNDEFINED;
-        // VkImageUsageFlags usageFlags;
-        // VmaMemoryUsage memoryUsage = VMA_MEMORY_USAGE_GPU_ONLY;
     };
 
-    static constexpr Usage DEFAULT_R_USAGE = Usage::COLOR_ATTACHMENT;
+    static constexpr Usage DEFAULT_R_USAGE = Usage::READ_ONLY;
+    static constexpr Usage DEFAULT_DEPTH_R_USAGE = Usage::DEPTH_READ_ONLY;
+    
     static constexpr Usage DEFAULT_W_USAGE = Usage::COLOR_ATTACHMENT;
+    static constexpr Usage DEFAULT_DEPTH_W_USAGE = Usage::DEPTH_ATTACHMENT;
 
     RenderGraphTexture() = default;
 
     RenderGraphTexture(const char* name, SgImage* hwTexture);
     RenderGraphTexture(const char* name, const Descriptor& descriptor);
-
-
+    
+    bool isDepthStencilTexture() const;
+    
     void setHwTexture(SgImage* hwTexture);
 
     SgImage* getHwTexture() const;

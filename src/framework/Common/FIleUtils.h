@@ -19,5 +19,7 @@ namespace FileUtils {
     std::string getShaderPath(const std::string &path);
 
     std::vector<uint8_t> readShaderBinary(const std::string filename);
+
+    std::string getFileTimeStr(const std::string &path,const std::string & format = "%Y-%m-%d %H:%M:%S");
 }
 

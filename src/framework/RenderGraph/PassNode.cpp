@@ -25,8 +25,7 @@ void RenderPassNode::RenderPassData::devirtualize(RenderGraph &renderGraph, cons
                 .format = hwTexture->getFormat(),
                 .samples = hwTexture->getVkImage().getSampleCount(),
                 .usage = hwTexture->getVkImage().getUseFlags(),
-                .initial_layout = ImageUtil::getVkImageLayout(
-                        hwTexture->getVkImage().getLayout(hwTexture->getVkImageView().getSubResourceRange())),
+                .initial_layout = hwTexture->getVkImage().getLayout(hwTexture->getVkImageView().getSubResourceRange()),
                 //todo fix this
                 .loadOp = desc.textures.size() == 1
                           ? VK_ATTACHMENT_LOAD_OP_LOAD
@@ -69,7 +68,8 @@ void RenderPassNode::execute(RenderGraph &renderGraph, CommandBuffer &commandBuf
 
         std::ranges::transform(renderGraphSubpassInfos.begin(), renderGraphSubpassInfos.end(),
                                std::back_inserter(subpassInfos), [&](const auto &renderGraphSubassInfo) {
-                    SubpassInfo subpassInfo;
+                    SubpassInfo subpassInfo{};
+                    subpassInfo.disableDepthStencilAttachment = renderGraphSubassInfo.disableDepthTest;
                     subpassInfo.inputAttachments.resize(renderGraphSubassInfo.inputAttachments.size());
                     subpassInfo.outputAttachments.resize(renderGraphSubassInfo.outputAttachments.size());
                     std::ranges::transform(renderGraphSubassInfo.inputAttachments.begin(),
@@ -96,6 +96,8 @@ void RenderPassNode::execute(RenderGraph &renderGraph, CommandBuffer &commandBuf
             .renderTarget = renderTarget
     };
     mRenderPass->execute(context);
+
+    RenderContext::g_context->endRenderPass(commandBuffer, renderTarget);
 }
 
 void RenderPassNode::declareRenderTarget(const char *name, const RenderGraphPassDescriptor &descriptor) {

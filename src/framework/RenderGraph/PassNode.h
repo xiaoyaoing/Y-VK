@@ -15,18 +15,21 @@ struct RenderGraphSubpassInfo {
     std::vector<RenderGraphHandle> inputAttachments{};
 
     std::vector<RenderGraphHandle> outputAttachments{};
+
+    bool disableDepthTest{false};
 };
 
 struct RenderGraphPassDescriptor {
     std::vector<RenderGraphHandle> textures;
     std::vector<RenderGraphSubpassInfo> subpasses;
-
+    
     size_t getSubpassCount() const {
         return subpasses.size();
     }
 
-    void addSubpass(const RenderGraphSubpassInfo &subpassInfo) {
+    RenderGraphPassDescriptor & addSubpass(const RenderGraphSubpassInfo &subpassInfo) {
         subpasses.push_back(subpassInfo);
+        return *this;
     }
 };
 

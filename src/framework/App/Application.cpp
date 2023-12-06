@@ -14,7 +14,7 @@
 
 
 void Application::initVk() {
-    VK_CHECK_RESULT(volkInitialize(), "Failed to initialize volk");
+    VK_CHECK_RESULT(volkInitialize());
 
     getRequiredInstanceExtensions();
     _instance = std::make_unique<Instance>(std::string("vulkanApp"), instanceExtensions, validationLayers);
@@ -165,9 +165,15 @@ Application::Application(const char *name,  uint32_t width, uint32_t height) : w
 }
 
 
-void Application::inputEvent(const InputEvent &inputEvent) {
+void Application::inputEvent(const InputEvent &inputEvent)
+{
+    if(gui)
+    {
+        if(gui->inputEvent(inputEvent))
+            return;
+    }
+    
     auto source = inputEvent.getSource();
-
     if (source == EventSource::KeyBoard) {
         const auto &keyEvent = static_cast<const KeyInputEvent &>(inputEvent);
         auto action = keyEvent.getAction();
@@ -307,6 +313,17 @@ void Application::mainloop() {
         glfwPollEvents();
         update();
     }
+}
+
+Application::~Application()
+{
+    scene.reset();
+    camera.reset();
+    renderContext.reset();
+    gui.reset();
+    device.reset();
+    _instance.reset();
+    window.reset();
 }
 
 void Application::handleMouseMove(float x, float y) {

@@ -40,25 +40,25 @@ set_target_properties(imgui PROPERTIES FOLDER "EXT" POSITION_INDEPENDENT_CODE ON
 # Vulkan
 add_subdirectory(glslang)
 
-if (NOT TARGET glslang-default-resource-limits)
-    add_library(glslang-default-resource-limits
-            glslang/StandAlone/ResourceLimits.cpp)
+if(NOT TARGET glslang-default-resource-limits)
+        add_library(glslang-default-resource-limits
+                glslang/StandAlone/ResourceLimits.cpp)
 
-    set_target_properties(glslang-default-resource-limits PROPERTIES FOLDER "EXT" POSITION_INDEPENDENT_CODE ON)
+        set_target_properties(glslang-default-resource-limits PROPERTIES FOLDER "EXT" POSITION_INDEPENDENT_CODE ON)
 
-    target_include_directories(glslang-default-resource-limits
-            PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/glslang)
-endif ()
+        target_include_directories(glslang-default-resource-limits
+                PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/glslang)
+endif()
 
-if (NOT MSVC)
-    target_compile_options(glslang PRIVATE
-            "-Wno-logical-op-parentheses"
-            "-Wno-unused-parameter")
+if(NOT MSVC)
+        target_compile_options(glslang PRIVATE
+                "-Wno-logical-op-parentheses"
+                "-Wno-unused-parameter")
 
-    target_compile_options(SPIRV PRIVATE
-            "-Wno-logical-op-parentheses"
-            "-Wno-unused-parameter")
-endif ()
+        target_compile_options(SPIRV PRIVATE
+                "-Wno-logical-op-parentheses"
+                "-Wno-unused-parameter")
+endif()
 
 set_target_properties(glslang PROPERTIES FOLDER "EXT" POSITION_INDEPENDENT_CODE ON)
 set_target_properties(OGLCompiler PROPERTIES FOLDER "EXT" POSITION_INDEPENDENT_CODE ON)
@@ -126,12 +126,17 @@ set(ASTC_SOURCES
         ${ASTC_SOURCE_DIR}/astc_weight_quant_xfer_tables.cpp
         ${ASTC_SOURCE_DIR}/astc_compute_variance.cpp
         ${ASTC_SOURCE_DIR}/astc_ktx_dds.cpp
-        )
+)
 
 add_library(astc STATIC ${ASTC_SOURCES})
 target_include_directories(astc PUBLIC ${ASTC_INCLUDE_DIR})
 target_compile_definitions(astc PRIVATE -DNO_STB_IMAGE_IMPLEMENTATION)
 set_target_properties(astc PROPERTIES FOLDER "ext" POSITION_INDEPENDENT_CODE ON)
-#target_link_libraries(astc PUBLIC stb)
+
+# target_link_libraries(astc PUBLIC stb)
+add_library(ctpl INTERFACE)
+set(CTPL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/CTPL)
+target_sources(ctpl INTERFACE ${CTPL_DIR}/ctpl_stl.h)
+target_include_directories(ctpl INTERFACE ${CTPL_DIR})
 
 add_subdirectory(volk)

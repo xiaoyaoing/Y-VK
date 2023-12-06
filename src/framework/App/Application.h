@@ -46,7 +46,6 @@ class Application {
     virtual void initGUI();
 
 
-    bool frameBufferResized{};
 
 public:
 
@@ -62,6 +61,8 @@ public:
     virtual void inputEvent(const InputEvent &inputEvent);
 
     void mainloop();
+
+    virtual  ~Application();
 
 protected:
     void createRenderContext();
@@ -100,8 +101,6 @@ protected:
 
     std::unique_ptr<Instance> _instance;
 
-    std::vector<VkFramebuffer> _frameBuffers;
-    // 指定怎么处理renderPass里面的attachment
 
     std::unordered_map<const char *, bool> deviceExtensions;
     std::unordered_map<const char *, bool> instanceExtensions;

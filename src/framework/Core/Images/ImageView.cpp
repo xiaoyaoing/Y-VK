@@ -84,7 +84,8 @@ const VkImageSubresourceRange& ImageView::getSubResourceRange() const
 
 ImageView::~ImageView()
 {
-    vkDestroyImageView(_device.getHandle(), _view, nullptr);
+    if(_view!=VK_NULL_HANDLE)
+        vkDestroyImageView(_device.getHandle(), _view, nullptr);
 }
 
 ImageView::ImageView(ImageView&& other) : image(other.image), _device(other._device), _format(other._format),

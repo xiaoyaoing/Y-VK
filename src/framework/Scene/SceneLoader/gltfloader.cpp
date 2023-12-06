@@ -7,8 +7,12 @@
 
 
 #include "gltfloader.h"
+
 #include "Core/Descriptor/DescriptorSet.h"
 #include "Core/Buffer.h"
+
+#include <ctpl_stl.h>
+
 
 inline std::vector<uint8_t> convertUnderlyingDataStride(const std::vector<uint8_t>& src_data, uint32_t src_stride,
                                                         uint32_t dst_stride)
@@ -279,7 +283,7 @@ struct GLTFLoadingImpl
     std::vector<Node*> linearNodes;
 
 
-    std::vector<Texture> textures;
+    std::vector<std::unique_ptr<Texture>> textures;
     std::vector<Light> lights;
     std::vector<Material> materials;
 
@@ -428,13 +432,25 @@ GLTFLoadingImpl::~GLTFLoadingImpl()
         delete node;
 }
 
+
+
 void GLTFLoadingImpl::loadImages(const std::filesystem::path& modelPath, const tinygltf::Model& gltfModel)
 {
     auto parentDir = modelPath.parent_path();
+
+    auto thread_count = std::thread::hardware_concurrency();
+    
+    thread_count      = thread_count == 0 ? 1 : thread_count;
+    ctpl::thread_pool thread_pool(thread_count);
+
+    
     for (const auto& image : gltfModel.images)
     {
-        Texture texture = Texture::loadTexture(device, parentDir.string() + "/" + image.uri);
-        textures.push_back(std::move(texture));
+            auto fut = thread_pool.push(
+                [this, parentDir,image](size_t) {
+                    return Texture::loadTexture(device, parentDir.string() + "/" + image.uri);;
+                });
+            textures.emplace_back(fut.get());
     }
 }
 
@@ -644,7 +660,7 @@ const Texture* GLTFLoadingImpl::getTexture(uint32_t index) const
 {
     if (index < textures.size())
     {
-        return &textures[index];
+        return textures[index].get();
     }
     return nullptr;
 }

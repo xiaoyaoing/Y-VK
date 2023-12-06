@@ -39,7 +39,7 @@ public:
 
     void IteratePrimitives(PrimitiveCallBack primitiveCallBack) const;
 
-    Scene(std::vector<std::unique_ptr<Primitive>> &&primitives, std::vector<Texture> &&textures,
+    Scene(std::vector<std::unique_ptr<Primitive>> &&primitives, std::vector<std::unique_ptr<Texture>> &&textures,
           std::vector<Material> materials, std::vector<Light> lights);
 
     void addLight(const Light &light);
@@ -56,5 +56,5 @@ private:
     std::vector<Light> lights;
 
     std::vector<std::unique_ptr<Primitive>> primitives;
-    std::vector<Texture> textures;
+    std::vector<std::unique_ptr<Texture>> textures;
 };

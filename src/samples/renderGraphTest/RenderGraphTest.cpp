@@ -13,8 +13,6 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
 
     //ON PASS TWO SUBPASS
     struct OnePassTwoSubPassDeferedShadingData {
-        RenderGraphHandle position;
-
 
         RenderGraphHandle albedo;
 
@@ -50,20 +48,13 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
                                       TextureUsage::DEPTH_ATTACHMENT
 
                     });
-
-                    data.position = rg.createTexture("position", {
-                            .extent = renderContext->getSwapChainExtent(),
-                            .useage = TextureUsage::SUBPASS_INPUT |
-                                      TextureUsage::COLOR_ATTACHMENT
-                    });
-
+                    
                     data.output = rg.importTexture("output", &renderContext->getCurHwtexture());
 
 
                     blackBoard.put("albedo", data.albedo);
                     blackBoard.put("normal", data.normal);
                     blackBoard.put("depth", data.depth);
-                    blackBoard.put("position", data.position);
                     blackBoard.put("output", data.output);
 
                     RenderGraphPassDescriptor desc{
@@ -72,8 +63,7 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
                                     data.normal
                             }
                     };
-                    desc.addSubpass({.outputAttachments = {data.albedo, data.normal, data.depth}});
-                    desc.addSubpass({
+                    desc.addSubpass({.outputAttachments = {data.albedo, data.normal, data.depth}}).addSubpass({
                                             .inputAttachments = {
                                                     data.albedo, data.depth,
                                                     data.normal
@@ -84,7 +74,7 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
                     builder.declare("Color Pass Target", desc);
 
                     data.output = builder.writeTexture(data.output, TextureUsage::COLOR_ATTACHMENT);
-                    data.position = builder.writeTexture(data.position, TextureUsage::COLOR_ATTACHMENT);
+                    data.depth = builder.writeTexture(data.depth, TextureUsage::COLOR_ATTACHMENT);
                     data.normal = builder.writeTexture(
                             data.normal, TextureUsage::COLOR_ATTACHMENT);
                     data.albedo = builder.writeTexture(
@@ -92,8 +82,8 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
                     data.depth = builder.writeTexture(data.depth, TextureUsage::DEPTH_ATTACHMENT);
 
                     data.output = builder.readTexture(data.output, TextureUsage::COLOR_ATTACHMENT);
-                    data.position = builder.readTexture(
-                            data.position, TextureUsage::COLOR_ATTACHMENT);
+                    data.depth = builder.readTexture(
+                            data.depth, TextureUsage::COLOR_ATTACHMENT);
                     data.normal = builder.readTexture(
                             data.normal, TextureUsage::COLOR_ATTACHMENT);
                     data.albedo = builder.readTexture(
@@ -101,10 +91,8 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
                     data.depth = builder.readTexture(data.depth, TextureUsage::DEPTH_ATTACHMENT);
                 },
                 [&](OnePassTwoSubPassDeferedShadingData &data, const RenderPassContext &context) {
-                    renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.gBuffer);
-                    auto state = renderContext->getPipelineState().getDepthStencilState();
-                    state.depthCompareOp = VK_COMPARE_OP_GREATER;
-                    renderContext->getPipelineState().setDepthStencilState(state);
+                    renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.gBuffer).setDepthStencilState({.depthCompareOp =  VK_COMPARE_OP_GREATER});
+                    
 
 
                     scene->IteratePrimitives([&](const Primitive &primitive) {
@@ -133,17 +121,7 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
                     renderContext->nextSubpass(commandBuffer);
                     renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.lighting);
                     renderContext->getPipelineState().setDepthStencilState({.depthTestEnable = false});
-
-                    // struct Poses
-                    // {
-                    //     glm::vec3 cameraPos, lightPos;
-                    // };
-
-                    // auto buffer = renderContext->allocateBuffer(
-                    //     sizeof(Poses), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-                    // const Poses poses{.cameraPos = camera->position, .lightPos = {0.0f, 2.5f, 0.0f}};
-                    // buffer.buffer->uploadData(&poses, buffer.size, buffer.offset);
-                    // renderContext->bindBuffer(0, *buffer.buffer, buffer.offset, buffer.size, 3, 0);
+                        
                     struct {
                         glm::mat4 invView;
                         glm::vec2 invRes;
@@ -157,10 +135,7 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
                     viewBuffer.buffer->uploadData(&fragUniform, viewBuffer.size, viewBuffer.offset);
                     renderContext->bindBuffer(0, *viewBuffer.buffer, viewBuffer.offset, viewBuffer.size, 3, 0);
 
-
-                    // blackBoard.getImage("albedo").transitionLayout(commandBuffer,VulkanLayout::READ_ONLY);    
-                    // blackBoard.getImage("depth").transitionLayout(commandBuffer,VulkanLayout::READ_ONLY);    
-                    // blackBoard.getImage("normal").transitionLayout(commandBuffer,VulkanLayout::READ_ONLY);    
+                        
                     renderContext->bindInput(0, blackBoard.getImageView("albedo"), 0, 0);
                     renderContext->bindInput(0, blackBoard.getImageView("depth"), 1, 0);
                     renderContext->bindInput(0, blackBoard.getImageView("normal"), 2, 0);
@@ -174,9 +149,7 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
 
                     renderContext->flushAndDraw(commandBuffer, 3, 1, 0, 0);
 
-                    //  gui->draw(commandBuffer);
 
-                    renderContext->endRenderPass(commandBuffer);
                 });
     }
 
@@ -184,7 +157,6 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
         //Two RenderPass
     else {
         struct GBufferData {
-            RenderGraphHandle position;
             RenderGraphHandle albedo;
             RenderGraphHandle normal;
             RenderGraphHandle depth;
@@ -205,13 +177,7 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
                                                                         TextureUsage::COLOR_ATTACHMENT
 
                                                       });
-
-                    data.position = rg.createTexture("position", {
-                            .extent = renderContext->getSwapChainExtent(),
-                            .useage = TextureUsage::SUBPASS_INPUT |
-                                      TextureUsage::COLOR_ATTACHMENT
-                    });
-
+                    
                     data.depth = rg.createTexture("depth", {
                             .extent = renderContext->getSwapChainExtent(),
                             .useage = TextureUsage::SUBPASS_INPUT |
@@ -219,53 +185,44 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
 
                     });
 
-                    RenderGraphPassDescriptor desc{.textures = {data.depth, data.albedo, data.position, data.normal}};
+                    RenderGraphPassDescriptor desc{.textures = {data.depth, data.albedo, data.depth, data.normal}};
                     builder.declare("GBuffer", desc);
 
 
                     data.normal = builder.writeTexture(data.normal, TextureUsage::COLOR_ATTACHMENT);
                     data.albedo = builder.writeTexture(data.albedo, TextureUsage::COLOR_ATTACHMENT);
-                    data.position = builder.writeTexture(data.position, TextureUsage::COLOR_ATTACHMENT);
+                    data.depth = builder.writeTexture(data.depth, TextureUsage::COLOR_ATTACHMENT);
                     data.depth = builder.writeTexture(data.depth, TextureUsage::DEPTH_ATTACHMENT);
                     data.depth = builder.readTexture(data.depth, TextureUsage::DEPTH_ATTACHMENT);
 
 
                     blackBoard.put("albedo", data.albedo);
                     blackBoard.put("normal", data.normal);
-                    blackBoard.put("position", data.position);
+                    blackBoard.put("depth", data.depth);
                 },
                 [&](GBufferData &data, const RenderPassContext &context) {
                     //   renderContext->beginRenderPass(commandBuffer, context.renderTarget, {});
-                    renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.gBuffer);
+                    renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.gBuffer).setDepthStencilState({.depthCompareOp =  VK_COMPARE_OP_GREATER});
                     scene->IteratePrimitives([&](const Primitive &primitive) {
-                                                 const auto allocation = renderContext->allocateBuffer(
-                                                         sizeof(GlobalUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+                            const auto allocation = renderContext->allocateBuffer(
+                                    sizeof(GlobalUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
-                                                 //todo: use camera data here
-                                                 GlobalUniform uniform{
-                                                         .model = primitive.matrix, .view = camera->matrices.view,
-                                                         .proj = camera->matrices.perspective
-                                                 };
-                                                 allocation.buffer->uploadData(
-                                                         &uniform, allocation.size, allocation.offset);
+                            //todo: use camera data here
+                            GlobalUniform uniform{
+                                    .model = primitive.matrix, .view = camera->matrices.view,
+                                    .proj = camera->matrices.perspective
+                            };
+                            allocation.buffer->uploadData(&uniform, allocation.size, allocation.offset);
 
-                                                 renderContext->bindBuffer(
-                                                         0, *allocation.buffer, allocation.offset, allocation.size, 0,
-                                                         0);
-
-                                                 renderContext->bindPrimitive(primitive);
-
-
-                                                 renderContext->bindMaterial(primitive.material);
-                                                 renderContext->flushAndDrawIndexed(
-                                                         commandBuffer, primitive.indexCount, 1, 0, 0, 0);
+                            renderContext->bindBuffer(0, *allocation.buffer, allocation.offset, allocation.size, 0,0)
+                                        .bindPrimitive(primitive)
+                                        .flushAndDrawIndexed(commandBuffer, primitive.indexCount, 1, 0, 0, 0);
                                              }
                     );
-                    renderContext->endRenderPass(commandBuffer);
                 });
 
         struct LightingData {
-            RenderGraphHandle position;
+            RenderGraphHandle depth;
             RenderGraphHandle albedo;
             RenderGraphHandle normal;
             RenderGraphHandle output;
@@ -273,7 +230,7 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
 
         rg.addPass<LightingData>(
                 "LightingPass", [&](RenderGraph::Builder &builder, LightingData &data) {
-                    data.position = blackBoard["position"];
+                    data.depth = blackBoard["depth"];
                     data.normal = blackBoard["normal"];
                     data.albedo = blackBoard["albedo"];
                     data.output = rg.importTexture("output", &renderContext->getCurHwtexture());
@@ -283,14 +240,14 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
                     data.output = builder.writeTexture(data.output, TextureUsage::COLOR_ATTACHMENT);
                     data.output = builder.readTexture(data.output, TextureUsage::COLOR_ATTACHMENT);
 
-                    data.normal = builder.readTexture(data.normal, {});
-                    data.albedo = builder.readTexture(data.albedo, {});
-                    data.position = builder.readTexture(data.position, {});
+                    data.normal = builder.readTexture(data.normal);
+                    data.albedo = builder.readTexture(data.albedo);
+                    data.depth = builder.readTexture(data.depth);
 
-                    RenderGraphPassDescriptor desc{.textures = {data.output, data.albedo, data.position, data.normal}};
+                    RenderGraphPassDescriptor desc{.textures = {data.output, data.albedo, data.depth, data.normal}};
                     desc.addSubpass({
                                             .inputAttachments = {
-                                                    data.albedo, data.position,
+                                                    data.albedo, data.depth,
                                                     data.normal
                                             },
                                             .outputAttachments = {data.output}
@@ -299,31 +256,27 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
                     // builder.addSubPass();
                 },
                 [&](LightingData &data, const RenderPassContext &context) {
-                    renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.lighting);
+                    renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.lighting).setRasterizationState({.cullMode = VK_CULL_MODE_NONE}).setDepthStencilState({.depthWriteEnable =  false});
+                    struct {
+                        glm::mat4 invView{};
+                        glm::vec2 invRes{};
+                    } fragUniform;
+                    
+                    fragUniform.invRes = glm::vec2(1.0f / renderContext->getSwapChainExtent().width,
+                                                   1.0f / renderContext->getSwapChainExtent().height);
+                    fragUniform.invView = glm::inverse(camera->matrices.perspective * camera->matrices.view);
 
-                    struct Poses {
-                        glm::vec3 cameraPos, lightPos;
-                    };
+                    auto viewBuffer = renderContext->
+                            allocateBuffer(sizeof(fragUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+                    viewBuffer.buffer->uploadData(&fragUniform, viewBuffer.size, viewBuffer.offset);
 
-                    auto buffer = renderContext->allocateBuffer(
-                            sizeof(Poses), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-                    const Poses poses{.cameraPos = camera->position, .lightPos = {0.0f, 2.5f, 0.0f}};
-                    buffer.buffer->uploadData(&poses, buffer.size, buffer.offset);
-                    renderContext->bindBuffer(0, *buffer.buffer, buffer.offset, buffer.size, 3, 0);
-
-
-                    renderContext->bindInput(0, blackBoard.getImageView("albedo"), 0, 0);
-                    renderContext->bindInput(0, blackBoard.getImageView("position"), 1, 0);
-                    renderContext->bindInput(0, blackBoard.getImageView("normal"), 2, 0);
-
-                    renderContext->bindLight<DeferredLights>(scene->getLights(), 0, 4);
-
-
-                    renderContext->getPipelineState().setRasterizationState({
-                                                                                    .cullMode = VK_CULL_MODE_NONE
-                                                                            });
-                    renderContext->flushAndDraw(commandBuffer, 3, 1, 0, 0);
-                    renderContext->endRenderPass(commandBuffer);
+                    renderContext->bindBuffer(0, *viewBuffer.buffer, viewBuffer.offset, viewBuffer.size, 3, 0)
+                                .bindInput(0, blackBoard.getImageView("albedo"), 0, 0)
+                                .bindInput(0, blackBoard.getImageView("depth"), 1, 0)
+                                .bindInput(0,blackBoard.getImageView("normal"),2,0)
+                                .bindLight<DeferredLights>(scene->getLights(), 0, 4)
+                                .flushAndDraw(commandBuffer,3,1,0,0);
+                    
                 });
     }
 
@@ -332,7 +285,7 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
 
 
     rg.execute(commandBuffer);
-    renderContext->submit(commandBuffer, fence);
+    renderContext->submitAndPresent(commandBuffer, fence);
 }
 
 
@@ -391,7 +344,7 @@ void Example::prepare() {
 
 Example::Example() : Application("Drawing Triangle", 1024, 1024) {
         addDeviceExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-
+        useSubpass = false;
 }
 
 
@@ -399,6 +352,8 @@ void Example::onUpdateGUI() {
     gui->text("Hello");
     gui->text("Hello IMGUI");
     gui->text("Hello imgui");
+    gui->checkBox("Use subpasses", &useSubpass);
+    // ImGui::RadioButton("use subpass", &useSubpass, 1);
 }
 
 int main() {

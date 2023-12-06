@@ -94,7 +94,7 @@ const ImageView &RenderTarget::getImageView(uint32_t index) const {
     return mHwTextures[index]->getVkImageView();
 }
 
-const Image &RenderTarget::getImage(uint32_t index) const {
+ Image &RenderTarget::getImage(uint32_t index) const {
     return mHwTextures[index]->getVkImage();
 }
 

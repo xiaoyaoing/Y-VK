@@ -20,20 +20,20 @@ const Sampler& Texture::getSampler() const
 }
 
 
-Texture Texture::loadTexture(Device& device, const std::string& path)
+std::unique_ptr<Texture>  Texture::loadTexture(Device& device, const std::string& path)
 {
-    Texture texture{};
-    texture.image = std::make_unique<SgImage>(device, path, VK_IMAGE_VIEW_TYPE_2D);
-    //  texture.image->createVkImage(device);
+    std::unique_ptr<Texture> texture = std::make_unique<Texture>();
+    texture->image = std::make_unique<SgImage>(device, path, VK_IMAGE_VIEW_TYPE_2D);
+    //  texture->image->createVkImage(device);
 
-    auto imageBuffer = Buffer(device, texture.image->getBufferSize(),
+    auto imageBuffer = Buffer(device, texture->image->getBufferSize(),
                               VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                               VMA_MEMORY_USAGE_CPU_ONLY);
-    imageBuffer.uploadData(static_cast<void*>(texture.image->getData().data()), texture.image->getBufferSize());
+    imageBuffer.uploadData(static_cast<void*>(texture->image->getData().data()), texture->image->getBufferSize());
 
     std::vector<VkBufferImageCopy> imageCopyRegions;
 
-    auto& mipmaps = texture.image->getMipMaps();
+    auto& mipmaps = texture->image->getMipMaps();
     for (int i = 0; i < mipmaps.size(); i++)
     {
         VkBufferImageCopy imageCopy{};
@@ -45,8 +45,8 @@ Texture Texture::loadTexture(Device& device, const std::string& path)
         imageCopy.imageSubresource.baseArrayLayer = 0;
         imageCopy.imageSubresource.layerCount = 1;
         imageCopy.imageOffset = {0, 0, 0};
-        imageCopy.imageExtent.width = texture.image->getExtent().width >> i;
-        imageCopy.imageExtent.height = texture.image->getExtent().height >> i;
+        imageCopy.imageExtent.width = texture->image->getExtent().width >> i;
+        imageCopy.imageExtent.height = texture->image->getExtent().height >> i;
         imageCopy.imageExtent.depth = 1;
         imageCopyRegions.push_back(imageCopy);
     }
@@ -60,11 +60,11 @@ Texture Texture::loadTexture(Device& device, const std::string& path)
     subresourceRange.layerCount = 1;
 
 
-    texture.getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::TRANSFER_DST, subresourceRange);
+    texture->getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::TRANSFER_DST, subresourceRange);
 
-    commandBuffer.copyBufferToImage(imageBuffer, texture.image->getVkImage(), imageCopyRegions);
+    commandBuffer.copyBufferToImage(imageBuffer, texture->image->getVkImage(), imageCopyRegions);
 
-    texture.getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY, subresourceRange);
+    texture->getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY, subresourceRange);
 
 
     commandBuffer.endRecord();
@@ -78,9 +78,14 @@ Texture Texture::loadTexture(Device& device, const std::string& path)
 
     submitInfo.pCommandBuffers = &vkCmdBuffer;
     queue.submit({submitInfo}, VK_NULL_HANDLE);
-    texture.sampler = std::make_unique<Sampler>(device, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, 1);
+    texture->sampler = std::make_unique<Sampler>(device, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, 1);
     queue.wait();
     return texture;
+}
+
+Texture::Texture( Texture & texture)
+{
+    int k =1;
 }
 
 Texture Texture::loadTextureArray(Device& device, const std::string& path)
@@ -150,4 +155,12 @@ Texture Texture::loadTextureArray(Device& device, const std::string& path)
                                                 mipmaps.size());
     queue.wait();
     return texture;
+}
+
+Texture& Texture::operator=( Texture&& rhs)
+{
+    this->image = std::move(rhs.image);
+    this->name = rhs.name;
+    this->sampler = std::move(rhs.sampler);
+    return *this;
 }
