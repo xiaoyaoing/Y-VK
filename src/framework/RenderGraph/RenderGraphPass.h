@@ -35,7 +35,7 @@ public:
     }
 
     void execute(RenderPassContext &context) override {
-        mExecute(data, context);
+        mExecute(context);
     }
 
     Data &getData() { return data; }

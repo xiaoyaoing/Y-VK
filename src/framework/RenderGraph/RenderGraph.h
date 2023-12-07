@@ -98,13 +98,64 @@ public:
 
     Blackboard &getBlackBoard() const;
 
+    using GraphicSetup = std::function<void(Builder & builder,GraphicPassSettings &)>;
+    using ComputeSetUp = std::function<void(Builder & builder,ComputePassSettings &)>;
+    using RayTracingSetup = std::function<void(Builder & builder,RaytracingPassSettings &)>;
+
+    using GraphicsExecute = std::function<void(RenderPassContext & context)>;
+    using ComputeExecute = std::function<void(RenderPassContext & context)>;
+    using RaytracingsExecute = std::function<void(RenderPassContext & context)>;
+
+    template<typename PassSettings>
+    using Setup = std::function<void(Builder & builder,PassSettings &)>;
+    
+    void addGraphicPass(const char * name,const GraphicSetup &  setup,GraphicsExecute && execute)
+    {
+        addPass<GraphicPassSettings>(name,setup,std::forward<GraphicsExecute>(execute));
+    }
+    
+    void addComputePass(const char * name,ComputeSetUp & setup,ComputeExecute && execute)
+    {
+        addPass<ComputePassSettings>(name,setup,std::forward<ComputeExecute>(execute));
+
+    }
+
+    void addRayTracingPass(const char * name,RayTracingSetup & setup,RaytracingsExecute && execute)
+    {
+        addPass<RaytracingPassSettings>(name,setup,std::forward<RaytracingsExecute>(execute));
+    }
+    
+
     
     template<typename Data, typename Setup, typename Execute>
-    void addPass(const char *name, Setup setup, Execute &&execute) {
+    void addPass(const char *name, const Setup & setup, Execute &&execute) {
         auto pass = new RenderGraphPass<Data, Execute>(std::forward<Execute>(execute));
-        Builder builder(addPassImpl(name, pass), *this);
-        setup(builder, pass->getData());
+        PassNode * node;
+        switch (pass->getData().type)
+        {
+            case(RENDER_GRAPH_PASS_TYPE::GRAPHICS):
+            {
+                 node = new RenderPassNode(*this, name, pass);
+                    break;
+            }
+            case(RENDER_GRAPH_PASS_TYPE::COMPUTE):
+            {
+                node = new ComputePassNode(*this, name, pass);
+                break;
+            }
+            case(RENDER_GRAPH_PASS_TYPE::RAYTRACING):
+            {
+                node = new RayTracingPassNode(*this, name, pass);
+                break;
+            }
+        }
+        
+        mPassNodes.emplace_back(node);
+        Builder builder(node, *this);
+        setup(builder,pass->getData());
     }
+
+    
 
     // void addPresentPass(RenderGraphHandle textureId);
     

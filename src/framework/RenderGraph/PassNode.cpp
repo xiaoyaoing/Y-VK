@@ -134,3 +134,22 @@ void PassNode::addResourceUsage(ResourceNode* texture, uint8_t usage)
 
 void PresentPassNode::execute(RenderGraph &renderGraph, CommandBuffer &commandBuffer) {
 }
+
+void ComputePassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer)
+{
+}
+
+void RayTracingPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer)
+{
+}
+
+
+ComputePassNode::ComputePassNode(RenderGraph& renderGraph, const char* name, RenderGraphPassBase* base)
+{
+}
+
+RayTracingPassNode::RayTracingPassNode(RenderGraph& renderGraph, const char* name, RenderGraphPassBase* base)
+{
+}
+
+

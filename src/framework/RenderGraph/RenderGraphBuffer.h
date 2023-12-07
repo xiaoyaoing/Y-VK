@@ -17,6 +17,7 @@ public:
     RenderGraphBuffer(const std::string& name, const Buffer *  hwBuffer);
     void devirtualize() override;
     void destroy() override;
+    std::string getName() const override;
     RENDER_GRAPH_RESOURCE_TYPE getType() const override;
     void resloveUsage(CommandBuffer& commandBuffer) override;
 

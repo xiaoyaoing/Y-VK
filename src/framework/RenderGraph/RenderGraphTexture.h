@@ -59,11 +59,12 @@ public:
 
     void destroy() override;
 
+    std::string getName() const override;
+
     RENDER_GRAPH_RESOURCE_TYPE getType() const override;
 
     void resloveUsage(CommandBuffer& commandBuffer) override;
 
-    void resolveTextureUsage(CommandBuffer& commandBuffer);
 
 public:
     bool imported{false};

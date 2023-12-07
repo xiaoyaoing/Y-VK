@@ -93,14 +93,42 @@ private:
     const char *name;
 };
 
+enum RENDER_GRAPH_PASS_TYPE
+{
+    GRAPHICS,COMPUTE,RAYTRACING
+};
+
 
 class ComputePassNode final : public PassNode
 {
-    
+public:
+    void execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) override;
+    ComputePassNode(RenderGraph &renderGraph, const char *name, RenderGraphPassBase *base);
+
 };
 
 
 class RayTracingPassNode final : public  PassNode
 {
-    
+public:
+    void execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) override;
+    RayTracingPassNode(RenderGraph &renderGraph, const char *name, RenderGraphPassBase *base);
+
+};
+
+struct GraphicPassSettings
+{
+    RENDER_GRAPH_PASS_TYPE type = GRAPHICS;
+};
+
+struct ComputePassSettings
+{
+    RENDER_GRAPH_PASS_TYPE type = COMPUTE;
+
+};
+
+struct RaytracingPassSettings 
+{
+    RENDER_GRAPH_PASS_TYPE  type = RAYTRACING;
+
 };

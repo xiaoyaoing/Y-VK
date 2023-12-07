@@ -286,22 +286,18 @@ void Gui::draw(CommandBuffer &commandBuffer) {
 }
 
 void Gui::addGuiPass(RenderGraph &graph, RenderContext &renderContext) {
-    struct GuiPassData {
-        RenderGraphHandle output;
-    };
-    graph.addPass<GuiPassData>("Gui Pass",
-                               [&graph](RenderGraph::Builder &builder, GuiPassData &data) {
-                                   data.output = graph.getBlackBoard()["output"];
-                                   data.output = builder.writeTexture(data.output, TextureUsage::COLOR_ATTACHMENT);
-                                   //    data.output = builder.readTexture(data.output, TextureUsage::COLOR_ATTACHMENT);
+    
+    graph.addGraphicPass("Gui Pass",
+                               [&graph](RenderGraph::Builder &builder,GraphicPassSettings & settings) {
+                                   auto output = graph.getBlackBoard()["output"];
 
                                    std::vector<RenderGraphSubpassInfo> subpassInfos;
                                    subpassInfos.push_back(RenderGraphSubpassInfo{
-                                           .outputAttachments = {data.output}
+                                           .outputAttachments = {output}
                                    });
-                                   builder.declare("gui pass", {.textures = {data.output}, .subpasses = subpassInfos});
+                                   builder.declare("gui pass", {.textures = {output}, .subpasses = subpassInfos});
                                },
-                               [&renderContext, this](GuiPassData &data, const RenderPassContext &context) {
+                               [&renderContext, this]( const RenderPassContext &context) {
                                    ImDrawData *imDrawData = ImGui::GetDrawData();
                                    int32_t vertexOffset = 0;
                                    int32_t indexOffset = 0;

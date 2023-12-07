@@ -16,6 +16,11 @@ void RenderGraphBuffer::destroy()
 {
 }
 
+std::string RenderGraphBuffer::getName() const
+{
+    return "buffer";
+}
+
 RENDER_GRAPH_RESOURCE_TYPE RenderGraphBuffer::getType() const
 {
     return BUFFER;

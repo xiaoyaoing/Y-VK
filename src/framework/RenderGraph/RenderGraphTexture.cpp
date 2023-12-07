@@ -41,6 +41,11 @@ void RenderGraphTexture::destroy() {
     delete this;
 }
 
+std::string RenderGraphTexture::getName() const
+{
+    return mName;
+}
+
 RENDER_GRAPH_RESOURCE_TYPE RenderGraphTexture::getType() const
 {
     return TEXTURE;
@@ -60,6 +65,8 @@ RenderGraphTexture::RenderGraphTexture(const char *name, SgImage *hwTexture) : m
 RenderGraphTexture::RenderGraphTexture(const char *name, const Descriptor &descriptor) : mName(name),
                                                                                          mDescriptor({descriptor}) {
 }
+
+
 
 bool RenderGraphTexture::isDepthStencilTexture() const
 {

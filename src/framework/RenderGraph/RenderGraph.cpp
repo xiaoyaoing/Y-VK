@@ -15,6 +15,18 @@
 void RenderGraph::Builder::declare(const char *name, const RenderGraphPassDescriptor &desc) {
     auto rNode = static_cast<RenderPassNode *>(node);
     rNode->declareRenderPass(name, desc);
+
+    for(const auto & subpass : desc.subpasses)
+    {
+        for(auto inputAtt : subpass.inputAttachments)
+        {
+            readTexture(inputAtt);
+        }
+        for(auto outputAtt : subpass.outputAttachments)
+        {
+            writeTexture(outputAtt);
+        }
+    }
 }
 
 RenderGraph::RenderGraph(Device &device) : device(device) {
@@ -80,6 +92,7 @@ RenderGraphBuffer* RenderGraph::getBuffer(RenderGraphHandle handle) const
 RenderGraphHandle RenderGraph::addBuffer(RenderGraphBuffer* buffer)
 {
     const RenderGraphHandle handle(mResources.size());
+    buffer->handle = handle;
     mResources.push_back(buffer);
     return handle;  
 }
@@ -167,7 +180,7 @@ std::vector<const RenderGraph::Edge *> RenderGraph::getEdges(RenderGraphNode *no
 
 RenderGraphHandle RenderGraph::addTexture(RenderGraphTexture *texture) {
     const RenderGraphHandle handle(mResources.size());
-    
+    texture->handle = handle;
     mResources.push_back(texture);
     return handle;
 }
@@ -286,15 +299,18 @@ void RenderGraph::execute(CommandBuffer &commandBuffer) {
         const auto pass = *first;
         first++;
 
-        for (const auto &texture: pass->devirtualize) {
-            texture->devirtualize();
-            //texture->resolveTextureUsage(commandBuffer);
+        for (const auto &resource : pass->devirtualize) {
+            resource ->devirtualize();
+            //getBlackBoard().put(resource->getName(), resource->handle);
         }
         pass->resolveTextureUsages(*this, commandBuffer);
         pass->execute(*this, commandBuffer);
 
         for (const auto &texture: pass->destroy)
+        {
+            //getBlackBoard().remove(texture->getName());
             texture->destroy();
+        }
     }
 }
 
