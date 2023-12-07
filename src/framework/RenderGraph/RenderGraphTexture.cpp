@@ -41,8 +41,14 @@ void RenderGraphTexture::destroy() {
     delete this;
 }
 
-void RenderGraphTexture::resolveTextureUsage(CommandBuffer &commandBuffer) {
-    const auto newLayout = ImageUtil::getDefaultLayout(usage);
+RENDER_GRAPH_RESOURCE_TYPE RenderGraphTexture::getType() const
+{
+    return TEXTURE;
+}
+
+
+void RenderGraphTexture::resloveUsage(CommandBuffer &commandBuffer) {
+    const auto newLayout = ImageUtil::getDefaultLayout(static_cast<Usage>(resourceUsage));
     const auto &subResourceRange = getHwTexture()->getVkImageView().getSubResourceRange();
     mHwTexture->getVkImage().transitionLayout(commandBuffer, newLayout, subResourceRange);
 }

@@ -41,5 +41,5 @@ const ImageView& Blackboard::getImageView(std::string_view name) const noexcept
 
 const SgImage& Blackboard::getHwImage(std::string_view name) const noexcept
 {
-    return *graph.getResource(getHandle(name))->getHwTexture();
+    return *graph.getTexture(getHandle(name))->getHwTexture();
 }

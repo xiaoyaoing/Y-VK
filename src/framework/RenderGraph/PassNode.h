@@ -43,13 +43,14 @@ public:
 
     void resolveTextureUsages(RenderGraph &renderGraph, CommandBuffer &commandBuffer);
 
-    std::vector<RenderGraphTexture *> devirtualize; // resources need to be create before executing
-    std::vector<RenderGraphTexture *> destroy; // resources need to be destroy after executing
+    std::vector<ResourceNode *> devirtualize; // resources need to be create before executing
+    std::vector<ResourceNode *> destroy; // resources need to be destroy after executing
 
-    void addTextureUsage(const RenderGraphTexture *texture, RenderGraphTexture::Usage usage);
+    // void addTextureUsage(const RenderGraphTexture *texture, RenderGraphTexture::Usage usage);
+    void addResourceUsage( ResourceNode *texture, uint8_t usage);
 
 protected:
-    std::unordered_map<const RenderGraphTexture *, TextureUsage> textureUsages;
+    std::unordered_map< ResourceNode *, uint8_t> resourceUsages;
 };
 
 class PresentPassNode : public PassNode {
@@ -90,4 +91,16 @@ private:
     RenderPassData renderPassData{};
     RenderGraphPassBase *mRenderPass{nullptr};
     const char *name;
+};
+
+
+class ComputePassNode final : public PassNode
+{
+    
+};
+
+
+class RayTracingPassNode final : public  PassNode
+{
+    
 };

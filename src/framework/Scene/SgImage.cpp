@@ -14,6 +14,7 @@
 // #include <ext/ktx/lib/vk_format.h>
 #include <ktx.h>
 #include <stb_image.h>
+// #include <stb_image_resize.h>
 
 #include "Images/AstcImageHelper.h"
 #include "Gui/Gui.h"
@@ -159,8 +160,8 @@ void SgImage::generateMipMap() {
 
         //todo
 
-        // std::copy(data.begin()+ next_mipmap.offset,data.begin()+prev_mipmap.offset,data.begin()+pr
-
+        // stbir_resize_uint8(data.data() + prev_mipmap.offset, prev_mipmap.extent.width, prev_mipmap.extent.height, 0,
+        //                        data.data() + next_mipmap.offset, next_mipmap.extent.width, next_mipmap.extent.height, 0, channels);
         // Fill next mipmap memory
         //            stbir_resize_uint8(data.data() + prev_mipmap.offset, prev_mipmap.extent.width, prev_mipmap.extent.height, 0,
         //                               data.data() + next_mipmap.offset, next_mipmap.extent.width, next_mipmap.extent.height, 0,

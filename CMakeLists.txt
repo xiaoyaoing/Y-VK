@@ -18,6 +18,6 @@ add_subdirectory(src/RayTracer)
 #add_subdirectory(src/samples/defered)
 #add_subdirectory(src/samples/shaderreFlection)
 add_subdirectory(src/samples/renderGraphTest)
-
+add_subdirectory(src/samples/computePipelineTest)
 
 file(COPY shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

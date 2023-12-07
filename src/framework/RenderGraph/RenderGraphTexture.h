@@ -3,7 +3,7 @@
 #include <memory>
 
 
-#include "RenderGraphNode.h"
+#include "ResourceNode.h"
 #include "Scene/SgImage.h"
 
 
@@ -21,13 +21,9 @@ class PassNode;
  * Texture used in RenderGraph.
  * Real hardware texture only created when required.
  */
-class RenderGraphTexture : public RenderGraphNode
+class RenderGraphTexture : public ResourceNode
 {
     SgImage* mHwTexture{nullptr};
-    //
-    // Image* image{nullptr};
-    // ImageView* imageView{nullptr};
-
 public:
     using Usage = TextureUsage;
 
@@ -59,9 +55,13 @@ public:
     void create(const char* name,
                 const Descriptor& descriptor);
 
-    void devirtualize();
+    void devirtualize() override;
 
-    void destroy();
+    void destroy() override;
+
+    RENDER_GRAPH_RESOURCE_TYPE getType() const override;
+
+    void resloveUsage(CommandBuffer& commandBuffer) override;
 
     void resolveTextureUsage(CommandBuffer& commandBuffer);
 
@@ -71,7 +71,6 @@ public:
     const char* mName;
     const Descriptor mDescriptor;
 
-    PassNode *first{nullptr}, *last{nullptr};
 
-    Usage usage{};
+    // Usage usage{};
 };

@@ -53,6 +53,34 @@ enum class TextureUsage : uint16_t
     DEFAULT = UPLOADABLE | SAMPLEABLE //!< Default texture usage
 };
 
+enum class BufferUsage : uint16_t
+{
+    NONE = 0x0,
+    UPLOADABLE = 0x1,
+    //!< Data can be uploaded into this buffer (default)
+    INDEX = 0x2,
+    //!< Buffer can be used as an index buffer
+    VERTEX = 0x4,
+    //!< Buffer can be used as a vertex buffer
+    CONSTANT = 0x8,
+    //!< Buffer can be used as a constant buffer
+    INDIRECT = 0x10,
+    //!< Buffer can be used as an indirect buffer
+    STORAGE = 0x20,
+    //!< Buffer can be used as a storage buffer
+    TRANSFER_SRC = 0x40,
+    //!< Buffer can be used as a transfer source
+    TRANSFER_DST = 0x80,
+    //!< Buffer can be used as a transfer destination
+    UNIFORM_TEXEL = 0x100,
+    //!< Buffer can be used as a uniform texel buffer
+    STORAGE_TEXEL = 0x200,
+    //!< Buffer can be used as a storage texel buffer
+    RAY_TRACING = 0x400,
+    //!< Buffer can be used as a ray tracing buffer
+    DEFAULT = UPLOADABLE //!< Default buffer usage
+};
+
 inline TextureUsage operator |(TextureUsage lhs, TextureUsage rhs)
 {
     return static_cast<TextureUsage>(static_cast<uint8_t>(lhs) | static_cast<uint8_t>(rhs));
@@ -68,3 +96,23 @@ inline bool any(TextureUsage usage)
 {
     return static_cast<uint8_t>(usage) != 0;
 }
+
+
+
+
+inline BufferUsage operator |(BufferUsage lhs, BufferUsage rhs)
+{
+    return static_cast<BufferUsage>(static_cast<uint8_t>(lhs) | static_cast<uint8_t>(rhs));
+}
+
+
+inline BufferUsage operator &(BufferUsage lhs, BufferUsage rhs)
+{
+    return static_cast<BufferUsage>(static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs));
+}
+
+inline bool any(BufferUsage usage)
+{
+    return static_cast<uint8_t>(usage) != 0;
+}
+

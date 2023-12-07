@@ -212,6 +212,9 @@ Pipeline::Pipeline(Device& device, const PipelineState& pipelineState) : device(
 
     else if(type == PIPELINE_TYPE::E_COMPUTE)
     {
-        
+        VkComputePipelineCreateInfo createInfo{.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO};
+    	createInfo.layout = pipelineState.getPipelineLayout().getHandle();
+    	createInfo.stage = stageCreateInfos[0];
+    	VK_CHECK_RESULT(vkCreateComputePipelines(device.getHandle(), nullptr, 1, &createInfo, nullptr, &pipeline))
     }
 }

@@ -8,6 +8,7 @@
 #include "RenderGraphTexture.h"
 #include "Core/RenderPass.h"
 #include "BlackBoard.h"
+#include "RenderGraphBuffer.h"
 /**render Graph **/
 /*
  * 1.add pass 需要指明pass的输入 注册RenderGraphTexture 这一步会添加passNode 这里node会根据传入的RenderGraphPass::Descriptor创建RenderTarget
@@ -22,6 +23,11 @@
 // class RenderGraph;
 
 
+namespace tinygltf
+{
+    struct Buffer;
+}
+
 class CommandBuffer;
 
 
@@ -34,7 +40,6 @@ public:
     RenderGraph(RenderGraph &&rhs) = delete;
 
 
-    RenderGraphHandle importTexture(const char *name, SgImage *hwTexture);
 
     class Builder {
     public:
@@ -46,6 +51,15 @@ public:
         RenderGraphHandle writeTexture(RenderGraphHandle output,
                                        RenderGraphTexture::Usage usage =
                                        RenderGraphTexture::Usage::NONE);
+
+
+        RenderGraphHandle readBuffer(RenderGraphHandle input,
+                                      RenderGraphBuffer::Usage usage =
+                                      RenderGraphBuffer::Usage::NONE);
+
+        RenderGraphHandle writeBuffer(RenderGraphHandle output,
+                                       RenderGraphBuffer::Usage usage =
+                                       RenderGraphBuffer::Usage::NONE);
 
         // void addSubpass(const RenderGraphSubpassInfo&);
 
@@ -65,14 +79,17 @@ public:
 
 
     RenderGraphHandle createTexture(const char *name, const RenderGraphTexture::Descriptor &desc = {});
+    RenderGraphHandle importTexture(const char *name, SgImage *hwTexture);
 
+    RenderGraphHandle createBuffer(const char *name, const RenderGraphBuffer::Descriptor &desc = {});
+    RenderGraphHandle importBuffer(const char *name, Buffer *hwBuffer);
 
-    RenderGraphHandle addResource(VirtualResource *resource);
+    ResourceNode * getResource(RenderGraphHandle handle) const;
+    RenderGraphTexture * getTexture(RenderGraphHandle handle) const;
+    RenderGraphBuffer * getBuffer(RenderGraphHandle handle) const;
 
-    RenderGraphHandle addTexture(RenderGraphTexture *texture);
 
     bool isWrite(RenderGraphHandle handle, const RenderPassNode *passNode) const;
-
     bool isRead(RenderGraphHandle handle, const RenderPassNode *passNode) const;
 
     void setUp();
@@ -89,10 +106,8 @@ public:
         setup(builder, pass->getData());
     }
 
-    void addPresentPass(RenderGraphHandle textureId);
-
-    RenderGraphTexture *getResource(RenderGraphHandle handle) const;
-
+    // void addPresentPass(RenderGraphHandle textureId);
+    
     void compile();
 
     Device &getDevice() const;
@@ -105,8 +120,11 @@ public:
     }
 
 private:
-    std::vector<RenderGraphNode *> getInComingNodes(RenderGraphNode *node) const;
+    RenderGraphHandle addTexture(RenderGraphTexture *texture);
+    RenderGraphHandle addBuffer(RenderGraphBuffer *buffer);
+    
 
+    std::vector<RenderGraphNode *> getInComingNodes(RenderGraphNode *node) const;
     std::vector<RenderGraphNode *> getOutComingNodes(RenderGraphNode *node) const;
 
     PassNode * addPassImpl(const char *name, RenderGraphPassBase *base) {
@@ -124,12 +142,41 @@ private:
         Version version = 0;
     };
 
+    // Using union instead of directly use two type of struct may be better;
+    // Using texture type and buffer type to avoid call get type function at runtime
+    // Pointer cast is not safe and ugly.
 
-    struct Edge {
+    // union 
+    // {
+    //     RenderGraphTexture *texture{nullptr};
+    //     RenderGraphBuffer *buffer{nullptr};
+    // };
+    // union 
+    // {
+    //     RenderGraphTexture::Usage textureUsage;
+    //     RenderGraphBuffer::Usage bufferUsage;
+    // };
+    
+    
+    // struct TextureEdge {
+    //     PassNode *pass{nullptr};
+    //     RenderGraphTexture *texture{nullptr};
+    //     RenderGraphTexture::Usage usage{};
+    //     bool read{true};
+    // };
+
+    struct Edge
+    {
         PassNode *pass{nullptr};
-        RenderGraphTexture *texture{nullptr};
-        RenderGraphTexture::Usage usage{};
+        ResourceNode *resource{nullptr};
+        uint8_t usage{};
         bool read{true};
+
+        //For Given Node ,whether this edge is incoming or outgoing
+        bool inComing(const ResourceNode * resourceNode) const {return resource == resourceNode && !read;}
+        bool outComing(const ResourceNode * resourceNode) const {return resource == resourceNode && read;}
+        bool inComing(const PassNode * passNode) const {return pass == passNode && read;}
+        bool outComing(const PassNode * passNode) const {return pass == passNode && !read;}
     };
 
     std::vector<const Edge *> getEdges(RenderGraphNode *node) const;
@@ -138,7 +185,11 @@ private:
     std::unique_ptr<Blackboard> mBlackBoard{};
     std::vector<PassNode *> mPassNodes{};
     std::vector<VirtualResource *> mVirtualResources{};
-    std::vector<RenderGraphTexture *> mTextures{};
+    
+    // std::vector<RenderGraphTexture *> mTextures{};
+    // std::vector<RenderGraphBuffer *> mBuffers{};
+    std::vector<ResourceNode *> mResources{};
+    
     std::vector<PassNode *>::iterator mActivePassNodesEnd;
 
     std::vector<ResourceSlot> mResourceSlots{};

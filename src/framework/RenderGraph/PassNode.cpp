@@ -13,7 +13,7 @@ void RenderPassNode::RenderPassData::devirtualize(RenderGraph &renderGraph, cons
     std::vector<SgImage *> images;
     std::vector<Attachment> attachments;
     for (const auto &color: desc.textures) {
-        auto texture = renderGraph.getResource(color);
+        auto texture = renderGraph.getTexture(color);
         auto hwTexture = texture->getHwTexture();
 
         auto undefined = texture->first == &node && !texture->imported;
@@ -116,20 +116,21 @@ void RenderPassNode::declareRenderPass(const char *name, const RenderGraphPassDe
 
 
 void PassNode::resolveTextureUsages(RenderGraph &renderGraph, CommandBuffer &commandBuffer) {
-    for (auto &textureIt: textureUsages) {
-        const auto *pResource = textureIt.first;
-        const auto newLayout = ImageUtil::getDefaultLayout(textureIt.second);
-        const auto subsubsource = pResource->getHwTexture()->getVkImageView().getSubResourceRange();
-        pResource->getHwTexture()->getVkImage().transitionLayout(commandBuffer, newLayout, subsubsource);
+    for (auto &textureIt: resourceUsages) {
+        textureIt.first->resloveUsage(commandBuffer);
+        // const auto *texture = textureIt.first;
+        // const auto newLayout = ImageUtil::getDefaultLayout(textureIt.second);
+        // const auto subsubsource = texture->getHwTexture()->getVkImageView().getSubResourceRange();
+        // texture->getHwTexture()->getVkImage().transitionLayout(commandBuffer, newLayout, subsubsource);
     }
 }
 
-void PassNode::addTextureUsage(const RenderGraphTexture *texture, RenderGraphTexture::Usage usage) {
-    if (textureUsages.contains(texture))
-        textureUsages[texture] = textureUsages[texture] | usage;
-    else
-        textureUsages[texture] = usage;
+void PassNode::addResourceUsage(ResourceNode* texture, uint8_t usage)
+{
+    resourceUsages.emplace(texture,usage);
 }
+
+
 
 void PresentPassNode::execute(RenderGraph &renderGraph, CommandBuffer &commandBuffer) {
 }

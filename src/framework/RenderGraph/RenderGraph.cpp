@@ -22,19 +22,66 @@ RenderGraph::RenderGraph(Device &device) : device(device) {
 }
 
 RenderGraphHandle RenderGraph::Builder::readTexture(RenderGraphHandle input, RenderGraphTexture::Usage usage) {
-    auto texture = renderGraph.getResource(input);
+    auto texture = renderGraph.getTexture(input);
     if(usage == RenderGraphTexture::Usage::NONE)
         usage = texture->isDepthStencilTexture()?RenderGraphTexture::Usage::DEPTH_READ_ONLY:RenderGraphTexture::Usage::READ_ONLY;
-     renderGraph.edges.emplace_back(Edge{.pass = node, .texture = texture, .usage = usage, .read = true});
+     renderGraph.edges.emplace_back(Edge{.pass = node, .resource = texture, .usage = static_cast<uint8_t>(usage), .read = true});
     return input;
 }
 
 RenderGraphHandle RenderGraph::Builder::writeTexture(RenderGraphHandle output, RenderGraphTexture::Usage usage) {
-    auto texture = renderGraph.getResource(output);
+    auto texture = renderGraph.getTexture(output);
     if(usage == RenderGraphTexture::Usage::NONE)
         usage = texture->isDepthStencilTexture()?RenderGraphTexture::Usage::DEPTH_ATTACHMENT:RenderGraphTexture::Usage::COLOR_ATTACHMENT;
-    renderGraph.edges.emplace_back(Edge{.pass = node, .texture = texture, .usage = usage, .read = false});
+    renderGraph.edges.emplace_back(Edge{.pass = node, .resource = texture, .usage = static_cast<uint8_t>(usage), .read = false});
     return output;
+}
+
+RenderGraphHandle RenderGraph::Builder::readBuffer(RenderGraphHandle input, RenderGraphBuffer::Usage usage)
+{
+    auto buffer = renderGraph.getBuffer(input);
+    renderGraph.edges.emplace_back(Edge{.pass = node, .resource = buffer, .usage = static_cast<uint8_t>(usage), .read = true});
+    return input;
+}
+
+RenderGraphHandle RenderGraph::Builder::writeBuffer(RenderGraphHandle output, RenderGraphBuffer::Usage usage)
+{
+    auto buffer = renderGraph.getBuffer(output);
+    renderGraph.edges.emplace_back(Edge{.pass = node, .resource = buffer, .usage = static_cast<uint8_t>(usage), .read = false});
+    return output;
+}
+
+RenderGraphHandle RenderGraph::createBuffer(const char* name, const RenderGraphBuffer::Descriptor& desc)
+{
+    auto buffer = new RenderGraphBuffer(name, desc);
+    return addBuffer(buffer);
+}
+
+RenderGraphHandle RenderGraph::importBuffer(const char* name, Buffer* hwBuffer)
+{
+    auto buffer = new RenderGraphBuffer(name, hwBuffer);
+    return addBuffer(buffer);
+}
+
+RenderGraphTexture* RenderGraph::getTexture(RenderGraphHandle handle) const
+{
+    auto resource = getResource(handle);
+    CHECK_RESULT(resource->getType() == RENDER_GRAPH_RESOURCE_TYPE::TEXTURE);
+    return static_cast<RenderGraphTexture*>(resource);
+}
+
+RenderGraphBuffer* RenderGraph::getBuffer(RenderGraphHandle handle) const
+{
+    auto resource = getResource(handle);
+    CHECK_RESULT(resource->getType() == RENDER_GRAPH_RESOURCE_TYPE::BUFFER);
+    return static_cast<RenderGraphBuffer*>(resource);
+}
+
+RenderGraphHandle RenderGraph::addBuffer(RenderGraphBuffer* buffer)
+{
+    const RenderGraphHandle handle(mResources.size());
+    mResources.push_back(buffer);
+    return handle;  
 }
 
 
@@ -43,23 +90,13 @@ RenderGraphHandle RenderGraph::createTexture(const char *name, const RenderGraph
     return addTexture(texture);
 }
 
-RenderGraphHandle RenderGraph::addResource(VirtualResource *resource) {
-    const RenderGraphHandle handle(mVirtualResources.size());
-
-    auto &slot = mResourceSlots.emplace_back();
-    slot.rid = mVirtualResources.size();
-    mVirtualResources.push_back(resource);
-
-    return handle;
-    //return RenderGraphHandle(RenderGraphHandle());
-}
 
 std::vector<RenderGraphNode *> RenderGraph::getInComingNodes(RenderGraphNode *node) const {
-    if (auto texture = dynamic_cast<RenderGraphTexture *>(node)) {
+    if (auto resource = dynamic_cast<ResourceNode *>(node)) {
         std::vector<Edge> inComingEdges{};
         std::ranges::copy_if(edges.begin(), edges.end(),
                              std::back_insert_iterator(inComingEdges),
-                             [node](const Edge &edge) { return !edge.read && edge.texture == node; });
+                             [resource](const Edge &edge) { return edge.inComing(resource); });
         std::vector<RenderGraphNode *> results{};
         std::ranges::transform(inComingEdges.begin(), inComingEdges.end(), std::back_insert_iterator(results),
                                [](const Edge &edge) {
@@ -71,11 +108,11 @@ std::vector<RenderGraphNode *> RenderGraph::getInComingNodes(RenderGraphNode *no
         std::vector<Edge> inComingEdges{};
         std::ranges::copy_if(edges.begin(), edges.end(),
                              std::back_insert_iterator(inComingEdges),
-                             [node](const Edge &edge) { return edge.read && edge.pass == node; });
+                             [pass](const Edge &edge) { return edge.inComing(pass); });
         std::vector<RenderGraphNode *> results{};
         std::ranges::transform(inComingEdges.begin(), inComingEdges.end(), std::back_insert_iterator(results),
                                [](const Edge &edge) {
-                                   return edge.texture;
+                                   return edge.resource;
                                });
         return results;
     }
@@ -83,11 +120,11 @@ std::vector<RenderGraphNode *> RenderGraph::getInComingNodes(RenderGraphNode *no
 }
 
 std::vector<RenderGraphNode *> RenderGraph::getOutComingNodes(RenderGraphNode *node) const {
-    if (auto texture = dynamic_cast<RenderGraphTexture *>(node)) {
+    if (auto resource = dynamic_cast<ResourceNode *>(node)) {
         std::vector<Edge> outComingEdges{};
         std::ranges::copy_if(edges.begin(), edges.end(),
                              std::back_insert_iterator(outComingEdges),
-                             [node](const Edge &edge) { return edge.read && edge.texture == node; });
+                             [resource](const Edge &edge) { return edge.outComing(resource); });
         std::vector<RenderGraphNode *> results{};
         std::ranges::transform(outComingEdges.begin(), outComingEdges.end(), std::back_insert_iterator(results),
                                [](const Edge &edge) {
@@ -99,11 +136,11 @@ std::vector<RenderGraphNode *> RenderGraph::getOutComingNodes(RenderGraphNode *n
         std::vector<Edge> outComingEdges{};
         std::ranges::copy_if(edges.begin(), edges.end(),
                              std::back_insert_iterator(outComingEdges),
-                             [node](const Edge &edge) { return !edge.read && edge.pass == node; });
+                             [pass](const Edge &edge) { return !edge.outComing(pass); });
         std::vector<RenderGraphNode *> results{};
         std::ranges::transform(outComingEdges.begin(), outComingEdges.end(), std::back_insert_iterator(results),
                                [](const Edge &edge) {
-                                   return edge.texture;
+                                   return edge.resource;
                                });
         return results;
     }
@@ -113,9 +150,9 @@ std::vector<RenderGraphNode *> RenderGraph::getOutComingNodes(RenderGraphNode *n
 std::vector<const RenderGraph::Edge *> RenderGraph::getEdges(RenderGraphNode *node) const {
     std::vector<const Edge *> results{};
 
-    if (auto texture = dynamic_cast<RenderGraphTexture *>(node)) {
+    if (auto resource = dynamic_cast<ResourceNode *>(node)) {
         for (const auto &edge: edges) {
-            if (edge.texture == texture)
+            if (edge.resource == resource)
                 results.push_back(&edge);
         }
     }
@@ -129,18 +166,15 @@ std::vector<const RenderGraph::Edge *> RenderGraph::getEdges(RenderGraphNode *no
 }
 
 RenderGraphHandle RenderGraph::addTexture(RenderGraphTexture *texture) {
-    const RenderGraphHandle handle(mTextures.size());
-
-    // auto& slot = mResourceSlots.emplace_back();
-    // slot.rid = mTextures.size();
-
-    mTextures.push_back(texture);
+    const RenderGraphHandle handle(mResources.size());
+    
+    mResources.push_back(texture);
     return handle;
 }
 
 bool RenderGraph::isWrite(RenderGraphHandle handle, const RenderPassNode *passNode) const {
     for (const auto &edge: edges) {
-        if (edge.pass == passNode && edge.texture == getResource(handle)) {
+        if (edge.pass == passNode && edge.resource == getResource(handle)) {
             if (!edge.read)
                 return true;
         }
@@ -150,7 +184,7 @@ bool RenderGraph::isWrite(RenderGraphHandle handle, const RenderPassNode *passNo
 
 bool RenderGraph::isRead(RenderGraphHandle handle, const RenderPassNode *passNode) const {
     for (const auto &edge: edges) {
-        if (edge.pass == passNode && edge.texture == getResource(handle)) {
+        if (edge.pass == passNode && edge.resource == getResource(handle)) {
             if (edge.read)
                 return true;
         }
@@ -163,8 +197,8 @@ void RenderGraph::setUp() {
 }
 
 
-RenderGraphTexture *RenderGraph::getResource(RenderGraphHandle handle) const {
-    return mTextures[handle.index];
+ResourceNode *RenderGraph::getResource(RenderGraphHandle handle) const {
+    return mResources[handle.index];
 }
 
 void RenderGraph::compile() {
@@ -172,17 +206,17 @@ void RenderGraph::compile() {
 
     for (auto edge: edges) {
         if (edge.read)
-            edge.texture->refCount++;
+            edge.resource->addRef();
         else
-            edge.pass->refCount++;
+            edge.pass->addRef();
     }
 
     std::stack<RenderGraphNode *> stack;
-    for (const auto &node: mTextures)
-        if (node->refCount == 0)
+    for (const auto &node: mResources)
+        if (node->getRefCount() == 0)
             stack.push(node);
     for (const auto &node: mPassNodes)
-        if (node->refCount == 0)
+        if (node->getRefCount() == 0)
             stack.push(node);
     while (!stack.empty()) {
         const auto node = stack.top();
@@ -194,46 +228,46 @@ void RenderGraph::compile() {
     }
 
     mActivePassNodesEnd = std::stable_partition(this->mPassNodes.begin(), mPassNodes.end(),
-                                                [](const auto &passNode) { return passNode->refCount != 0; });
+                                                [](const auto &passNode) { return passNode->getRefCount() != 0; });
 
     auto first = mPassNodes.begin();
     const auto last = mActivePassNodesEnd;
     while (first != last) {
         PassNode *const passNode = *first;
         first++;
-        auto inTextures = getInComingNodes(passNode);
-        auto outTextures = getOutComingNodes(passNode);
+        auto inResources = getInComingNodes(passNode);
+        auto outResources = getOutComingNodes(passNode);
 
 
-        for (const auto inTexture: inTextures) {
-            const auto texture = dynamic_cast<RenderGraphTexture *>(inTexture);
-            assert(texture);
-            texture->first = texture->first ? texture->first : passNode;
-            texture->last = passNode;
-            //   passNode->addTextureUsage(static_cast<const RenderGraphTexture*>(inTexture), );
+        for (const auto inResource: inResources) {
+            const auto resource = dynamic_cast<RenderGraphTexture *>(inResource);
+            assert(resource);
+            resource->first = resource->first ? resource->first : passNode;
+            resource->last = passNode;
+            //   passNode->addTextureUsage(static_cast<const RenderGraphTexture*>(inResource), );
         }
-        for (const auto outTexture: outTextures) {
-            const auto texture = dynamic_cast<RenderGraphTexture *>(outTexture);
-            assert(texture);
-            texture->first = texture->first ? texture->first : passNode;
-            texture->last = passNode;
-            //passNode->addTextureUsage(static_cast<const RenderGraphTexture*>(inTexture), texture->usage);
+        for (const auto outResource: outResources) {
+            const auto resource = dynamic_cast<RenderGraphTexture *>(outResource);
+            assert(resource);
+            resource->first = resource->first ? resource->first : passNode;
+            resource->last = passNode;
+            //passNode->addTextureUsage(static_cast<const RenderGraphTexture*>(inResource), texture->usage);
         }
 
         for (const auto edge: getEdges(passNode)) {
-            passNode->addTextureUsage(edge->texture, edge->usage);
+            passNode->addResourceUsage(edge->resource, edge->usage);
         }
     }
 
-    for (const auto &texture: mTextures) {
-        if (texture->refCount != 0) {
-            texture->first->devirtualize.push_back(texture);
-            texture->last->destroy.push_back(texture);
+    for (const auto &resource : mResources) {
+        if (resource ->getRefCount() != 0) {
+            resource ->first->devirtualize.push_back(resource );
+            resource ->last->destroy.push_back(resource );
         }
     }
 
     for (const auto &edge: edges) {
-        edge.texture->usage = edge.texture->usage | edge.usage;
+        edge.resource->resourceUsage = edge.resource->resourceUsage | edge.usage;
     }
 }
 
@@ -271,8 +305,6 @@ Blackboard &RenderGraph::getBlackBoard() const {
 
 RenderGraphHandle RenderGraph::importTexture(const char *name, SgImage *hwTexture) {
     auto texture = new RenderGraphTexture(name, hwTexture);
-    // VirtualResource* resource = new ImportedResource<RenderGraphTexture>(name, texture);
-    // return RenderGraphHandle(addResource(resource));
     return addTexture(texture);
 }
 
