@@ -118,6 +118,8 @@ void Application::update() {
     vkResetFences(device->getHandle(), 1, &fence);
 
     RenderGraph graph(*device);
+    auto handle = graph.importTexture(SWAPCHAIN_IMAGE_NAME,&renderContext->getCurHwtexture());
+    graph.getBlackBoard().put(SWAPCHAIN_IMAGE_NAME,handle);
     
     drawFrame(graph,commandBuffer);
 

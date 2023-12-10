@@ -128,12 +128,6 @@ void RenderContext::submitAndPresent(CommandBuffer& buffer, VkFence fence)
 {
     getCurHwtexture().getVkImage().transitionLayout(buffer, VulkanLayout::PRESENT,
                                                     getCurHwtexture().getVkImageView().getSubResourceRange());
-    vkCommon::set_image_layout(
-            buffer.getHandle(),
-            getCurHwtexture().getVkImage().getHandle(),
-            VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-            VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-             VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
     buffer.endRecord();
 
 
@@ -180,6 +174,7 @@ void RenderContext::submitAndPresent(CommandBuffer& buffer, VkFence fence)
 
 void RenderContext::submit(CommandBuffer& commandBuffer, bool waiteFence)
 {
+    commandBuffer.endRecord();
     auto queue = device.getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0);
 
     VkSubmitInfo submitInfo{VK_STRUCTURE_TYPE_SUBMIT_INFO};
@@ -283,17 +278,25 @@ SgImage& RenderContext::getCurHwtexture()
     return hwTextures[activeFrameIndex];
 }
 
-RenderContext & RenderContext::bindBuffer(uint32_t setId, const Buffer& buffer, VkDeviceSize offset, VkDeviceSize range,
-                               uint32_t binding, uint32_t array_element)
+// RenderContext & RenderContext::bindBuffer(uint32_t setId, const Buffer& buffer, VkDeviceSize offset, VkDeviceSize range,
+//                                uint32_t binding, uint32_t array_element)
+// {
+//     resourceSets[setId].bindBuffer(buffer, offset, range, binding, array_element);
+//     return *this;
+// }
+
+RenderContext &  RenderContext::bindBuffer(uint32_t binding, const Buffer& buffer, VkDeviceSize offset, VkDeviceSize range,
+    uint32_t setId, uint32_t array_element)
 {
+    if(range == 0) range = buffer.getSize();
     resourceSets[setId].bindBuffer(buffer, offset, range, binding, array_element);
     return *this;
 }
 
 RenderContext& RenderContext::bindAcceleration(uint32_t setId, const Accel& acceleration, uint32_t binding,
-    uint32_t array_element)
+                                               uint32_t array_element)
 {
-    resourceSets[setId].bindAccel(acceleration,binding,array_element);
+    resourceSets[setId].bindAccel1(acceleration,binding,array_element);
     return *this;
 }
 
@@ -528,15 +531,26 @@ void RenderContext::flushAndDraw(CommandBuffer& commandBuffer, uint32_t vertexCo
     commandBuffer.draw(vertexCount, instanceCount, firstVertex, firstInstance);
 }
 
-void RenderContext::traceRay(CommandBuffer& commandBuffer)
+void RenderContext::traceRay(CommandBuffer& commandBuffer,VkExtent3D dims)
 {
     CHECK_RESULT((getPipelineState().getPipelineType() == PIPELINE_TYPE::E_RAY_TRACING));
+    if(dims.width == 0 || dims.height == 0 || dims.depth == 0)
+    {
+        dims = {getSwapChainExtent().width,getSwapChainExtent().height,1};
+    }
+    flush(commandBuffer);
     auto & pipeline = device.getResourceCache().requestPipeline(this->getPipelineState());
     auto & sbtWarpper = pipeline.getSbtWarpper();
     auto & shaderBindingTable = sbtWarpper.getRegions();
-    auto dims = getPipelineState().getRtPassSettings().dims;
     vkCmdTraceRaysKHR(commandBuffer.getHandle(), &shaderBindingTable[0], &shaderBindingTable[1],
                       &shaderBindingTable[2], &shaderBindingTable[3], dims.width, dims.height, dims.depth);
+}
+
+void RenderContext::dispath(CommandBuffer& commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
+    uint32_t groupCountZ)
+{
+    flush(commandBuffer);
+    vkCmdDispatch(commandBuffer.getHandle(), groupCountX, groupCountY, groupCountZ);
 }
 
 
@@ -682,4 +696,13 @@ void RenderContext::recrateSwapChain(VkExtent2D extent)
                                     swapchain->getUseage());
         }
     }
+}
+
+void RenderContext::copyBuffer(Buffer& src, Buffer& dst)
+{
+    auto commandBuffer    = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY,true);
+    VkBufferCopy    copy_region  = {};
+    copy_region.size             = src.getSize();
+    vkCmdCopyBuffer(commandBuffer.getHandle(), src.getHandle(),dst.getHandle(), 1, &copy_region);
+    submit(commandBuffer);
 }

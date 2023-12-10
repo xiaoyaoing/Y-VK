@@ -44,7 +44,14 @@ public:
 
     void bindInput(const ImageView &view, uint32_t binding, uint32_t array_element);
 
-    void bindAccel(const Accel &accel, uint32_t binding, uint32_t array_element);
+    // void bindAccel(const Accel &accel, uint32_t binding, uint32_t array_element);
+  //   void bindAccel(const Accel &accel, uint32_t binding, uint32_t array_element);
+     void bindAccel1(const Accel &accel, uint32_t binding, uint32_t array_element)
+     {
+         resourceBindings[binding][array_element].dirty = true;
+         resourceBindings[binding][array_element].accel = &accel;
+         dirty = true;
+     }
 
     const BindingMap<ResourceInfo> &getResourceBindings() const;
 
@@ -58,6 +65,9 @@ private:
 
 class ResourceBindingState {
 public:
+
+    
+    
     void bindBuffer(uint32_t setId, const Buffer &buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t binding,
                     uint32_t array_element);
 

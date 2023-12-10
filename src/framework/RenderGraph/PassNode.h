@@ -6,8 +6,10 @@
 #include "RenderGraphPass.h"
 #include "RenderGraphTexture.h"
 #include "Core/RenderTarget.h"
+#include "Core/RayTracing/Accel.h"
 
 
+class PipelineLayout;
 class RenderGraph;
 
 
@@ -47,14 +49,18 @@ public:
     std::vector<ResourceNode *> destroy; // resources need to be destroy after executing
 
     // void addTextureUsage(const RenderGraphTexture *texture, RenderGraphTexture::Usage usage);
-    void addResourceUsage( ResourceNode *texture, uint8_t usage);
+    void addResourceUsage( ResourceNode *texture, uint16_t usage);
 
 protected:
-    std::unordered_map< ResourceNode *, uint8_t> resourceUsages;
+    std::unordered_map< ResourceNode *, uint16_t> resourceUsages;
 };
 
-class PresentPassNode : public PassNode {
+class ImageCopyPassNode : public PassNode {
+public:
     void execute(RenderGraph &renderGraph, CommandBuffer &commandBuffer) override;
+    ImageCopyPassNode(RenderGraphHandle src,RenderGraphHandle dst);
+protected:
+    RenderGraphHandle src, dst;
 };
 
 
@@ -93,18 +99,15 @@ private:
     const char *name;
 };
 
-enum RENDER_GRAPH_PASS_TYPE
-{
-    GRAPHICS,COMPUTE,RAYTRACING
-};
-
 
 class ComputePassNode final : public PassNode
 {
 public:
     void execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) override;
-    ComputePassNode(RenderGraph &renderGraph, const char *name, RenderGraphPassBase *base);
-
+    ComputePassNode(RenderGraph &renderGraph, const char *name, ComputeRenderGraphPass *base);
+private:
+    ComputeRenderGraphPass *mPass{nullptr};
+    const char *name;
 };
 
 
@@ -112,23 +115,9 @@ class RayTracingPassNode final : public  PassNode
 {
 public:
     void execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) override;
-    RayTracingPassNode(RenderGraph &renderGraph, const char *name, RenderGraphPassBase *base);
-
+    RayTracingPassNode(RenderGraph &renderGraph, const char *name, RaytracingRenderGraphPass *base);
+    // ~RayTracingPassNode() override;
+private:
+    RaytracingRenderGraphPass * mPass{nullptr};
 };
 
-struct GraphicPassSettings
-{
-    RENDER_GRAPH_PASS_TYPE type = GRAPHICS;
-};
-
-struct ComputePassSettings
-{
-    RENDER_GRAPH_PASS_TYPE type = COMPUTE;
-
-};
-
-struct RaytracingPassSettings 
-{
-    RENDER_GRAPH_PASS_TYPE  type = RAYTRACING;
-
-};

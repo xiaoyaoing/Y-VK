@@ -146,7 +146,7 @@ Pipeline::Pipeline(Device& device, const PipelineState& pipelineState) : device(
     }
     else if(type == PIPELINE_TYPE::E_RAY_TRACING)
     {
-		auto settings = pipelineState.getRtPassSettings();
+		auto settings = pipelineState.getrTPipelineSettings();
 
     	std::vector<VkRayTracingShaderGroupCreateInfoKHR> groups;
     	

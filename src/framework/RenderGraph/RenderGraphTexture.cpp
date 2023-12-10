@@ -52,8 +52,8 @@ RENDER_GRAPH_RESOURCE_TYPE RenderGraphTexture::getType() const
 }
 
 
-void RenderGraphTexture::resloveUsage(CommandBuffer &commandBuffer) {
-    const auto newLayout = ImageUtil::getDefaultLayout(static_cast<Usage>(resourceUsage));
+void RenderGraphTexture::resloveUsage(CommandBuffer &commandBuffer,uint16_t usage) {
+    const auto newLayout = ImageUtil::getDefaultLayout(static_cast<TextureUsage>(usage));
     const auto &subResourceRange = getHwTexture()->getVkImageView().getSubResourceRange();
     mHwTexture->getVkImage().transitionLayout(commandBuffer, newLayout, subResourceRange);
 }

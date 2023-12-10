@@ -13,18 +13,28 @@ struct VertexInputState {
     std::vector<VkVertexInputAttributeDescription> attributes;
 };
 
-struct SpecializationConstantState {
-    VkBool32 depthClampEnable{VK_FALSE};
+class SpecializationConstantState
+{
+public:
+    void reset();
 
-    VkBool32 rasterizerDiscardEnable{VK_FALSE};
+    bool is_dirty() const;
 
-    VkPolygonMode polygonMode{VK_POLYGON_MODE_FILL};
+    void clear_dirty();
 
-    VkCullModeFlags cullMode{VK_CULL_MODE_BACK_BIT};
+    template <class T>
+    void set_constant(uint32_t constant_id, const T &data);
 
-    VkFrontFace frontFace{VK_FRONT_FACE_COUNTER_CLOCKWISE};
+    void set_constant(uint32_t constant_id, const std::vector<uint8_t> &data);
 
-    VkBool32 depthBiasEnable{VK_FALSE};
+    void set_specialization_constant_state(const std::map<uint32_t, std::vector<uint8_t>> &state);
+
+    const std::map<uint32_t, std::vector<uint8_t>> &get_specialization_constant_state() const;
+
+private:
+    bool dirty{false};
+    // Map tracking state of the Specialization Constants
+    std::map<uint32_t, std::vector<uint8_t>> specialization_constant_state;
 };
 
 struct InputAssemblyState {
@@ -115,7 +125,7 @@ struct ColorBlendAttachmentState {
 };
 
 
-struct RTPassSettings 
+struct RTPipelineSettings 
 {
     std::vector<Shader> shaders;
     VkAccelerationStructureKHR accel;
@@ -137,6 +147,9 @@ enum  class PIPELINE_TYPE : uint8_t
     E_COMPUTE,
     E_RAY_TRACING
 };
+
+
+
 
 struct PipelineState {
 public:
@@ -216,13 +229,13 @@ private:
     ColorBlendState colorBlendState{};
 
 public:
-    const RTPassSettings & getRtPassSettings() const;
-    PipelineState & setRtPassSettings(const RTPassSettings& rtPassSettings);
+    const RTPipelineSettings & getrTPipelineSettings() const;
+    PipelineState & setrTPipelineSettings(const RTPipelineSettings& rTPipelineSettings);
 
 private:
     uint32_t subpassIndex{0U};
     
-    RTPassSettings rtPassSettings{};
+    RTPipelineSettings rTPipelineSettings{};
 
     PIPELINE_TYPE pipelineType{PIPELINE_TYPE::E_GRAPHICS};
     

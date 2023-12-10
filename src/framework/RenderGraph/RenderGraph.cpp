@@ -2,6 +2,7 @@
 #include "Core/CommandBuffer.h"
 #include <stack>
 
+#include "Core/Pipeline.h"
 #include "Core/Texture.h"
 
 // void RenderGraph::Builder::read(VirtualResource* resource, PassNode* node)
@@ -37,7 +38,7 @@ RenderGraphHandle RenderGraph::Builder::readTexture(RenderGraphHandle input, Ren
     auto texture = renderGraph.getTexture(input);
     if(usage == RenderGraphTexture::Usage::NONE)
         usage = texture->isDepthStencilTexture()?RenderGraphTexture::Usage::DEPTH_READ_ONLY:RenderGraphTexture::Usage::READ_ONLY;
-     renderGraph.edges.emplace_back(Edge{.pass = node, .resource = texture, .usage = static_cast<uint8_t>(usage), .read = true});
+     renderGraph.edges.emplace_back(Edge{.pass = node, .resource = texture, .usage = static_cast<uint16_t>(usage), .read = true});
     return input;
 }
 
@@ -45,21 +46,21 @@ RenderGraphHandle RenderGraph::Builder::writeTexture(RenderGraphHandle output, R
     auto texture = renderGraph.getTexture(output);
     if(usage == RenderGraphTexture::Usage::NONE)
         usage = texture->isDepthStencilTexture()?RenderGraphTexture::Usage::DEPTH_ATTACHMENT:RenderGraphTexture::Usage::COLOR_ATTACHMENT;
-    renderGraph.edges.emplace_back(Edge{.pass = node, .resource = texture, .usage = static_cast<uint8_t>(usage), .read = false});
+    renderGraph.edges.emplace_back(Edge{.pass = node, .resource = texture, .usage = static_cast<uint16_t>(usage), .read = false});
     return output;
 }
 
 RenderGraphHandle RenderGraph::Builder::readBuffer(RenderGraphHandle input, RenderGraphBuffer::Usage usage)
 {
     auto buffer = renderGraph.getBuffer(input);
-    renderGraph.edges.emplace_back(Edge{.pass = node, .resource = buffer, .usage = static_cast<uint8_t>(usage), .read = true});
+    renderGraph.edges.emplace_back(Edge{.pass = node, .resource = buffer, .usage = static_cast<uint16_t>(usage), .read = true});
     return input;
 }
 
 RenderGraphHandle RenderGraph::Builder::writeBuffer(RenderGraphHandle output, RenderGraphBuffer::Usage usage)
 {
     auto buffer = renderGraph.getBuffer(output);
-    renderGraph.edges.emplace_back(Edge{.pass = node, .resource = buffer, .usage = static_cast<uint8_t>(usage), .read = false});
+    renderGraph.edges.emplace_back(Edge{.pass = node, .resource = buffer, .usage = static_cast<uint16_t>(usage), .read = false});
     return output;
 }
 
@@ -149,7 +150,7 @@ std::vector<RenderGraphNode *> RenderGraph::getOutComingNodes(RenderGraphNode *n
         std::vector<Edge> outComingEdges{};
         std::ranges::copy_if(edges.begin(), edges.end(),
                              std::back_insert_iterator(outComingEdges),
-                             [pass](const Edge &edge) { return !edge.outComing(pass); });
+                             [pass](const Edge &edge) { return edge.outComing(pass); });
         std::vector<RenderGraphNode *> results{};
         std::ranges::transform(outComingEdges.begin(), outComingEdges.end(), std::back_insert_iterator(results),
                                [](const Edge &edge) {
@@ -214,6 +215,46 @@ ResourceNode *RenderGraph::getResource(RenderGraphHandle handle) const {
     return mResources[handle.index];
 }
 
+void RenderGraph::addPass(const char* name, const GraphicSetup& setup, GraphicsExecute&& execute)
+{
+
+    GraphicRenderGraphPass * pass = new GraphicRenderGraphPass(std::move(execute));
+    auto node = new RenderPassNode(*this, name, pass);
+    mPassNodes.emplace_back(node);
+    Builder builder(node, *this);
+    setup(builder,pass->getData());
+
+}
+
+void RenderGraph::addComputePass(const char* name, const ComputeSetUp& setup, ComputeExecute&& execute)
+{
+    ComputeRenderGraphPass * pass = new ComputeRenderGraphPass(std::move(execute));
+    auto node = new ComputePassNode(*this, name, pass);
+    mPassNodes.emplace_back(node);
+    Builder builder(node, *this);
+    setup(builder,pass->getData());
+}
+
+void RenderGraph::addRaytracingPass(const char* name, const RayTracingSetup& setup, RaytracingExecute&& execute)
+{
+    RaytracingRenderGraphPass * pass = new RaytracingRenderGraphPass(std::move(execute));
+    auto node = new RayTracingPassNode(*this, name, pass);
+    mPassNodes.emplace_back(node);
+    Builder builder(node, *this);
+    setup(builder,pass->getData());
+}
+
+void RenderGraph::addImageCopyPass(RenderGraphHandle src,RenderGraphHandle dst)
+{
+    if(src == dst)
+        return;
+    auto node = new ImageCopyPassNode(src,dst);
+    mPassNodes.emplace_back(node);
+    Builder builder(node, *this);
+    builder.readTexture(src,RenderGraphTexture::Usage::TRANSFER_SRC);
+    builder.writeTexture(dst,RenderGraphTexture::Usage::TRANSFER_DST);
+}
+
 void RenderGraph::compile() {
     //first cull Graph
 
@@ -253,14 +294,14 @@ void RenderGraph::compile() {
 
 
         for (const auto inResource: inResources) {
-            const auto resource = dynamic_cast<RenderGraphTexture *>(inResource);
+            const auto resource = dynamic_cast<ResourceNode *>(inResource);
             assert(resource);
             resource->first = resource->first ? resource->first : passNode;
             resource->last = passNode;
             //   passNode->addTextureUsage(static_cast<const RenderGraphTexture*>(inResource), );
         }
         for (const auto outResource: outResources) {
-            const auto resource = dynamic_cast<RenderGraphTexture *>(outResource);
+            const auto resource = dynamic_cast<ResourceNode *>(outResource);
             assert(resource);
             resource->first = resource->first ? resource->first : passNode;
             resource->last = passNode;
@@ -319,8 +360,9 @@ Blackboard &RenderGraph::getBlackBoard() const {
 }
 
 
-RenderGraphHandle RenderGraph::importTexture(const char *name, SgImage *hwTexture) {
+RenderGraphHandle RenderGraph::importTexture(const char *name, SgImage *hwTexture,bool addRef) {
     auto texture = new RenderGraphTexture(name, hwTexture);
+    if(addRef) texture->addRef();
     return addTexture(texture);
 }
 

@@ -63,7 +63,7 @@ public:
 
     RENDER_GRAPH_RESOURCE_TYPE getType() const override;
 
-    void resloveUsage(CommandBuffer& commandBuffer) override;
+    void resloveUsage(CommandBuffer& commandBuffer,uint16_t usage) override;
 
 
 public:

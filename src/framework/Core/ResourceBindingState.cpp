@@ -4,6 +4,7 @@
 
 #include "ResourceBindingState.h"
 
+#include "Buffer.h"
 #include "Images/Image.h"
 #include "Images/ImageView.h"
 
@@ -35,12 +36,17 @@ void ResourceSet::bindInput(const ImageView& view, uint32_t binding, uint32_t ar
     dirty = true;
 }
 
-void ResourceSet::bindAccel(const Accel& accel, uint32_t binding, uint32_t array_element)
-{
-    resourceBindings[binding][array_element].dirty = true;
-    resourceBindings[binding][array_element].accel = &accel;
-    dirty = true;
-}
+// void ResourceSet::bindAccel(const Accel& accel, uint32_t binding, uint32_t array_element)
+// {
+//     resourceBindings[binding][array_element].dirty = true;
+//     resourceBindings[binding][array_element].accel = &accel;
+//     dirty = true;
+// }
+
+// void ResourceSet::bindAccel1(const Accel& accel, uint32_t binding, uint32_t array_element)
+// {
+//     
+// }
 
 
 bool ResourceSet::isDirty() const
@@ -53,6 +59,8 @@ const BindingMap<ResourceInfo>& ResourceSet::getResourceBindings() const
 {
     return resourceBindings;
 }
+
+
 
 
 void ResourceBindingState::bindBuffer(uint32_t setId, const Buffer& buffer, VkDeviceSize offset, VkDeviceSize range,

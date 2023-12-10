@@ -4,7 +4,23 @@
 #include "Core/Descriptor/DescriptorSet.h"
 
 
-PipelineLayout::PipelineLayout(Device& device, std::vector<Shader>& shaders_) : shaders(std::move(shaders_))
+PipelineLayout::PipelineLayout(Device& device, std::vector<Shader>& shaders_) : shaders(std::move(shaders_)),device(device)
+{
+   create(); 
+}
+
+PipelineLayout::PipelineLayout(Device& device, const std::vector<std::string>& shaderPaths):device(device)
+{
+    shaders.reserve(shaderPaths.size());
+    for(auto & shaderPath : shaderPaths)
+    {
+        shaders.emplace_back(device,FileUtils::getShaderPath(shaderPath));
+    }
+
+    create();
+}
+
+void PipelineLayout::create()
 {
     VkPipelineLayoutCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -30,6 +46,9 @@ PipelineLayout::PipelineLayout(Device& device, std::vector<Shader>& shaders_) : 
 
     VK_CHECK_RESULT(vkCreatePipelineLayout(device.getHandle(), &createInfo, nullptr, &layout))
 }
+
+
+
 
 DescriptorLayout& PipelineLayout::getDescriptorSetLayout(std::size_t setIdx)
 {

@@ -49,6 +49,11 @@ Buffer::Buffer(Buffer &&buffer) : _buffer(buffer._buffer), _allocatedSize(buffer
     buffer._buffer = VK_NULL_HANDLE;
 }
 
+void Buffer::copyFrom(Buffer& srcBuffer)
+{
+    
+}
+
 Buffer::~Buffer() {
     vmaDestroyBuffer(_allocator, _buffer, _bufferAllocation);
 }

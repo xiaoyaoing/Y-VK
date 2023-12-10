@@ -29,7 +29,7 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
 
     if (useSubpass) {
 
-        rg.addGraphicPass("gbuffer",[&](RenderGraph::Builder &builder,GraphicPassSettings & settings)
+        rg.addPass("gbuffer",[&](RenderGraph::Builder &builder,GraphicPassSettings & settings)
         {
             auto albedo = rg.createTexture("color",
                                                      {
@@ -94,8 +94,7 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
                                                          &uniform, allocation.size, allocation.offset);
 
                                                  renderContext->bindBuffer(
-                                                         0, *allocation.buffer, allocation.offset, allocation.size, 0,
-                                                         0);
+                                                         0, *allocation.buffer, allocation.offset, allocation.size);
                                                  renderContext->bindMaterial(primitive.material);
                                                  renderContext->flushAndDrawIndexed(
                                                          commandBuffer, primitive.indexCount, 1, 0, 0, 0);
@@ -116,7 +115,7 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
                     auto viewBuffer = renderContext->
                             allocateBuffer(sizeof(fragUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
                     viewBuffer.buffer->uploadData(&fragUniform, viewBuffer.size, viewBuffer.offset);
-                    renderContext->bindBuffer(0, *viewBuffer.buffer, viewBuffer.offset, viewBuffer.size, 3, 0);
+                    renderContext->bindBuffer(3, *viewBuffer.buffer, viewBuffer.offset, viewBuffer.size);
 
                         
                     renderContext->bindInput(0, blackBoard.getImageView("albedo"), 0, 0);
@@ -133,16 +132,16 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
                     renderContext->flushAndDraw(commandBuffer, 3, 1, 0, 0);
         });
         if(false )
-        rg.addPass<OnePassTwoSubPassDeferedShadingData>(
-                "gbuffer", [&](RenderGraph::Builder &builder, OnePassTwoSubPassDeferedShadingData &data) {
-                    data.albedo = rg.createTexture("color",
+        rg.addPass(
+                "gbuffer", [&](RenderGraph::Builder &builder,GraphicPassSettings & settings) {
+                    auto albedo = rg.createTexture("color",
                                                       {
                                                               .extent = renderContext->getSwapChainExtent(),
                                                               .useage = TextureUsage::SUBPASS_INPUT |
                                                                         TextureUsage::COLOR_ATTACHMENT
                                                       });
 
-                    data.normal = rg.createTexture("normal",
+                    auto normal = rg.createTexture("normal",
                                                       {
                                                               .extent = renderContext->getSwapChainExtent(),
                                                               .useage = TextureUsage::SUBPASS_INPUT |
@@ -150,53 +149,53 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
 
                                                       });
 
-                    data.depth = rg.createTexture("depth", {
+                    auto depth = rg.createTexture("depth", {
                             .extent = renderContext->getSwapChainExtent(),
                             .useage = TextureUsage::SUBPASS_INPUT |
                                       TextureUsage::DEPTH_ATTACHMENT
 
                     });
                     
-                    data.output = rg.importTexture("output", &renderContext->getCurHwtexture());
+                    auto output = rg.importTexture("output", &renderContext->getCurHwtexture());
 
 
-                    blackBoard.put("albedo", data.albedo);
-                    blackBoard.put("normal", data.normal);
-                    blackBoard.put("depth", data.depth);
-                    blackBoard.put("output", data.output);
+                    blackBoard.put("albedo", albedo);
+                    blackBoard.put("normal", normal);
+                    blackBoard.put("depth", depth);
+                    blackBoard.put("output", output);
 
                     RenderGraphPassDescriptor desc{
                             .textures = {
-                                    data.output, data.depth, data.albedo,
-                                    data.normal
+                                    output, depth, albedo,
+                                    normal
                             }
                     };
-                    desc.addSubpass({.outputAttachments = {data.albedo, data.normal, data.depth}}).addSubpass({
+                    desc.addSubpass({.outputAttachments = {albedo, normal, depth}}).addSubpass({
                                             .inputAttachments = {
-                                                    data.albedo, data.depth,
-                                                    data.normal
+                                                    albedo, depth,
+                                                    normal
                                             },
-                                            .outputAttachments = {data.output}
+                                            .outputAttachments = {output}
                                     });
 
                     builder.declare("Color Pass Target", desc);
 
-                    data.output = builder.writeTexture(data.output, TextureUsage::COLOR_ATTACHMENT);
-                    data.depth = builder.writeTexture(data.depth, TextureUsage::COLOR_ATTACHMENT);
-                    data.normal = builder.writeTexture(
-                            data.normal, TextureUsage::COLOR_ATTACHMENT);
-                    data.albedo = builder.writeTexture(
-                            data.albedo, TextureUsage::COLOR_ATTACHMENT);
-                    data.depth = builder.writeTexture(data.depth, TextureUsage::DEPTH_ATTACHMENT);
+                    output = builder.writeTexture(output, TextureUsage::COLOR_ATTACHMENT);
+                    depth = builder.writeTexture(depth, TextureUsage::COLOR_ATTACHMENT);
+                    normal = builder.writeTexture(
+                            normal, TextureUsage::COLOR_ATTACHMENT);
+                    albedo = builder.writeTexture(
+                            albedo, TextureUsage::COLOR_ATTACHMENT);
+                    depth = builder.writeTexture(depth, TextureUsage::DEPTH_ATTACHMENT);
 
-                    data.output = builder.readTexture(data.output, TextureUsage::COLOR_ATTACHMENT);
-                    data.depth = builder.readTexture(
-                            data.depth, TextureUsage::DEPTH_ATTACHMENT);
-                    data.normal = builder.readTexture(
-                            data.normal, TextureUsage::COLOR_ATTACHMENT);
-                    data.albedo = builder.readTexture(
-                            data.albedo, TextureUsage::COLOR_ATTACHMENT);
-                    data.depth = builder.readTexture(data.depth, TextureUsage::DEPTH_ATTACHMENT);
+                    output = builder.readTexture(output, TextureUsage::COLOR_ATTACHMENT);
+                    depth = builder.readTexture(
+                            depth, TextureUsage::DEPTH_ATTACHMENT);
+                    normal = builder.readTexture(
+                            normal, TextureUsage::COLOR_ATTACHMENT);
+                    albedo = builder.readTexture(
+                            albedo, TextureUsage::COLOR_ATTACHMENT);
+                    depth = builder.readTexture(depth, TextureUsage::DEPTH_ATTACHMENT);
                 },
                 [&](RenderPassContext & context) {
                     renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.gBuffer).setDepthStencilState({.depthCompareOp =  VK_COMPARE_OP_GREATER});
@@ -219,8 +218,7 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
                                                          &uniform, allocation.size, allocation.offset);
 
                                                  renderContext->bindBuffer(
-                                                         0, *allocation.buffer, allocation.offset, allocation.size, 0,
-                                                         0);
+                                                         0, *allocation.buffer, allocation.offset, allocation.size);
                                                  renderContext->bindMaterial(primitive.material);
                                                  renderContext->flushAndDrawIndexed(
                                                          commandBuffer, primitive.indexCount, 1, 0, 0, 0);
@@ -241,7 +239,7 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
                     auto viewBuffer = renderContext->
                             allocateBuffer(sizeof(fragUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
                     viewBuffer.buffer->uploadData(&fragUniform, viewBuffer.size, viewBuffer.offset);
-                    renderContext->bindBuffer(0, *viewBuffer.buffer, viewBuffer.offset, viewBuffer.size, 3, 0);
+                    renderContext->bindBuffer(3, *viewBuffer.buffer, viewBuffer.offset, viewBuffer.size);
 
                         
                     renderContext->bindInput(0, blackBoard.getImageView("albedo"), 0, 0);
@@ -270,16 +268,16 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
             RenderGraphHandle depth;
             RENDER_GRAPH_PASS_TYPE type = GRAPHICS;
         };
-        rg.addPass<GBufferData>(
-                "GBufferPass", [&](RenderGraph::Builder &builder, GBufferData &data) {
-                    data.albedo = rg.createTexture("albedo",
+        rg.addPass(
+                "GBufferPass", [&](RenderGraph::Builder &builder,GraphicPassSettings & settings) {
+                    auto albedo = rg.createTexture("albedo",
                                                       {
                                                               .extent = renderContext->getSwapChainExtent(),
                                                               .useage = TextureUsage::SUBPASS_INPUT |
                                                                         TextureUsage::COLOR_ATTACHMENT
                                                       });
 
-                    data.normal = rg.createTexture("normal",
+                    auto normal = rg.createTexture("normal",
                                                       {
                                                               .extent = renderContext->getSwapChainExtent(),
                                                               .useage = TextureUsage::SUBPASS_INPUT |
@@ -287,27 +285,27 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
 
                                                       });
                     
-                    data.depth = rg.createTexture("depth", {
+                    auto depth = rg.createTexture("depth", {
                             .extent = renderContext->getSwapChainExtent(),
                             .useage = TextureUsage::SUBPASS_INPUT |
                                       TextureUsage::DEPTH_ATTACHMENT
 
                     });
 
-                    RenderGraphPassDescriptor desc{.textures = {data.depth, data.albedo, data.depth, data.normal}};
+                    RenderGraphPassDescriptor desc{.textures = {depth, albedo, depth, normal}};
                     builder.declare("GBuffer", desc);
 
 
-                    data.normal = builder.writeTexture(data.normal, TextureUsage::COLOR_ATTACHMENT);
-                    data.albedo = builder.writeTexture(data.albedo, TextureUsage::COLOR_ATTACHMENT);
-                    data.depth = builder.writeTexture(data.depth, TextureUsage::COLOR_ATTACHMENT);
-                    data.depth = builder.writeTexture(data.depth, TextureUsage::DEPTH_ATTACHMENT);
-                    data.depth = builder.readTexture(data.depth, TextureUsage::DEPTH_ATTACHMENT);
+                    normal = builder.writeTexture(normal, TextureUsage::COLOR_ATTACHMENT);
+                    albedo = builder.writeTexture(albedo, TextureUsage::COLOR_ATTACHMENT);
+                    depth = builder.writeTexture(depth, TextureUsage::COLOR_ATTACHMENT);
+                    depth = builder.writeTexture(depth, TextureUsage::DEPTH_ATTACHMENT);
+                    depth = builder.readTexture(depth, TextureUsage::DEPTH_ATTACHMENT);
 
 
-                    blackBoard.put("albedo", data.albedo);
-                    blackBoard.put("normal", data.normal);
-                    blackBoard.put("depth", data.depth);
+                    blackBoard.put("albedo", albedo);
+                    blackBoard.put("normal", normal);
+                    blackBoard.put("depth", depth);
                 },
                 [&](RenderPassContext & context) {
                     //   renderContext->beginRenderPass(commandBuffer, context.renderTarget, {});
@@ -339,29 +337,29 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
 
         };
 
-        rg.addPass<LightingData>(
-                "LightingPass", [&](RenderGraph::Builder &builder, LightingData &data) {
-                    data.depth = blackBoard["depth"];
-                    data.normal = blackBoard["normal"];
-                    data.albedo = blackBoard["albedo"];
-                    data.output = rg.importTexture("output", &renderContext->getCurHwtexture());
+        rg.addPass(
+                "LightingPass", [&](RenderGraph::Builder &builder,GraphicPassSettings & settings) {
+                    auto depth = blackBoard["depth"];
+                    auto normal = blackBoard["normal"];
+                    auto albedo = blackBoard["albedo"];
+                    auto output = rg.importTexture("output", &renderContext->getCurHwtexture());
 
-                    rg.getBlackBoard().put("output", data.output);
+                    rg.getBlackBoard().put("output", output);
 
-                    data.output = builder.writeTexture(data.output, TextureUsage::COLOR_ATTACHMENT);
-                    data.output = builder.readTexture(data.output, TextureUsage::COLOR_ATTACHMENT);
+                    output = builder.writeTexture(output, TextureUsage::COLOR_ATTACHMENT);
+                    output = builder.readTexture(output, TextureUsage::COLOR_ATTACHMENT);
 
-                    data.normal = builder.readTexture(data.normal);
-                    data.albedo = builder.readTexture(data.albedo);
-                    data.depth = builder.readTexture(data.depth);
+                    normal = builder.readTexture(normal);
+                    albedo = builder.readTexture(albedo);
+                    depth = builder.readTexture(depth);
 
-                    RenderGraphPassDescriptor desc{.textures = {data.output, data.albedo, data.depth, data.normal}};
+                    RenderGraphPassDescriptor desc{.textures = {output, albedo, depth, normal}};
                     desc.addSubpass({
                                             .inputAttachments = {
-                                                    data.albedo, data.depth,
-                                                    data.normal
+                                                    albedo, depth,
+                                                    normal
                                             },
-                                            .outputAttachments = {data.output}
+                                            .outputAttachments = {output}
                                     });
                     builder.declare("Lighting Pass", desc);
                     // builder.addSubPass();
@@ -381,7 +379,7 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
                             allocateBuffer(sizeof(fragUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
                     viewBuffer.buffer->uploadData(&fragUniform, viewBuffer.size, viewBuffer.offset);
 
-                    renderContext->bindBuffer(0, *viewBuffer.buffer, viewBuffer.offset, viewBuffer.size, 3, 0)
+                    renderContext->bindBuffer(3, *viewBuffer.buffer, viewBuffer.offset, viewBuffer.size)
                                 .bindInput(0, blackBoard.getImageView("albedo"), 0, 0)
                                 .bindInput(0, blackBoard.getImageView("depth"), 1, 0)
                                 .bindInput(0,blackBoard.getImageView("normal"),2,0)

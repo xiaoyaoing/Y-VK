@@ -45,6 +45,9 @@ public:
 
     inline static VulkanLayout getDefaultLayout(TextureUsage usage)
     {
+        if(any(usage & TextureUsage::STORAGE))
+            return VulkanLayout::READ_WRITE;
+        
         if (any(usage & TextureUsage::DEPTH_ATTACHMENT))
         {
             if (any(usage & TextureUsage::SAMPLEABLE))
@@ -64,48 +67,69 @@ public:
         // Finally, the layout for an immutable texture is optimal read-only.
         if(any(usage & TextureUsage::DEPTH_READ_ONLY))
             return VulkanLayout::DEPTH_READ_ONLY;
+        if(any (usage & TextureUsage::TRANSFER_SRC))
+            return VulkanLayout::TRANSFER_SRC;
+        if(any (usage & TextureUsage::TRANSFER_DST))
+            return VulkanLayout::TRANSFER_DST;
         return VulkanLayout::READ_ONLY;
     }
 
-    inline static VulkanLayout getDefaultLayout(VkImageUsageFlags vkusage)
-    {
-        TextureUsage usage{};
-        if (vkusage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
-        {
-            usage = usage | TextureUsage::DEPTH_ATTACHMENT;
-        }
-        if (vkusage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
-        {
-            usage = usage | TextureUsage::COLOR_ATTACHMENT;
-        }
-        if (vkusage & VK_IMAGE_USAGE_SAMPLED_BIT)
-        {
-            usage = usage | TextureUsage::SAMPLEABLE;
-        }
-        return getDefaultLayout(usage);
-    }
+    // inline static VulkanLayout getDefaultLayout(VkImageUsageFlags vkusage)
+    // {
+    //     TextureUsage usage{};
+    //     if (vkusage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
+    //     {
+    //         usage = usage | TextureUsage::DEPTH_ATTACHMENT;
+    //     }
+    //     if (vkusage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
+    //     {
+    //         usage = usage | TextureUsage::COLOR_ATTACHMENT;
+    //     }
+    //     if (vkusage & VK_IMAGE_USAGE_SAMPLED_BIT)
+    //     {
+    //         usage = usage | TextureUsage::SAMPLEABLE;
+    //     }
+    //     return getDefaultLayout(usage);
+    // }
 
     inline static VkImageUsageFlags getUsageFlags(TextureUsage usage)
     {
-        VkImageUsageFlags flags{};
-        if (any(usage & TextureUsage::DEPTH_ATTACHMENT))
-        {
-            flags = flags | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        }
-        if (any(usage & TextureUsage::COLOR_ATTACHMENT))
-        {
-            flags = flags | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        }
-        if (any(usage & TextureUsage::SUBPASS_INPUT))
-        {
-            flags = flags | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
-        }
-        if (any(usage & TextureUsage::SAMPLEABLE))
-        {
-            flags = flags | VK_IMAGE_USAGE_SAMPLED_BIT;
-        }
+        VkImageUsageFlags vkUsage{};
+        const VkImageUsageFlags blittable = VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+          VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
-        return flags;
+        if (any(usage & TextureUsage::SAMPLEABLE)) {
+            vkUsage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+        }
+        if (any(usage & TextureUsage::COLOR_ATTACHMENT)) {
+            vkUsage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT ;//| blittable;
+            if (any(usage & TextureUsage::SUBPASS_INPUT)) {
+                vkUsage |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+            }
+        }
+        if (any(usage & TextureUsage::STENCIL_ATTACHMENT)) {
+            vkUsage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        }
+        if (any(usage & TextureUsage::UPLOADABLE)) {
+            //vkUsage |= blittable;
+        }
+        if (any(usage & TextureUsage::DEPTH_ATTACHMENT)) {
+            // vkUsage |= blittable;
+            vkUsage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+            // Depth resolves uses a custom shader and therefore needs to be sampleable.
+            // if (samples > 1) {
+            //     vkUsage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+            // }
+        }
+        if (any(usage & TextureUsage::STORAGE)) {
+            vkUsage |= VK_IMAGE_USAGE_STORAGE_BIT;
+        }
+        if(any(usage & TextureUsage::TRANSFER_SRC))
+            vkUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+        if(any(usage & TextureUsage::TRANSFER_DST))
+            vkUsage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        return vkUsage;
     }
 
     inline static VkFormat getFormat(TextureUsage usage)
@@ -114,7 +138,8 @@ public:
         {
             return VK_FORMAT_D32_SFLOAT;
         }
-
+        if(any(usage & TextureUsage::STORAGE))
+            return VK_FORMAT_B8G8R8A8_UNORM;
         return VK_FORMAT_R8G8B8A8_SRGB;
     }
 };

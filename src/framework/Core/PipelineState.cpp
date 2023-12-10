@@ -134,6 +134,7 @@ PipelineState& PipelineState::setSpecializationConstant(uint32_t constantId, con
     // if (specializationConstantState.isDirty()) {
     //     dirty = true;
     // }
+    // return *this;
     return *this;
 }
 
@@ -267,14 +268,14 @@ PipelineState & PipelineState::clearDirty() {
     return *this;
 }
 
-const RTPassSettings &  PipelineState::getRtPassSettings() const
+const RTPipelineSettings &  PipelineState::getrTPipelineSettings() const
 {
-    return rtPassSettings;
+    return rTPipelineSettings;
 }
 
-PipelineState & PipelineState::setRtPassSettings(const RTPassSettings& rtPassSettings_)
+PipelineState & PipelineState::setrTPipelineSettings(const RTPipelineSettings& rTPipelineSettings_)
 {
-    this->rtPassSettings = rtPassSettings_;
+    this->rTPipelineSettings = rTPipelineSettings_;
     return *this;
 }
 

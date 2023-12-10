@@ -7,6 +7,7 @@ class DescriptorLayout;
 class PipelineLayout {
 public:
     PipelineLayout(Device &device, std::vector<Shader> &shaders);
+    PipelineLayout(Device &device, const std::vector<std::string> &shaderPaths);
 
     DescriptorLayout &getDescriptorSetLayout(std::size_t setIdx);
 
@@ -27,7 +28,11 @@ public:
     VkShaderStageFlags getPushConstantRangeStage(uint32_t size) const;
 
 private:
+
+    void create();
+    
     VkPipelineLayout layout;
+    Device & device;
     std::vector<DescriptorLayout *> descriptorLayouts;
     std::vector<Shader> shaders;
 };

@@ -14,6 +14,7 @@
 #include "Core/FrameBuffer.h"
 #include "Core/Pipeline.h"
 #include "Core/RenderTarget.h"
+#include "Core/ResourceCachingHelper.h"
 #include "Core/Descriptor/DescriptorLayout.h"
 #include "Core/Descriptor/DescriptorPool.h"
 #include "Core/Descriptor/DescriptorSet.h"
@@ -42,6 +43,8 @@ struct ResourceCacheState
     std::unordered_map<std::size_t, SgImage> sgImages;
 
     std::unordered_map<std::size_t, FrameBuffer> frameBuffers;
+    
+    std::unordered_map<std::size_t, Buffer> buffers;
 };
 
 
@@ -49,6 +52,28 @@ template <class T, class... A>
 T& requestResource(Device& device, std::unordered_map<std::size_t, T>& resources, A&... args)
 {
     std::size_t hash{0U};
+    hash_param(hash, args...);
+    auto res = resources.find(hash);
+    if (res != resources.end())
+    {
+        return res->second;
+    }
+
+    T resource(device, args...);
+    auto res_it = resources.emplace(hash, std::move(resource));
+
+    res = res_it.first;
+    return res->second;
+
+    // return resources[hash]->second;
+}
+
+
+template <class T, class... A>
+T& requestResource(Device& device,const std::string & name, std::unordered_map<std::size_t, T>& resources, A&... args)
+{
+    std::size_t hash{0U};
+    hash_param(hash, name);
     hash_param(hash, args...);
     auto res = resources.find(hash);
     if (res != resources.end())
@@ -107,6 +132,8 @@ public:
     DescriptorPool& requestDescriptorPool(const DescriptorLayout& layout,
                                           uint32_t poolSize = DescriptorPool::MAX_SETS_PER_POOL);
 
+    Buffer & requestNamedBuffer(const std::string & name, uint64_t bufferSize, VkBufferUsageFlags bufferUsage,
+                    VmaMemoryUsage memoryUsage);
 
     ResourceCache(Device& device);
 
@@ -179,6 +206,8 @@ private:
     std::mutex pipelineLayoutMutex;
 
     std::mutex sgImageMutex;
+    
+    std::mutex bufferMutex;
 
     VkPipelineCache pipelineCache;
 };

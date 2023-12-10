@@ -398,22 +398,22 @@ namespace std
     };
 
     template <>
-    struct hash<RTPassSettings>
+    struct hash<RTPipelineSettings>
     {
-        std::size_t operator()(const RTPassSettings& rtPassSettings) const
+        std::size_t operator()(const RTPipelineSettings& rTPipelineSettings) const
         {
             std::size_t result = 0;
 
-            // hash_combine(result, rtPassSettings.debugName);
-            // hash_combine(result, rtPassSettings.maxRecursionDepth);
-            // hash_combine(result, rtPassSettings.raygenShader);
-            // hash_combine(result, rtPassSettings.missShaders);
-            // hash_combine(result, rtPassSettings.hitGroups);
-            // hash_combine(result, rtPassSettings.callableShaders);
-            // hash_combine(result, rtPassSettings.width);
-            // hash_combine(result, rtPassSettings.height);
-            // hash_combine(result, rtPassSettings.depth);
-            // hash_combine(result, rtPassSettings.shaderBindingTable);
+            // hash_combine(result, rTPipelineSettings.debugName);
+            // hash_combine(result, rTPipelineSettings.maxRecursionDepth);
+            // hash_combine(result, rTPipelineSettings.raygenShader);
+            // hash_combine(result, rTPipelineSettings.missShaders);
+            // hash_combine(result, rTPipelineSettings.hitGroups);
+            // hash_combine(result, rTPipelineSettings.callableShaders);
+            // hash_combine(result, rTPipelineSettings.width);
+            // hash_combine(result, rTPipelineSettings.height);
+            // hash_combine(result, rTPipelineSettings.depth);
+            // hash_combine(result, rTPipelineSettings.shaderBindingTable);
 
             return result;
         }

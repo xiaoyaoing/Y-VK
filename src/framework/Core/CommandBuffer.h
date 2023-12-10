@@ -57,6 +57,8 @@ public:
     void bindVertexBuffer(uint32_t firstBinding, std::vector<const Buffer *> &buffers,
                           const std::vector<VkDeviceSize> &offsets) const;
 
+    void bindVertexBuffer( const Buffer & buffer);
+
     void bindVertexBuffer(const Buffer &buffers, VkDeviceSize offset);
 
 

@@ -13,6 +13,17 @@ requestResource(Device &device, std::mutex &resourceMutex, std::unordered_map<st
     return res;
 }
 
+
+template<class T, class... A>
+T &
+requestResource(Device &device, const std::string & resourceName,std::mutex &resourceMutex, std::unordered_map<std::size_t, T> &resources, A &... args) {
+    std::lock_guard<std::mutex> guard(resourceMutex);
+
+    auto &res = requestResource(device, resourceName,resources, args...);
+
+    return res;
+}
+
 ResourceCache &ResourceCache::getResourceCache() {
     assert(cache != nullptr && "Cache has not been initalized");
     return *cache;
@@ -62,6 +73,12 @@ DescriptorSet &ResourceCache::requestDescriptorSet(const DescriptorLayout &descr
 DescriptorPool &ResourceCache::requestDescriptorPool(const DescriptorLayout &layout, uint32_t poolSize) {
 
     return requestResource(device, descriptorPoolMutex, state.descriptor_pools, layout, poolSize);
+}
+
+Buffer& ResourceCache::requestNamedBuffer(const std::string& name, uint64_t bufferSize, VkBufferUsageFlags bufferUsage,
+    VmaMemoryUsage memoryUsage)
+{
+    return requestResource(device,name, bufferMutex, state.buffers, bufferSize, bufferUsage, memoryUsage);
 }
 
 ResourceCache::ResourceCache(Device &device) : device(device) {

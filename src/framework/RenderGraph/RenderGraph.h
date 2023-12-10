@@ -79,7 +79,7 @@ public:
 
 
     RenderGraphHandle createTexture(const char *name, const RenderGraphTexture::Descriptor &desc = {});
-    RenderGraphHandle importTexture(const char *name, SgImage *hwTexture);
+    RenderGraphHandle importTexture(const char *name, SgImage *hwTexture,bool addRef = true);
 
     RenderGraphHandle createBuffer(const char *name, const RenderGraphBuffer::Descriptor &desc = {});
     RenderGraphHandle importBuffer(const char *name, Buffer *hwBuffer);
@@ -102,58 +102,65 @@ public:
     using ComputeSetUp = std::function<void(Builder & builder,ComputePassSettings &)>;
     using RayTracingSetup = std::function<void(Builder & builder,RaytracingPassSettings &)>;
 
-    using GraphicsExecute = std::function<void(RenderPassContext & context)>;
-    using ComputeExecute = std::function<void(RenderPassContext & context)>;
-    using RaytracingsExecute = std::function<void(RenderPassContext & context)>;
-
-    template<typename PassSettings>
-    using Setup = std::function<void(Builder & builder,PassSettings &)>;
     
-    void addGraphicPass(const char * name,const GraphicSetup &  setup,GraphicsExecute && execute)
-    {
-        addPass<GraphicPassSettings>(name,setup,std::forward<GraphicsExecute>(execute));
-    }
+
+    // template<typename PassSettings>
+    // using Setup = std::function<void(Builder & builder,PassSettings &)>;
     
-    void addComputePass(const char * name,ComputeSetUp & setup,ComputeExecute && execute)
-    {
-        addPass<ComputePassSettings>(name,setup,std::forward<ComputeExecute>(execute));
-
-    }
-
-    void addRayTracingPass(const char * name,RayTracingSetup & setup,RaytracingsExecute && execute)
-    {
-        addPass<RaytracingPassSettings>(name,setup,std::forward<RaytracingsExecute>(execute));
-    }
+    // void addGraphicPass(const char * name,const GraphicSetup &  setup,GraphicsExecute && execute)
+    // {
+    //     addPass<GraphicPassSettings>(name,setup,std::forward<GraphicsExecute>(execute));
+    // }
+    //
+    // void addComputePass(const char * name,ComputeSetUp & setup,ComputeExecute && execute)
+    // {
+    //     addPass<ComputePassSettings>(name,setup,std::forward<ComputeExecute>(execute));
+    //
+    // }
+    //
+    // void addRayTracingPass(const char * name,RayTracingSetup & setup,RaytracingExecute && execute)
+    // {
+    //     addPass<RaytracingPassSettings>(name,setup,std::forward<RaytracingExecute>(execute));
+    // }
     
 
     
-    template<typename Data, typename Setup, typename Execute>
-    void addPass(const char *name, const Setup & setup, Execute &&execute) {
-        auto pass = new RenderGraphPass<Data, Execute>(std::forward<Execute>(execute));
-        PassNode * node;
-        switch (pass->getData().type)
-        {
-            case(RENDER_GRAPH_PASS_TYPE::GRAPHICS):
-            {
-                 node = new RenderPassNode(*this, name, pass);
-                    break;
-            }
-            case(RENDER_GRAPH_PASS_TYPE::COMPUTE):
-            {
-                node = new ComputePassNode(*this, name, pass);
-                break;
-            }
-            case(RENDER_GRAPH_PASS_TYPE::RAYTRACING):
-            {
-                node = new RayTracingPassNode(*this, name, pass);
-                break;
-            }
-        }
+    
+    // template<typename Data, typename Setup, typename Execute>
+    // void addPass(const char *name, const Setup & setup, Execute &&execute) {
+    //     auto pass = new RenderGraphPass<Data, Execute>(std::forward<Execute>(execute));
+    //     PassNode * node;
+    //     switch (pass->getData().type)
+    //     {
+    //         case(RENDER_GRAPH_PASS_TYPE::GRAPHICS):
+    //         {
+    //              node = new RenderPassNode(*this, name, pass);
+    //                 break;
+    //         }
+    //         case(RENDER_GRAPH_PASS_TYPE::COMPUTE):
+    //         {
+    //             node = new ComputePassNode(*this, name, pass);
+    //             break;
+    //         }
+    //         case(RENDER_GRAPH_PASS_TYPE::RAYTRACING):
+    //         {
+    //             node = new RayTracingPassNode(*this, name, pass);
+    //             break;
+    //         }
+    //     }
+    //     
+    //     mPassNodes.emplace_back(node);
+    //     Builder builder(node, *this);
+    //     setup(builder,pass->getData());
+    // }
+
+    // template< typename Setup, typename Execute>
+    void addPass(const char *name, const GraphicSetup & setup,GraphicsExecute &&execute) ;
         
-        mPassNodes.emplace_back(node);
-        Builder builder(node, *this);
-        setup(builder,pass->getData());
-    }
+
+    void addComputePass(const char *name, const ComputeSetUp  & setup,ComputeExecute &&execute) ;
+    void addRaytracingPass(const char *name, const RayTracingSetup  & setup,RaytracingExecute &&execute) ;
+    void addImageCopyPass(RenderGraphHandle src,RenderGraphHandle dst);
 
     
 
@@ -220,7 +227,7 @@ private:
     {
         PassNode *pass{nullptr};
         ResourceNode *resource{nullptr};
-        uint8_t usage{};
+        uint16_t usage{};
         bool read{true};
 
         //For Given Node ,whether this edge is incoming or outgoing

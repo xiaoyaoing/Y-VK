@@ -287,7 +287,7 @@ void Gui::draw(CommandBuffer &commandBuffer) {
 
 void Gui::addGuiPass(RenderGraph &graph, RenderContext &renderContext) {
     
-    graph.addGraphicPass("Gui Pass",
+    graph.addPass("Gui Pass",
                                [&graph](RenderGraph::Builder &builder,GraphicPassSettings & settings) {
                                    auto output = graph.getBlackBoard()["output"];
 

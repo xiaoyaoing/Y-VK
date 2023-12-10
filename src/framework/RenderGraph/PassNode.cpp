@@ -88,12 +88,11 @@ void RenderPassNode::execute(RenderGraph &renderGraph, CommandBuffer &commandBuf
 
 
     auto hwTextures = renderTarget.getHwTextures();
-
+    RenderContext::g_context->getPipelineState().setPipelineType(PIPELINE_TYPE::E_GRAPHICS);
     RenderContext::g_context->beginRenderPass(commandBuffer, renderTarget, subpassInfos);
 
     RenderPassContext context = {
-            .commandBuffer = commandBuffer,
-            .renderTarget = renderTarget
+            .commandBuffer = commandBuffer
     };
     mRenderPass->execute(context);
 
@@ -117,7 +116,7 @@ void RenderPassNode::declareRenderPass(const char *name, const RenderGraphPassDe
 
 void PassNode::resolveTextureUsages(RenderGraph &renderGraph, CommandBuffer &commandBuffer) {
     for (auto &textureIt: resourceUsages) {
-        textureIt.first->resloveUsage(commandBuffer);
+        textureIt.first->resloveUsage(commandBuffer, textureIt.second);
         // const auto *texture = textureIt.first;
         // const auto newLayout = ImageUtil::getDefaultLayout(textureIt.second);
         // const auto subsubsource = texture->getHwTexture()->getVkImageView().getSubResourceRange();
@@ -125,30 +124,59 @@ void PassNode::resolveTextureUsages(RenderGraph &renderGraph, CommandBuffer &com
     }
 }
 
-void PassNode::addResourceUsage(ResourceNode* texture, uint8_t usage)
+void PassNode::addResourceUsage(ResourceNode* texture, uint16_t usage)
 {
     resourceUsages.emplace(texture,usage);
 }
 
 
 
-void PresentPassNode::execute(RenderGraph &renderGraph, CommandBuffer &commandBuffer) {
+void ImageCopyPassNode::execute(RenderGraph &renderGraph, CommandBuffer &commandBuffer) {
+
+    auto & srcVkImage =renderGraph.getTexture(src)->getHwTexture()->getVkImage();
+    auto & dstVkImage =renderGraph.getTexture(dst)->getHwTexture()->getVkImage();
+    
+    VkImageCopy copy_region{};
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1    };
+    copy_region.srcOffset      = {0, 0, 0};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstOffset      = {0, 0, 0};
+    copy_region.extent         = {srcVkImage.getExtent().width,srcVkImage.getExtent().height, 1};
+
+    vkCmdCopyImage(commandBuffer.getHandle(),srcVkImage.getHandle(),VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                    dstVkImage.getHandle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
+}
+
+ImageCopyPassNode::ImageCopyPassNode(RenderGraphHandle src, RenderGraphHandle dst):src(src),dst(dst)
+{
 }
 
 void ComputePassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer)
-{
+{    RenderContext::g_context->getPipelineState().setPipelineType(PIPELINE_TYPE::E_COMPUTE);
+
+    RenderPassContext context{.commandBuffer = commandBuffer};
+    mPass->execute(context);
 }
 
 void RayTracingPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer)
-{
+{   
+    auto &  settings = mPass->getData();
+    RenderContext::g_context->getPipelineState().setPipelineType(PIPELINE_TYPE::E_RAY_TRACING)
+    .setPipelineLayout(*settings.pipelineLayout).setrTPipelineSettings(settings.rTPipelineSettings);
+    RenderContext::g_context->bindAcceleration(0,*settings.accel,0,0);
+    RenderPassContext context{.commandBuffer = commandBuffer};
+    mPass->execute(context);
+    // RenderContext::g_context->getPipelineState().setPipelineType(PIPELINE_TYPE::E_RAY_TRACING).setPipelineLayout(*layout).setrTPipelineSettings({.maxDepth = 5,.dims = {width,height,1}});
+    // renderContext->getPipelineState().setPipelineType(PIPELINE_TYPE::E_RAY_TRACING).setPipelineLayout(*layout).setrTPipelineSettings({.maxDepth = 5,.dims = {width,height,1}});
+
 }
 
 
-ComputePassNode::ComputePassNode(RenderGraph& renderGraph, const char* name, RenderGraphPassBase* base)
+ComputePassNode::ComputePassNode(RenderGraph& renderGraph, const char* name, ComputeRenderGraphPass* base):mPass(base)
 {
 }
 
-RayTracingPassNode::RayTracingPassNode(RenderGraph& renderGraph, const char* name, RenderGraphPassBase* base)
+RayTracingPassNode::RayTracingPassNode(RenderGraph& renderGraph, const char* name, RaytracingRenderGraphPass *base):mPass(base)
 {
 }
 

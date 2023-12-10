@@ -68,8 +68,11 @@ public:
     static RenderContext* g_context;
     
 
-    RenderContext & bindBuffer(uint32_t setId, const Buffer& buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t binding,
-                    uint32_t array_element);
+    // RenderContext & bindBuffer(uint32_t setId, const Buffer& buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t binding,
+    //                 uint32_t array_element);
+    
+    RenderContext &  bindBuffer(uint32_t binding, const Buffer &buffer, VkDeviceSize offset = 0 , VkDeviceSize range = 0 ,uint32_t setId = 0,uint32_t array_element=0);
+    
 
     RenderContext & bindAcceleration(uint32_t setId, const Accel& acceleration, uint32_t binding,
                           uint32_t array_element);
@@ -126,7 +129,6 @@ public:
     bool isPrepared() const;
 
 
-    RenderGraph& getRenderGraph() const;
 
     PipelineState& getPipelineState();
 
@@ -142,7 +144,9 @@ public:
     void flushAndDraw(CommandBuffer& commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
                       uint32_t firstInstance);
 
-    void traceRay(CommandBuffer& commandBuffer);
+    void traceRay(CommandBuffer& commandBuffer,VkExtent3D dims);
+
+    void dispath(CommandBuffer & commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
 
     void beginRenderPass(CommandBuffer& commandBuffer, RenderTarget& renderTarget,
                          const std::vector<SubpassInfo>& subpassInfos);
@@ -160,6 +164,8 @@ public:
     void handleSurfaceChanges();
 
     void recrateSwapChain(VkExtent2D extent);
+
+    void copyBuffer(Buffer & src, Buffer & dst);
 
 private:
     bool frameActive = false;

@@ -108,62 +108,58 @@ void RayTracer::drawFrame(RenderGraph& renderGraph, CommandBuffer& commandBuffer
 {
     // renderContext->submit(commandBuffer,fence);
     // return ;
-    storageImage->getVkImage().transitionLayout(commandBuffer,VulkanLayout::READ_WRITE);    
 
-    auto buffer = renderContext->allocateBuffer(sizeof(cameraUbo),VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-    cameraUbo.projInverse = glm::inverse(camera->matrices.perspective);
-    cameraUbo.viewInverse = glm::inverse(camera->matrices.view);
-    buffer.buffer->uploadData(&cameraUbo,sizeof(cameraUbo));
-    
-    renderContext->getPipelineState().setPipelineType(PIPELINE_TYPE::E_RAY_TRACING).setPipelineLayout(*layout).setRtPassSettings({.maxDepth = 5,.dims = {width,height,1}});
-    renderContext->bindAcceleration(0,tlas,0,0).bindInput(0,storageImage->getVkImageView(),1,0).bindBuffer(0,*buffer.buffer,0,sizeof(cameraUbo),2,0);
-    renderContext->flush(commandBuffer);
-    renderContext->traceRay(commandBuffer);
+    renderGraph.addRaytracingPass("PT pass",[&](RenderGraph::Builder & builder,RaytracingPassSettings & settings)
+    {
+        settings.accel = &tlas;
+        settings.pipelineLayout = layout;
+        settings.rTPipelineSettings.dims = {width,height,1};
+        settings.rTPipelineSettings.maxDepth = 5;
+        
+        auto output = renderGraph.createTexture("RT output",{width,height,TextureUsage::STORAGE | TextureUsage::TRANSFER_SRC});
+        builder.writeTexture(output,TextureUsage::STORAGE);
+        renderGraph.getBlackBoard().put("RT",output);
+    },[&](RenderPassContext & context)
+    {
+        auto buffer = renderContext->allocateBuffer(sizeof(cameraUbo),VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+        cameraUbo.projInverse = glm::inverse(camera->matrices.perspective);
+        cameraUbo.viewInverse = glm::inverse(camera->matrices.view);
+        buffer.buffer->uploadData(&cameraUbo,sizeof(cameraUbo));
+        renderContext->bindBuffer(0,*buffer.buffer,0,sizeof(cameraUbo),2,0).
+        bindInput(0,renderGraph.getBlackBoard().getImageView("RT"),1,0);
+        renderContext->traceRay(commandBuffer,{width,height,1});
+    });
 
-    renderContext->getCurHwtexture().getVkImage().transitionLayout(commandBuffer,VulkanLayout::TRANSFER_DST);
-    storageImage->getVkImage().transitionLayout(commandBuffer,VulkanLayout::TRANSFER_SRC);
+    renderGraph.addImageCopyPass(renderGraph.getBlackBoard().getHandle("RT"),renderGraph.getBlackBoard().getHandle(SWAPCHAIN_IMAGE_NAME));
     
-    VkImageCopy copy_region{};
-    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    copy_region.srcOffset      = {0, 0, 0};
-    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    copy_region.dstOffset      = {0, 0, 0};
-    copy_region.extent         = {width, height, 1};
-    
-    vkCmdCopyImage(commandBuffer.getHandle(),storageImage->getVkImage().getHandle(),VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                    renderContext->getCurHwtexture().getVkImage().getHandle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
-
- //   renderContext->getCurHwtexture().getVkImage().transitionLayout(commandBuffer,VulkanLayout::PRESENT);
-    storageImage->getVkImage().transitionLayout(commandBuffer,VulkanLayout::READ_WRITE);
-    // //copy image to swapchain image
-    // vkCommon::setImageLayout(commandBuffer.getHandle(),storageImage->getVkImage().getHandle(),VK_IMAGE_LAYOUT_GENERAL,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-    // // vkb::set_image_layout(
-    // //         draw_cmd_buffers[i],
-    // //         storage_image.image,
-    // //         VK_IMAGE_LAYOUT_GENERAL,
-    // //         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-    // //         subresource_range);
+    // storageImage->getVkImage().transitionLayout(commandBuffer,VulkanLayout::READ_WRITE);    
     //
-    
-    // vkCmdCopyImage(draw_cmd_buffers[i], storage_image.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-    //                get_render_context().get_swapchain().get_images()[i], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
+    // auto buffer = renderContext->allocateBuffer(sizeof(cameraUbo),VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    // cameraUbo.projInverse = glm::inverse(camera->matrices.perspective);
+    // cameraUbo.viewInverse = glm::inverse(camera->matrices.view);
+    // buffer.buffer->uploadData(&cameraUbo,sizeof(cameraUbo));
     //
-    // // Transition swap chain image back for presentation
-    // vkb::set_image_layout(
-    //     draw_cmd_buffers[i],
-    //     get_render_context().get_swapchain().get_images()[i],
-    //     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-    //     VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-    //     subresource_range);
+    // renderContext->getPipelineState().setPipelineType(PIPELINE_TYPE::E_RAY_TRACING).setPipelineLayout(*layout).setrTPipelineSettings({.maxDepth = 5,.dims = {width,height,1}});
+    // renderContext->bindAcceleration(0,tlas,0,0).bindInput(0,storageImage->getVkImageView(),1,0).bindBuffer(0,*buffer.buffer,0,sizeof(cameraUbo),2,0);
+    // renderContext->flush(commandBuffer);
+    // renderContext->traceRay(commandBuffer);
     //
-    // // Transition ray tracing output image back to general layout
-    // vkb::set_image_layout(
-    //     draw_cmd_buffers[i],
-    //     storage_image.image,
-    //     VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-    //     VK_IMAGE_LAYOUT_GENERAL,
-    //     subresource_range);
+    // renderContext->getCurHwtexture().getVkImage().transitionLayout(commandBuffer,VulkanLayout::TRANSFER_DST);
+    // storageImage->getVkImage().transitionLayout(commandBuffer,VulkanLayout::TRANSFER_SRC);
+    //
+    // VkImageCopy copy_region{};
+    // copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1    };
+    // copy_region.srcOffset      = {0, 0, 0};
+    // copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    // copy_region.dstOffset      = {0, 0, 0};
+    // copy_region.extent         = {width, height, 1};
+    //
+    // vkCmdCopyImage(commandBuffer.getHandle(),storageImage->getVkImage().getHandle(),VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+    //                 renderContext->getCurHwtexture().getVkImage().getHandle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
+    //
+    // storageImage->getVkImage().transitionLayout(commandBuffer,VulkanLayout::READ_WRITE);
 
+    renderGraph.execute(commandBuffer);
     
     renderContext->submitAndPresent(commandBuffer,fence);
     // vkCmdTraceRaysKHR()
@@ -285,7 +281,6 @@ void RayTracer::buildBLAS()
             indices.clear();
         }
     }
-     commandBuffer.endRecord();
     auto queue = device->getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0);
 
     renderContext->submit(commandBuffer);
@@ -471,10 +466,7 @@ void RayTracer::buildTLAS()
     
         // Build the TLAS
     vkCmdBuildAccelerationStructuresKHR(cmdBuffer.getHandle(), 1, &build_info, &pBuildOffsetInfo);
-
-    cmdBuffer.endRecord();
-   
-
+    
     renderContext->submit(cmdBuffer);
 
     

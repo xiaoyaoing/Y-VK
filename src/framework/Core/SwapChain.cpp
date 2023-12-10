@@ -87,6 +87,13 @@ SwapChain::SwapChainSupportDetails SwapChain::querySwapChainSupport()
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, _surface, &details.capabilities);
 
     uint32_t formatCount;
+
+
+
+
+
+
+
     vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, _surface, &formatCount, nullptr);
     if (formatCount != 0)
     {

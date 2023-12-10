@@ -133,7 +133,7 @@ DescriptorSet::DescriptorSet(Device &device, const DescriptorLayout &descriptorS
         };
 
             writeSets.push_back(writeSet);
-        }
+        } 
     }
 
     vkUpdateDescriptorSets(device.getHandle(),

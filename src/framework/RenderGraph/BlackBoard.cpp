@@ -43,3 +43,9 @@ const SgImage& Blackboard::getHwImage(std::string_view name) const noexcept
 {
     return *graph.getTexture(getHandle(name))->getHwTexture();
 }
+
+const Buffer & Blackboard::getBuffer(std::string_view name) const noexcept
+{
+    return *graph.getBuffer(getHandle(name))->getHwBuffer();
+
+}

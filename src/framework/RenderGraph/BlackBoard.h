@@ -5,12 +5,14 @@
 #include <unordered_map>
 
 
+class Buffer;
 class Image;
 class ImageView;
 class SgImage;
 
 class RenderGraph;
 
+#define SWAPCHAIN_IMAGE_NAME "_swapchain_image"
 
 class Blackboard
 {
@@ -39,7 +41,10 @@ public:
     const ImageView& getImageView(std::string_view name) const noexcept;
 
     const SgImage& getHwImage(std::string_view name) const noexcept;
+    
 
+    const Buffer & getBuffer(std::string_view name) const noexcept;
+    
     void remove(std::string_view name) noexcept;
 
 private:
