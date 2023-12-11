@@ -1,6 +1,5 @@
-#version 450
-/* Copyright (c) 2019-2020, Sascha Willems
- *
+/* Copyright (c) 2019, Arm Limited and Contributors
+*
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 the "License";
@@ -16,33 +15,30 @@
  * limitations under the License.
  */
 
-struct Particle
-{
-	vec4 pos;
-	vec4 vel;
-};
+#include "Timer.h"
 
-// Binding 0 : Position storage buffer
-layout(std140, binding = 0) buffer Pos 
-{
-   Particle particles[ ];
-};
+    Timer::Timer() :
+        start_time{Clock::now()},
+        previous_tick{Clock::now()}
+    {
+    }
 
-layout (local_size_x = 128) in;
+    void Timer::start()
+    {
+        if (!running)
+        {
+            running    = true;
+            start_time = Clock::now();
+        }
+    }
 
-layout (binding = 1) uniform UBO 
-{
-	float deltaT;
-	int particleCount;
-} ubo;
+    void Timer::lap()
+    {
+        lapping  = true;
+        lap_time = Clock::now();
+    }
 
-#define TIME_FACTOR 0.05
-
-void main() 
-{
-	int index = int(gl_GlobalInvocationID);
-	vec4 position = particles[index].pos;
-	vec4 velocity = particles[index].vel;
-	position += ubo.deltaT * TIME_FACTOR * velocity;
-	particles[index].pos = position;
-}
+    bool Timer::is_running() const
+    {
+        return running;
+    }

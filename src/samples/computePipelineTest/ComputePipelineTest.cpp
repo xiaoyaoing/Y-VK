@@ -7,13 +7,19 @@
 
 Example::Example()
 {
-   // addDeviceExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-   
+    // addDeviceExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    
 }
 
 void Example::prepare()
 {
+    
+    
     Application::prepare();
+
+    camera->setPerspective(60.0f, static_cast<float>(width) / static_cast<float>(height), 512.0f, 0.1f);
+    camera->setRotation(glm::vec3(-26.0f, 75.0f, 0.0f));
+    camera->setTranslation(glm::vec3(0.0f, 0.0f, -14.0f));
 
     graphics.particle = Texture::loadTexture(*device,FileUtils::getResourcePath("textures/particle_rgba.ktx"));
     graphics.gradient = Texture::loadTexture(*device,FileUtils::getResourcePath("textures/particle_gradient_rgba.ktx"));
@@ -82,16 +88,27 @@ void Example::prepare()
     uniformBuffer = std::make_unique<Buffer>(*device,sizeof(ubo),VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,VMA_MEMORY_USAGE_CPU_TO_GPU);
 }
 
-void Example::drawFrame(RenderGraph& rg, CommandBuffer& commandBuffer)
+void Example::drawFrame(RenderGraph& rg)
 {
     graphics.ubo.projection = camera->matrices.perspective;
     graphics.ubo.view       = camera->matrices.view;
     graphics.ubo.screenDim  = glm::vec2(static_cast<float>(width), static_cast<float>(height));
     graphics.uniformBuffer->uploadData(&graphics.ubo,sizeof(graphics.ubo));
 
-    ubo.delta_time = frameTimer * 0.05f;
+    ubo.delta_time = timer.tick<Timer::Seconds>();
     ubo.particle_count =    num_particles;
     uniformBuffer->uploadData(&ubo,sizeof(ubo));
+
+
+    ColorBlendAttachmentState state{.blendEnable = VK_TRUE,
+                                    .srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
+                                    .dstColorBlendFactor = VK_BLEND_FACTOR_ONE,
+                                    .colorBlendOp = VK_BLEND_OP_ADD,
+                                    .srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
+                                    .dstAlphaBlendFactor = VK_BLEND_FACTOR_DST_ALPHA,
+                                    .alphaBlendOp = VK_BLEND_OP_ADD,
+                                    .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+};
 
     rg.addComputePass("Compute Pass",[&](auto & builder,auto & settings)
     {
@@ -101,6 +118,7 @@ void Example::drawFrame(RenderGraph& rg, CommandBuffer& commandBuffer)
         rg.getBlackBoard().put("storageBuffer",bufferHandle);
     }, [&](auto & context)
     {
+        auto &  commandBuffer = context.commandBuffer;
         renderContext->getPipelineState().setPipelineLayout(*computeCalculateLayout);
         renderContext->bindBuffer(0,rg.getBlackBoard().getBuffer("storageBuffer")).bindBuffer(1,*uniformBuffer);
         renderContext->dispath(commandBuffer,num_particles/128,1,1);
@@ -113,21 +131,30 @@ void Example::drawFrame(RenderGraph& rg, CommandBuffer& commandBuffer)
         [&](auto & builder,auto & settings  )
     {
         auto handle = rg.getBlackBoard().getHandle(SWAPCHAIN_IMAGE_NAME);
-            builder.writeTexture(handle);
-            builder.readBuffer(rg.getBlackBoard().getHandle("storageBuffer"));
-            RenderGraphPassDescriptor desc{};
-            desc.textures = {handle};
-            desc.subpasses = {{.outputAttachments = {handle}}};
-            builder.declare("",desc);
+        auto depth = rg.createTexture("depth", {
+                                       .extent = renderContext->getSwapChainExtent(),
+                                       .useage = TextureUsage::SUBPASS_INPUT |
+                                                 TextureUsage::DEPTH_ATTACHMENT
+
+                               });        builder.writeTexture(handle);
+        builder.readBuffer(rg.getBlackBoard().getHandle("storageBuffer"));
+        RenderGraphPassDescriptor desc{};
+        desc.textures = {handle,depth};
+        desc.subpasses = {{.outputAttachments = {handle,depth}}};
+        builder.declare("",desc);
     },[&](auto & context)
     {
-        renderContext->getPipelineState().setPipelineLayout(*graphics.pipelineLayout).setVertexInputState(
+        auto & commandBuffer = context.commandBuffer;
+        renderContext->getPipelineState().setPipelineLayout(*graphics.pipelineLayout).setInputAssemblyState({.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST}).setVertexInputState(
             { .bindings =  {vkCommon::initializers::vertexInputBindingDescription(0, sizeof(Particle), VK_VERTEX_INPUT_RATE_VERTEX)},
                 .attributes = {
                 vkCommon::initializers::vertexInputAttributeDescription(0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Particle, pos)),
                 vkCommon::initializers::vertexInputAttributeDescription(0, 1, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Particle, vel))}
             }
-            );
+            ).setDepthStencilState({.depthTestEnable =  false}).setRasterizationState({.cullMode = VK_CULL_MODE_NONE}).
+        setColorBlendState({.attachments =  {state}}
+                )
+        ;
         renderContext->bindImage(0,graphics.particle->getImage().getVkImageView(),graphics.particle->getSampler(),0,0)
         .bindImage(0,graphics.gradient->getImage().getVkImageView(),graphics.gradient->getSampler(),1,0)
         .bindBuffer(2,*graphics.uniformBuffer);
@@ -135,8 +162,8 @@ void Example::drawFrame(RenderGraph& rg, CommandBuffer& commandBuffer)
         renderContext->flushAndDraw(commandBuffer,num_particles,1,0,0);
     });
 
-    rg.execute(commandBuffer);
-    renderContext->submitAndPresent(commandBuffer,fence);
+    rg.execute(renderContext->getGraphicBuffer());
+    renderContext->submitAndPresent(renderContext->getGraphicBuffer(),fence);
 }
 
 int main(int argc, char* argv[])

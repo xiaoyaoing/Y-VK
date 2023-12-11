@@ -18,23 +18,26 @@ class SpecializationConstantState
 public:
     void reset();
 
-    bool is_dirty() const;
+    bool isDirty() const;
 
-    void clear_dirty();
+    void clearDirty();
 
     template <class T>
-    void set_constant(uint32_t constant_id, const T &data);
+    void setConstant(uint32_t constantId, const T &data)
+    {
+        setConstant(constantId, toUint32(static_cast<std::uint32_t>(data)));
+    }
 
-    void set_constant(uint32_t constant_id, const std::vector<uint8_t> &data);
+    void setConstant(uint32_t constantId, const std::vector<uint8_t> &data);
 
-    void set_specialization_constant_state(const std::map<uint32_t, std::vector<uint8_t>> &state);
+    void setSpecializationConstantState(const std::map<uint32_t, std::vector<uint8_t>> &state);
 
-    const std::map<uint32_t, std::vector<uint8_t>> &get_specialization_constant_state() const;
+    const std::map<uint32_t, std::vector<uint8_t>> &getSpecializationConstantState() const;
 
 private:
     bool dirty{false};
     // Map tracking state of the Specialization Constants
-    std::map<uint32_t, std::vector<uint8_t>> specialization_constant_state;
+    std::map<uint32_t, std::vector<uint8_t>> specializationConstantState;
 };
 
 struct InputAssemblyState {

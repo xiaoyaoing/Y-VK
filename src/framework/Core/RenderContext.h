@@ -45,7 +45,10 @@ struct FrameResource
 
     void reset();
 
-    std::unique_ptr<CommandBuffer> commandBuffer{nullptr};
+    std::unique_ptr<CommandBuffer> graphicComputeBuffer{nullptr};
+    std::unique_ptr<CommandBuffer> computeComputeBuffer{nullptr};
+
+    
     std::unordered_map<VkBufferUsageFlags, std::unique_ptr<BufferPool>> bufferPools{};
     // CommandBuffer commandBuffer;
 };
@@ -84,7 +87,7 @@ public:
 
     RenderContext & bindMaterial(const Material& material);
 
-    RenderContext & bindPrimitive(const Primitive& primitive);
+    RenderContext & bindPrimitive(CommandBuffer & commandBuffer,const Primitive& primitive);
 
 
     template <typename T>
@@ -111,7 +114,7 @@ public:
     void prepare();
 
 
-    CommandBuffer& beginFrame();
+    void beginFrame();
 
     void waitFrame();
 
@@ -120,9 +123,7 @@ public:
     void submitAndPresent(CommandBuffer& buffer, VkFence fence = VK_NULL_HANDLE);
     void submit(CommandBuffer& commandBuffer, bool waiteFence = true);
 
-
-    VkSemaphore submit(const Queue& queue, const std::vector<CommandBuffer*>& commandBuffers, VkSemaphore waitSem,
-                       VkPipelineStageFlags waitPiplineStage);
+    
 
     void setActiveFrameIdx(int idx);
 
@@ -159,7 +160,8 @@ public:
 
     BufferAllocation allocateBuffer(VkDeviceSize allocateSize, VkBufferUsageFlags usage);
 
-    CommandBuffer& getCommandBuffer();
+    CommandBuffer& getGraphicBuffer();
+    CommandBuffer& getComputeCommandBuffer();
 
     void handleSurfaceChanges();
 
@@ -185,6 +187,8 @@ private:
     {
         VkSemaphore presentFinishedSem;
         VkSemaphore renderFinishedSem;
+        VkSemaphore computeFinishedSem;
+        VkSemaphore graphicFinishedSem;
     } semaphores;
 
     PipelineState pipelineState;

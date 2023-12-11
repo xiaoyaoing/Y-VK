@@ -28,10 +28,11 @@ public:
     
     Queue &getQueueByFlag(VkQueueFlagBits requiredFlag, uint32_t queueIndex);
     const Queue &getPresentQueue(uint32_t queueIndex);
+    CommandPool & getCommandPool(VkQueueFlags queueFlags = VK_QUEUE_GRAPHICS_BIT) { return commandPools.at(queueFlags);}
+
     
     inline VmaAllocator getMemoryAllocator() const {  return allocator;}
-    inline CommandPool & getCommandPool() { return *commandPool;}
-    inline CommandBuffer createCommandBuffer(VkCommandBufferLevel level, bool begin = false) { return commandPool->allocateCommandBuffer(level, begin);}
+    inline CommandBuffer createCommandBuffer(VkCommandBufferLevel level, bool begin = false) { return getCommandPool().allocateCommandBuffer(level, begin);}
     inline ResourceCache &getResourceCache(){    return *cache; }
     inline VkPhysicalDeviceProperties getProperties() const {return properties;}
     inline VkDevice getHandle() const { return _device; }
@@ -51,6 +52,7 @@ protected:
     std::vector<VkExtensionProperties> deviceExtensions{};
     std::vector<const char *> enabled_extensions{};
 
+    std::unordered_map<VkQueueFlags, CommandPool> commandPools;
     std::unique_ptr<CommandPool> commandPool;
     ResourceCache *cache;
 

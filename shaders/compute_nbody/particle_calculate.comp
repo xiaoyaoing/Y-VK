@@ -34,20 +34,24 @@ layout (binding = 1) uniform UBO
 	int particleCount;
 } ubo;
 
-layout (constant_id = 1) const int SHARED_DATA_SIZE = 1024;
-layout (constant_id = 2) const float GRAVITY = 0.002;
-layout (constant_id = 3) const float POWER = 0.75;
-layout (constant_id = 4) const float SOFTEN = 0.05;
+//layout (constant_id = 1) const int ;
+//layout (constant_id = 2) const ;
+//layout (constant_id = 3) const ;
+//layout (constant_id = 4) const ;
 
-layout (local_size_x_id = 0) in;
+layout (local_size_x = 128) in;
 
 // Share data between computer shader invocations to speed up caluclations
-shared vec4 sharedData[SHARED_DATA_SIZE];
+shared vec4 sharedData[1024];
 
 #define TIME_FACTOR 0.05
 
 void main() 
 {
+	int SHARED_DATA_SIZE = 1024;
+	float GRAVITY = 0.002;
+	float POWER = 0.75;
+	float SOFTEN = 0.05;
 	// Current SSBO index
 	uint index = gl_GlobalInvocationID.x;
 	if (index >= ubo.particleCount) 
@@ -70,7 +74,7 @@ void main()
 
 		barrier();
 
-		for (int j = 0; j < gl_WorkGroupSize.x; j++)
+		for (int j = 0; j < 128; j++)
 		{
 			vec4 other = sharedData[j];
 			vec3 len = other.xyz - position.xyz;

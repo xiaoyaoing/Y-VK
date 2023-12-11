@@ -112,7 +112,7 @@ void Application::update() {
     updateGUI();
 
 
-    auto &commandBuffer = renderContext->beginFrame();
+     renderContext->beginFrame();
     
     vkWaitForFences(device->getHandle(), 1, &fence, VK_TRUE, UINT64_MAX);
     vkResetFences(device->getHandle(), 1, &fence);
@@ -121,7 +121,7 @@ void Application::update() {
     auto handle = graph.importTexture(SWAPCHAIN_IMAGE_NAME,&renderContext->getCurHwtexture());
     graph.getBlackBoard().put(SWAPCHAIN_IMAGE_NAME,handle);
     
-    drawFrame(graph,commandBuffer);
+    drawFrame(graph);
 
     auto tEnd = std::chrono::high_resolution_clock::now();
 

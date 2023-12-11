@@ -202,10 +202,16 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,VkInstance 
         }
     }
 
-    commandPool = std::make_unique<CommandPool>(*this,
-                                                getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0).getFamilyIndex(),
-                                                CommandBuffer::ResetMode::AlwaysAllocate);
+    // commandPool = std::make_unique<CommandPool>(*this,
+    //                                             getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0).getFamilyIndex(),
+    //                                             CommandBuffer::ResetMode::AlwaysAllocate);
+	commandPools.emplace(VK_QUEUE_GRAPHICS_BIT, CommandPool(*this,
+	                                                         getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0).getFamilyIndex(),
+	                                                         CommandBuffer::ResetMode::AlwaysAllocate));
 
+	commandPools.emplace(VK_QUEUE_COMPUTE_BIT, CommandPool(*this,
+															 getQueueByFlag(VK_QUEUE_COMPUTE_BIT, 0).getFamilyIndex(),
+															 CommandBuffer::ResetMode::AlwaysAllocate));
     //Init Cache 
     cache = new ResourceCache(*this);
     ResourceCache::initCache(*this);

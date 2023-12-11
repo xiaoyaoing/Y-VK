@@ -51,15 +51,15 @@ void Camera::updateViewMatrix() {
     transM = glm::translate(transM, position);
 
     matrices.view = rotM * transM;
+    matrices.view = transM * rotM;
 
-    //    }
 }
 
 void Camera::setPerspective(float fov, float aspect, float znear, float zfar) {
     this->fov = fov;
     this->zNear = znear;
     this->zFar = zfar;
-    matrices.perspective = glm::perspective(glm::radians(fov), aspect, zfar, znear);
+    matrices.perspective = glm::perspective(glm::radians(fov), aspect, znear,zfar);
     if (flipY) {
         matrices.perspective[1][1] *= -1.0f;
     }

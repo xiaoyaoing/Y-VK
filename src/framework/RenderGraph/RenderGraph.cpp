@@ -181,6 +181,8 @@ std::vector<const RenderGraph::Edge *> RenderGraph::getEdges(RenderGraphNode *no
 
 RenderGraphHandle RenderGraph::addTexture(RenderGraphTexture *texture) {
     const RenderGraphHandle handle(mResources.size());
+    if(texture->getName() == "depth")
+        texture->addRef();
     texture->handle = handle;
     mResources.push_back(texture);
     return handle;

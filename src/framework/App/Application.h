@@ -33,6 +33,8 @@
 #include <optional>
 #include <chrono>
 
+#include "Common/Timer.h"
+
 // #ifdef _WIN32
 // #include <minwindef.h>
 // #include <WinUser.h>
@@ -83,7 +85,7 @@ protected:
 
     virtual void initVk();
 
-    virtual void drawFrame(RenderGraph &renderGraph, CommandBuffer &commandBuffer) = 0;
+    virtual void drawFrame(RenderGraph &renderGraph) = 0;
 
     virtual void updateScene();
 
@@ -102,6 +104,8 @@ protected:
     std::unique_ptr<Instance> _instance;
 
 
+    Timer timer;
+    
     std::unordered_map<const char *, bool> deviceExtensions;
     std::unordered_map<const char *, bool> instanceExtensions;
     std::vector<const char *> validationLayers{"VK_LAYER_KHRONOS_validation"};

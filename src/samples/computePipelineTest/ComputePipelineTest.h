@@ -20,7 +20,7 @@ protected:
         int32_t particle_count;
     } ubo;
     
-    void drawFrame(RenderGraph& renderGraph, CommandBuffer& commandBuffer) override;
+    void drawFrame(RenderGraph& renderGraph) override;
     uint32_t num_particles;
     bool lock_simulation_speed{false};
     std::unique_ptr<Buffer> storageBuffer{nullptr};

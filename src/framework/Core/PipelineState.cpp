@@ -83,6 +83,46 @@ bool operator!=(const ColorBlendState &lhs, const ColorBlendState &rhs) {
                        });
 }
 
+void SpecializationConstantState::reset()
+{
+    // auto data = specialization_constant_state.find(constant_id);
+    //
+    // if (data != specialization_constant_state.end() && data->second == value)
+    // {
+    //     return;
+    // }
+    //
+    // dirty = true;
+    //
+    // specialization_constant_state[constant_id] = value;
+}
+
+bool SpecializationConstantState::isDirty() const
+{
+    return dirty;
+}
+
+void SpecializationConstantState::clearDirty()
+{
+    dirty = false;
+}
+
+
+
+void SpecializationConstantState::setConstant(uint32_t constantId, const std::vector<uint8_t>& data)
+{
+}
+
+void SpecializationConstantState::setSpecializationConstantState(const std::map<uint32_t, std::vector<uint8_t>>& state)
+{
+    
+}
+
+const std::map<uint32_t, std::vector<uint8_t>>& SpecializationConstantState::getSpecializationConstantState() const
+{
+    return specializationConstantState;
+}
+
 void PipelineState::reset() {
     clearDirty();
 
@@ -130,10 +170,10 @@ PipelineState& PipelineState::setRenderPass(const RenderPass& newRenderPass) {
 }
 
 PipelineState& PipelineState::setSpecializationConstant(uint32_t constantId, const std::vector<uint8_t>& data) {
-    // specializationConstantState.setConstant(constantId, data);
-    // if (specializationConstantState.isDirty()) {
-    //     dirty = true;
-    // }
+    specializationConstantState.setConstant(constantId, data);
+    if (specializationConstantState.isDirty()) {
+        dirty = true;
+    }
     // return *this;
     return *this;
 }
