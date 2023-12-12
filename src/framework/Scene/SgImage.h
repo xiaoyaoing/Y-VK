@@ -92,6 +92,7 @@ public:
 
     void generateMipMap();
 
+    void setExtent(const VkExtent3D & extent3D);
 
     void loadResources(const std::string &path);
 
@@ -108,7 +109,7 @@ protected:
 
     VkFormat format;
 
-    VkExtent3D extent3D;
+    VkExtent3D mExtent3D;
 
 
     std::vector<Mipmap> mipMaps{{}};

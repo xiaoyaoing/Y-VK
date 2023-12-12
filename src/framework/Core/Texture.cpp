@@ -9,6 +9,8 @@
 #include "Common/VkCommon.h"
 #include <Core/Images/Sampler.h>
 
+#include "RenderContext.h"
+
 const SgImage& Texture::getImage() const
 {
     return *image;
@@ -24,7 +26,8 @@ std::unique_ptr<Texture>  Texture::loadTexture(Device& device, const std::string
 {
     std::unique_ptr<Texture> texture = std::make_unique<Texture>();
     texture->image = std::make_unique<SgImage>(device, path, VK_IMAGE_VIEW_TYPE_2D);
-    //  texture->image->createVkImage(device);
+    texture->image->generateMipMap();
+    texture->image->createVkImage(device);
 
     auto imageBuffer = Buffer(device, texture->image->getBufferSize(),
                               VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -65,21 +68,11 @@ std::unique_ptr<Texture>  Texture::loadTexture(Device& device, const std::string
     commandBuffer.copyBufferToImage(imageBuffer, texture->image->getVkImage(), imageCopyRegions);
 
     texture->getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY, subresourceRange);
+    
+    RenderContext::g_context->submit(commandBuffer);
+    texture->sampler = std::make_unique<Sampler>(device, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, mipmaps.size());
 
-
-    commandBuffer.endRecord();
-
-    auto queue = device.getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0);
-
-    VkSubmitInfo submitInfo{VK_STRUCTURE_TYPE_SUBMIT_INFO};
-    submitInfo.commandBufferCount = 1;
-
-    auto vkCmdBuffer = commandBuffer.getHandle();
-
-    submitInfo.pCommandBuffers = &vkCmdBuffer;
-    queue.submit({submitInfo}, VK_NULL_HANDLE);
-    texture->sampler = std::make_unique<Sampler>(device, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, 1);
-    queue.wait();
+    
     return texture;
 }
 

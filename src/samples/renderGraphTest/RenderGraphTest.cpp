@@ -7,8 +7,10 @@
 #include "../../framework/Common/VkCommon.h"
 #include "Common/FIleUtils.h"
 
-void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
-   
+void Example::drawFrame(RenderGraph & rg) {
+
+    auto & commandBuffer = renderContext->getGraphicBuffer();
+
     auto &blackBoard = rg.getBlackBoard();
 
     //ON PASS TWO SUBPASS
@@ -79,7 +81,7 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
             renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.gBuffer).setDepthStencilState({.depthCompareOp =  VK_COMPARE_OP_GREATER});
                 
             scene->IteratePrimitives([&](const Primitive &primitive) {
-                                                 renderContext->bindPrimitive(primitive);
+                                                 renderContext->bindPrimitive(context.commandBuffer,primitive);
 
                                                  const auto allocation = renderContext->allocateBuffer(
                                                          sizeof(GlobalUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
@@ -122,7 +124,7 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
                     renderContext->bindInput(0, blackBoard.getImageView("depth"), 1, 0);
                     renderContext->bindInput(0, blackBoard.getImageView("normal"), 2, 0);
                         
-                    renderContext->bindLight<DeferredLights>(scene->getLights(), 0, 4);
+                    renderContext->bindLight<DeferredLights>(scene->getLights(), 0,4);
 
 
                     renderContext->getPipelineState().setRasterizationState({
@@ -203,7 +205,7 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
 
 
                     scene->IteratePrimitives([&](const Primitive &primitive) {
-                                                 renderContext->bindPrimitive(primitive);
+                                                 renderContext->bindPrimitive(context.commandBuffer,primitive);
 
                                                  const auto allocation = renderContext->allocateBuffer(
                                                          sizeof(GlobalUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
@@ -262,12 +264,6 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
 
         //Two RenderPass
     else {
-        struct GBufferData {
-            RenderGraphHandle albedo;
-            RenderGraphHandle normal;
-            RenderGraphHandle depth;
-            RENDER_GRAPH_PASS_TYPE type = GRAPHICS;
-        };
         rg.addPass(
                 "GBufferPass", [&](RenderGraph::Builder &builder,GraphicPassSettings & settings) {
                     auto albedo = rg.createTexture("albedo",
@@ -322,7 +318,7 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
                             allocation.buffer->uploadData(&uniform, allocation.size, allocation.offset);
 
                             renderContext->bindBuffer(0, *allocation.buffer, allocation.offset, allocation.size, 0,0)
-                                        .bindPrimitive(primitive)
+                                        .bindPrimitive(context.commandBuffer,primitive)
                                         .flushAndDrawIndexed(commandBuffer, primitive.indexCount, 1, 0, 0, 0);
                                              }
                     );
@@ -390,11 +386,10 @@ void Example::drawFrame(RenderGraph & rg,CommandBuffer &commandBuffer) {
     }
 
 
-    gui->addGuiPass(rg, *renderContext);
+    gui->addGuiPass(rg);
 
 
     rg.execute(commandBuffer);
-    renderContext->submitAndPresent(commandBuffer, fence);
 }
 
 
@@ -444,10 +439,11 @@ void Example::prepare() {
 
         camera->flipY = true;
         camera->setTranslation(glm::vec3(0.0f, 1.0f, 0.0f));
-        camera->setTranslation(glm::vec3(-705.f, 200.f, -119.f));
+        camera->setTranslation(glm::vec3(-494.f,-116.f,99.f));
         camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
         camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
-        camera->setPerspective(60.0f, (float) width / (float) height, 0.1f, 4000.f);
+        camera->setPerspective(60.0f, (float) width / (float) height, 4000.f,1.f);
+        camera->setMoveSpeed(0.05f);
 }
 
 
@@ -457,9 +453,6 @@ Example::Example() : Application("Drawing Triangle", 1024, 1024) {
 
 
 void Example::onUpdateGUI() {
-    gui->text("Hello");
-    gui->text("Hello IMGUI");
-    gui->text("Hello imgui");
     gui->checkBox("Use subpasses", &useSubpass);
     // ImGui::RadioButton("use subpass", &useSubpass, 1);
 }

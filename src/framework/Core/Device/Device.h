@@ -22,7 +22,7 @@ public:
            std::unordered_map<const char *, bool> requested_extensions = {});
     Device(Device &other) = delete;
     Device operator=(Device other) = delete;
-    ~Device() = default;
+    ~Device();
     
     bool isImageFormatSupported(VkFormat format);
     

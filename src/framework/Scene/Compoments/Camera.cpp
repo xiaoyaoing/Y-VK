@@ -16,7 +16,7 @@ void Camera::update(float deltaTime) {
             camFront.z = cos(glm::radians(rotation.x)) * cos(glm::radians(rotation.y));
             camFront = glm::normalize(camFront);
 
-            float moveDistance = deltaTime * moveSpeed++;
+            float moveDistance = deltaTime * mMoveSpeed++;
 
             if (keys.up) {
                 position += camFront * moveDistance;
@@ -31,7 +31,7 @@ void Camera::update(float deltaTime) {
             updateViewMatrix();
         }
     } else {
-        moveSpeed = 1.f;
+        mMoveSpeed = 1.f;
     }
 }
 
@@ -50,7 +50,9 @@ void Camera::updateViewMatrix() {
 
     transM = glm::translate(transM, position);
 
-    matrices.view = rotM * transM;
+    if(mode == FIRST_PERSON)
+        matrices.view = rotM * transM;
+    else if(mode == THIRD_PERSON)
     matrices.view = transM * rotM;
 
 }
@@ -96,4 +98,14 @@ void Camera::translate(const glm::vec3 &delta) {
 void Camera::rotate(const glm::vec3 &delta) {
     rotation += delta;
     updateViewMatrix();
+}
+
+void Camera::setMoveSpeed(float moveSpeed)
+{
+    mMoveSpeed = moveSpeed;
+}
+
+float Camera::getMoveSpeed() const
+{
+    return mMoveSpeed;
 }

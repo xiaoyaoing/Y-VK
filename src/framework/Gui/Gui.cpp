@@ -285,11 +285,11 @@ void Gui::draw(CommandBuffer &commandBuffer) {
     }
 }
 
-void Gui::addGuiPass(RenderGraph &graph, RenderContext &renderContext) {
-    
+void Gui::addGuiPass(RenderGraph &graph) {
+    auto & renderContext = *RenderContext::g_context;
     graph.addPass("Gui Pass",
                                [&graph](RenderGraph::Builder &builder,GraphicPassSettings & settings) {
-                                   auto output = graph.getBlackBoard()["output"];
+                                   auto output = graph.getBlackBoard()[SWAPCHAIN_IMAGE_NAME];
 
                                    std::vector<RenderGraphSubpassInfo> subpassInfos;
                                    subpassInfos.push_back(RenderGraphSubpassInfo{
@@ -340,7 +340,7 @@ void Gui::addGuiPass(RenderGraph &graph, RenderContext &renderContext) {
                                            scissorRect.offset.y = std::max((int32_t) (pcmd->ClipRect.y), 0);
                                            scissorRect.extent.width = (uint32_t) (pcmd->ClipRect.z - pcmd->ClipRect.x);
                                            scissorRect.extent.height = (uint32_t) (pcmd->ClipRect.w - pcmd->ClipRect.y);
-                                           context.commandBuffer.setScissor(0, {scissorRect});
+                                        //   context.commandBuffer.setScissor(0, {scissorRect});
                                            renderContext.flushAndDrawIndexed(
                                                    context.commandBuffer, pcmd->ElemCount, 1, indexOffset, vertexOffset,
                                                    0);

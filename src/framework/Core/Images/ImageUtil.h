@@ -103,9 +103,7 @@ public:
         }
         if (any(usage & TextureUsage::COLOR_ATTACHMENT)) {
             vkUsage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT ;//| blittable;
-            if (any(usage & TextureUsage::SUBPASS_INPUT)) {
-                vkUsage |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
-            }
+            
         }
         if (any(usage & TextureUsage::STENCIL_ATTACHMENT)) {
             vkUsage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
@@ -121,6 +119,9 @@ public:
             // if (samples > 1) {
             //     vkUsage |= VK_IMAGE_USAGE_SAMPLED_BIT;
             // }
+        }
+        if (any(usage & TextureUsage::SUBPASS_INPUT)) {
+            vkUsage |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
         }
         if (any(usage & TextureUsage::STORAGE)) {
             vkUsage |= VK_IMAGE_USAGE_STORAGE_BIT;

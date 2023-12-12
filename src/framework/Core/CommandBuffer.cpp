@@ -16,27 +16,10 @@ void CommandBuffer::beginRecord(VkCommandBufferUsageFlags usage)
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = usage; // Optional
     beginInfo.pInheritanceInfo = nullptr; // Optional
-    VK_CHECK_RESULT(vkBeginCommandBuffer(_buffer, &beginInfo))
+    VK_CHECK_RESULT(vkBeginCommandBuffer(mCommandBuffer, &beginInfo))
 }
 
 
-// void CommandBuffer::beginRenderPass(VkRenderPass renderPass, VkFramebuffer buffer,
-//                                     const std::vector<VkClearValue>& clearValues,
-//                                     const VkExtent2D& extent2D)
-// {
-//     VkRenderPassBeginInfo renderPassInfo{};
-//     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-//     renderPassInfo.renderPass = renderPass;
-//     renderPassInfo.framebuffer = buffer;
-//     renderPassInfo.renderArea.offset = {0, 0};
-//     renderPassInfo.renderArea.extent = extent2D;
-//
-//     renderPassInfo.clearValueCount = clearValues.size();
-//     renderPassInfo.pClearValues = clearValues.data();
-//
-//
-//     vkCmdBeginRenderPass(_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-// }
 
 void CommandBuffer::bindVertexBuffer(std::vector<const Buffer*>& buffers,
                                      const std::vector<VkDeviceSize>& offsets) const
@@ -45,7 +28,7 @@ void CommandBuffer::bindVertexBuffer(std::vector<const Buffer*>& buffers,
     std::transform(buffers.begin(), buffers.end(), bufferHandles.begin(),
                    [](const Buffer*& buffer) { return buffer->getHandle(); });
 
-    vkCmdBindVertexBuffers(_buffer, 0, static_cast<uint32_t>(bufferHandles.size()), bufferHandles.data(),
+    vkCmdBindVertexBuffers(mCommandBuffer, 0, static_cast<uint32_t>(bufferHandles.size()), bufferHandles.data(),
                            offsets.data());
 }
 
@@ -53,7 +36,7 @@ void CommandBuffer::bindVertexBuffer(const Buffer& vertexBuffer)
 {
    std::vector<VkBuffer> bufferHandles {vertexBuffer.getHandle()};
     std::vector<VkDeviceSize> offsets {0};
-    vkCmdBindVertexBuffers(_buffer, 0, static_cast<uint32_t>(bufferHandles.size()), bufferHandles.data(),
+    vkCmdBindVertexBuffers(mCommandBuffer, 0, static_cast<uint32_t>(bufferHandles.size()), bufferHandles.data(),
                                offsets.data());}
 
 
@@ -64,14 +47,14 @@ void CommandBuffer::bindVertexBuffer(uint32_t firstBinding, std::vector<const Bu
     std::transform(buffers.begin(), buffers.end(), bufferHandles.begin(),
                    [](const Buffer*& buffer) { return buffer->getHandle(); });
 
-    vkCmdBindVertexBuffers(_buffer, firstBinding, static_cast<uint32_t>(bufferHandles.size()), bufferHandles.data(),
+    vkCmdBindVertexBuffers(mCommandBuffer, firstBinding, static_cast<uint32_t>(bufferHandles.size()), bufferHandles.data(),
                            offsets.data());
 }
 
 void CommandBuffer::bindIndicesBuffer(const Buffer& buffer, VkDeviceSize offset, VkIndexType indexType)
 {
     // auto bufferHandles = getHandles<Buffer,VkBuffer>(buffers);
-    vkCmdBindIndexBuffer(_buffer, buffer.getHandle(), offset, indexType);
+    vkCmdBindIndexBuffer(mCommandBuffer, buffer.getHandle(), offset, indexType);
 }
 
 void CommandBuffer::bindDescriptorSets(VkPipelineBindPoint bindPoint, VkPipelineLayout layout, uint32_t firstSet,
@@ -81,14 +64,14 @@ void CommandBuffer::bindDescriptorSets(VkPipelineBindPoint bindPoint, VkPipeline
     std::vector<VkDescriptorSet> vkDescriptorSets(descriptorSets.size(), VK_NULL_HANDLE);
     std::transform(descriptorSets.begin(), descriptorSets.end(), vkDescriptorSets.begin(),
                    [](auto descriptorSet) { return descriptorSet.getHandle(); });
-    vkCmdBindDescriptorSets(_buffer, bindPoint, layout, firstSet, vkDescriptorSets.size(), vkDescriptorSets.data(),
+    vkCmdBindDescriptorSets(mCommandBuffer, bindPoint, layout, firstSet, vkDescriptorSets.size(), vkDescriptorSets.data(),
                             dynamicOffsets.size(), dynamicOffsets.data());
 }
 
 void
 CommandBuffer::copyBufferToImage(Buffer& src, Image& dst, const std::vector<VkBufferImageCopy>& copyRegions)
 {
-    vkCmdCopyBufferToImage(_buffer,
+    vkCmdCopyBufferToImage(mCommandBuffer,
                            src.getHandle(), dst.getHandle(),
                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                            static_cast<uint32_t>(copyRegions.size()), copyRegions.data());
@@ -168,7 +151,7 @@ CommandBuffer::copyBufferToImage(Buffer& src, Image& dst, const std::vector<VkBu
 
 void CommandBuffer::endRenderPass()
 {
-    vkCmdEndRenderPass(_buffer);
+    vkCmdEndRenderPass(mCommandBuffer);
 }
 
 CommandBuffer::~CommandBuffer()
@@ -193,13 +176,13 @@ void CommandBuffer::beginRenderPass(RenderPass& render_pass, FrameBuffer& frameB
     VkClearValue v{.color = {1, 0, 0}};
 
 
-    vkCmdBeginRenderPass(_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(mCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 
 void CommandBuffer::bindPipeline(const Pipeline& pipeline,VkPipelineBindPoint bindPoint) const
 {
-    vkCmdBindPipeline(_buffer,bindPoint, pipeline.getHandle());
+    vkCmdBindPipeline(mCommandBuffer,bindPoint, pipeline.getHandle());
 }
 
 void CommandBuffer::setViewport(uint32_t firstViewport, const std::vector<VkViewport>& viewports)

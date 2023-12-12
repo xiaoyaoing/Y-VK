@@ -85,7 +85,7 @@ protected:
 
     virtual void initVk();
 
-    virtual void drawFrame(RenderGraph &renderGraph) = 0;
+    virtual void drawFrame(RenderGraph &rg) = 0;
 
     virtual void updateScene();
 
@@ -101,31 +101,25 @@ protected:
 protected:
     VmaAllocator _allocator{};
 
-    std::unique_ptr<Instance> _instance;
 
+    float deltaTime{0};
 
     Timer timer;
     
+    std::unique_ptr<Instance> _instance;
     std::unordered_map<const char *, bool> deviceExtensions;
     std::unordered_map<const char *, bool> instanceExtensions;
     std::vector<const char *> validationLayers{"VK_LAYER_KHRONOS_validation"};
-
-
     std::unique_ptr<Window> window{nullptr};
-
     std::unique_ptr<RenderContext> renderContext{nullptr};
-
     std::unique_ptr<Device> device{nullptr};
+    std::unique_ptr<Camera> camera;
+    std::unique_ptr<Scene> scene;
+    std::unique_ptr<Gui> gui;
 
     VkSurfaceKHR surface{};
 
-    std::unique_ptr<Camera> camera;
 
-    std::unique_ptr<Scene> scene;
-
-    std::unique_ptr<Gui> gui;
-
-    float frameTimer{1};
 
     uint32_t width, height;
 
@@ -145,6 +139,8 @@ protected:
     bool viewUpdated{false};
 
     float rotationSpeed{1};
+
+    bool enableGui{true};
     //Camera related  variable end
 
 

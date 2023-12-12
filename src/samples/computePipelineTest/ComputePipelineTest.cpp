@@ -95,7 +95,7 @@ void Example::drawFrame(RenderGraph& rg)
     graphics.ubo.screenDim  = glm::vec2(static_cast<float>(width), static_cast<float>(height));
     graphics.uniformBuffer->uploadData(&graphics.ubo,sizeof(graphics.ubo));
 
-    ubo.delta_time = timer.tick<Timer::Seconds>();
+    ubo.delta_time = deltaTime;
     ubo.particle_count =    num_particles;
     uniformBuffer->uploadData(&ubo,sizeof(ubo));
 
@@ -108,7 +108,7 @@ void Example::drawFrame(RenderGraph& rg)
                                     .dstAlphaBlendFactor = VK_BLEND_FACTOR_DST_ALPHA,
                                     .alphaBlendOp = VK_BLEND_OP_ADD,
                                     .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
-};
+    };
 
     rg.addComputePass("Compute Pass",[&](auto & builder,auto & settings)
     {
@@ -150,10 +150,7 @@ void Example::drawFrame(RenderGraph& rg)
                 .attributes = {
                 vkCommon::initializers::vertexInputAttributeDescription(0, 0, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Particle, pos)),
                 vkCommon::initializers::vertexInputAttributeDescription(0, 1, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Particle, vel))}
-            }
-            ).setDepthStencilState({.depthTestEnable =  false}).setRasterizationState({.cullMode = VK_CULL_MODE_NONE}).
-        setColorBlendState({.attachments =  {state}}
-                )
+            }).setDepthStencilState({.depthTestEnable =  false}).setRasterizationState({.cullMode = VK_CULL_MODE_NONE}).setColorBlendState({.attachments =  {state}})
         ;
         renderContext->bindImage(0,graphics.particle->getImage().getVkImageView(),graphics.particle->getSampler(),0,0)
         .bindImage(0,graphics.gradient->getImage().getVkImageView(),graphics.gradient->getSampler(),1,0)
@@ -161,9 +158,10 @@ void Example::drawFrame(RenderGraph& rg)
         commandBuffer.bindVertexBuffer( rg.getBlackBoard().getBuffer("storageBuffer"));
         renderContext->flushAndDraw(commandBuffer,num_particles,1,0,0);
     });
-
+    if(enableGui)
+        gui->addGuiPass(rg);
     rg.execute(renderContext->getGraphicBuffer());
-    renderContext->submitAndPresent(renderContext->getGraphicBuffer(),fence);
+    
 }
 
 int main(int argc, char* argv[])

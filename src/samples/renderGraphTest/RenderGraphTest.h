@@ -23,5 +23,5 @@ protected:
 
 
     void onUpdateGUI() override;
-    void drawFrame(RenderGraph &renderGraph,CommandBuffer &commandBuffer) override;
+    void drawFrame(RenderGraph &renderGraph) override;
 };

@@ -38,7 +38,7 @@ public:
 
     void draw(CommandBuffer& commandBuffer);
 
-    void addGuiPass(RenderGraph& graph, RenderContext& renderContext);
+    void addGuiPass(RenderGraph& graph);
 
     bool checkBox(const char* caption, bool* value);
 

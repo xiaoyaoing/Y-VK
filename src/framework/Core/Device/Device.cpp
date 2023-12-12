@@ -13,6 +13,12 @@
 const std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
 
 
+Device::~Device()
+{
+	delete cache;
+}
+
+
 bool Device::isImageFormatSupported(VkFormat format) {
     VkImageFormatProperties format_properties;
 

@@ -32,13 +32,13 @@ public:
     };
 
 
-    VkCommandBuffer getHandle() const { return _buffer; }
+    VkCommandBuffer getHandle() const { return mCommandBuffer; }
 
     //Avoid right value can't be located.
-    const VkCommandBuffer *getHandlePointer() const { return &_buffer; }
+    const VkCommandBuffer *getHandlePointer() const { return &mCommandBuffer; }
 
 
-    explicit CommandBuffer(VkCommandBuffer buffer) : _buffer(buffer) {
+    explicit CommandBuffer(VkCommandBuffer buffer) : mCommandBuffer(buffer) {
     }
 
     void beginRecord(VkCommandBufferUsageFlags usage);
@@ -67,19 +67,19 @@ public:
     void copyBufferToImage(Buffer &, Image &, const std::vector<VkBufferImageCopy> &copyRegions);
 
     inline void bindPipeline(const VkPipeline &pipeline) const {
-        vkCmdBindPipeline(_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        vkCmdBindPipeline(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     }
 
     void bindPipeline(const Pipeline &pipeline,VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS) const;
 
 
     inline void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) {
-        vkCmdDraw(_buffer, vertexCount, instanceCount, firstVertex, firstInstance);
+        vkCmdDraw(mCommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
     }
 
     inline void drawIndexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, int32_t vertex_offset,
                             uint32_t first_instance) {
-        vkCmdDrawIndexed(_buffer, index_count, instance_count, first_index, vertex_offset, first_instance);
+        vkCmdDrawIndexed(mCommandBuffer, index_count, instance_count, first_index, vertex_offset, first_instance);
     }
 
 
@@ -88,19 +88,20 @@ public:
     void setScissor(uint32_t firstScissor, const std::vector<VkRect2D> &scissors);
 
     inline void endRecord() {
-        VK_CHECK_RESULT(vkEndCommandBuffer(_buffer))
+        VK_CHECK_RESULT(vkEndCommandBuffer(mCommandBuffer))
     }
 
     inline void endPass() {
-        vkCmdEndRenderPass(_buffer);
+        vkCmdEndRenderPass(mCommandBuffer);
     }
 
     void endRenderPass();
 
+    
+
     ~CommandBuffer();
 
 protected:
-    VkCommandBuffer _buffer;
+    VkCommandBuffer mCommandBuffer;
 
-    PipelineState state;
 };

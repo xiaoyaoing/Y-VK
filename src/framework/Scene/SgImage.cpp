@@ -11,14 +11,25 @@
 #include "Common/FIleUtils.h"
 
 
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
 // #include <ext/ktx/lib/vk_format.h>
 #include <ktx.h>
 #include <stb_image.h>
+#include <stb_image_resize.h>
 // #include <stb_image_resize.h>
 
 #include "Images/AstcImageHelper.h"
 #include "Gui/Gui.h"
 #include "Images/KtxFormat.h"
+#include "ktx.h"
+
+
+struct CallbackData final
+{
+    ktxTexture *         texture;
+    std::vector<Mipmap> *mipmaps;
+};
+
 
 bool isAstc(const VkFormat format) {
     return (format == VK_FORMAT_ASTC_4x4_UNORM_BLOCK ||
@@ -51,10 +62,75 @@ bool isAstc(const VkFormat format) {
             format == VK_FORMAT_ASTC_12x12_SRGB_BLOCK);
 }
 
+static KTX_error_code KTXAPIENTRY callBack(int mipLevel, int face,
+                                               int width, int height, int depth,
+                                               ktx_uint32_t faceLodSize,
+                                               void* pixels,
+                                               void* userdata)
+{
+    auto *callback_data = reinterpret_cast<CallbackData *>(userdata);
+    assert(static_cast<size_t>(mipLevel) < callback_data->mipmaps->size() && "Not enough space in the mipmap vector");
+
+    ktx_size_t mipmap_offset = 0;
+    auto       result        = ktxTexture_GetImageOffset(callback_data->texture, mipLevel, 0, face, &mipmap_offset);
+    if (result != KTX_SUCCESS)
+    {
+        return result;
+    }
+
+    auto &mipmap         = callback_data->mipmaps->at(mipLevel);
+    mipmap.level         = mipLevel;
+    mipmap.offset        = toUint32(mipmap_offset);
+    mipmap.extent.width  = width;
+    mipmap.extent.height = height;
+    mipmap.extent.depth  = depth;
+
+    return KTX_SUCCESS;
+}
+
+
+// struct CallbackData final
+// {
+//     ktxTexture *         texture;
+//     std::vector<Mipmap> *mipmaps;
+// };
+//
+// /// Row padding is different between KTX (pad to 4) and Vulkan (none).
+// /// Also region->bufferOffset, i.e. the start of each image, has
+// /// to be a multiple of 4 and also a multiple of the element size.
+// static ktx_error_code_t KTX_APIENTRY optimal_tiling_callback(int          mipLevel,
+//                                                              int          face,
+//                                                              int          width,
+//                                                              int          height,
+//                                                              int          depth,
+//                                                              ktx_uint64_t face_lod_size,
+//                                                              void *       pixels,
+//                                                              void *       user_data)
+// {
+//     auto *callback_data = reinterpret_cast<CallbackData *>(user_data);
+//     assert(static_cast<size_t>(mipLevel) < callback_data->mipmaps->size() && "Not enough space in the mipmap vector");
+//
+//     ktx_size_t mipmap_offset = 0;
+//     auto       result        = ktxTexture_GetImageOffset(callback_data->texture, mipLevel, 0, face, &mipmap_offset);
+//     if (result != KTX_SUCCESS)
+//     {
+//         return result;
+//     }
+//
+//     auto &mipmap         = callback_data->mipmaps->at(mipLevel);
+//     mipmap.level         = mipLevel;
+//     mipmap.offset        = to_u32(mipmap_offset);
+//     mipmap.extent.width  = width;
+//     mipmap.extent.height = height;
+//     mipmap.extent.depth  = depth;
+//
+//     return KTX_SUCCESS;
+// }
+
 void SgImage::createVkImage(Device &device, VkImageViewType image_view_type, VkImageCreateFlags flags) {
     assert(vkImage == nullptr && "Image has been created");
     assert(vkImageView == nullptr && "ImageView has been created");
-    vkImage = std::make_unique<Image>(device, extent3D, format,
+    vkImage = std::make_unique<Image>(device, mExtent3D, format,
                                       VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                                       VMA_MEMORY_USAGE_GPU_ONLY, VK_SAMPLE_COUNT_1_BIT, toUint32(mipMaps.size()),
                                       layers, flags);
@@ -63,7 +139,7 @@ void SgImage::createVkImage(Device &device, VkImageViewType image_view_type, VkI
 
 SgImage::SgImage(Device &device, const std::string &path, VkImageViewType viewType) : device(device) {
     loadResources(path);
-    createVkImage(device, viewType);
+    //createVkImage(device, viewType);
 }
 
 SgImage::~SgImage() {
@@ -73,7 +149,7 @@ SgImage::~SgImage() {
 
 SgImage::SgImage(SgImage &&other) : vkImage(std::move(other.vkImage)), vkImageView(std::move(other.vkImageView)),
                                     data(std::move(other.data)),
-                                    format(other.format), extent3D(other.extent3D),
+                                    format(other.format), mExtent3D(other.mExtent3D),
                                     mipMaps(std::move(other.mipMaps)), offsets(std::move(other.offsets)),
                                     device(other.device), layers(other.layers) {
     other.vkImage = nullptr;
@@ -82,14 +158,14 @@ SgImage::SgImage(SgImage &&other) : vkImage(std::move(other.vkImage)), vkImageVi
 
 SgImage::SgImage(Device &device, const std::string &name, const VkExtent3D &extent, VkFormat format,
                  VkImageUsageFlags image_usage, VmaMemoryUsage memory_usage, VkImageViewType viewType,
-                 VkSampleCountFlagBits sample_count, uint32_t mip_levels, uint32_t array_layers,
-                 VkImageCreateFlags flags) : format(format), extent3D(extent), name(name), device(device) {
-    vkImage = std::make_unique<Image>(device, extent, format, image_usage, memory_usage, sample_count, mip_levels,
+                 VkSampleCountFlagBits sample_count, uint32_t mipLevels, uint32_t array_layers,
+                 VkImageCreateFlags flags) : format(format), mExtent3D(extent), name(name), device(device) {
+    vkImage = std::make_unique<Image>(device, extent, format, image_usage, memory_usage, sample_count, mipLevels,
                                       array_layers, flags);
     vkImageView = std::make_unique<ImageView>(*vkImage, viewType);
 
     this->format = format;
-    this->extent3D = extent;
+    this->mExtent3D = extent;
 }
 
 uint64_t SgImage::getBufferSize() const {
@@ -102,11 +178,11 @@ std::vector<uint8_t> &SgImage::getData() {
 
 
 VkExtent3D SgImage::getExtent() const {
-    return extent3D;
+    return mExtent3D;
 }
 
 VkExtent2D SgImage::getExtent2D() const {
-    return {extent3D.width, extent3D.height};
+    return {mExtent3D.width, mExtent3D.height};
 }
 
 Image &SgImage::getVkImage() const {
@@ -138,6 +214,8 @@ void SgImage::setLayers(uint32_t layers) {
 }
 
 void SgImage::generateMipMap() {
+    if(mipMaps.size() >1)
+        return ;
     assert(mipMaps.size() == 1 && "Mipmaps already generated");
 
     auto extent = getExtent();
@@ -160,8 +238,8 @@ void SgImage::generateMipMap() {
 
         //todo
 
-        // stbir_resize_uint8(data.data() + prev_mipmap.offset, prev_mipmap.extent.width, prev_mipmap.extent.height, 0,
-        //                        data.data() + next_mipmap.offset, next_mipmap.extent.width, next_mipmap.extent.height, 0, channels);
+        stbir_resize_uint8(data.data() + prev_mipmap.offset, prev_mipmap.extent.width, prev_mipmap.extent.height, 0,
+                               data.data() + next_mipmap.offset, next_mipmap.extent.width, next_mipmap.extent.height, 0, channels);
         // Fill next mipmap memory
         //            stbir_resize_uint8(data.data() + prev_mipmap.offset, prev_mipmap.extent.width, prev_mipmap.extent.height, 0,
         //                               data.data() + next_mipmap.offset, next_mipmap.extent.width, next_mipmap.extent.height, 0,
@@ -180,6 +258,12 @@ void SgImage::generateMipMap() {
     }
 }
 
+void SgImage::setExtent(const VkExtent3D & extent3D)
+{
+    this->mExtent3D = extent3D;
+    mipMaps[0].extent = extent3D;
+}
+
 
 void SgImage::loadResources(const std::string &path) {
     auto ext = FileUtils::getFileExt(path);
@@ -190,7 +274,7 @@ void SgImage::loadResources(const std::string &path) {
         data = {rawData, rawData + w * h * comp};
         stbi_image_free(rawData);
 
-        extent3D = {toUint32(w), toUint32(h), 1};
+        setExtent({toUint32(w), toUint32(h), 1});
         format = VK_FORMAT_R8G8B8A8_SRGB;
     } else if (ext == "ttf") {
         assert(FileUtils::getFileExt(path) == "ttf");
@@ -203,22 +287,35 @@ void SgImage::loadResources(const std::string &path) {
 
         data = std::vector<uint8_t>(fontData, fontData + texHeight * texWidth * 4);
         format = VK_FORMAT_R8G8B8A8_UNORM;
-        extent3D = {toUint32(texWidth), toUint32(texHeight), 1};
+        setExtent({toUint32(texWidth), toUint32(texHeight), 1});
     } else if (ext == "ktx") {
         ktxTexture *ktxTexture;
         ktxResult result = ktxTexture_CreateFromNamedFile(path.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT,
                                                           &ktxTexture);
         assert(result == KTX_SUCCESS);
-        this->extent3D = VkExtent3D{ktxTexture->baseWidth, ktxTexture->baseHeight, 1};
+     //   this->extent3D = VkExtent3D{ktxTexture->baseWidth, ktxTexture->baseHeight, 1};
+        setExtent({ktxTexture->baseWidth, ktxTexture->baseHeight, 1});
 
         ktx_uint8_t *ktxTextureData = ktxTexture_GetData(ktxTexture);
         ktx_size_t ktxTextureSize = ktxTexture_GetSize(ktxTexture);
 
         mipMaps.resize(ktxTexture->numLevels);
+
+        CallbackData callbackData{ .texture = ktxTexture,.mipmaps = &mipMaps,};
+         result =  ktxTexture_IterateLevels(ktxTexture,callBack,&callbackData);
+        assert(result == KTX_SUCCESS);
+
+        // for(uint32_t i = 0; i < ktxTexture->numLevels; i++)
+        // {
+        //     mipMaps[i].offset = ktxTextureSize
+        // }
+        
         layers = ktxTexture->numLayers;
 
         ktx_size_t pixelsMulChannels;
         result = ktxTexture_GetImageOffset(ktxTexture, 0, 0, 0, &pixelsMulChannels);
+        assert(result == KTX_SUCCESS);
+        
 
         data = {ktxTextureData, ktxTextureData + ktxTextureSize};
 
@@ -244,6 +341,7 @@ void SgImage::loadResources(const std::string &path) {
         if (!device.isImageFormatSupported(format)) {
             LOGW("ASTC not supported: decoding {}", name);
             AstcImageHelper::decodeAstcImage(*this);
+            generateMipMap();
         }
     }
 }
@@ -255,5 +353,5 @@ SgImage::SgImage(Device &device, VkImage handle, const VkExtent3D &extent, VkFor
     vkImage = std::make_unique<Image>(device, handle, extent, format, image_usage, sample_count);
     vkImageView = std::make_unique<ImageView>(*vkImage, viewType);
     this->format = format;
-    this->extent3D = extent;
+    setExtent(extent);
 }

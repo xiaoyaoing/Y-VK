@@ -1,4 +1,3 @@
-add_subdirectory(tinyobjloader)
 
 find_package(Vulkan REQUIRED)
 
@@ -10,8 +9,9 @@ target_include_directories(vma INTERFACE ${VMA_DIR})
 target_link_libraries(vma INTERFACE Vulkan::Vulkan)
 
 add_library(stb_image INTERFACE)
-target_sources(stb_image INTERFACE)
-target_include_directories(stb_image INTERFACE stb_image)
+set(STB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/stb_image)
+target_sources(stb_image INTERFACE  ${STB_DIR}/stb_image_resize.h )
+target_include_directories(stb_image INTERFACE ${STB_DIR})
 
 add_subdirectory(glfw)
 add_subdirectory(spdlog)
@@ -77,12 +77,6 @@ set_target_properties(spirv-cross-msl PROPERTIES FOLDER "EXT" POSITION_INDEPENDE
 set_target_properties(spirv-cross-reflect PROPERTIES FOLDER "EXT" POSITION_INDEPENDENT_CODE ON)
 set_target_properties(spirv-cross-util PROPERTIES FOLDER "EXT" POSITION_INDEPENDENT_CODE ON)
 
-# gltf loader
-# add_subdirectory(tinygltf)
-
-# add_library(tinygltf INTERFACE)
-# target_sources(tinygltf INTERFACE tinygltf/tiny_gltf.h)
-# target_include_directories(stb_image INTERFACE stb_image)
 set(KTX_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ktx)
 add_library(ktx INTERFACE)
 

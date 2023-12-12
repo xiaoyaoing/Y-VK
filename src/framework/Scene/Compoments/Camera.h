@@ -53,6 +53,9 @@ public:
 
     void rotate(const glm::vec3 &delta);
 
+    void setMoveSpeed(float moveSpeed);
+
+    float getMoveSpeed() const;
 
     float rotationSpeed{1};
 
@@ -64,7 +67,7 @@ private:
 
     glm::vec3 cameraFront;
 
-    float moveSpeed{1};
+    float mMoveSpeed{1};
 
     float zNear{0.01}, zFar{10}, fov{45}, aspect{1};
 };

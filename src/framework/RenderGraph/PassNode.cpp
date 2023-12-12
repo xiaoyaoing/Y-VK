@@ -117,10 +117,6 @@ void RenderPassNode::declareRenderPass(const char *name, const RenderGraphPassDe
 void PassNode::resolveTextureUsages(RenderGraph &renderGraph, CommandBuffer &commandBuffer) {
     for (auto &textureIt: resourceUsages) {
         textureIt.first->resloveUsage(commandBuffer, textureIt.second);
-        // const auto *texture = textureIt.first;
-        // const auto newLayout = ImageUtil::getDefaultLayout(textureIt.second);
-        // const auto subsubsource = texture->getHwTexture()->getVkImageView().getSubResourceRange();
-        // texture->getHwTexture()->getVkImage().transitionLayout(commandBuffer, newLayout, subsubsource);
     }
 }
 
@@ -156,6 +152,7 @@ void ComputePassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBu
 
     RenderPassContext context{            .commandBuffer = RenderContext::g_context->getGraphicBuffer()};
     mPass->execute(context);
+    RenderContext::g_context->clearPassResources();
 }
 
 void RayTracingPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer)

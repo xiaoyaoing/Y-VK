@@ -90,6 +90,8 @@ RenderContext::RenderContext(Device& device, VkSurfaceKHR surface, Window& windo
         frameResources.back()->graphicComputeBuffer = std::make_unique<CommandBuffer>(vkGraphicCommandBuffers[i]);
         frameResources.back()->computeComputeBuffer = std::make_unique<CommandBuffer>(vkComputeCommandBuffers[i]);
     }
+
+    maxPushConstantSize = device.getProperties().limits.maxPushConstantsSize;
 }
 
 
@@ -572,7 +574,9 @@ void RenderContext::beginRenderPass(CommandBuffer& commandBuffer, RenderTarget& 
 
 void RenderContext::nextSubpass(CommandBuffer& commandBuffer)
 {
-    clearPassResources();
+   // clearPassResources();
+    resourceSets.clear();
+    storePushConstants.clear();
 
     uint32_t subpassIdx = pipelineState.getSubpassIndex();
     pipelineState.setSubpassIndex(subpassIdx + 1);
@@ -627,6 +631,7 @@ void RenderContext::clearPassResources()
 {
     resourceSets.clear();
     storePushConstants.clear();
+    pipelineState.reset();
 }
 
 RenderContext & RenderContext::bindPushConstants(std::vector<uint8_t>& pushConstants)

@@ -70,6 +70,11 @@ ImageView::ImageView(Image& image, VkImageViewType view_type, VkFormat format, u
 
     VK_CHECK_RESULT(vkCreateImageView(_device.getHandle(), &imageViewInfo, nullptr, &_view));
     image.addView(this);
+    if(isDepthOrStencilFormat(_format))
+    {
+        int k = 1;
+    }
+    
 }
 
 VkFormat ImageView::getFormat() const
@@ -84,6 +89,10 @@ const VkImageSubresourceRange& ImageView::getSubResourceRange() const
 
 ImageView::~ImageView()
 {
+    if(isDepthOrStencilFormat(_format))
+    {
+        int k = 1;
+    }
     if(_view!=VK_NULL_HANDLE)
         vkDestroyImageView(_device.getHandle(), _view, nullptr);
 }

@@ -80,14 +80,12 @@ void Application::updateGUI() {
     ImGui::SetNextWindowSize(ImVec2(0, 0), ImGuiSetCond_FirstUseEver);
     ImGui::Begin("Vulkan Example", nullptr,
                  ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
-    ImGui::TextUnformatted("Vk Example");
-    ImGui::TextUnformatted("Device");
-    ImGui::Text("%.2f ms/frame (%.1d fps)", (1000.0f / 1, 1));
-
-
-    ImGui::PushItemWidth(110.0f * gui->scale);
-    // OnUpdateUIOverlay(&UIOverlay);
-    ImGui::PopItemWidth();
+    ImGui::PushItemWidth(200.0f * gui->scale);
+    ImGui::Text("%.2f ms/frame ", 1000.f * deltaTime);
+    ImGui::NextColumn();
+    ImGui::Text(" %d fps",toUint32(1.f/deltaTime));
+    ImGui::InputFloat3("Camera Position", &camera->position[0], 2);
+    ImGui::PopItemWidth(); 
     onUpdateGUI();
     ImGui::End();
     ImGui::PopStyleVar();
@@ -101,7 +99,7 @@ void Application::updateGUI() {
 
 
 void Application::update() {
-    auto tStart = std::chrono::high_resolution_clock::now();
+    deltaTime = timer.tick<Timer::Seconds>();
 
     if (viewUpdated) {
         viewUpdated = false;
@@ -112,7 +110,7 @@ void Application::update() {
     updateGUI();
 
 
-     renderContext->beginFrame();
+    renderContext->beginFrame();
     
     vkWaitForFences(device->getHandle(), 1, &fence, VK_TRUE, UINT64_MAX);
     vkResetFences(device->getHandle(), 1, &fence);
@@ -123,12 +121,11 @@ void Application::update() {
     
     drawFrame(graph);
 
-    auto tEnd = std::chrono::high_resolution_clock::now();
+  
 
-    auto tDiff = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
-
-    frameTimer = tDiff / 1000.f;
-    camera->update(frameTimer);
+    renderContext->submitAndPresent(renderContext->getGraphicBuffer(),fence);
+    
+    camera->update(deltaTime);
 
     if (camera->moving()) {
         viewUpdated = true;
@@ -353,6 +350,7 @@ void Application::handleMouseMove(float x, float y) {
 }
 
 void Application::onUpdateGUI() {
+    
 }
 
 void Application::onMouseMove() {

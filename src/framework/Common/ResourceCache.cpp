@@ -1,7 +1,8 @@
 #include "ResourceCache.h"
 #include "Core/ResourceCachingHelper.h"
+#include "Core/Device/Device.h"
 
-std::unique_ptr<ResourceCache> ResourceCache::cache = nullptr;
+ResourceCache * ResourceCache::cache = nullptr;
 
 template<class T, class... A>
 T &
@@ -24,6 +25,7 @@ requestResource(Device &device, const std::string & resourceName,std::mutex &res
     return res;
 }
 
+
 ResourceCache &ResourceCache::getResourceCache() {
     assert(cache != nullptr && "Cache has not been initalized");
     return *cache;
@@ -31,7 +33,7 @@ ResourceCache &ResourceCache::getResourceCache() {
 
 void ResourceCache::initCache(Device &device) {
     assert(cache == nullptr && "Cache has been initalized");
-    cache = std::make_unique<ResourceCache>(device);
+    cache = &device.getResourceCache();
 }
 
 SgImage &ResourceCache::requestSgImage(const std::string &path, VkImageViewType viewType) {

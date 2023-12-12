@@ -95,6 +95,7 @@ class ResourceCache
 {
 public:
     // std::unordered_map<Rende>
+    ~ResourceCache() = default;
 
     static ResourceCache& getResourceCache();
 
@@ -185,7 +186,7 @@ public:
     }
 
 private:
-    static std::unique_ptr<ResourceCache> cache;
+    static ResourceCache * cache;
 
     ResourceCacheState state;
 

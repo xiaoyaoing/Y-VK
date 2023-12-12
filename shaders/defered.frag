@@ -27,7 +27,6 @@ layout (location = 1) in vec2 in_uv;
 layout (location = 2) in vec3 in_normal;
 
 layout (location = 0) out vec4 o_albedo;
-layout (location = 1)  out vec4 o_position;
 layout (location = 2) out vec4 o_normal;
 
 //layout(set = 0, binding = 1) uniform GlobalUniform {
@@ -50,12 +49,9 @@ void main(void)
 
     vec4 base_color = vec4(1.0, 0.0, 0.0, 1.0);
 
-    //    #ifdef HAS_baseColorTexture
     base_color = texture(baseColorTexture, in_uv);
-    //    #else
-    //    base_color = pbr_material_uniform.base_color_factor;
-    //    #endif
-
+    
     o_albedo = base_color;
-    o_position = vec4(((in_pos.xyz + 10000.f) / 20000.f), 1.f);
+  //  o_albedo = vec4(in_uv, 0.0, 1.0);
+    
 }

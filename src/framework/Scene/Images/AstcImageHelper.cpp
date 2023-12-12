@@ -87,14 +87,14 @@ void AstcImageHelper::decodeAstcImage(SgImage &image) {
     auto mip_it = std::find_if(image.getMipMaps().begin(), image.getMipMaps().end(),
                                [](auto &mip) { return mip.level == 0; });
     assert(mip_it != image.getMipMaps().end() && "Mip #0 not found");
-
+    image.mipMaps.resize(1);
     // When decoding ASTC on CPU (as it is the case in here), we don't decode all mips in the mip chain.
     // Instead, we just decode mip #0 and re-generate the other LODs later (via image->generate_mipmaps()).
     const auto blockdim = toBlockDim(image.getFormat());
     const uint8_t *data_ptr = image.getData().data() + mip_it->offset;
 
 
-    decode(image, blockdim, image.extent3D, data_ptr);
+    decode(image, blockdim, image.mExtent3D, data_ptr);
 }
 
 
@@ -152,7 +152,7 @@ void AstcImageHelper::decode(SgImage &image, BlockDim blockdim, VkExtent3D exten
             astc_image->imagedata8[0][0] + astc_image->xsize * astc_image->ysize * astc_image->zsize * 4
     };
     image.format = (VK_FORMAT_R8G8B8A8_SRGB);
-    image.extent3D = {
+    image.mExtent3D = {
             static_cast<uint32_t>(astc_image->xsize), static_cast<uint32_t>(astc_image->ysize),
             static_cast<uint32_t>(astc_image->zsize)
     };

@@ -70,9 +70,8 @@ public:
 
     static RenderContext* g_context;
     
-
-    // RenderContext & bindBuffer(uint32_t setId, const Buffer& buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t binding,
-    //                 uint32_t array_element);
+    inline static RenderContext & get(){return *g_context;}
+    
     
     RenderContext &  bindBuffer(uint32_t binding, const Buffer &buffer, VkDeviceSize offset = 0 , VkDeviceSize range = 0 ,uint32_t setId = 0,uint32_t array_element=0);
     
@@ -236,7 +235,8 @@ RenderContext & RenderContext::bindLight(const std::vector<Light>& lights, uint3
 
     buffer.buffer->uploadData(&lightUbos, sizeof(T), buffer.offset);
 
-    bindBuffer(setId, *buffer.buffer, buffer.offset, buffer.size, binding, 0);
+    bindBuffer(binding,*buffer.buffer, buffer.offset, buffer.size, setId, 0);
+    //bindBuffer(setId, *buffer.buffer, buffer.offset, buffer.size, binding, 0);
 
     return *this;
 }
