@@ -21,6 +21,12 @@ struct VertexAttribute {
     std::uint32_t offset = 0;
 };
 
+#define POSITION_ATTRIBUTE_NAME "position"
+#define INDEX_ATTRIBUTE_NAME "indices"
+#define NORMAL_ATTRIBUTE_NAME "normal"
+#define TANGENT_ATTRIBUTE_NAME "tangent"
+#define TEXCOORD_ATTRIBUTE_NAME "texcoord"
+
 struct Primitive {
     uint32_t firstIndex{};
     uint32_t indexCount{};

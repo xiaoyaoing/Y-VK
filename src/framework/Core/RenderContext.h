@@ -11,7 +11,7 @@
 #include "Pipeline.h"
 #include "RenderGraph/RenderGraph.h"
 #include "ResourceBindingState.h"
-#include "Scene/SceneLoader/gltfloader.h"
+#include "Scene/Scene.h"
 #include "Core/BufferPool.h"
 
 class Device;
@@ -90,7 +90,7 @@ public:
 
 
     template <typename T>
-    RenderContext & bindLight(const std::vector<Light>& lights, uint32_t setId, uint32_t binding);
+    RenderContext & bindLight(const std::vector<SgLight>& lights, uint32_t setId, uint32_t binding);
 
     RenderContext & bindPushConstants(std::vector<uint8_t>& pushConstants);
 
@@ -119,7 +119,7 @@ public:
 
     uint32_t getActiveFrameIndex() const;
 
-    void submitAndPresent(CommandBuffer& buffer, VkFence fence = VK_NULL_HANDLE);
+    void submitAndPresent(CommandBuffer& commandBuffer, VkFence fence = VK_NULL_HANDLE);
     void submit(CommandBuffer& commandBuffer, bool waiteFence = true);
 
     
@@ -159,14 +159,14 @@ public:
 
     BufferAllocation allocateBuffer(VkDeviceSize allocateSize, VkBufferUsageFlags usage);
 
-    CommandBuffer& getGraphicBuffer();
+    CommandBuffer& getGraphicCommandBuffer();
     CommandBuffer& getComputeCommandBuffer();
 
     void handleSurfaceChanges();
 
     void recrateSwapChain(VkExtent2D extent);
 
-    void copyBuffer(Buffer & src, Buffer & dst);
+    void copyBuffer(const Buffer & src, Buffer & dst);
 
 private:
     bool frameActive = false;
@@ -202,7 +202,7 @@ private:
 };
 
 template <typename T>
-RenderContext & RenderContext::bindLight(const std::vector<Light>& lights, uint32_t setId, uint32_t binding)
+RenderContext & RenderContext::bindLight(const std::vector<SgLight>& lights, uint32_t setId, uint32_t binding)
 {
     const auto buffer = allocateBuffer(sizeof(T), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 

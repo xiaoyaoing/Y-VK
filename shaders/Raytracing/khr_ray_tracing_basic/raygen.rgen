@@ -18,6 +18,22 @@
 #version 460
 #extension GL_EXT_ray_tracing : enable
 
+struct ReservoirSample {
+	vec3 pos;
+	vec3 normal;
+	vec3 emission;
+	float dist;
+	vec3 radiance;
+	float p_hat;
+};
+
+struct ReSTIRReservoir {
+	ReservoirSample y;
+	float      w_sum;
+	float      W;
+	int  M;
+};
+
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
 layout(binding = 1, set = 0, rgba8) uniform image2D image;
 layout(binding = 2, set = 0) uniform CameraProperties 
@@ -25,8 +41,14 @@ layout(binding = 2, set = 0) uniform CameraProperties
 	mat4 viewInverse;
 	mat4 projInverse;
 } cam;
+layout(binding = 3,set = 0) buffer ReSTIRReservoirs
+{
+	ReSTIRReservoir reservoirs[];
+} ;
 
 layout(location = 0) rayPayloadEXT vec3 hitValue;
+
+
 
 void main() 
 {
@@ -45,5 +67,13 @@ void main()
 
     traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, origin.xyz, tmin, direction.xyz, tmax, 0);
 
+//	int pos = int(gl_LaunchIDEXT.xy.x * gl_LaunchIDEXT.xy.y);
+//	reservoirs[pos].y.pos = vec3(1.0f);
+//	reservoirs[pos].y.normal = vec3(1.0f);
+//	reservoirs[pos].y.emission = vec3(1.0f);
+//	reservoirs[pos].y.dist = 1.f;
+//	reservoirs[pos].y.radiance = vec3(1.0f);
+//	reservoirs[pos].y.p_hat = 1.f;
+	
 	imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(hitValue, 0.0));
 }

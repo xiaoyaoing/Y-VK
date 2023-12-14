@@ -76,7 +76,7 @@ DescriptorLayout::DescriptorLayout(Device &device, std::vector<Shader> &shaders)
             bindingFlags.emplace_back(0);
             resourceLookUp.emplace(resource.name, resource.binding);
             layoutBindings.emplace_back(bindingInfo);
-             bindingLookUp.emplace(bindingInfo.binding, layoutBindings.size() - 1);
+            bindingLookUp.emplace(bindingInfo.binding, layoutBindings.size() - 1);
         }
     }
     

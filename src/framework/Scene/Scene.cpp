@@ -9,27 +9,35 @@ void Scene::IteratePrimitives(PrimitiveCallBack primitiveCallBack) const
 }
 
 Scene::Scene(std::vector<std::unique_ptr<Primitive>>&& primitives, std::vector<std::unique_ptr<Texture>>&& textures,
-             std::vector<Material> materials, std::vector<Light> lights): materials(std::move(materials)),
+             std::vector<Material> && materials, std::vector<SgLight> && lights, std::vector<std::shared_ptr<Camera>> && cameras): materials(std::move(materials)),
                                                                           lights(std::move(lights)),
                                                                           primitives(std::move(primitives)),
-                                                                          textures(std::move(textures))
+                                                                          textures(std::move(textures)),
+                                                                          cameras(std::move(cameras))
 {
+ 
 }
 
-void Scene::addLight(const Light& light)
+void Scene::addLight(const SgLight& light)
 {
     lights.emplace_back(light);
 }
 
-const std::vector<Light>& Scene::getLights() const
+const std::vector<SgLight>& Scene::getLights() const
 {
     return lights;
 }
 
-// const std::vector<Primitive>& Scene::getPrimitives() const
-// {
-//     return primitives;
-// }
+const std::vector<std::unique_ptr<Primitive>>& Scene::getPrimitives()
+{
+    return  primitives;
+}
+
+std::vector<std::shared_ptr<Camera>>& Scene::getCameras()
+{
+    return cameras;
+}
+
 
 
 bool Primitive::getVertexAttribute(const std::string& name, VertexAttribute& attribute) const

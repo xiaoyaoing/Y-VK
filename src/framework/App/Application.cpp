@@ -11,6 +11,7 @@
 #include "Core/Shader/Shader.h"
 #include "Core/Texture.h"
 #include "Scene/Compoments/Camera.h"
+#include "Scene/SceneLoader/gltfloader.h"
 
 
 void Application::initVk() {
@@ -120,10 +121,8 @@ void Application::update() {
     graph.getBlackBoard().put(SWAPCHAIN_IMAGE_NAME,handle);
     
     drawFrame(graph);
-
-  
-
-    renderContext->submitAndPresent(renderContext->getGraphicBuffer(),fence);
+    
+    renderContext->submitAndPresent(renderContext->getGraphicCommandBuffer(),fence);
     
     camera->update(deltaTime);
 
@@ -137,6 +136,12 @@ void Application::createRenderContext() {
     renderContext = std::make_unique<RenderContext>(*device, surface, *window);
     RenderContext::g_context = renderContext.get();
 }
+
+// void Application::loadScene(const std::string& path,const SceneLoadingConfig & config)
+// {
+//     scene = GltfLoading::LoadSceneFromGLTFFile(*device,FileUtils::getResourcePath(path));
+//     camera = scene->getCameras()[0];
+// }
 
 
 void Application::initWindow(const char *name, uint32_t width, uint32_t height) {
@@ -156,7 +161,6 @@ void Application::prepare() {
     initVk();
     initGUI();
 
-    camera = std::make_unique<Camera>();
 }
 
 Application::Application(const char *name,  uint32_t width, uint32_t height) : width(width), height(height) {

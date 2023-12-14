@@ -92,7 +92,7 @@ void RenderPassNode::execute(RenderGraph &renderGraph, CommandBuffer &commandBuf
     RenderContext::g_context->beginRenderPass(commandBuffer, renderTarget, subpassInfos);
 
     RenderPassContext context = {
-            .commandBuffer = RenderContext::g_context->getGraphicBuffer()
+            .commandBuffer = RenderContext::g_context->getGraphicCommandBuffer()
     };
     mRenderPass->execute(context);
 
@@ -150,7 +150,7 @@ ImageCopyPassNode::ImageCopyPassNode(RenderGraphHandle src, RenderGraphHandle ds
 void ComputePassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer)
 {    RenderContext::g_context->getPipelineState().setPipelineType(PIPELINE_TYPE::E_COMPUTE);
 
-    RenderPassContext context{            .commandBuffer = RenderContext::g_context->getGraphicBuffer()};
+    RenderPassContext context{            .commandBuffer = RenderContext::g_context->getGraphicCommandBuffer()};
     mPass->execute(context);
     RenderContext::g_context->clearPassResources();
 }
@@ -163,6 +163,7 @@ void RayTracingPassNode::execute(RenderGraph& renderGraph, CommandBuffer& comman
     RenderContext::g_context->bindAcceleration(0,*settings.accel,0,0);
     RenderPassContext context{.commandBuffer = RenderContext::g_context->getComputeCommandBuffer()};
     mPass->execute(context);
+    RenderContext::g_context->clearPassResources();
     // RenderContext::g_context->getPipelineState().setPipelineType(PIPELINE_TYPE::E_RAY_TRACING).setPipelineLayout(*layout).setrTPipelineSettings({.maxDepth = 5,.dims = {width,height,1}});
     // renderContext->getPipelineState().setPipelineType(PIPELINE_TYPE::E_RAY_TRACING).setPipelineLayout(*layout).setrTPipelineSettings({.maxDepth = 5,.dims = {width,height,1}});
 

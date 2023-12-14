@@ -55,5 +55,6 @@ void Buffer::copyFrom(Buffer& srcBuffer)
 }
 
 Buffer::~Buffer() {
-    vmaDestroyBuffer(_allocator, _buffer, _bufferAllocation);
+    if(_buffer != VK_NULL_HANDLE)
+     vmaDestroyBuffer(_allocator, _buffer, _bufferAllocation);
 }

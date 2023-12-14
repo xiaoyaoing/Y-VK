@@ -42,6 +42,7 @@
 // #endif
 
 
+
 class Application {
     void initWindow(const char *name,  uint32_t width, uint32_t height);
 
@@ -67,37 +68,26 @@ public:
     virtual  ~Application();
 
 protected:
-    void createRenderContext();
-
-
-    virtual void update();
-
-    virtual void getRequiredInstanceExtensions();
 
     inline void addDeviceExtension(const char *extension, bool optional = true) {
         deviceExtensions[extension] = optional;
     }
-
     inline void addInstanceExtension(const char *extension, bool optional = true) {
         instanceExtensions[extension] = optional;
     }
 
-
+    virtual void update();
+    virtual void getRequiredInstanceExtensions();
     virtual void initVk();
-
     virtual void drawFrame(RenderGraph &rg) = 0;
-
     virtual void updateScene();
-
-    void updateGUI();
-
     virtual void onUpdateGUI();
-
     virtual void onMouseMove();
-
     virtual void onViewUpdated();
 
-
+    void updateGUI();
+    void createRenderContext();
+    //void loadScene(const std::string & path);
 protected:
     VmaAllocator _allocator{};
 
@@ -113,7 +103,8 @@ protected:
     std::unique_ptr<Window> window{nullptr};
     std::unique_ptr<RenderContext> renderContext{nullptr};
     std::unique_ptr<Device> device{nullptr};
-    std::unique_ptr<Camera> camera;
+     std::shared_ptr<Camera> camera;
+    
     std::unique_ptr<Scene> scene;
     std::unique_ptr<Gui> gui;
 

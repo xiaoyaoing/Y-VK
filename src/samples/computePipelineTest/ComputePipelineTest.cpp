@@ -160,7 +160,7 @@ void Example::drawFrame(RenderGraph& rg)
     });
     if(enableGui)
         gui->addGuiPass(rg);
-    rg.execute(renderContext->getGraphicBuffer());
+    rg.execute(renderContext->getGraphicCommandBuffer());
     
 }
 

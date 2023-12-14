@@ -7,25 +7,9 @@
 #include "Common/ResourceCache.h"
 #include "Common/VkCommon.h"
 #include "Core/Shader/GlslCompiler.h"
+#include "Integrators/PathIntegrator.h"
+#include "Scene/SceneLoader/gltfloader.h"
 
-struct BlasInput
-{
-    std::vector<VkAccelerationStructureGeometryKHR> geometry;
-    std::vector<VkAccelerationStructureBuildRangeInfoKHR> range;
-};
-
-
-using TlasInput  = VkAccelerationStructureInstanceKHR;
-
-
-static VkTransformMatrixKHR toVkTransformMatrix(const glm::mat4 & matrix)
-{
-    VkTransformMatrixKHR transformMatrix{};
-    const  auto tMatrix = glm::transpose(matrix);
-
-    memcpy(transformMatrix.matrix, &tMatrix, sizeof(transformMatrix.matrix));
-    return transformMatrix;
-}
 
 static BlasInput toVkGeometry(const Primitive & primitive)
 {
@@ -69,11 +53,6 @@ static TlasInput toVkInstance(const Primitive & primitive,VkDeviceAddress blasAd
 Accel RayTracer::createAccel(VkAccelerationStructureCreateInfoKHR& accel)
 {
     Accel result_accel;
-    // Allocating the buffer to hold the acceleration structure
-    // Buffer buffer(*device,accel.size, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-    //               VMA_MEMORY_USAGE_GPU_ONLY );
-    
-    // Setting the buffer
     result_accel.buffer = std::make_unique<Buffer>(*device,accel.size, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                   VMA_MEMORY_USAGE_GPU_ONLY);
     accel.buffer = result_accel.buffer->getHandle();
@@ -104,64 +83,43 @@ RayTracer::RayTracer(const RayTracerSettings& settings)
     //Application::g_App = this;
 }
 
-void RayTracer::drawFrame(RenderGraph& renderGraph, CommandBuffer& commandBuffer)
+void RayTracer::drawFrame(RenderGraph& renderGraph)
 {
-    // renderContext->submit(commandBuffer,fence);
-    // return ;
 
-    renderGraph.addRaytracingPass("PT pass",[&](RenderGraph::Builder & builder,RaytracingPassSettings & settings)
-    {
-        settings.accel = &tlas;
-        settings.pipelineLayout = layout;
-        settings.rTPipelineSettings.dims = {width,height,1};
-        settings.rTPipelineSettings.maxDepth = 5;
-        
-        auto output = renderGraph.createTexture("RT output",{width,height,TextureUsage::STORAGE | TextureUsage::TRANSFER_SRC});
-        builder.writeTexture(output,TextureUsage::STORAGE);
-        renderGraph.getBlackBoard().put("RT",output);
-    },[&](RenderPassContext & context)
-    {
-        auto buffer = renderContext->allocateBuffer(sizeof(cameraUbo),VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-        cameraUbo.projInverse = glm::inverse(camera->matrices.perspective);
-        cameraUbo.viewInverse = glm::inverse(camera->matrices.view);
-        buffer.buffer->uploadData(&cameraUbo,sizeof(cameraUbo));
-        renderContext->bindBuffer(0,*buffer.buffer,0,sizeof(cameraUbo),2,0).
-        bindInput(0,renderGraph.getBlackBoard().getImageView("RT"),1,0);
-        renderContext->traceRay(commandBuffer,{width,height,1});
-    });
+   // integrator->render(renderGraph);
+    
+    auto & commandBuffer = renderContext->getGraphicCommandBuffer();
+
+    // renderGraph.addRaytracingPass("PT pass",[&](RenderGraph::Builder & builder,RaytracingPassSettings & settings)
+    // {
+    //     settings.accel = &tlas;
+    //     settings.pipelineLayout = layout;
+    //     settings.rTPipelineSettings.dims = {width,height,1};
+    //     settings.rTPipelineSettings.maxDepth = 5;
+    //     
+    //     auto output = renderGraph.createTexture("RT output",{width,height,TextureUsage::STORAGE | TextureUsage::TRANSFER_SRC});
+    //     builder.writeTexture(output,TextureUsage::STORAGE);
+    //     renderGraph.getBlackBoard().put("RT",output);
+    // },[&](RenderPassContext & context)
+    // {
+    //     auto buffer = renderContext->allocateBuffer(sizeof(cameraUbo),VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    //     cameraUbo.projInverse = glm::inverse(camera->matrices.perspective);
+    //     cameraUbo.viewInverse = glm::inverse(camera->matrices.view);
+    //     buffer.buffer->uploadData(&cameraUbo,sizeof(cameraUbo));
+    //     renderContext->bindBuffer(2,*buffer.buffer,0,sizeof(cameraUbo));
+    //     renderContext->bindInput(0,renderGraph.getBlackBoard().getImageView("RT"),1,0);
+    //     renderContext->traceRay(commandBuffer,{width,height,1});
+    // });
+
+    integrator->render(renderGraph);
 
     renderGraph.addImageCopyPass(renderGraph.getBlackBoard().getHandle("RT"),renderGraph.getBlackBoard().getHandle(SWAPCHAIN_IMAGE_NAME));
-    
-    // storageImage->getVkImage().transitionLayout(commandBuffer,VulkanLayout::READ_WRITE);    
-    //
-    // auto buffer = renderContext->allocateBuffer(sizeof(cameraUbo),VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-    // cameraUbo.projInverse = glm::inverse(camera->matrices.perspective);
-    // cameraUbo.viewInverse = glm::inverse(camera->matrices.view);
-    // buffer.buffer->uploadData(&cameraUbo,sizeof(cameraUbo));
-    //
-    // renderContext->getPipelineState().setPipelineType(PIPELINE_TYPE::E_RAY_TRACING).setPipelineLayout(*layout).setrTPipelineSettings({.maxDepth = 5,.dims = {width,height,1}});
-    // renderContext->bindAcceleration(0,tlas,0,0).bindInput(0,storageImage->getVkImageView(),1,0).bindBuffer(0,*buffer.buffer,0,sizeof(cameraUbo),2,0);
-    // renderContext->flush(commandBuffer);
-    // renderContext->traceRay(commandBuffer);
-    //
-    // renderContext->getCurHwtexture().getVkImage().transitionLayout(commandBuffer,VulkanLayout::TRANSFER_DST);
-    // storageImage->getVkImage().transitionLayout(commandBuffer,VulkanLayout::TRANSFER_SRC);
-    //
-    // VkImageCopy copy_region{};
-    // copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1    };
-    // copy_region.srcOffset      = {0, 0, 0};
-    // copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    // copy_region.dstOffset      = {0, 0, 0};
-    // copy_region.extent         = {width, height, 1};
-    //
-    // vkCmdCopyImage(commandBuffer.getHandle(),storageImage->getVkImage().getHandle(),VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-    //                 renderContext->getCurHwtexture().getVkImage().getHandle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
-    //
-    // storageImage->getVkImage().transitionLayout(commandBuffer,VulkanLayout::READ_WRITE);
+
+    gui->addGuiPass(renderGraph);
 
     renderGraph.execute(commandBuffer);
     
-    renderContext->submitAndPresent(commandBuffer,fence);
+  //  renderContext->submitAndPresent(commandBuffer,fence);
     // vkCmdTraceRaysKHR()
 }
 
@@ -171,34 +129,35 @@ void RayTracer::prepare()
     GlslCompiler::setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_5);
 
 
-    std::vector<Shader> shaders= {
-        // Shader(*device,FileUtils::getShaderPath("Raytracing/raygen.rgen")),
-        // Shader{*device,FileUtils::getShaderPath("Raytracing/miss.rmiss")},
-        // Shader{*device,FileUtils::getShaderPath("Raytracing/shadow.rmiss")},
-        // Shader(*device,FileUtils::getShaderPath("Raytracing/closesthit.rchit"))
-        Shader(*device,FileUtils::getShaderPath("Raytracing/khr_ray_tracing_basic/raygen.rgen")),
-        Shader(*device,FileUtils::getShaderPath("Raytracing/khr_ray_tracing_basic/miss.rmiss")),
-        Shader(*device,FileUtils::getShaderPath("Raytracing/khr_ray_tracing_basic/closesthit.rchit"))
-    };
-    layout = &device->getResourceCache().requestPipelineLayout(shaders);
-
-   // scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"));
-scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));
-    buildBLAS();
-    buildTLAS();
-   storageImage = std::make_unique<SgImage>(*device,"",VkExtent3D{width,height,1},VK_FORMAT_B8G8R8A8_UNORM,VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,VMA_MEMORY_USAGE_GPU_ONLY,VK_IMAGE_VIEW_TYPE_2D);
-
-    camera->setTranslation(glm::vec3(0.0f, 0.0f, -28.f));
-    camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
-    camera->setPerspective(60.0f, (float) width / (float) height, 0.1f, 4000.f);
+    // std::vector<Shader> shaders= {
+    //     // Shader(*device,FileUtils::getShaderPath("Raytracing/raygen.rgen")),
+    //     // Shader{*device,FileUtils::getShaderPath("Raytracing/miss.rmiss")},
+    //     // Shader{*device,FileUtils::getShaderPath("Raytracing/shadow.rmiss")},
+    //     // Shader(*device,FileUtils::getShaderPath("Raytracing/closesthit.rchit"))
+    //     Shader(*device,FileUtils::getShaderPath("Raytracing/khr_ray_tracing_basic/raygen.rgen")),
+    //     Shader(*device,FileUtils::getShaderPath("Raytracing/khr_ray_tracing_basic/miss.rmiss")),
+    //     Shader(*device,FileUtils::getShaderPath("Raytracing/khr_ray_tracing_basic/closesthit.rchit"))
+    // };
+    // layout = &device->getResourceCache().requestPipelineLayout(shaders);
+    //
+    SceneLoadingConfig sceneConfig = {.requiredVertexAttribute = {POSITION_ATTRIBUTE_NAME,INDEX_ATTRIBUTE_NAME},.indexType = VK_INDEX_TYPE_UINT32,.bufferForTransferSrc = true};
+    scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"),sceneConfig);
+   // scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"),sceneConfig);
+    
+    camera = scene->getCameras()[0];
+    //
+    // buildBLAS();
+    // buildTLAS();
+    // storageImage = std::make_unique<SgImage>(*device,"",VkExtent3D{width,height,1},VK_FORMAT_B8G8R8A8_UNORM,VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,VMA_MEMORY_USAGE_GPU_ONLY,VK_IMAGE_VIEW_TYPE_2D);
+    //
     camera->flipY = true;
-    camera->setTranslation(glm::vec3(0.0f, 1.0f, 0.0f));
-    // camera->setTranslation(glm::vec3(-705.f, 200.f, -119.f));
-    camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
+    camera->setTranslation(glm::vec3(-2.5f,-3.34f,-20.f));
     camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
     camera->setPerspective(60.0f, (float) width / (float) height, 0.1f, 4000.f);
     
-
+    
+    integrator = std::make_unique<PathIntegrator>(*device);
+    integrator->init(*scene);
 }
 
 

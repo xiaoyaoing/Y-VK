@@ -6,10 +6,11 @@
 #include "Core/Shader/Shader.h"
 #include "../../framework/Common/VkCommon.h"
 #include "Common/FIleUtils.h"
+#include "Scene/SceneLoader/gltfloader.h"
 
 void Example::drawFrame(RenderGraph & rg) {
 
-    auto & commandBuffer = renderContext->getGraphicBuffer();
+    auto & commandBuffer = renderContext->getGraphicCommandBuffer();
 
     auto &blackBoard = rg.getBlackBoard();
 
@@ -422,7 +423,7 @@ void Example::prepare() {
                 props.intensity = 0.2f;
                 props.position = pos;
 
-                scene->addLight(Light{.type = LIGHT_TYPE::Point, .lightProperties = props});
+                scene->addLight(SgLight{.type = LIGHT_TYPE::Point, .lightProperties = props});
             }
         }
     }
@@ -437,13 +438,13 @@ void Example::prepare() {
     };
     pipelineLayouts.lighting = std::make_unique<PipelineLayout>(*device, shaders1);
 
-        camera->flipY = true;
-        camera->setTranslation(glm::vec3(0.0f, 1.0f, 0.0f));
-        camera->setTranslation(glm::vec3(-494.f,-116.f,99.f));
-        camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
-        camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
-        camera->setPerspective(60.0f, (float) width / (float) height, 4000.f,1.f);
-        camera->setMoveSpeed(0.05f);
+    camera->flipY = true;
+
+    camera->setTranslation(glm::vec3(-494.f,-116.f,99.f));
+    camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
+    camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
+    camera->setPerspective(60.0f, (float) width / (float) height, 1.f,4000.f);
+    camera->setMoveSpeed(0.05f);
 }
 
 

@@ -1,0 +1,18 @@
+{
+    "glsllint.glslangValidatorArgs": "C:\\Program Files\\RenderDoc\\plugins\\spirv\\glslangValidator.exe",
+    "glsl-linter.validatorPath": "C:\\test\\glslang\\bin\\glslangValidator.exe",
+    "glsl-linter.fileExtensions": {
+        ".fs.glsl": "frag",
+        ".fs": "frag",
+        ".vs.glsl": "vert",
+        ".vs": "vert",
+        ".tes.glsl": "tese",
+        ".tes": "tese",
+        ".tcs.glsl": "tesc",
+        ".tcs": "tesc",
+        ".gs.glsl": "geom",
+        ".gs": "geom",
+        ".glsl": "glsl",
+        ".rgen": "rgen"
+    }
+}

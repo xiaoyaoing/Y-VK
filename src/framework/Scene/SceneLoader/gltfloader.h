@@ -11,6 +11,7 @@
 #include "ext/tinygltf/tiny_gltf.h"
 
 #include <filesystem>
+#include <unordered_set>
 
 #include "Core/Buffer.h"
 #include "Core/Texture.h"
@@ -18,12 +19,22 @@
 #include "Scene/Scene.h"
 //#include "Mesh.h"
 
+struct SceneLoadingConfig
+{
+    std::unordered_set<std::string> requiredVertexAttribute{};
+    VkIndexType indexType{VK_INDEX_TYPE_NONE_KHR};
+    bool bufferAddressAble{false};
+    bool bufferForAccel{false};
+    bool bufferForTransferSrc{false};
+    bool bufferForTransferDst{false};
+};
 
 class GltfLoading
 {
 public:
-    static std::unique_ptr<Scene> LoadSceneFromGLTFFile(Device& device, const std::string& path,
-                                                        uint32_t fileLoadingFlags = 0, float scale = 1.0f);
+
+    
+    static std::unique_ptr<Scene> LoadSceneFromGLTFFile(Device& device, const std::string& path,const SceneLoadingConfig & config = {});
 
     enum FileLoadingFlags
     {

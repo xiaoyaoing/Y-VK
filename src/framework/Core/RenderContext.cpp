@@ -109,7 +109,7 @@ void  RenderContext::beginFrame()
 
     getComputeCommandBuffer().beginRecord(0);
 
-    auto& commandBuffer = getGraphicBuffer();
+    auto& commandBuffer = getGraphicCommandBuffer();
     commandBuffer.beginRecord(0);
 
 
@@ -144,13 +144,12 @@ uint32_t RenderContext::getActiveFrameIndex() const
     return activeFrameIndex;
 }
 
-void RenderContext::submitAndPresent(CommandBuffer& buffer, VkFence fence)
+void RenderContext::submitAndPresent(CommandBuffer& commandBuffer, VkFence fence)
 {
-    getCurHwtexture().getVkImage().transitionLayout(buffer, VulkanLayout::PRESENT,
+    getCurHwtexture().getVkImage().transitionLayout(commandBuffer, VulkanLayout::PRESENT,
                                                     getCurHwtexture().getVkImageView().getSubResourceRange());
-    buffer.endRecord();
-
-
+    commandBuffer.endRecord();
+    
     getComputeCommandBuffer().endRecord();
     
     auto queue = device.getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0);
@@ -168,7 +167,7 @@ void RenderContext::submitAndPresent(CommandBuffer& buffer, VkFence fence)
     submitInfo.pSignalSemaphores = signalSems;
 
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = buffer.getHandlePointer();
+    submitInfo.pCommandBuffers = commandBuffer.getHandlePointer();
  
     queue.submit({submitInfo}, fence);
 
@@ -653,7 +652,7 @@ BufferAllocation RenderContext::allocateBuffer(VkDeviceSize allocateSize, VkBuff
     return frameResource->bufferPools.at(usage)->AllocateBufferBlock(allocateSize);
 }
 
-CommandBuffer& RenderContext::getGraphicBuffer()
+CommandBuffer& RenderContext::getGraphicCommandBuffer()
 {
     return *frameResources[activeFrameIndex]->graphicComputeBuffer;
 }
@@ -707,7 +706,7 @@ void RenderContext::recrateSwapChain(VkExtent2D extent)
     }
 }
 
-void RenderContext::copyBuffer(Buffer& src, Buffer& dst)
+void RenderContext::copyBuffer(const Buffer& src, Buffer& dst)
 {
     auto commandBuffer    = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY,true);
     VkBufferCopy    copy_region  = {};

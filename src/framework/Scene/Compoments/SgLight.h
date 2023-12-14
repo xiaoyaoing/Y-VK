@@ -24,7 +24,7 @@ struct LightProperties
     float outer_cone_angle{0.0f};
 };
 
-struct Light
+struct SgLight
 {
     LIGHT_TYPE type;
     LightProperties lightProperties;
@@ -51,15 +51,15 @@ struct alignas(16) DeferredLights
 
 struct LightingState
 {
-    std::vector<Light> directionalLights;
-    std::vector<Light> pointLights;
-    std::vector<Light> spotLights;
+    std::vector<SgLight> directionalLights;
+    std::vector<SgLight> pointLights;
+    std::vector<SgLight> spotLights;
 
     std::unique_ptr<Buffer> buffer{nullptr};
-    void addLight(const Light& light);
+    void addLight(const SgLight& light);
 };
 
-inline void LightingState::addLight(const Light& light)
+inline void LightingState::addLight(const SgLight& light)
 {
     switch (light.type)
     {

@@ -8,7 +8,7 @@
 #include "Core/Texture.h"
 #include "Core/Buffer.h"
 
-#include "Scene/Compoments/Light.h"
+#include "Scene/Compoments/SgLight.h"
 
 class Camera;
 
@@ -40,21 +40,23 @@ public:
     void IteratePrimitives(PrimitiveCallBack primitiveCallBack) const;
 
     Scene(std::vector<std::unique_ptr<Primitive>> &&primitives, std::vector<std::unique_ptr<Texture>> &&textures,
-          std::vector<Material> materials, std::vector<Light> lights);
+          std::vector<Material> && materials, std::vector<SgLight> && lights, std::vector<std::shared_ptr<Camera>> && cameras);
 
-    void addLight(const Light &light);
+    void addLight(const SgLight &light);
 
-    const std::vector<Light> &getLights() const;
+    const std::vector<SgLight> &getLights() const;
 
-    // const std::vector<Primitive> &getPrimitives() const;
 
-    
+    const  std::vector<std::unique_ptr<Primitive>> &getPrimitives();
 
+    std::vector<std::shared_ptr<Camera>> & getCameras();
 private:
     std::vector<Material> materials;
 
-    std::vector<Light> lights;
+    std::vector<SgLight> lights;
 
     std::vector<std::unique_ptr<Primitive>> primitives;
     std::vector<std::unique_ptr<Texture>> textures;
+
+    std::vector<std::shared_ptr<Camera>> cameras;
 };
