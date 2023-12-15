@@ -121,9 +121,9 @@ void Example::drawFrame(RenderGraph & rg) {
                     renderContext->bindBuffer(3, *viewBuffer.buffer, viewBuffer.offset, viewBuffer.size);
 
                         
-                    renderContext->bindInput(0, blackBoard.getImageView("albedo"), 0, 0);
-                    renderContext->bindInput(0, blackBoard.getImageView("depth"), 1, 0);
-                    renderContext->bindInput(0, blackBoard.getImageView("normal"), 2, 0);
+                    renderContext->bindImage(0, blackBoard.getImageView("albedo"), 0, 0);
+                    renderContext->bindImage(0, blackBoard.getImageView("depth"), 1, 0);
+                    renderContext->bindImage(0, blackBoard.getImageView("normal"), 2, 0);
                         
                     renderContext->bindLight<DeferredLights>(scene->getLights(), 0,4);
 
@@ -245,9 +245,9 @@ void Example::drawFrame(RenderGraph & rg) {
                     renderContext->bindBuffer(3, *viewBuffer.buffer, viewBuffer.offset, viewBuffer.size);
 
                         
-                    renderContext->bindInput(0, blackBoard.getImageView("albedo"), 0, 0);
-                    renderContext->bindInput(0, blackBoard.getImageView("depth"), 1, 0);
-                    renderContext->bindInput(0, blackBoard.getImageView("normal"), 2, 0);
+                    renderContext->bindImage(0, blackBoard.getImageView("albedo"), 0, 0);
+                    renderContext->bindImage(0, blackBoard.getImageView("depth"), 1, 0);
+                    renderContext->bindImage(0, blackBoard.getImageView("normal"), 2, 0);
                         
                     renderContext->bindLight<DeferredLights>(scene->getLights(), 0, 4);
 
@@ -377,9 +377,9 @@ void Example::drawFrame(RenderGraph & rg) {
                     viewBuffer.buffer->uploadData(&fragUniform, viewBuffer.size, viewBuffer.offset);
 
                     renderContext->bindBuffer(3, *viewBuffer.buffer, viewBuffer.offset, viewBuffer.size)
-                                .bindInput(0, blackBoard.getImageView("albedo"), 0, 0)
-                                .bindInput(0, blackBoard.getImageView("depth"), 1, 0)
-                                .bindInput(0,blackBoard.getImageView("normal"),2,0)
+                                .bindImage(0, blackBoard.getImageView("albedo"), 0, 0)
+                                .bindImage(0, blackBoard.getImageView("depth"), 1, 0)
+                                .bindImage(0,blackBoard.getImageView("normal"),2,0)
                                 .bindLight<DeferredLights>(scene->getLights(), 0, 4)
                                 .flushAndDraw(commandBuffer,3,1,0,0);
                     

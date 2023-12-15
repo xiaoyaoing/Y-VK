@@ -36,8 +36,6 @@ public:
     void prepare() override;
 protected:
     void drawFrame(RenderGraph &renderGraph) override;
-    void buildBLAS();
-    void buildTLAS();
     Accel createAccel(VkAccelerationStructureCreateInfoKHR & accel);
     VkDeviceAddress getAccelerationStructureDeviceAddress(uint32_t primIdx);
     PipelineLayout * layout;

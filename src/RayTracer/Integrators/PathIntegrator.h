@@ -5,6 +5,7 @@ class PathIntegrator : public  Integrator
 {
 public:
     void render(RenderGraph& renderGraph) override;
+    virtual void initScene(Scene& scene) override;
     PathIntegrator(Device& device);
 protected:
     PipelineLayout * layout;

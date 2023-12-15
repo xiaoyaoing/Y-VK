@@ -257,7 +257,7 @@ void Gui::draw(CommandBuffer &commandBuffer) {
     std::vector<uint8_t> pushConstants(blockPtr, blockPtr + sizeof(PushConstBlock));
     renderContext.bindPushConstants(pushConstants);
 
-    renderContext.bindImage(0, fontTexture->getImage().getVkImageView(),
+    renderContext.bindImageSampler(0, fontTexture->getImage().getVkImageView(),
                             fontTexture->getSampler(), 0, 0);
 
 
@@ -321,7 +321,7 @@ void Gui::addGuiPass(RenderGraph &graph) {
                                    std::vector<uint8_t> pushConstants(blockPtr, blockPtr + sizeof(PushConstBlock));
                                    renderContext.bindPushConstants(pushConstants);
 
-                                   renderContext.bindImage(0, fontTexture->getImage().getVkImageView(),
+                                   renderContext.bindImageSampler(0, fontTexture->getImage().getVkImageView(),
                                                            fontTexture->getSampler(), 0, 0);
 
 

@@ -33,6 +33,16 @@ const std::vector<std::unique_ptr<Primitive>>& Scene::getPrimitives()
     return  primitives;
 }
 
+const std::vector<std::unique_ptr<Texture>>& Scene::getTextures()
+{
+    return textures;
+}
+
+const std::vector<Material>& Scene::getMaterials()
+{
+    return materials;
+}
+
 std::vector<std::shared_ptr<Camera>>& Scene::getCameras()
 {
     return cameras;

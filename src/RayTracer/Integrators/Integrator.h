@@ -3,40 +3,15 @@
 #include "shaders/Raytracing/commons.h"
 
 
-struct RTModel
-{
-    std::vector<glm::vec3> position;
-    
-};
-
-struct RTPrimitive
-{
-    uint32_t materialIndex;
-    uint32_t vertexOffset;
-    uint32_t vertexCount;
-    uint32_t indexOffset;
-    uint32_t indexCount;
-    glm::mat4 worldMatrix;
-};
-
-struct BlasInput
-{
-    std::vector<VkAccelerationStructureGeometryKHR> geometry;
-    std::vector<VkAccelerationStructureBuildRangeInfoKHR> range;
-};
+// struct RTModel
+// {
+//     std::vector<glm::vec3> position;
+//     
+// };
 
 
-using TlasInput  = VkAccelerationStructureInstanceKHR;
 
 
-static VkTransformMatrixKHR toVkTransformMatrix(const glm::mat4 & matrix)
-{
-    VkTransformMatrixKHR transformMatrix{};
-    const  auto tMatrix = glm::transpose(matrix);
-
-    memcpy(transformMatrix.matrix, &tMatrix, sizeof(transformMatrix.matrix));
-    return transformMatrix;
-}
 
 
 class Integrator
@@ -54,8 +29,9 @@ public:
     virtual void buildBLAS();
     virtual void buildTLAS();
 
+    virtual void bindRaytracingResources(CommandBuffer & commandBuffer);
+    
     Accel createAccel(VkAccelerationStructureCreateInfoKHR& accel);
-    void setCamera(std::shared_ptr<Camera> camera);    
 protected:
     SceneUbo sceneUbo;
     
@@ -63,24 +39,29 @@ protected:
     std::unique_ptr<Buffer> normalBuffer{nullptr};
     std::unique_ptr<Buffer> uvBuffer{nullptr};
     std::unique_ptr<Buffer> indexBuffer{nullptr};
+    
     std::unique_ptr<Buffer> materialsBuffer{nullptr};
-    std::unique_ptr<Buffer> sceneDescBuffer{nullptr};
-
+    std::unique_ptr<Buffer> primitiveMeshBuffer{nullptr};
+    std::unique_ptr<Buffer> rtLightBuffer{nullptr};
     std::vector<Buffer> transformBuffers{};
-
+    
+    std::unique_ptr<Buffer> sceneDescBuffer{nullptr};
+    std::unique_ptr<Buffer> sceneUboBuffer{nullptr};
+    
     std::vector<Accel> blases;
     Accel tlas;
-
-
+    
     std::vector<RTLight> lights;
     std::vector<RTPrimitive> primitives;
     std::vector<RTMaterial> materials;
+    std::vector<Texture *> textures;
 
     std::unique_ptr<SgImage> storageImage;
 
 
     uint32_t width,height;
     std::shared_ptr<Camera> camera{nullptr};
+
 
     friend class RayTracer;
     

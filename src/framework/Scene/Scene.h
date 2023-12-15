@@ -24,6 +24,7 @@ struct Material {
     float metallicFactor = 1.0f;
     float roughnessFactor = 1.0f;
     glm::vec4 baseColorFactor = glm::vec4(1.0f);
+    glm::vec3 emissiveFactor = glm::vec3(0.0f);
 
     std::unordered_map<std::string, const Texture &> textures{};
 };
@@ -48,7 +49,9 @@ public:
 
 
     const  std::vector<std::unique_ptr<Primitive>> &getPrimitives();
-
+    const std::vector<std::unique_ptr<Texture>> &getTextures();
+    const std::vector<Material> &getMaterials();
+    
     std::vector<std::shared_ptr<Camera>> & getCameras();
 private:
     std::vector<Material> materials;

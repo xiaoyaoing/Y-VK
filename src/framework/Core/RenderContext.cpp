@@ -293,25 +293,24 @@ RenderContext &  RenderContext::bindBuffer(uint32_t binding, const Buffer& buffe
     return *this;
 }
 
-RenderContext& RenderContext::bindAcceleration(uint32_t setId, const Accel& acceleration, uint32_t binding,
+RenderContext& RenderContext::bindAcceleration(uint32_t binding, const Accel& acceleration, uint32_t setId,
                                                uint32_t array_element)
 {
     resourceSets[setId].bindAccel1(acceleration,binding,array_element);
     return *this;
 }
 
-RenderContext & RenderContext::bindImage(uint32_t setId, const ImageView& view, const Sampler& sampler, uint32_t binding,
+RenderContext & RenderContext::bindImageSampler(uint32_t binding, const ImageView& view, const Sampler& sampler, uint32_t setId,
                                          uint32_t array_element)
 {
     resourceSets[setId].bindImage(view, sampler, binding, array_element);
     return *this;
 }
 
-RenderContext & RenderContext::bindInput(uint32_t setId, const ImageView& view, uint32_t binding, uint32_t array_element)
+RenderContext & RenderContext::bindImage(uint32_t setId, const ImageView& view, uint32_t binding, uint32_t array_element)
 {
     resourceSets[setId].bindInput(view, binding, array_element);
     return *this;
-
 }
 
 RenderContext & RenderContext::bindMaterial(const Material& material)
@@ -323,7 +322,7 @@ RenderContext & RenderContext::bindMaterial(const Material& material)
         if (descriptorLayout.hasLayoutBinding(texture.first))
         {
             auto& binding = descriptorLayout.getLayoutBindingInfo(texture.first);
-            bindImage(0, texture.second.image->getVkImageView(), texture.second.getSampler(), binding.binding, 0);
+            bindImageSampler(0, texture.second.image->getVkImageView(), texture.second.getSampler(), binding.binding, 0);
         }
     }
     return *this;

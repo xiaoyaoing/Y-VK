@@ -152,8 +152,8 @@ void Example::drawFrame(RenderGraph& rg)
                 vkCommon::initializers::vertexInputAttributeDescription(0, 1, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Particle, vel))}
             }).setDepthStencilState({.depthTestEnable =  false}).setRasterizationState({.cullMode = VK_CULL_MODE_NONE}).setColorBlendState({.attachments =  {state}})
         ;
-        renderContext->bindImage(0,graphics.particle->getImage().getVkImageView(),graphics.particle->getSampler(),0,0)
-        .bindImage(0,graphics.gradient->getImage().getVkImageView(),graphics.gradient->getSampler(),1,0)
+        renderContext->bindImageSampler(0,graphics.particle->getImage().getVkImageView(),graphics.particle->getSampler(),0,0)
+        .bindImageSampler(0,graphics.gradient->getImage().getVkImageView(),graphics.gradient->getSampler(),1,0)
         .bindBuffer(2,*graphics.uniformBuffer);
         commandBuffer.bindVertexBuffer( rg.getBlackBoard().getBuffer("storageBuffer"));
         renderContext->flushAndDraw(commandBuffer,num_particles,1,0,0);

@@ -25,9 +25,24 @@ void PathIntegrator::render(RenderGraph& renderGraph)
         cameraUbo.viewInverse = glm::inverse(camera->matrices.view);
         buffer.buffer->uploadData(&cameraUbo,sizeof(cameraUbo));
         renderContext->bindBuffer(2,*buffer.buffer,0,sizeof(cameraUbo));
-        renderContext->bindInput(0,renderGraph.getBlackBoard().getImageView("RT"),1,0);
+        renderContext->bindImage(0,renderGraph.getBlackBoard().getImageView("RT"),1,0);
         renderContext->traceRay(commandBuffer,{width,height,1});
     });
+}
+
+void PathIntegrator::initScene(Scene& scene)
+{
+    Integrator::initScene(scene);
+
+    SceneDesc desc{.vertex_addr =  vertexBuffer->getDeviceAddress(),
+                   .index_addr = indexBuffer->getDeviceAddress(),
+                   .normal_addr = normalBuffer->getDeviceAddress(),
+                   .uv_addr = uvBuffer->getDeviceAddress(),
+                   .material_addr = materialsBuffer->getDeviceAddress(),
+                   .prim_info_addr = primitiveMeshBuffer->getDeviceAddress(),
+    };
+    sceneDescBuffer = std::make_unique<Buffer>(device, sizeof(SceneDesc),
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_GPU_ONLY,&desc);
 }
 
 PathIntegrator::PathIntegrator(Device& device):Integrator(device)

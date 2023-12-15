@@ -6,3 +6,5 @@ struct HitPayload{
     uint material_idx;
     uint triangle_idx;
 };
+
+#define EPS 0.001

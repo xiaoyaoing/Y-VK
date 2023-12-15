@@ -75,14 +75,17 @@ public:
     
     RenderContext &  bindBuffer(uint32_t binding, const Buffer &buffer, VkDeviceSize offset = 0 , VkDeviceSize range = 0 ,uint32_t setId = 0,uint32_t array_element=0);
     
+    RenderContext & bindAcceleration(uint32_t binding, const Accel& acceleration, uint32_t setId = 0,
+                              uint32_t array_element = 0 );
+    
+    // RenderContext & bindAcceleration(uint32_t setId, const Accel& acceleration, uint32_t binding,
+    //                       uint32_t array_element);
 
-    RenderContext & bindAcceleration(uint32_t setId, const Accel& acceleration, uint32_t binding,
-                          uint32_t array_element);
+    RenderContext & bindImageSampler(uint32_t binding, const ImageView& view, const Sampler& sampler, uint32_t setId = 0,
+                   uint32_t array_element =  0);
 
-    RenderContext & bindImage(uint32_t setId, const ImageView& view, const Sampler& sampler, uint32_t binding,
-                   uint32_t array_element);
-
-    RenderContext & bindInput(uint32_t setId, const ImageView& view, uint32_t binding, uint32_t array_element);
+    RenderContext & bindImage(uint32_t binding, const ImageView& view, uint32_t setId = 0,
+                   uint32_t array_element =  0);
 
     RenderContext & bindMaterial(const Material& material);
 

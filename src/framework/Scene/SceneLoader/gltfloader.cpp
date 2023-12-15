@@ -433,10 +433,6 @@ void GLTFLoadingImpl::loadMaterials(tinygltf::Model& gltfModel)
         }
 
 
-        if (mat.values.find("roughnessFactor") != mat.values.end())
-        {
-            material.roughnessFactor = static_cast<float>(mat.values["roughnessFactor"].Factor());
-        }
         if (mat.values.find("metallicFactor") != mat.values.end())
         {
             material.metallicFactor = static_cast<float>(mat.values["metallicFactor"].Factor());
@@ -446,6 +442,10 @@ void GLTFLoadingImpl::loadMaterials(tinygltf::Model& gltfModel)
             material.baseColorFactor = glm::make_vec4(mat.values["baseColorFactor"].ColorFactor().data());
         }
 
+        if(mat.values.find("emissiveFactor") != mat.values.end())
+        {
+            material.emissiveFactor = glm::make_vec3(mat.values["emissiveFactor"].ColorFactor().data());
+        }
 
         if (mat.additionalValues.find("alphaMode") != mat.additionalValues.end())
         {
@@ -462,6 +462,11 @@ void GLTFLoadingImpl::loadMaterials(tinygltf::Model& gltfModel)
         if (mat.additionalValues.find("alphaCutoff") != mat.additionalValues.end())
         {
             material.alphaCutoff = static_cast<float>(mat.additionalValues["alphaCutoff"].Factor());
+        }
+
+        if(mat.additionalValues.find("emissiveFactor") != mat.additionalValues.end())
+        {
+            material.emissiveFactor = glm::make_vec3(mat.additionalValues["emissiveFactor"].ColorFactor().data());
         }
 
         materials.push_back(std::move(material));
