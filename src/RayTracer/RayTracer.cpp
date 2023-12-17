@@ -141,7 +141,8 @@ void RayTracer::prepare()
     // };
     // layout = &device->getResourceCache().requestPipelineLayout(shaders);
     //
-    SceneLoadingConfig sceneConfig = {.requiredVertexAttribute = {POSITION_ATTRIBUTE_NAME,INDEX_ATTRIBUTE_NAME,NORMAL_ATTRIBUTE_NAME,TEXCOORD_ATTRIBUTE_NAME},.indexType = VK_INDEX_TYPE_UINT32,.bufferForTransferSrc = true};
+    SceneLoadingConfig sceneConfig = {.requiredVertexAttribute = {POSITION_ATTRIBUTE_NAME,INDEX_ATTRIBUTE_NAME,NORMAL_ATTRIBUTE_NAME,TEXCOORD_ATTRIBUTE_NAME},
+        .indexType = VK_INDEX_TYPE_UINT32,.bufferAddressAble = true,.bufferForAccel = true,.bufferForTransferSrc = true};
     scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"),sceneConfig);
    // scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"),sceneConfig);
     
@@ -151,7 +152,7 @@ void RayTracer::prepare()
     // buildTLAS();
     // storageImage = std::make_unique<SgImage>(*device,"",VkExtent3D{width,height,1},VK_FORMAT_B8G8R8A8_UNORM,VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,VMA_MEMORY_USAGE_GPU_ONLY,VK_IMAGE_VIEW_TYPE_2D);
     //
-    camera->flipY = true;
+    // camera->flipY = true;
     camera->setTranslation(glm::vec3(-2.5f,-3.34f,-20.f));
     camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
     camera->setPerspective(60.0f, (float) width / (float) height, 0.1f, 4000.f);

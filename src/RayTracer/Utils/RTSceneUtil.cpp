@@ -2,6 +2,8 @@
 
 #include "Core/RenderContext.h"
 
+static Scene * scene_;
+
 struct RTSceneEntryImpl : public  RTSceneEntry
 {
     RTSceneEntryImpl(Device & device);
@@ -42,11 +44,7 @@ Accel RTSceneEntryImpl::createAccel(VkAccelerationStructureCreateInfoKHR& accel)
 
 void RTSceneEntryImpl::initScene(Scene& scene)
 {
-
-    
-
-
-    
+    scene_ = &scene;
     bool useStagingBuffer = true;;
     uint32_t positionBufferSize =  0;
     uint32_t indexBufferSize = 0;
@@ -76,7 +74,7 @@ void RTSceneEntryImpl::initScene(Scene& scene)
     auto commandBuffer = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
     std::vector<VkBufferCopy> bufferCopies;
-    uint32 positionBufferOffset{0},indexBufferOffset{0},uvBufferOffset{0};
+  uint32 vertexBufferOffset{0},indexBufferOffset{0},uvBufferOffset{0},normalBufferOffset{0};
 
     uint32 vertexOffset{0},indexOffset{0},normalOffset{0};
 
@@ -84,7 +82,7 @@ void RTSceneEntryImpl::initScene(Scene& scene)
     {
         VkBufferCopy copy{.srcOffset = 0,.dstOffset = offset,.size =   srcBuffer.getSize()};
         vkCmdCopyBuffer(commandBuffer.getHandle(),srcBuffer.getHandle(),dstBuffer.getHandle(),1,&copy);
-        offset += srcBuffer.getSize();
+        offset += srcBuffer.getSize();///stride;
     };
     
     for(auto & primitive : scene.getPrimitives())
@@ -93,9 +91,13 @@ void RTSceneEntryImpl::initScene(Scene& scene)
          primitives.emplace_back(RTPrimitive{.material_index = primitive->materialIndex,  .vertex_offset = vertexOffset,.vertex_count = primitive->vertexCount,
                                  .index_offset =  indexOffset,.index_count = primitive->indexCount,.world_matrix = primitive->matrix});
         
-        copyBuffer(*vertexBuffer,*primitive->vertexBuffers.at(POSITION_ATTRIBUTE_NAME),positionBufferOffset);
+        copyBuffer(*vertexBuffer,*primitive->vertexBuffers.at(POSITION_ATTRIBUTE_NAME),vertexBufferOffset);
         copyBuffer(*indexBuffer,*primitive->indexBuffer,indexBufferOffset);
-        copyBuffer(*normalBuffer,*primitive->vertexBuffers.at(NORMAL_ATTRIBUTE_NAME),normalOffset);
+        copyBuffer(*normalBuffer,*primitive->vertexBuffers.at(NORMAL_ATTRIBUTE_NAME),normalBufferOffset);
+
+        vertexOffset += primitive->vertexCount;
+        indexOffset += primitive->indexCount;
+        normalOffset += primitive->vertexCount;
         
 
         transformBuffers.emplace_back(Buffer{device, sizeof(glm::mat4),
@@ -175,14 +177,16 @@ void RTSceneEntryImpl::buildBLAS()
         accelerationStructureGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
         accelerationStructureGeometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
         accelerationStructureGeometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-        accelerationStructureGeometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-        accelerationStructureGeometry.geometry.triangles.vertexData.deviceAddress = vertexBuffer->getDeviceAddress() + primitive.vertex_offset * sizeof(glm::vec3);
+       // accelerationStructureGeometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
+        accelerationStructureGeometry.geometry.triangles.vertexData.deviceAddress = vertexBuffer->getDeviceAddress() + primitive.vertex_offset * sizeof(glm::vec3) ;
+        // accelerationStructureGeometry.geometry.triangles.vertexData.deviceAddress = scene_->getPrimitives()[i]->vertexBuffers.at("position")->getDeviceAddress();
         accelerationStructureGeometry.geometry.triangles.maxVertex = primitive.vertex_count;
         accelerationStructureGeometry.geometry.triangles.vertexStride = sizeof(glm::vec3);
         accelerationStructureGeometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
         accelerationStructureGeometry.geometry.triangles.indexData.deviceAddress = indexBuffer->getDeviceAddress() + primitive.index_offset * sizeof(uint32_t);
-     accelerationStructureGeometry.geometry.triangles.transformData.deviceAddress = transformBuffers[i].getDeviceAddress();
-     accelerationStructureGeometry.geometry.triangles.transformData.hostAddress = nullptr;
+     //   accelerationStructureGeometry.geometry.triangles.indexData.deviceAddress = scene_->getPrimitives()[i]->indexBuffer->getDeviceAddress();
+        accelerationStructureGeometry.geometry.triangles.transformData.deviceAddress = transformBuffers[i].getDeviceAddress();
+        accelerationStructureGeometry.geometry.triangles.transformData.hostAddress = nullptr;
 
         VkAccelerationStructureBuildRangeInfoKHR accelerationStructureBuildRangeInfo{};
         accelerationStructureBuildRangeInfo.primitiveCount =  primitive.index_count/3;
