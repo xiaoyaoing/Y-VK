@@ -307,7 +307,7 @@ RenderContext & RenderContext::bindImageSampler(uint32_t binding, const ImageVie
     return *this;
 }
 
-RenderContext & RenderContext::bindImage(uint32_t setId, const ImageView& view, uint32_t binding, uint32_t array_element)
+RenderContext & RenderContext::bindImage(uint32_t binding, const ImageView& view, uint32_t setId, uint32_t array_element)
 {
     resourceSets[setId].bindInput(view, binding, array_element);
     return *this;
@@ -322,7 +322,7 @@ RenderContext & RenderContext::bindMaterial(const Material& material)
         if (descriptorLayout.hasLayoutBinding(texture.first))
         {
             auto& binding = descriptorLayout.getLayoutBindingInfo(texture.first);
-            bindImageSampler(0, texture.second.image->getVkImageView(), texture.second.getSampler(), binding.binding, 0);
+            bindImageSampler(binding.binding, texture.second.image->getVkImageView(), texture.second.getSampler(), 0, 0);
         }
     }
     return *this;

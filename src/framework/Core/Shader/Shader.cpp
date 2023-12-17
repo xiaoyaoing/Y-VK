@@ -147,7 +147,7 @@ Shader::Shader(Device& device, std::string path) : device(device)
         std::string shaderLog;
         auto shaderBuffer = FileUtils::readShaderBinary(path);
         if (!GlslCompiler::compileToSpirv(stage, shaderBuffer, "main", spirvCode,
-                                          shaderLog))
+                                          shaderLog,path))
         {
             LOGE("Failed to compile shader {}, Error: {}", path, shaderLog.c_str())
         }

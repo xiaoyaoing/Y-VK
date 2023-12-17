@@ -10,6 +10,7 @@
 // #include "ext/spirv-cross/spirv_glsl.hpp"
 
 
+#include <filesystem>
 #include <SPIRV/GLSL.std.450.h>
 #include <SPIRV/GlslangToSpv.h>
 #include <StandAlone/DirStackFileIncluder.h>
@@ -70,9 +71,9 @@
 glslang::EShTargetLanguage  GlslCompiler::env_target_language = glslang::EShTargetLanguage::EShTargetNone;
 glslang::EShTargetLanguageVersion GlslCompiler::env_target_language_version = glslang::EShTargetLanguageVersion::EShTargetSpv_1_0;
 
-    bool GlslCompiler::compileToSpirv(VkShaderStageFlagBits stage, const std::vector<uint8_t> &glsl_source,
+bool GlslCompiler::compileToSpirv(VkShaderStageFlagBits stage, const std::vector<uint8_t> &glsl_source,
                         const std::string &entry_point, std::vector<std::uint32_t> &spirv,
-                        std::string &info_log) {
+                        std::string &info_log,const std::filesystem::path & shader_path) {
         //return false;
         // Initialize glslang library.
         glslang::InitializeProcess();
@@ -93,8 +94,13 @@ glslang::EShTargetLanguageVersion GlslCompiler::env_target_language_version = gl
         if(GlslCompiler::env_target_language != glslang::EShTargetLanguage::EShTargetNone)
         shader.setEnvTarget(GlslCompiler::env_target_language, GlslCompiler::env_target_language_version);
 
+        
+        
+
         DirStackFileIncluder includeDir;
-        includeDir.pushExternalLocalDirectory("shaders");
+        includeDir.pushExternalLocalDirectory(shader_path.parent_path().string());
+        
+        
 
         if (!shader.parse(GetDefaultResources(), 460, false, messages, includeDir)) {
             info_log = std::string(shader.getInfoLog()) + "\n" + std::string(shader.getInfoDebugLog());

@@ -581,7 +581,7 @@ void GLTFLoadingImpl::loadNode( const tinygltf::Node& node,const tinygltf::Model
                                                             primitive.material > -1
                                                                 ? materials[primitive.material]
                                                                 : materials.back());
-
+            newPrimitive->materialIndex = primitive.material;
             // Vertices
             {
                 const float* bufferNormals = nullptr;

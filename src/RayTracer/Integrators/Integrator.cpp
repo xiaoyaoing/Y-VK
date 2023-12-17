@@ -27,6 +27,9 @@ void Integrator::initScene(Scene& scene)
     lights = std::move(sceneEntry->lights);
     primitives = std::move(sceneEntry->primitives);
     materials = std::move(sceneEntry->materials);
+
+    sceneUboBuffer = std::make_unique<Buffer>(device, sizeof(SceneUbo),
+        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU,&sceneUbo);
     
     //  bool useStagingBuffer = true;;
     //
@@ -337,7 +340,6 @@ void Integrator::bindRaytracingResources(CommandBuffer& commandBuffer)
     sceneUboBuffer->uploadData(&sceneUbo,sizeof(sceneUbo));
     
     RenderContext::g_context->bindAcceleration(0,tlas,0,0)
-                            .bindImage(1,storageImage->getVkImageView())
                             .bindBuffer(2,*sceneUboBuffer,0,sizeof(sceneUbo))
                             .bindBuffer(3,*sceneDescBuffer)
                             .bindBuffer(4,*rtLightBuffer);

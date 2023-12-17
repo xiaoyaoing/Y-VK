@@ -34,6 +34,7 @@ struct Primitive {
     uint32_t vertexCount{};
     Material &material;
     glm::mat4 matrix{};
+    uint32_t materialIndex{0};
 
     PRIMITIVE_TYPE primitiveType{PRIMITIVE_TYPE::E_TRIANGLE_LIST};
 

@@ -63,7 +63,10 @@ void RTSceneEntryImpl::initScene(Scene& scene)
         VK_BUFFER_USAGE_INDEX_BUFFER_BIT| VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
     normalBuffer = std::make_unique<Buffer>(device, positionBufferSize,
         VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-    
+
+    const auto uvBufferSize = positionBufferSize * 2 / 3;
+    uvBuffer = std::make_unique<Buffer>(device, uvBufferSize,
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
 
     std::unique_ptr<Buffer> stagingVertexBuffer{nullptr},stagingIndexBuffer{nullptr};
     static constexpr VkBufferUsageFlags buffer_usage_flags = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
@@ -84,10 +87,10 @@ void RTSceneEntryImpl::initScene(Scene& scene)
         offset += srcBuffer.getSize();
     };
     
-    for(const auto & primitive : scene.getPrimitives())
+    for(auto & primitive : scene.getPrimitives())
     {
 
-         primitives.emplace_back(RTPrimitive{.vertex_offset = vertexOffset,.vertex_count = primitive->vertexCount,
+         primitives.emplace_back(RTPrimitive{.material_index = primitive->materialIndex,  .vertex_offset = vertexOffset,.vertex_count = primitive->vertexCount,
                                  .index_offset =  indexOffset,.index_count = primitive->indexCount,.world_matrix = primitive->matrix});
         
         copyBuffer(*vertexBuffer,*primitive->vertexBuffers.at(POSITION_ATTRIBUTE_NAME),positionBufferOffset);
@@ -100,6 +103,8 @@ void RTSceneEntryImpl::initScene(Scene& scene)
                                                             | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
                                                             | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
                                                             VMA_MEMORY_USAGE_CPU_TO_GPU,&primitive->matrix});
+        auto & trBuffer = primitive->vertexBuffers.at("transform");
+        transformBuffers.push_back(std::move(*trBuffer));
     }
     
     renderContext->submit(commandBuffer);
@@ -150,6 +155,7 @@ void RTSceneEntryImpl::initScene(Scene& scene)
     rtLightBuffer = std::make_unique<Buffer>(device, sizeof(RTLight) * lights.size(),
                                                             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, 
                                                             VMA_MEMORY_USAGE_CPU_TO_GPU,lights.data());
+    
 }
 
 
@@ -175,8 +181,8 @@ void RTSceneEntryImpl::buildBLAS()
         accelerationStructureGeometry.geometry.triangles.vertexStride = sizeof(glm::vec3);
         accelerationStructureGeometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
         accelerationStructureGeometry.geometry.triangles.indexData.deviceAddress = indexBuffer->getDeviceAddress() + primitive.index_offset * sizeof(uint32_t);
-        accelerationStructureGeometry.geometry.triangles.transformData.deviceAddress = transformBuffers[i].getDeviceAddress();
-        accelerationStructureGeometry.geometry.triangles.transformData.hostAddress = nullptr;
+     accelerationStructureGeometry.geometry.triangles.transformData.deviceAddress = transformBuffers[i].getDeviceAddress();
+     accelerationStructureGeometry.geometry.triangles.transformData.hostAddress = nullptr;
 
         VkAccelerationStructureBuildRangeInfoKHR accelerationStructureBuildRangeInfo{};
         accelerationStructureBuildRangeInfo.primitiveCount =  primitive.index_count/3;

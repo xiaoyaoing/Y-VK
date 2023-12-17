@@ -121,9 +121,9 @@ void Example::drawFrame(RenderGraph & rg) {
                     renderContext->bindBuffer(3, *viewBuffer.buffer, viewBuffer.offset, viewBuffer.size);
 
                         
-                    renderContext->bindImage(0, blackBoard.getImageView("albedo"), 0, 0);
-                    renderContext->bindImage(0, blackBoard.getImageView("depth"), 1, 0);
-                    renderContext->bindImage(0, blackBoard.getImageView("normal"), 2, 0);
+                    renderContext->bindImage(0, blackBoard.getImageView("albedo"));
+                    renderContext->bindImage(1, blackBoard.getImageView("depth"));
+                    renderContext->bindImage(2, blackBoard.getImageView("normal"));
                         
                     renderContext->bindLight<DeferredLights>(scene->getLights(), 0,4);
 
@@ -377,9 +377,9 @@ void Example::drawFrame(RenderGraph & rg) {
                     viewBuffer.buffer->uploadData(&fragUniform, viewBuffer.size, viewBuffer.offset);
 
                     renderContext->bindBuffer(3, *viewBuffer.buffer, viewBuffer.offset, viewBuffer.size)
-                                .bindImage(0, blackBoard.getImageView("albedo"), 0, 0)
-                                .bindImage(0, blackBoard.getImageView("depth"), 1, 0)
-                                .bindImage(0,blackBoard.getImageView("normal"),2,0)
+                                .bindImage(0, blackBoard.getImageView("albedo"))
+                                .bindImage(1, blackBoard.getImageView("depth"))
+                                .bindImage(2,blackBoard.getImageView("normal"))
                                 .bindLight<DeferredLights>(scene->getLights(), 0, 4)
                                 .flushAndDraw(commandBuffer,3,1,0,0);
                     
@@ -397,8 +397,9 @@ void Example::drawFrame(RenderGraph & rg) {
 void Example::prepare() {
     Application::prepare();
 
-    //  scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("space_module/SpaceModule.gltf"));
-    scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"));
+    scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("space_module/SpaceModule.gltf"));
+ //   scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"));
+  //  scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));
 
     auto light_pos = glm::vec3(0.0f, 128.0f, -225.0f);
     auto light_color = glm::vec3(1.0, 1.0, 1.0);
@@ -438,8 +439,8 @@ void Example::prepare() {
     };
     pipelineLayouts.lighting = std::make_unique<PipelineLayout>(*device, shaders1);
 
+    camera = scene->getCameras()[0];
     camera->flipY = true;
-
     camera->setTranslation(glm::vec3(-494.f,-116.f,99.f));
     camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
     camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));

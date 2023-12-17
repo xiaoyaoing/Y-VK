@@ -8,6 +8,7 @@
 #include "Common/VkCommon.h"
 #include "Core/Shader/GlslCompiler.h"
 #include "Integrators/PathIntegrator.h"
+#include "Integrators/SimpleIntegrator.h"
 #include "Scene/SceneLoader/gltfloader.h"
 
 
@@ -156,7 +157,7 @@ void RayTracer::prepare()
     camera->setPerspective(60.0f, (float) width / (float) height, 0.1f, 4000.f);
     
     
-    integrator = std::make_unique<PathIntegrator>(*device);
+    integrator = std::make_unique<SimpleIntegrator>(*device);
     integrator->init(*scene);
 }
 

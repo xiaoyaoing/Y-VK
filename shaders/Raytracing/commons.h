@@ -1,6 +1,5 @@
-#pragma once
-
-#define ALIGN16 alignas(16)
+#ifndef COMMONS_HOST_DEVICE
+#define COMMONS_HOST_DEVICE
 
 #ifdef __cplusplus
 #include <glm/glm.hpp>
@@ -13,12 +12,16 @@ using uvec4 = glm::uvec4;
 using ivec2 = glm::ivec2;
 using uint = unsigned int;
 using uvec2 = glm::uvec2;
+#else
+#define NAMESPACE_BEGIN(name)
+#define NAMESPACE_END()
+#define ALIGN16
 #endif
 
 
 //For code used in shader,use "_" code style 
 
-struct ALIGN16  SceneDesc{
+struct  SceneDesc{
     uint64_t vertex_addr;
     uint64_t index_addr;
     uint64_t normal_addr;
@@ -49,24 +52,25 @@ struct RTMaterial {
 
 struct RTLight
 {
-    uint32_t light_flags;
-    uint32_t prim_idx;
+    uint light_flags;
+    uint prim_idx;
     mat4 world_matrix;
     vec3 L;
 };
 
 struct RTPrimitive
 {
-    uint32_t material_index;
-    uint32_t vertex_offset;
-    uint32_t vertex_count;
-    uint32_t index_offset;
-    uint32_t index_count;
-    glm::mat4 world_matrix;
+    uint material_index;
+    uint vertex_offset;
+    uint vertex_count;
+    uint index_offset;
+    uint index_count;
+    mat4 world_matrix;
 };
 
 // struct PrimitiveMeshInfo
 // {
-//     uint32_t triangle_count;
+//     uint triangle_count;
 //     float total_area;
 // };
+#endif

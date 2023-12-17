@@ -1,15 +1,14 @@
 #pragma once
 
 #include "Integrator.h"
-class PathIntegrator : public  Integrator
+class SimpleIntegrator : public  Integrator
 {
 public:
     void render(RenderGraph& renderGraph) override;
     virtual void initScene(Scene& scene) override;
-    PathIntegrator(Device& device);
-    // ~PathIntegrator();
+    SimpleIntegrator(Device& device);
 protected:
-    std::unique_ptr<PipelineLayout> layout;
+    PipelineLayout * layout;
     struct 
     {
         glm::mat4 viewInverse;

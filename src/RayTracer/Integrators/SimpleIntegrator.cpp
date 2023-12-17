@@ -1,23 +1,17 @@
-#include "PathIntegrator.h"
+#include "SimpleIntegrator.h"
 
 #include "Common/ResourceCache.h"
 #include "Scene/Compoments/Camera.h"
-#include "shaders/Raytracing/PT/path_commons.h"
 
-void PathIntegrator::render(RenderGraph& renderGraph)
+void SimpleIntegrator::render(RenderGraph& renderGraph)
 {
     auto & commandBuffer = renderContext->getGraphicCommandBuffer();
     
-    bindRaytracingResources(commandBuffer);
-
-    PCPath pcPath;
-    pcPath.light_num = 1;
-    pcPath.max_depth = 5;
     
     renderGraph.addRaytracingPass("PT pass",[&](RenderGraph::Builder & builder,RaytracingPassSettings & settings)
     {
         settings.accel = &tlas;
-        settings.pipelineLayout = layout.get();
+        settings.pipelineLayout = layout;
         settings.rTPipelineSettings.dims = {width,height,1};
         settings.rTPipelineSettings.maxDepth = 5;
         
@@ -26,19 +20,17 @@ void PathIntegrator::render(RenderGraph& renderGraph)
         renderGraph.getBlackBoard().put("RT",output);
     },[&](RenderPassContext & context)
     {
-        // auto buffer = renderContext->allocateBuffer(sizeof(cameraUbo),VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-        // cameraUbo.projInverse = glm::inverse(camera->matrices.perspective);
-        // cameraUbo.viewInverse = glm::inverse(camera->matrices.view);
-        // buffer.buffer->uploadData(&cameraUbo,sizeof(cameraUbo));
-        // renderContext->bindBuffer(2,*buffer.buffer,0,sizeof(cameraUbo));
-        auto pushConstant = toBytes(pcPath);
-        renderContext->bindPushConstants(pushConstant);
+        auto buffer = renderContext->allocateBuffer(sizeof(cameraUbo),VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+        cameraUbo.projInverse = glm::inverse(camera->matrices.perspective);
+        cameraUbo.viewInverse = glm::inverse(camera->matrices.view);
+        buffer.buffer->uploadData(&cameraUbo,sizeof(cameraUbo));
+        renderContext->bindBuffer(2,*buffer.buffer,0,sizeof(cameraUbo));
         renderContext->bindImage(1,renderGraph.getBlackBoard().getImageView("RT"));
         renderContext->traceRay(commandBuffer,{width,height,1});
     });
 }
 
-void PathIntegrator::initScene(Scene& scene)
+void SimpleIntegrator::initScene(Scene& scene)
 {
     Integrator::initScene(scene);
 
@@ -50,20 +42,17 @@ void PathIntegrator::initScene(Scene& scene)
                    .prim_info_addr = primitiveMeshBuffer->getDeviceAddress(),
     };
     sceneDescBuffer = std::make_unique<Buffer>(device, sizeof(SceneDesc),
-        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU,&desc);
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU,&desc);
 }
 
-PathIntegrator::PathIntegrator(Device& device_):Integrator(device_)
+SimpleIntegrator::SimpleIntegrator(Device& device):Integrator(device)
 {
-    layout = std::make_unique<PipelineLayout>(device,std::vector<std::string>{"Raytracing/PT/raygen.rgen",
-                                                   "Raytracing/PT/closesthit.rchit",
-                                                 "Raytracing/PT/miss.rmiss"});
+    layout = new  PipelineLayout(device,{"Raytracing/khr_ray_tracing_basic/raygen.rgen",
+                                                   "Raytracing/khr_ray_tracing_basic/closesthit.rchit",
+                                                 "Raytracing/khr_ray_tracing_basic/miss.rmiss"});
 
-    
     
 }
-
-
 
 
 
