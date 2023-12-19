@@ -5,9 +5,9 @@
 #extension GL_EXT_debug_printf : enable
 
 #include "../util.glsl"
-layout(location = 0) rayPayloadInEXT HitPayload payload;
+layout(location = 1) rayPayloadInEXT AnyHitPayload payload;
 
 void main()
 {
-   payload.material_idx = -1;
+    payload.hit = 0;
 }

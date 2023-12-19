@@ -34,7 +34,7 @@ class RayTracer : public Application {
 public:
     RayTracer(const RayTracerSettings& settings);
     void prepare() override;
-protected:
+    void onUpdateGUI() override; 
     void drawFrame(RenderGraph &renderGraph) override;
     Accel createAccel(VkAccelerationStructureCreateInfoKHR & accel);
     VkDeviceAddress getAccelerationStructureDeviceAddress(uint32_t primIdx);
@@ -51,6 +51,7 @@ protected:
         glm::mat4 viewInverse;
         glm::mat4 projInverse;
     } cameraUbo;
+
 };
 
 

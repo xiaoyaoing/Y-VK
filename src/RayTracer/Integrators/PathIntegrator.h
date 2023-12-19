@@ -7,8 +7,11 @@ class PathIntegrator : public  Integrator
 {
 public:
     void render(RenderGraph& renderGraph) override;
-    virtual void initScene(Scene& scene) override;
+    void initScene(Scene& scene) override;
+    void onUpdateGUI() override;
+    
     PathIntegrator(Device& device);
+    
     // ~PathIntegrator();
 protected:
     std::unique_ptr<PipelineLayout> layout;
@@ -18,7 +21,6 @@ protected:
         glm::mat4 projInverse;
     } cameraUbo;
     PCPath pcPath{};
-
 };
 
 

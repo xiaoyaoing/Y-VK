@@ -38,6 +38,8 @@ struct LightSample{
     vec3 wi;
     float pdf;
     vec3 p;
+    vec3 n;
+    float dist;
 };
 
 struct MeshSampleRecord{
@@ -147,7 +149,7 @@ MeshSampleRecord uniform_sample_on_mesh(uint mesh_idx,vec3 rands,in mat4 world_m
 
 
 
-LightSample sample_li(uint light_idx,vec3 p,vec3 n,vec3 wo,vec3 rand){
+LightSample sample_li(uint light_idx,const SurfaceScatterEvent event,vec3 rand){
 
     LightSample result;
 
@@ -163,40 +165,37 @@ LightSample sample_li(uint light_idx,vec3 p,vec3 n,vec3 wo,vec3 rand){
 
 
     vec3 light_p = record.p; 
+    vec3 p = event.p;
     
     vec3 wi = light_p - p;
-    float dist = length(wi) - EPS;
-
-
-    wi = normalize(wi);
+    float dist = length(wi);
     
+    wi /= dist;
+    
+    dist -=  EPS;
+    
+    
+
     float cos_theta_light = dot(record.n, -wi);
     cos_theta_light = cos_theta_light;
     if (cos_theta_light <= 0.0){
+        result.indensity  = vec3(0);
+        result.pdf = 0;
         return result;
     }
     //convert pdf
     pdf = record.pdf * dist * dist / abs(cos_theta_light)  ;
 
     result.wi = wi;
+    result.n = record.n;
     result.pdf = pdf;
     result.p = light_p;
     result.indensity = light.L;
+    result.dist = dist;
+    
     return result;
 }
 
-
-LightSample  uniform_sample_one_light(vec4 u,vec3 p,vec3 wo,vec3 n,uint light_num,uint material_idx){
-    uint light_idx = uint(u.x * light_num);
-    float light_choose_pdf = 1.0 / light_num;
-    LightSample result = sample_li(light_idx,p,n,wo,u.yzw);
-    result.pdf *= light_choose_pdf;
-
-    float bsdf_pdf;
-    result.indensity *= eval_bsdf(materials.m[material_idx],wo,result.wi,n,bsdf_pdf);
-
-    return result;
-}
 
 
 

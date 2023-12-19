@@ -32,6 +32,8 @@ public:
     virtual void bindRaytracingResources(CommandBuffer & commandBuffer);
     
     Accel createAccel(VkAccelerationStructureCreateInfoKHR& accel);
+
+    virtual  void onUpdateGUI() {};
 protected:
     SceneUbo sceneUbo;
     

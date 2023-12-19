@@ -1,5 +1,6 @@
 #include "PathIntegrator.h"
 
+#include "imgui.h"
 #include "Common/ResourceCache.h"
 #include "Scene/Compoments/Camera.h"
 #include "shaders/Raytracing/PT/path_commons.h"
@@ -32,8 +33,6 @@ void PathIntegrator::render(RenderGraph& renderGraph)
         // cameraUbo.viewInverse = glm::inverse(camera->matrices.view);
         // buffer.buffer->uploadData(&cameraUbo,sizeof(cameraUbo));
         // renderContext->bindBuffer(2,*buffer.buffer,0,sizeof(cameraUbo));
-        pcPath.light_num = 1;
-        pcPath.max_depth = 5;
         auto pushConstant = toBytes(pcPath);
         renderContext->bindPushConstants(pushConstant);
         renderContext->bindImage(1,renderGraph.getBlackBoard().getImageView("RT"));
@@ -57,13 +56,33 @@ void PathIntegrator::initScene(Scene& scene)
     };
     sceneDescBuffer = std::make_unique<Buffer>(device, sizeof(SceneDesc),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU,&desc);
+
+    pcPath.light_num = lights.size();
+    pcPath.max_depth = 3;
 }
+
+void PathIntegrator::onUpdateGUI()
+{
+    int maxDepth = pcPath.max_depth;
+    ImGui::SliderInt("Max Depth",&maxDepth,1,10);
+    if(maxDepth!=pcPath.max_depth)
+    {
+        pcPath.max_depth = maxDepth;
+        pcPath.frame_num = 0;
+    }
+    ImGui::Text("frame count %5d",pcPath.frame_num);
+}
+
+
 
 PathIntegrator::PathIntegrator(Device& device_):Integrator(device_)
 {
     layout = std::make_unique<PipelineLayout>(device,std::vector<std::string>{"Raytracing/PT/raygen.rgen",
                                                    "Raytracing/PT/closesthit.rchit",
-                                                 "Raytracing/PT/miss.rmiss"});
+                                                 "Raytracing/PT/miss.rmiss",
+                                                 "Raytracing/PT/miss_shadow.rmiss",
+
+    });
 
     
     
