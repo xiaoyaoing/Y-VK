@@ -138,7 +138,7 @@ void RTSceneEntryImpl::initScene(Scene& scene)
         if(materials[primitive.material_index].emissiveFactor != glm::vec3(0.0f))
         {
             RTLight light{};
-            light.light_flags = 0;
+         //   light.light_flags = 0;
             light.prim_idx = i;
             light.world_matrix = primitive.world_matrix;
             light.L = materials[primitive.material_index].emissiveFactor;
@@ -179,13 +179,13 @@ void RTSceneEntryImpl::buildBLAS()
         accelerationStructureGeometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
        // accelerationStructureGeometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
         accelerationStructureGeometry.geometry.triangles.vertexData.deviceAddress = vertexBuffer->getDeviceAddress() + primitive.vertex_offset * sizeof(glm::vec3) ;
-        // accelerationStructureGeometry.geometry.triangles.vertexData.deviceAddress = scene_->getPrimitives()[i]->vertexBuffers.at("position")->getDeviceAddress();
+        // accelerationStructureGeometry.geometry.triangles.vertexData.deviceAddress = scene_->getPrimitives()[i]->vertfexBuffers.at("position")->getDeviceAddress();
         accelerationStructureGeometry.geometry.triangles.maxVertex = primitive.vertex_count;
         accelerationStructureGeometry.geometry.triangles.vertexStride = sizeof(glm::vec3);
         accelerationStructureGeometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
         accelerationStructureGeometry.geometry.triangles.indexData.deviceAddress = indexBuffer->getDeviceAddress() + primitive.index_offset * sizeof(uint32_t);
      //   accelerationStructureGeometry.geometry.triangles.indexData.deviceAddress = scene_->getPrimitives()[i]->indexBuffer->getDeviceAddress();
-        accelerationStructureGeometry.geometry.triangles.transformData.deviceAddress = transformBuffers[i].getDeviceAddress();
+        // accelerationStructureGeometry.geometry.triangles.transformData.deviceAddress = transformBuffers[i].getDeviceAddress();
         accelerationStructureGeometry.geometry.triangles.transformData.hostAddress = nullptr;
 
         VkAccelerationStructureBuildRangeInfoKHR accelerationStructureBuildRangeInfo{};
@@ -284,7 +284,7 @@ void RTSceneEntryImpl::buildTLAS()
    {
        VkAccelerationStructureInstanceKHR instance{};
        instance.transform = toVkTransformMatrix(primitives[i].world_matrix);
-       instance.instanceCustomIndex = 0;
+       instance.instanceCustomIndex = i;
        instance.mask = 0xFF;
        instance.instanceShaderBindingTableRecordOffset = 0;
        instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;

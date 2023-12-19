@@ -36,7 +36,7 @@ void Camera::update(float deltaTime) {
 }
 
 bool Camera::moving() const {
-    return keys.up || keys.down || keys.left || keys.right;
+    return keys.up || keys.down || keys.left || keys.right ||  mouseButtons.left || mouseButtons.right || mouseButtons.middle;
 }
 
 void Camera::updateViewMatrix() {
@@ -53,7 +53,7 @@ void Camera::updateViewMatrix() {
     if(mode == FIRST_PERSON)
         matrices.view = rotM * transM;
     else if(mode == THIRD_PERSON)
-    matrices.view = transM * rotM;
+        matrices.view = transM * rotM;
 
 }
 

@@ -22,6 +22,12 @@ public:
         bool right{false};
     } keys;
 
+    struct {
+        bool left{false};
+        bool middle{false};
+        bool right{false};
+    } mouseButtons;
+
     bool flipY{false};
 
 
@@ -35,6 +41,7 @@ public:
     glm::vec3 position{0}, rotation{0};
 
 
+    
     void updateViewMatrix();
 
     void update(float deltaTime);
@@ -70,4 +77,6 @@ private:
     float mMoveSpeed{1};
 
     float zNear{0.01}, zFar{10}, fov{45}, aspect{1};
+
+    // bool rotating{false};
 };

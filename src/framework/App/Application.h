@@ -115,11 +115,11 @@ protected:
     uint32_t width, height;
 
     //Camera related  variable begin
-    struct {
-        bool left{false};
-        bool middle{false};
-        bool right{false};
-    } mouseButtons;
+    // struct {
+    //     bool left{false};
+    //     bool middle{false};
+    //     bool right{false};
+    // } mouseButtons;
 
     glm::vec2 mousePos;
 

@@ -104,6 +104,7 @@ void Integrator::initScene(Scene& scene)
     // buildTLAS();
 
     camera = scene.getCameras()[0];
+    camera->flipY = false;
 
     width = renderContext->getSwapChainExtent().width;
     height = renderContext->getSwapChainExtent().height;

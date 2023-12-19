@@ -481,8 +481,6 @@ void RenderContext::flushDescriptorState(CommandBuffer& commandBuffer, VkPipelin
                             continue;
                         }
                     }
-                    // if( resourceInfo.layout != VK_IMAGE_LAYOUT_UNDEFINED)
-                 // imageInfo.imageLayout =  ImageUtil::getVkImageLayout(imageView->getImage().getLayout());
                     imageInfos[bindingIndex][arrayElement] = imageInfo;
                 }
 

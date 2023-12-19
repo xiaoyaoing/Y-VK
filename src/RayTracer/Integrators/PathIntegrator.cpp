@@ -6,13 +6,14 @@
 
 void PathIntegrator::render(RenderGraph& renderGraph)
 {
+    if(camera->moving())
+        pcPath.frame_num = 0;
+    
     auto & commandBuffer = renderContext->getGraphicCommandBuffer();
     
     bindRaytracingResources(commandBuffer);
 
-    PCPath pcPath;
-    pcPath.light_num = 1;
-    pcPath.max_depth = 5;
+  
     
     renderGraph.addRaytracingPass("PT pass",[&](RenderGraph::Builder & builder,RaytracingPassSettings & settings)
     {
@@ -31,10 +32,15 @@ void PathIntegrator::render(RenderGraph& renderGraph)
         // cameraUbo.viewInverse = glm::inverse(camera->matrices.view);
         // buffer.buffer->uploadData(&cameraUbo,sizeof(cameraUbo));
         // renderContext->bindBuffer(2,*buffer.buffer,0,sizeof(cameraUbo));
+        pcPath.light_num = 1;
+        pcPath.max_depth = 5;
         auto pushConstant = toBytes(pcPath);
         renderContext->bindPushConstants(pushConstant);
         renderContext->bindImage(1,renderGraph.getBlackBoard().getImageView("RT"));
         renderContext->traceRay(commandBuffer,{width,height,1});
+
+        pcPath.frame_num++;
+
     });
 }
 

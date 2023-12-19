@@ -52,10 +52,12 @@ struct RTMaterial {
 
 struct RTLight
 {
-    uint light_flags;
-    uint prim_idx;
     mat4 world_matrix;
     vec3 L;
+    uint prim_idx;
+    // vec3 to_use;
+    // uint light_flags;
+    
 };
 
 struct RTPrimitive

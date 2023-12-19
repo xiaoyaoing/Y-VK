@@ -31,7 +31,7 @@
 hitAttributeEXT vec2 attribs;
 layout(location = 0) rayPayloadInEXT HitPayload payload;
 
-layout(set = 0, binding = 2, scalar)  uniform SceneDesc_ {
+layout(set = 0, binding = 3, scalar)  uniform SceneDesc_ {
   SceneDesc scene_desc;
 };
 layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
@@ -91,6 +91,8 @@ void main()
   const vec3 pos =
   v0 * barycentrics.x + v1 * barycentrics.y + v2 * barycentrics.z;
   const vec3 world_pos = vec3(gl_ObjectToWorldEXT * vec4(pos, 1.0));
+  
+//  gl_O
 
   // Computing the normal at hit position
   const vec3 nrm = normalize(n0 * barycentrics.x + n1 * barycentrics.y +
@@ -109,10 +111,12 @@ void main()
 
   payload.n_g = normalize(vec3(cross(e0, e1) * gl_WorldToObjectEXT));
   payload.n_s = world_nrm;
+//  payload.n_s = n_g;
+  payload.p = world_pos;
   payload.p = world_pos;
 //  payload.uv = uv;
   payload.material_idx = material_index;
-  payload.triangle_idx = gl_PrimitiveID;
+  payload.triangle_idx = gl_InstanceCustomIndexEXT;
  // payload.area = 0.5 * length(cross(e0t, e1t));
  // payload.dist = gl_RayTminEXT + gl_HitTEXT;
 //  payload.hit_kind = gl_HitKindEXT;

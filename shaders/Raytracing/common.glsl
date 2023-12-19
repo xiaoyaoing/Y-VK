@@ -5,6 +5,7 @@
 #include "commons.h"
 #include "PT/pt_commons.glsl"
 #include "util.glsl"
+#include "bsdf.glsl"
 
 
 layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
@@ -30,9 +31,7 @@ Materials materials = Materials(scene_desc.material_addr);
 InstanceInfo prim_infos = InstanceInfo(scene_desc.prim_info_addr);
 TexCoords tex_coords = TexCoords(scene_desc.uv_addr);
 
-vec3 eval_bsdf(uint material_idx,vec3 n,vec3 wi,vec3 wo){
-    return vec3(1.0f);
-}
+
 
 struct LightSample{
     vec3 indensity;
@@ -46,7 +45,6 @@ struct MeshSampleRecord{
     vec3 p;
     float pdf;
 };
-
 
 uvec4 init_rng(uvec2 pixel_coords, uvec2 resolution, uint frame_num) {
     return uvec4(pixel_coords.xy, frame_num, 0);
@@ -110,14 +108,21 @@ MeshSampleRecord uniform_sample_on_mesh(uint mesh_idx,vec3 rands,in mat4 world_m
     uint triangle_idx = uint(rands.x * triangle_count);
     
     uint index_offset = mesh_info.index_offset + triangle_idx * 3;
+
+    ivec3 ind = ivec3(indices.i[index_offset + 0], indices.i[index_offset + 1],
+    indices.i[index_offset + 2]);
     
-    vec3 p0 = vertices.v[indices.i[index_offset]];
-    vec3 p1 = vertices.v[indices.i[index_offset + 1]];
-    vec3 p2 = vertices.v[indices.i[index_offset + 2]];
-    
-    vec3 n0 = normals.n[indices.i[index_offset]];
-    vec3 n1 = normals.n[indices.i[index_offset + 1]];
-    vec3 n2 = normals.n[indices.i[index_offset + 2]];
+    uint vertex_offset = mesh_info.vertex_offset;
+
+    ind += ivec3(vertex_offset);
+
+    const vec3 p0 = vertices.v[ind.x];
+    const vec3 p1 = vertices.v[ind.y];
+    const vec3 p2 = vertices.v[ind.z];
+
+    const vec3 n0 = normals.n[ind.x];
+    const vec3 n1 = normals.n[ind.y];
+    const vec3 n2 = normals.n[ind.z];
     
     float u = 1 - sqrt(rands.y);
     float v = rands.z * sqrt(rands.y);
@@ -127,21 +132,31 @@ MeshSampleRecord uniform_sample_on_mesh(uint mesh_idx,vec3 rands,in mat4 world_m
     
     vec4 n = inv_tr_mat * vec4(normalize(n0 * barycentrics.x + n1 * barycentrics.y + n2 * barycentrics.z), 0.0);
     
-    result.pdf  = 2.f / float(triangle_count) / dot(vec3(n), normalize(p1 - p0));
+    float area = cross(p1 - p0, p2 - p0).length() ;
+    
+    result.pdf  = 2.f / float(triangle_count) / area ;
+//    result.pdf = area;
     result.n = vec3(n);
-    result.p = p0 * barycentrics.x + p1 * barycentrics.y + p2 * barycentrics.z;
+    
+    vec3 pos =  p0 * barycentrics.x + p1 * barycentrics.y + p2 * barycentrics.z;
+    result.p = (world_matrix * vec4(pos,1.f)).xyz;
+ //   result.p =vec3(area);
     
     return result;
 }
+
+
 
 LightSample sample_li(uint light_idx,vec3 p,vec3 n,vec3 wo,vec3 rand){
 
     LightSample result;
 
     RTLight light = lights[light_idx];
-    
 
-    vec3 light_ng;
+  //  result.indensity = light_idx == 0 ? vec3(1.f) : vec3(0.f);
+    result.indensity = light.L;
+    //return result;
+    
     float pdf;
     //sample one point on primitive 
     MeshSampleRecord record  = uniform_sample_on_mesh(light.prim_idx, rand, light.world_matrix);
@@ -152,37 +167,37 @@ LightSample sample_li(uint light_idx,vec3 p,vec3 n,vec3 wo,vec3 rand){
     vec3 wi = light_p - p;
     float dist = length(wi) - EPS;
 
-//    any_hit_payload.hit = 1;
-//    traceRayEXT(tlas,
-//    gl_RayFlagsTerminateOnFirstHitEXT |
-//    gl_RayFlagsSkipClosestHitShaderEXT, 0xFF, 1, 0, 1, p, 0, wi, dist - EPS, 1);
 
-//    bool visible = any_hit_payload.hit == 0;
-//    if (!visible){
-//        return result;
-//    }
+    wi = normalize(wi);
+    
     float cos_theta_light = dot(record.n, -wi);
+    cos_theta_light = cos_theta_light;
     if (cos_theta_light <= 0.0){
         return result;
     }
-
     //convert pdf
-    pdf = record.pdf *  dist * dist / abs(dot(light_ng, wi));
+    pdf = record.pdf * dist * dist / abs(cos_theta_light)  ;
 
+    result.wi = wi;
     result.pdf = pdf;
-    // result.wi = wi;
-    result.indensity = light.L * abs(dot(record.n, wi));
-
+    result.p = light_p;
+    result.indensity = light.L;
     return result;
 }
 
-LightSample uniform_sample_one_light(vec4 u,vec3 p,vec3 wo,vec3 n,uint light_num){
+
+LightSample  uniform_sample_one_light(vec4 u,vec3 p,vec3 wo,vec3 n,uint light_num,uint material_idx){
     uint light_idx = uint(u.x * light_num);
     float light_choose_pdf = 1.0 / light_num;
     LightSample result = sample_li(light_idx,p,n,wo,u.yzw);
-   // result.indensity = vec3(1.f);
     result.pdf *= light_choose_pdf;
+
+    float bsdf_pdf;
+    result.indensity *= eval_bsdf(materials.m[material_idx],wo,result.wi,n,bsdf_pdf);
+
     return result;
 }
+
+
 
 #endif

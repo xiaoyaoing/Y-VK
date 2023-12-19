@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Integrator.h"
+#include "shaders/Raytracing/PT/path_commons.h"
+
 class PathIntegrator : public  Integrator
 {
 public:
@@ -15,7 +17,8 @@ protected:
         glm::mat4 viewInverse;
         glm::mat4 projInverse;
     } cameraUbo;
-    
+    PCPath pcPath{};
+
 };
 
 

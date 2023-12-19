@@ -86,6 +86,7 @@ void Application::updateGUI() {
     ImGui::NextColumn();
     ImGui::Text(" %d fps",toUint32(1.f/deltaTime));
     ImGui::InputFloat3("Camera Position", &camera->position[0], 2);
+    ImGui::InputFloat3("Camera Rotation", &camera->rotation[0], 2);
     ImGui::PopItemWidth(); 
     onUpdateGUI();
     ImGui::End();
@@ -234,13 +235,13 @@ void Application::inputEvent(const InputEvent &inputEvent)
             case MouseAction::Down:
                 switch (button) {
                     case MouseButton::Left:
-                        mouseButtons.left = true;
+                        camera->mouseButtons.left = true;
                         break;
                     case MouseButton::Right:
-                        mouseButtons.right = true;
+                        camera->mouseButtons.right = true;
                         break;
                     case MouseButton::Middle:
-                        mouseButtons.middle = true;
+                        camera->mouseButtons.middle = true;
                         break;
                     default:
                         break;
@@ -249,13 +250,13 @@ void Application::inputEvent(const InputEvent &inputEvent)
             case MouseAction::Up:
                 switch (button) {
                     case MouseButton::Left:
-                        mouseButtons.left = false;
+                        camera->mouseButtons.left = false;
                         break;
                     case MouseButton::Right:
-                        mouseButtons.right = false;
+                        camera->mouseButtons.right = false;
                         break;
                     case MouseButton::Middle:
-                        mouseButtons.middle = false;
+                        camera->mouseButtons.middle = false;
                         break;
                     default:
                         break;
@@ -275,14 +276,14 @@ void Application::inputEvent(const InputEvent &inputEvent)
             touchPos.y = static_cast<int32_t>(touchEvent.getPosY());
             mousePos.x = touchEvent.getPosX();
             mousePos.y = touchEvent.getPosY();
-            mouseButtons.left = true;
+            camera->mouseButtons.left = true;
         } else if (touchEvent.getAction() == TouchAction::Up) {
             touchPos.x = static_cast<int32_t>(touchEvent.getPosX());
             touchPos.y = static_cast<int32_t>(touchEvent.getPosY());
             //   touchTimer = 0.0;
             //   touchDown = false;
             camera->keys.up = false;
-            mouseButtons.left = false;
+            camera->mouseButtons.left = false;
         } else if (touchEvent.getAction() == TouchAction::Move) {
             bool handled = false;
             if (gui) {
@@ -336,17 +337,17 @@ void Application::handleMouseMove(float x, float y) {
     onMouseMove();
 
 
-    if (mouseButtons.left) {
+    if (camera->mouseButtons.left) {
         rotation.x += dy * 1.25f * rotationSpeed;
         rotation.y -= dx * 1.25f * rotationSpeed;
         camera->rotate(glm::vec3(dy * camera->rotationSpeed, -dx * camera->rotationSpeed, 0.0f));
         viewUpdated = true;
     }
-    if (mouseButtons.right) {
+    if (camera->mouseButtons.right) {
         camera->translate(glm::vec3(-0.0f, 0.0f, dy * .005f));
         viewUpdated = true;
     }
-    if (mouseButtons.middle) {
+    if (camera->mouseButtons.middle) {
         camera->translate(glm::vec3(-dx * 0.01f, -dy * 0.01f, 0.0f));
         viewUpdated = true;
     }

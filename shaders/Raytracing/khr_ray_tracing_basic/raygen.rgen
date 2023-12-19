@@ -65,7 +65,7 @@ void main()
 
     hitValue = vec3(0.0);
 
-    traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, origin.xyz, tmin, direction.xyz, tmax, 0);
+    traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, origin.xyz, tmin, direction.xyz, tmax, 0); 
 
 //	int pos = int(gl_LaunchIDEXT.xy.x * gl_LaunchIDEXT.xy.y);
 //	reservoirs[pos].y.pos = vec3(1.0f);
