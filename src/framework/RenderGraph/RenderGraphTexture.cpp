@@ -58,6 +58,12 @@ void RenderGraphTexture::resloveUsage(CommandBuffer &commandBuffer,uint16_t usag
     mHwTexture->getVkImage().transitionLayout(commandBuffer, newLayout, subResourceRange);
 }
 
+// RenderGraphTexture::~RenderGraphTexture() {
+//     // if (!imported)
+//     //     delete mHwTexture;
+// }
+
+
 RenderGraphTexture::RenderGraphTexture(const char *name, SgImage *hwTexture) : mHwTexture(hwTexture), imported(true),
                                                                                mName(name), mDescriptor({}) {
 }

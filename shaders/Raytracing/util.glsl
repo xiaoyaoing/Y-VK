@@ -19,6 +19,7 @@ struct HitPayload{
     vec2 uv;
     uint material_idx;
     uint triangle_idx;
+    uint prim_idx;
 };
 
 struct AnyHitPayload {
@@ -61,6 +62,7 @@ struct SurfaceScatterEvent{
     vec3 wo;
     vec3 wi;
     vec3 p;
+    vec2 uv;
     Frame frame;
 
     uint material_idx;
@@ -69,16 +71,12 @@ struct SurfaceScatterEvent{
 
 SurfaceScatterEvent make_suface_scatter_event(const HitPayload hit_pay_load, const vec3 wo){
     SurfaceScatterEvent event;
-//    event.wo = wo;
-//    event.wi = wi;
-//    event.p = p;
-//    event.material_idx = material_idx;
-//    event.triangle_idx = triangle_idx;
     
     event.frame = make_frame(hit_pay_load.n_s);
     event.wo = to_local(event.frame, wo);
     event.p = hit_pay_load.p;
     event.material_idx = hit_pay_load.material_idx;
+    event.uv = hit_pay_load.uv;
     return event;
 }
 
@@ -106,6 +104,10 @@ vec3 square_to_cosine_hemisphere(const vec2 rand) {
 
 float square_to_cosine_hemisphere_pdf(const vec3 v) {
     return v[2] >= 0 ? v.z * INV_PI : .0f;
+}
+
+float power_heuristic(float a, float b) {
+    return (a * a) / (a * a + b * b);
 }
 
 

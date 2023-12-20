@@ -28,6 +28,8 @@ void Integrator::initScene(Scene& scene)
     primitives = std::move(sceneEntry->primitives);
     materials = std::move(sceneEntry->materials);
 
+    textures = std::move(sceneEntry->textures);
+
     sceneUboBuffer = std::make_unique<Buffer>(device, sizeof(SceneUbo),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU,&sceneUbo);
     
@@ -330,7 +332,7 @@ Accel Integrator::createAccel(VkAccelerationStructureCreateInfoKHR& accel)
 
 Integrator::~Integrator()
 {
-    
+  
 }
 
 void Integrator::bindRaytracingResources(CommandBuffer& commandBuffer)
@@ -347,7 +349,7 @@ void Integrator::bindRaytracingResources(CommandBuffer& commandBuffer)
     uint32_t arrayElement=0;
     for(const auto & texture : this->textures)
     {
-        RenderContext::g_context->bindImageSampler(5,texture->getImage().getVkImageView(),texture->getSampler(),arrayElement++);
+        RenderContext::g_context->bindImageSampler(5,texture->getImage().getVkImageView(),texture->getSampler(),0,arrayElement++);
     }
 }
 

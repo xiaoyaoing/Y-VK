@@ -1778,6 +1778,12 @@
                 "metallicFactor" : 0.5879999995231628,
                 "roughnessFactor" : 0.8999999761581421
             }
+          ,
+                "emissiveFactor": [
+                  10.0,
+                  10.0,
+                  10.0
+                ]
         },
         {
             "name" : "Material__25",

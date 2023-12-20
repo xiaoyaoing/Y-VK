@@ -105,6 +105,7 @@ class ComputePassNode final : public PassNode
 public:
     void execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) override;
     ComputePassNode(RenderGraph &renderGraph, const char *name, ComputeRenderGraphPass *base);
+    ~ComputePassNode() override {delete mPass;}
 private:
     ComputeRenderGraphPass *mPass{nullptr};
     const char *name;
@@ -116,6 +117,7 @@ class RayTracingPassNode final : public  PassNode
 public:
     void execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) override;
     RayTracingPassNode(RenderGraph &renderGraph, const char *name, RaytracingRenderGraphPass *base);
+    ~RayTracingPassNode() override {delete mPass;}
     // ~RayTracingPassNode() override;
 private:
     RaytracingRenderGraphPass * mPass{nullptr};

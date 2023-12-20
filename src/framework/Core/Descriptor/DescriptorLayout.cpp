@@ -71,6 +71,8 @@ DescriptorLayout::DescriptorLayout(Device &device, std::vector<Shader> &shaders)
             bindingInfo.stageFlags = resource.stages;
             bindingInfo.binding = resource.binding;
             bindingInfo.descriptorCount = resource.arraySize;
+            if(binding == 5) bindingInfo.descriptorCount = 25;
+            //todo fix this 
             bindingInfo.descriptorType = find_descriptor_type(resource.type, false);
 
             bindingFlags.emplace_back(0);

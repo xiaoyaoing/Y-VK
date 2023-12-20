@@ -106,7 +106,7 @@ inline void readResourceArraySize(const spirv_cross::Compiler& compiler,
                                     ShaderResource& shaderResource)
 {
     const auto& sprivType = compiler.get_type_from_variable(resource.id);
-
+    
     shaderResource.arraySize = sprivType.array.size() ? sprivType.array[0] : 1;
 }
 

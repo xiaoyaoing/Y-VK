@@ -173,8 +173,7 @@ public:
     ~RenderGraph() {
         for (const auto &passNode: mPassNodes)
             delete passNode;
-        for (const auto &resource: mVirtualResources)
-            delete resource;
+        
     }
 
 private:
@@ -242,11 +241,8 @@ private:
 
     std::unique_ptr<Blackboard> mBlackBoard{};
     std::vector<PassNode *> mPassNodes{};
-    std::vector<VirtualResource *> mVirtualResources{};
-    
-    // std::vector<RenderGraphTexture *> mTextures{};
-    // std::vector<RenderGraphBuffer *> mBuffers{};
     std::vector<ResourceNode *> mResources{};
+    
     
     std::vector<PassNode *>::iterator mActivePassNodesEnd;
 

@@ -74,7 +74,7 @@ void RTSceneEntryImpl::initScene(Scene& scene)
     auto commandBuffer = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
     std::vector<VkBufferCopy> bufferCopies;
-  uint32 vertexBufferOffset{0},indexBufferOffset{0},uvBufferOffset{0},normalBufferOffset{0};
+   uint32 vertexBufferOffset{0},indexBufferOffset{0},uvBufferOffset{0},normalBufferOffset{0};
 
     uint32 vertexOffset{0},indexOffset{0},normalOffset{0};
 
@@ -94,10 +94,10 @@ void RTSceneEntryImpl::initScene(Scene& scene)
         copyBuffer(*vertexBuffer,*primitive->vertexBuffers.at(POSITION_ATTRIBUTE_NAME),vertexBufferOffset);
         copyBuffer(*indexBuffer,*primitive->indexBuffer,indexBufferOffset);
         copyBuffer(*normalBuffer,*primitive->vertexBuffers.at(NORMAL_ATTRIBUTE_NAME),normalBufferOffset);
+        copyBuffer(*uvBuffer,*primitive->vertexBuffers.at(TEXCOORD_ATTRIBUTE_NAME),uvBufferOffset);
 
         vertexOffset += primitive->vertexCount;
         indexOffset += primitive->indexCount;
-        normalOffset += primitive->vertexCount;
         
 
         transformBuffers.emplace_back(Buffer{device, sizeof(glm::mat4),

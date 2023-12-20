@@ -20,6 +20,7 @@ void RenderGraphBuffer::devirtualize()
 
 void RenderGraphBuffer::destroy()
 {
+    delete this;
     //todo 
 }
 

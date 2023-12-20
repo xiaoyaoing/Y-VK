@@ -143,6 +143,8 @@ Pipeline::Pipeline(Device& device, const PipelineState& pipelineState) : device(
 
         //todo add pipeline cache 
         VK_CHECK_RESULT(vkCreateGraphicsPipelines(device.getHandle(), nullptr, 1, &createInfo, nullptr, &pipeline))
+
+    	LOGI("Graphics pipeline created");
     }
     else if(type == PIPELINE_TYPE::E_RAY_TRACING)
     {
@@ -206,6 +208,8 @@ Pipeline::Pipeline(Device& device, const PipelineState& pipelineState) : device(
 	pipeline_CI.flags = 0;
 	VK_CHECK_RESULT(vkCreateRayTracingPipelinesKHR(device.getHandle(), {}, {}, 1, &pipeline_CI, nullptr, &pipeline));
 
+    LOGI("Ray tracing pipeline created");	
+
     mSbtWarpper = std::make_unique<SbtWarpper>(device);
     mSbtWarpper->create(pipeline, pipeline_CI);
  }
@@ -216,5 +220,7 @@ Pipeline::Pipeline(Device& device, const PipelineState& pipelineState) : device(
     	createInfo.layout = pipelineState.getPipelineLayout().getHandle();
     	createInfo.stage = stageCreateInfos[0];
     	VK_CHECK_RESULT(vkCreateComputePipelines(device.getHandle(), nullptr, 1, &createInfo, nullptr, &pipeline))
+
+    	LOGI("Compute pipeline created");
     }
 }

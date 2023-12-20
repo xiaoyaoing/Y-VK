@@ -39,7 +39,7 @@ public:
     static constexpr Usage DEFAULT_W_USAGE = Usage::COLOR_ATTACHMENT;
     static constexpr Usage DEFAULT_DEPTH_W_USAGE = Usage::DEPTH_ATTACHMENT;
 
-    RenderGraphTexture() = default;
+     ~RenderGraphTexture() override= default;
 
     RenderGraphTexture(const char* name, SgImage* hwTexture);
     RenderGraphTexture(const char* name, const Descriptor& descriptor);

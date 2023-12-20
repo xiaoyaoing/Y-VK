@@ -50,24 +50,18 @@
 //     instance.accelerationStructureReference = blasAddress;
 //     return instance;
 // }
+//
+// Accel RayTracer::createAccel(VkAccelerationStructureCreateInfoKHR& accel)
+// {
+//     Accel result_accel;
+//     result_accel.buffer = std::make_unique<Buffer>(*device,accel.size, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+//                   VMA_MEMORY_USAGE_GPU_ONLY);
+//     accel.buffer = result_accel.buffer->getHandle();
+//     // Create the acceleration structure
+//     VK_CHECK_RESULT(vkCreateAccelerationStructureKHR(device->getHandle(), &accel, nullptr, &result_accel.accel));
+//     return result_accel;
+// }
 
-Accel RayTracer::createAccel(VkAccelerationStructureCreateInfoKHR& accel)
-{
-    Accel result_accel;
-    result_accel.buffer = std::make_unique<Buffer>(*device,accel.size, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                  VMA_MEMORY_USAGE_GPU_ONLY);
-    accel.buffer = result_accel.buffer->getHandle();
-    // Create the acceleration structure
-    VK_CHECK_RESULT(vkCreateAccelerationStructureKHR(device->getHandle(), &accel, nullptr, &result_accel.accel));
-    return result_accel;
-}
-
-VkDeviceAddress RayTracer::getAccelerationStructureDeviceAddress(uint32_t primIdx)
-{
-    VkAccelerationStructureDeviceAddressInfoKHR deviceAddressInfo{VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR,
-            nullptr,blases[primIdx].accel};
-    return vkGetAccelerationStructureDeviceAddressKHR(device->getHandle(), &deviceAddressInfo);
-}
 
 RayTracer::RayTracer(const RayTracerSettings& settings)
 {
@@ -89,62 +83,90 @@ void RayTracer::drawFrame(RenderGraph& renderGraph)
 
    // integrator->render(renderGraph);
     
-    auto & commandBuffer = renderContext->getGraphicCommandBuffer();
+   auto & commandBuffer = renderContext->getGraphicCommandBuffer();
     
-    integrator->render(renderGraph);
+  integrator->render(renderGraph);
 
-    renderGraph.addImageCopyPass(renderGraph.getBlackBoard().getHandle("RT"),renderGraph.getBlackBoard().getHandle(SWAPCHAIN_IMAGE_NAME));
+  renderGraph.addImageCopyPass(renderGraph.getBlackBoard().getHandle("RT"),renderGraph.getBlackBoard().getHandle(SWAPCHAIN_IMAGE_NAME));
 
-    gui->addGuiPass(renderGraph);
+  gui->addGuiPass(renderGraph);
 
-    renderGraph.execute(commandBuffer);
+   renderGraph.execute(commandBuffer);
     
-  //  renderContext->submitAndPresent(commandBuffer,fence);
-    // vkCmdTraceRaysKHR()
+
 }
+
+// void RayTracer::update()
+// {
+//
+//     Application::update();
+//     // deltaTime = timer.tick<Timer::Seconds>();
+//     //
+//     // if (viewUpdated) {
+//     //     viewUpdated = false;
+//     //     onViewUpdated();
+//     // }
+//     //
+//     // updateScene();
+//     // updateGUI();
+//     //
+//     //
+//     // renderContext->beginFrame();
+//     //
+//     // vkWaitForFences(device->getHandle(), 1, &fence, VK_TRUE, UINT64_MAX);
+//     // vkResetFences(device->getHandle(), 1, &fence);
+//     //
+//     // RenderGraph graph(*device);
+//     // auto handle = graph.importTexture(SWAPCHAIN_IMAGE_NAME,&renderContext->getCurHwtexture());
+//     // graph.getBlackBoard().put(SWAPCHAIN_IMAGE_NAME,handle);
+//     //
+//     // drawFrame(graph);
+//     //
+//     // renderContext->submitAndPresent(renderContext->getGraphicCommandBuffer(),fence);
+//     //
+//     // camera->update(deltaTime);
+//     //
+//     // if (camera->moving()) {
+//     //     viewUpdated = true;
+//     // }
+// }
+
+
+
+
 
 void RayTracer::prepare()
 {
     Application::prepare();
     GlslCompiler::setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_5);
 
-
-    // std::vector<Shader> shaders= {
-    //     // Shader(*device,FileUtils::getShaderPath("Raytracing/raygen.rgen")),
-    //     // Shader{*device,FileUtils::getShaderPath("Raytracing/miss.rmiss")},
-    //     // Shader{*device,FileUtils::getShaderPath("Raytracing/shadow.rmiss")},
-    //     // Shader(*device,FileUtils::getShaderPath("Raytracing/closesthit.rchit"))
-    //     Shader(*device,FileUtils::getShaderPath("Raytracing/khr_ray_tracing_basic/raygen.rgen")),
-    //     Shader(*device,FileUtils::getShaderPath("Raytracing/khr_ray_tracing_basic/miss.rmiss")),
-    //     Shader(*device,FileUtils::getShaderPath("Raytracing/khr_ray_tracing_basic/closesthit.rchit"))
-    // };
-    // layout = &device->getResourceCache().requestPipelineLayout(shaders);
-    //
+    
     SceneLoadingConfig sceneConfig = {.requiredVertexAttribute = {POSITION_ATTRIBUTE_NAME,INDEX_ATTRIBUTE_NAME,NORMAL_ATTRIBUTE_NAME,TEXCOORD_ATTRIBUTE_NAME},
         .indexType = VK_INDEX_TYPE_UINT32,.bufferAddressAble = true,.bufferForAccel = true,.bufferForTransferSrc = true};
-    scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"),sceneConfig);
-   // scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"),sceneConfig);
+    camera = std::make_shared<Camera>();
+   //scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"),sceneConfig);
+    scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"),sceneConfig);
+   camera = scene->getCameras()[0];
+   camera->flipY = true;
+   // camera->setTranslation(glm::vec3(-2.5f,-3.34f,-20.f));
+   // camera->setRotation(glm::vec3(0.f, -15.f, 0.0f));
+   // camera->setPerspective(60.0f, (float) width / (float) height, 0.1f, 4000.f);
+    camera->setTranslation(glm::vec3(-494.f,-116.f,99.f));
+    camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
+    camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
+    camera->setPerspective(60.0f, (float) width / (float) height, 1.f,4000.f);
+    camera->setMoveSpeed(0.05f);
     
-    camera = scene->getCameras()[0];
-    //
-    // buildBLAS();
-    // buildTLAS();
-    // storageImage = std::make_unique<SgImage>(*device,"",VkExtent3D{width,height,1},VK_FORMAT_B8G8R8A8_UNORM,VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,VMA_MEMORY_USAGE_GPU_ONLY,VK_IMAGE_VIEW_TYPE_2D);
-    //
-    camera->flipY = true;
-    camera->setTranslation(glm::vec3(-2.5f,-3.34f,-20.f));
-    camera->setRotation(glm::vec3(0.f, -15.f, 0.0f));
-    camera->setPerspective(60.0f, (float) width / (float) height, 0.1f, 4000.f);
     
-   //  integrator = std::make_unique<SimpleIntegrator>(*device);
+ // integrator = std::make_unique<SimpleIntegrator>(*device);
     integrator = std::make_unique<PathIntegrator>(*device);
-    integrator->init(*scene);
+   integrator->init(*scene);
 }
 
 void RayTracer::onUpdateGUI()
 {
-    Application::onUpdateGUI();
-    integrator->onUpdateGUI();
+   Application::onUpdateGUI();
+   integrator->onUpdateGUI();
 }
 
 

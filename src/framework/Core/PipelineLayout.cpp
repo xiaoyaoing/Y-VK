@@ -45,6 +45,8 @@ void PipelineLayout::create()
     createInfo.pPushConstantRanges = pushConstantRanges.data();
 
     VK_CHECK_RESULT(vkCreatePipelineLayout(device.getHandle(), &createInfo, nullptr, &layout))
+
+    LOGI("Pipeline Layout created");
 }
 
 

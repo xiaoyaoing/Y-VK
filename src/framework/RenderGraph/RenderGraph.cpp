@@ -283,6 +283,7 @@ void RenderGraph::compile() {
         }
     }
 
+    
     mActivePassNodesEnd = std::stable_partition(this->mPassNodes.begin(), mPassNodes.end(),
                                                 [](const auto &passNode) { return passNode->getRefCount() != 0; });
 
@@ -325,6 +326,13 @@ void RenderGraph::compile() {
     for (const auto &edge: edges) {
         edge.resource->resourceUsage = edge.resource->resourceUsage | edge.usage;
     }
+
+    for(const auto &node : mResources)
+    {
+        if(node->getRefCount() == 0)
+            node->destroy();
+    }
+
 }
 
 Device &RenderGraph::getDevice() const {
@@ -349,10 +357,10 @@ void RenderGraph::execute(CommandBuffer &commandBuffer) {
         pass->resolveTextureUsages(*this, commandBuffer);
         pass->execute(*this, commandBuffer);
 
-        for (const auto &texture: pass->destroy)
+        for (const auto &resourceNode: pass->destroy)
         {
             //getBlackBoard().remove(texture->getName());
-            texture->destroy();
+            resourceNode->destroy();
         }
     }
 }

@@ -25,7 +25,7 @@ struct VertexAttribute {
 #define INDEX_ATTRIBUTE_NAME "indices"
 #define NORMAL_ATTRIBUTE_NAME "normal"
 #define TANGENT_ATTRIBUTE_NAME "tangent"
-#define TEXCOORD_ATTRIBUTE_NAME "texcoord"
+#define TEXCOORD_ATTRIBUTE_NAME "texcoord_0"
 
 struct Primitive {
     uint32_t firstIndex{};

@@ -41,6 +41,8 @@ Buffer::Buffer(Device &device, uint64_t bufferSize, VkBufferUsageFlags bufferUsa
     {
         uploadData(data, bufferSize);
     }
+
+    //LOGI("Buffer created: %d bytes, usage %d, memory usage %d", bufferSize, bufferUsage, memoryUsage);
 }
 
 Buffer::Buffer(Buffer &&buffer) : _buffer(buffer._buffer), _allocatedSize(buffer._allocatedSize),

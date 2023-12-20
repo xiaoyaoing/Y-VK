@@ -93,6 +93,9 @@ Image::Image(Device &device, const VkExtent3D &extent, VkFormat format, VkImageU
                                    &image_info, &memory_info,
                                    &image, &memory,
                                    nullptr));
+
+    LOGI("Image created: %dx%d, %d mips, %d layers, format %d, usage %d, memory usage %d",
+         extent.width, extent.height, mip_levels, array_layers, format, image_usage, memory_usage);
 }
 
 Image::Image(Device &device, VkImage handle, const VkExtent3D &extent, VkFormat format,

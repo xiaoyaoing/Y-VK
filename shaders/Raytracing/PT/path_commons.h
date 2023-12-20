@@ -7,4 +7,5 @@ struct PCPath
     uint frame_num;
     uint light_num;
     uint max_depth;
+    uint min_depth;
 };

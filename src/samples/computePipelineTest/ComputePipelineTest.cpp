@@ -16,7 +16,7 @@ void Example::prepare()
     
     
     Application::prepare();
-
+    camera = std::make_shared<Camera>();
     camera->setPerspective(60.0f, static_cast<float>(width) / static_cast<float>(height), 512.0f, 0.1f);
     camera->setRotation(glm::vec3(-26.0f, 75.0f, 0.0f));
     camera->setTranslation(glm::vec3(0.0f, 0.0f, -14.0f));
@@ -152,8 +152,8 @@ void Example::drawFrame(RenderGraph& rg)
                 vkCommon::initializers::vertexInputAttributeDescription(0, 1, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(Particle, vel))}
             }).setDepthStencilState({.depthTestEnable =  false}).setRasterizationState({.cullMode = VK_CULL_MODE_NONE}).setColorBlendState({.attachments =  {state}})
         ;
-        renderContext->bindImageSampler(0,graphics.particle->getImage().getVkImageView(),graphics.particle->getSampler(),0,0)
-        .bindImageSampler(0,graphics.gradient->getImage().getVkImageView(),graphics.gradient->getSampler(),1,0)
+        renderContext->bindImageSampler(0,graphics.particle->getImage().getVkImageView(),graphics.particle->getSampler())
+        .bindImageSampler(1,graphics.gradient->getImage().getVkImageView(),graphics.gradient->getSampler())
         .bindBuffer(2,*graphics.uniformBuffer);
         commandBuffer.bindVertexBuffer( rg.getBlackBoard().getBuffer("storageBuffer"));
         renderContext->flushAndDraw(commandBuffer,num_particles,1,0,0);
