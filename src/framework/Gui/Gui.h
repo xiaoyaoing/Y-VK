@@ -1,8 +1,5 @@
 #pragma once
 
-#pragma once
-
-#include "ext/imgui/imgui.h"
 #include "Core/Vulkan.h"
 #include "Core/Buffer.h"
 #include <glm/vec2.hpp>
@@ -24,28 +21,22 @@ class CommandBuffer;
 
 class RenderGraph;
 
-class Gui
-{
+class Gui {
 public:
     Gui(Device& device);
 
-
-    bool inputEvent(const InputEvent & event);
-    
+    bool inputEvent(const InputEvent& event);
     void prepareResoucrces(Application* app);
-
     bool update();
-
     void draw(CommandBuffer& commandBuffer);
-
     void addGuiPass(RenderGraph& graph);
-
+    void setColorsDark();
     bool checkBox(const char* caption, bool* value);
-
     void text(const char* formatstr, ...);
+    void newFrame();
 
     //是否有新的数据 需要更新
-    bool updated{false};
+    bool  updated{false};
     float scale{1.f};
 
 protected:
@@ -62,23 +53,20 @@ protected:
     //    VkDescriptorSet descriptorSet;
     //  VkPipelineLayout pipelineLayout;
 
-    std::unique_ptr<DescriptorSet> descriptorSet{nullptr};
-    std::unique_ptr<DescriptorPool> descriptorPool{nullptr};
+    std::unique_ptr<DescriptorSet>    descriptorSet{nullptr};
+    std::unique_ptr<DescriptorPool>   descriptorPool{nullptr};
     std::unique_ptr<DescriptorLayout> descriptorLayout{nullptr};
 
     float contentScaleFactor{1.f};
-
 
     VkSampleCountFlagBits rasterSamples = VK_SAMPLE_COUNT_1_BIT;
 
     Device& device;
 
-    struct PushConstBlock
-    {
+    struct PushConstBlock {
         glm::vec2 scale;
         glm::vec2 translate;
     } pushConstBlock;
-
 
     PipelineLayout* pipelineLayout;
 
@@ -87,5 +75,6 @@ protected:
     ColorBlendState colorBlendState;
 
     std::unique_ptr<Texture> fontTexture;
-    uint32 subPass{0};
+    uint32                   subPass{0};
+    double                   mTime{0};
 };

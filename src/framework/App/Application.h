@@ -33,6 +33,8 @@
 #include <optional>
 #include <chrono>
 
+#include <imgui.h>
+
 #include "Common/Timer.h"
 
 // #ifdef _WIN32
@@ -41,45 +43,36 @@
 // #include <windef.h>
 // #endif
 
-
-
 class Application {
-    void initWindow(const char *name,  uint32_t width, uint32_t height);
+    void initWindow(const char* name, uint32_t width, uint32_t height);
 
     virtual void initGUI();
 
-
-
 public:
-
-    // static  Application * g_App{nullptr};
-    
-    Application(const char *name,  uint32_t width, uint32_t height);
-
+    Application(const char* name, uint32_t width, uint32_t height);
     Application() : Application("Vulkan", 1920, 1080) {
     }
 
     virtual void prepare();
+    virtual void inputEvent(const InputEvent& inputEvent);
+    virtual ~Application();
 
-    virtual void inputEvent(const InputEvent &inputEvent);
-
+    void setFocused(bool focused);
     void mainloop();
-
-    virtual  ~Application();
+    void onResize(uint32_t width, uint32_t height);
 
 protected:
-
-    inline void addDeviceExtension(const char *extension, bool optional = true) {
+    inline void addDeviceExtension(const char* extension, bool optional = true) {
         deviceExtensions[extension] = optional;
     }
-    inline void addInstanceExtension(const char *extension, bool optional = true) {
+    inline void addInstanceExtension(const char* extension, bool optional = true) {
         instanceExtensions[extension] = optional;
     }
 
     virtual void update();
     virtual void getRequiredInstanceExtensions();
     virtual void initVk();
-    virtual void drawFrame(RenderGraph &rg) = 0;
+    virtual void drawFrame(RenderGraph& rg) = 0;
     virtual void updateScene();
     virtual void onUpdateGUI();
     virtual void onMouseMove();
@@ -91,36 +84,26 @@ protected:
 protected:
     VmaAllocator _allocator{};
 
-
     float deltaTime{0};
 
     Timer timer;
-    
-    std::unique_ptr<Instance> _instance;
-    std::unordered_map<const char *, bool> deviceExtensions;
-    std::unordered_map<const char *, bool> instanceExtensions;
-    std::vector<const char *> validationLayers{"VK_LAYER_KHRONOS_validation"};
-    std::unique_ptr<Window> window{nullptr};
-    std::unique_ptr<RenderContext> renderContext{nullptr};
-    std::unique_ptr<Device> device{nullptr};
-     std::shared_ptr<Camera> camera;
-    
+
+    std::unique_ptr<Instance>             _instance;
+    std::unordered_map<const char*, bool> deviceExtensions;
+    std::unordered_map<const char*, bool> instanceExtensions;
+    std::vector<const char*>              validationLayers{"VK_LAYER_KHRONOS_validation"};
+    std::unique_ptr<Window>               window{nullptr};
+    std::unique_ptr<RenderContext>        renderContext{nullptr};
+    std::unique_ptr<Device>               device{nullptr};
+    std::shared_ptr<Camera>               camera;
+
     std::unique_ptr<Scene> scene;
-    std::unique_ptr<Gui> gui;
+    std::unique_ptr<Gui>   gui;
 
     VkSurfaceKHR surface{};
 
-
-
-    uint32_t width, height;
-
-    //Camera related  variable begin
-    // struct {
-    //     bool left{false};
-    //     bool middle{false};
-    //     bool right{false};
-    // } mouseButtons;
-
+    uint32_t  mWidth, mHeight;
+    bool      m_focused{true};
     glm::vec2 mousePos;
 
     glm::vec2 touchPos;
@@ -134,16 +117,12 @@ protected:
     bool enableGui{true};
     //Camera related  variable end
 
-
-
-
     VkFence fence{VK_NULL_HANDLE};
 #ifdef NOEBUG
     const bool enableValidationLayers = false;
 #else
     const bool enableValidationLayers = true;
 #endif
-
 
     void handleMouseMove(float x, float y);
 };

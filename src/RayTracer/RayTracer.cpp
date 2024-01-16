@@ -11,10 +11,9 @@
 #include "Integrators/SimpleIntegrator.h"
 #include "Scene/SceneLoader/gltfloader.h"
 
-
 // static BlasInput toVkGeometry(const Primitive & primitive)
 // {
-//    
+//
 //         VkAccelerationStructureGeometryKHR accelerationStructureGeometry{};
 //         accelerationStructureGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
 //         accelerationStructureGeometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
@@ -36,7 +35,7 @@
 //
 //         return {.geometry = {accelerationStructureGeometry},.range = {accelerationStructureBuildRangeInfo}};
 //         // accelerationStructureGeometry.geometry.triangles.transformData = transformBufferDeviceAddress;
-//     
+//
 // }
 //
 // static TlasInput toVkInstance(const Primitive & primitive,VkDeviceAddress blasAddress)
@@ -62,38 +61,33 @@
 //     return result_accel;
 // }
 
-
-RayTracer::RayTracer(const RayTracerSettings& settings)
-{
-        addDeviceExtension(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-        addDeviceExtension(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
-        addDeviceExtension(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
-        addDeviceExtension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
-        addDeviceExtension(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME);
-        addDeviceExtension(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
-        addDeviceExtension(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-        addDeviceExtension(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
-        addDeviceExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+RayTracer::RayTracer(const RayTracerSettings& settings) {
+    addDeviceExtension(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    addDeviceExtension(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    addDeviceExtension(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+    addDeviceExtension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    addDeviceExtension(VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME);
+    addDeviceExtension(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
+    addDeviceExtension(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    addDeviceExtension(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
+    addDeviceExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
 
     //Application::g_App = this;
 }
 
-void RayTracer::drawFrame(RenderGraph& renderGraph)
-{
+void RayTracer::drawFrame(RenderGraph& renderGraph) {
 
-   // integrator->render(renderGraph);
-    
-   auto & commandBuffer = renderContext->getGraphicCommandBuffer();
-    
-  integrator->render(renderGraph);
+    // integrator->render(renderGraph);
 
-  renderGraph.addImageCopyPass(renderGraph.getBlackBoard().getHandle("RT"),renderGraph.getBlackBoard().getHandle(SWAPCHAIN_IMAGE_NAME));
+    auto& commandBuffer = renderContext->getGraphicCommandBuffer();
 
-  gui->addGuiPass(renderGraph);
+    integrator->render(renderGraph);
 
-   renderGraph.execute(commandBuffer);
-    
+    renderGraph.addImageCopyPass(renderGraph.getBlackBoard().getHandle("RT"), renderGraph.getBlackBoard().getHandle(SWAPCHAIN_IMAGE_NAME));
 
+    gui->addGuiPass(renderGraph);
+
+    renderGraph.execute(commandBuffer);
 }
 
 // void RayTracer::update()
@@ -131,50 +125,44 @@ void RayTracer::drawFrame(RenderGraph& renderGraph)
 //     // }
 // }
 
-
-
-
-
-void RayTracer::prepare()
-{
+void RayTracer::prepare() {
     Application::prepare();
     GlslCompiler::setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_5);
 
-    
-    SceneLoadingConfig sceneConfig = {.requiredVertexAttribute = {POSITION_ATTRIBUTE_NAME,INDEX_ATTRIBUTE_NAME,NORMAL_ATTRIBUTE_NAME,TEXCOORD_ATTRIBUTE_NAME},
-        .indexType = VK_INDEX_TYPE_UINT32,.bufferAddressAble = true,.bufferForAccel = true,.bufferForTransferSrc = true};
-    camera = std::make_shared<Camera>();
-   //scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"),sceneConfig);
-    scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"),sceneConfig);
-   camera = scene->getCameras()[0];
-   camera->flipY = true;
-   // camera->setTranslation(glm::vec3(-2.5f,-3.34f,-20.f));
-   // camera->setRotation(glm::vec3(0.f, -15.f, 0.0f));
-   // camera->setPerspective(60.0f, (float) width / (float) height, 0.1f, 4000.f);
-    camera->setTranslation(glm::vec3(-494.f,-116.f,99.f));
-    camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
-    camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
-    camera->setPerspective(60.0f, (float) width / (float) height, 1.f,4000.f);
-    camera->setMoveSpeed(0.05f);
-    
-    
- // integrator = std::make_unique<SimpleIntegrator>(*device);
+    SceneLoadingConfig sceneConfig = {.requiredVertexAttribute = {POSITION_ATTRIBUTE_NAME, INDEX_ATTRIBUTE_NAME, NORMAL_ATTRIBUTE_NAME, TEXCOORD_ATTRIBUTE_NAME},
+                                      .indexType               = VK_INDEX_TYPE_UINT32,
+                                      .bufferAddressAble       = true,
+                                      .bufferForAccel          = true,
+                                      .bufferForTransferSrc    = true};
+    camera                         = std::make_shared<Camera>();
+    scene                          = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"), sceneConfig);
+    // scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"),sceneConfig);
+    camera        = scene->getCameras()[0];
+    camera->flipY = true;
+    camera->setTranslation(glm::vec3(-2.5f, -3.34f, -20.f));
+    camera->setRotation(glm::vec3(0.f, -15.f, 0.0f));
+    camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 0.1f, 4000.f);
+    // camera->setTranslation(glm::vec3(-494.f,-116.f,99.f));
+    // camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
+    // camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
+    // camera->setPerspective(60.0f, (float) width / (float) height, 1.f,4000.f);
+    // camera->setMoveSpeed(0.05f);
+
+    // integrator = std::make_unique<SimpleIntegrator>(*device);
     integrator = std::make_unique<PathIntegrator>(*device);
-   integrator->init(*scene);
+    integrator->init(*scene);
 }
 
-void RayTracer::onUpdateGUI()
-{
-   Application::onUpdateGUI();
-   integrator->onUpdateGUI();
+void RayTracer::onUpdateGUI() {
+    Application::onUpdateGUI();
+    integrator->onUpdateGUI();
 }
-
 
 // void RayTracer::buildBLAS()
 // {
 //     // scene->IteratePrimitives([](const Primitive & primitive)
 //     // {
-//     //     
+//     //
 //     // });
 //      {
 // 	uint32_t nb_blas = static_cast<uint32_t>(input.size());
@@ -278,12 +266,7 @@ void RayTracer::onUpdateGUI()
 // }
 // }
 
-
-
-
-
-int main()
-{
+int main() {
     RayTracer rayTracer({});
     rayTracer.prepare();
     rayTracer.mainloop();

@@ -2,7 +2,6 @@
 // Created by 打工人 on 2023/3/19.
 //
 
-
 #include "Application.h"
 #include <Core/Device/Instance.h>
 #include "../Common/VkCommon.h"
@@ -13,13 +12,12 @@
 #include "Scene/Compoments/Camera.h"
 #include "Scene/SceneLoader/gltfloader.h"
 
-
 void Application::initVk() {
     VK_CHECK_RESULT(volkInitialize());
 
     getRequiredInstanceExtensions();
     _instance = std::make_unique<Instance>(std::string("vulkanApp"), instanceExtensions, validationLayers);
-    surface = window->createSurface(*_instance);
+    surface   = window->createSurface(*_instance);
 
     uint32_t physical_device_count{0};
     VK_CHECK_RESULT(vkEnumeratePhysicalDevices(_instance->getHandle(), &physical_device_count, nullptr));
@@ -34,7 +32,7 @@ void Application::initVk() {
     LOGI("Found {} physical device", physical_device_count);
 
     VK_CHECK_RESULT(
-            vkEnumeratePhysicalDevices(_instance->getHandle(), &physical_device_count, physical_devices.data()));
+        vkEnumeratePhysicalDevices(_instance->getHandle(), &physical_device_count, physical_devices.data()));
 
     addDeviceExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
@@ -42,7 +40,7 @@ void Application::initVk() {
     vkGetPhysicalDeviceProperties(physical_devices[0], &deviceProperties);
     LOGI("Device Name: {}", deviceProperties.deviceName)
 
-    device = std::make_unique<Device>(physical_devices[0], surface,_instance->getHandle(), deviceExtensions);
+    device = std::make_unique<Device>(physical_devices[0], surface, _instance->getHandle(), deviceExtensions);
 
     createRenderContext();
 
@@ -53,8 +51,8 @@ void Application::initVk() {
 }
 
 void Application::getRequiredInstanceExtensions() {
-    uint32_t glfwExtensionsCount = 0;
-    const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionsCount);
+    uint32_t     glfwExtensionsCount = 0;
+    const char** glfwExtensions      = glfwGetRequiredInstanceExtensions(&glfwExtensionsCount);
     for (uint32_t i = 0; i < glfwExtensionsCount; i++) {
         addInstanceExtension(glfwExtensions[i]);
     }
@@ -68,40 +66,45 @@ void Application::updateScene() {
 void Application::updateGUI() {
     if (!gui)
         return;
-    ImGuiIO &io = ImGui::GetIO();
+    ImGuiIO& io = ImGui::GetIO();
 
-    io.DisplaySize = ImVec2((float) 1024, (float) 1024);
-    io.DeltaTime = 0;
+    io.DisplaySize = ImVec2(static_cast<float>(mWidth), static_cast<float>(mHeight));
+    io.DeltaTime   = 0;
 
-
-    ImGui::NewFrame();
+    gui->newFrame();
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
-    ImGui::SetNextWindowPos(ImVec2(10 * gui->scale, 10 * gui->scale));
-    ImGui::SetNextWindowSize(ImVec2(0, 0), ImGuiSetCond_FirstUseEver);
-    ImGui::Begin("Vulkan Example", nullptr,
-                 ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+    ImGui::SetNextWindowPos(ImVec2(50 * gui->scale, 50 * gui->scale));
+    // ImGui::SetNextWindowSize(ImVec2(0, 0), ImGuiSetCond_FirstUseEver);
+    ImGui::Begin("Vulkan Example", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
     ImGui::PushItemWidth(200.0f * gui->scale);
     ImGui::Text("%.2f ms/frame ", 1000.f * deltaTime);
     ImGui::NextColumn();
-    ImGui::Text(" %d fps",toUint32(1.f/deltaTime));
-    ImGui::InputFloat3("Camera Position", &camera->position[0], 2);
-    ImGui::InputFloat3("Camera Rotation", &camera->rotation[0], 2);
-    ImGui::PopItemWidth(); 
+    ImGui::Text(" %d fps", toUint32(1.f / deltaTime));
+    ImGui::InputFloat3("Camera Position", &camera->position[0], "%.2f %.2f %.2f", 2);
+    ImGui::InputFloat3("Camera Rotation", &camera->rotation[0], "%.2f %.2f %.2f", 2);
+    ImGui::PopItemWidth();
     onUpdateGUI();
     ImGui::End();
     ImGui::PopStyleVar();
+    ImGui::End();
+
     ImGui::Render();
+
+    bool showDeomWindow = true;
+    ImGui::ShowDemoWindow(&showDeomWindow);
 
     if (gui->update() || gui->updated) {
         gui->updated = false;
     }
 }
 
-
-
 void Application::update() {
+
     deltaTime = timer.tick<Timer::Seconds>();
+
+    if (!m_focused)
+        return;
 
     if (viewUpdated) {
         viewUpdated = false;
@@ -111,20 +114,19 @@ void Application::update() {
     updateScene();
     updateGUI();
 
-
     renderContext->beginFrame();
-    
+
     vkWaitForFences(device->getHandle(), 1, &fence, VK_TRUE, UINT64_MAX);
     vkResetFences(device->getHandle(), 1, &fence);
 
     RenderGraph graph(*device);
-    auto handle = graph.importTexture(SWAPCHAIN_IMAGE_NAME,&renderContext->getCurHwtexture());
-    graph.getBlackBoard().put(SWAPCHAIN_IMAGE_NAME,handle);
-    
+    auto        handle = graph.importTexture(SWAPCHAIN_IMAGE_NAME, &renderContext->getCurHwtexture());
+    graph.getBlackBoard().put(SWAPCHAIN_IMAGE_NAME, handle);
+
     drawFrame(graph);
-    
-    renderContext->submitAndPresent(renderContext->getGraphicCommandBuffer(),fence);
-    
+
+    renderContext->submitAndPresent(renderContext->getGraphicCommandBuffer(), fence);
+
     camera->update(deltaTime);
 
     if (camera->moving()) {
@@ -132,10 +134,13 @@ void Application::update() {
     }
 }
 
-
 void Application::createRenderContext() {
-    renderContext = std::make_unique<RenderContext>(*device, surface, *window);
+    renderContext            = std::make_unique<RenderContext>(*device, surface, *window);
     RenderContext::g_context = renderContext.get();
+}
+
+void Application::setFocused(bool focused) {
+    m_focused = focused;
 }
 
 // void Application::loadScene(const std::string& path,const SceneLoadingConfig & config)
@@ -144,12 +149,11 @@ void Application::createRenderContext() {
 //     camera = scene->getCameras()[0];
 // }
 
-
-void Application::initWindow(const char *name, uint32_t width, uint32_t height) {
+void Application::initWindow(const char* name, uint32_t width, uint32_t height) {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-    window = std::make_unique<Window>(Window::WindowProp{"title",{width,height}}, this);
+    window = std::make_unique<Window>(Window::WindowProp{"title", {width, height}}, this);
 }
 
 void Application::initGUI() {
@@ -157,31 +161,26 @@ void Application::initGUI() {
     gui->prepareResoucrces(this);
 }
 
-
 void Application::prepare() {
     initVk();
     initGUI();
-
 }
 
-Application::Application(const char *name,  uint32_t width, uint32_t height) : width(width), height(height) {
+Application::Application(const char* name, uint32_t width, uint32_t height) : mWidth(width), mHeight(height) {
     initWindow(name, width, height);
 }
 
-
-void Application::inputEvent(const InputEvent &inputEvent)
-{
-    if(gui)
-    {
-        if(gui->inputEvent(inputEvent))
+void Application::inputEvent(const InputEvent& inputEvent) {
+    if (gui) {
+        if (gui->inputEvent(inputEvent))
             return;
     }
-    
+
     auto source = inputEvent.getSource();
     if (source == EventSource::KeyBoard) {
-        const auto &keyEvent = static_cast<const KeyInputEvent &>(inputEvent);
-        auto action = keyEvent.getAction();
-        auto code = keyEvent.getCode();
+        const auto& keyEvent = static_cast<const KeyInputEvent&>(inputEvent);
+        auto        action   = keyEvent.getAction();
+        auto        code     = keyEvent.getCode();
 
         switch (action) {
             case KeyAction::Down:
@@ -227,7 +226,7 @@ void Application::inputEvent(const InputEvent &inputEvent)
         }
     }
     if (source == EventSource::Mouse) {
-        const auto &mouseEvent = static_cast<const MouseButtonInputEvent &>(inputEvent);
+        const auto& mouseEvent = static_cast<const MouseButtonInputEvent&>(inputEvent);
         handleMouseMove(mouseEvent.getPosX(), mouseEvent.getPosY());
         auto action = mouseEvent.getAction();
         auto button = mouseEvent.getButton();
@@ -268,27 +267,27 @@ void Application::inputEvent(const InputEvent &inputEvent)
                 break;
         }
     } else if (source == EventSource::TouchScreen) {
-        const auto &touchEvent = static_cast<const TouchInputEvent &>(inputEvent);
+        const auto& touchEvent = static_cast<const TouchInputEvent&>(inputEvent);
 
         if (touchEvent.getAction() == TouchAction::Down) {
             //   touchDown = true;
-            touchPos.x = static_cast<int32_t>(touchEvent.getPosX());
-            touchPos.y = static_cast<int32_t>(touchEvent.getPosY());
-            mousePos.x = touchEvent.getPosX();
-            mousePos.y = touchEvent.getPosY();
+            touchPos.x                = static_cast<int32_t>(touchEvent.getPosX());
+            touchPos.y                = static_cast<int32_t>(touchEvent.getPosY());
+            mousePos.x                = touchEvent.getPosX();
+            mousePos.y                = touchEvent.getPosY();
             camera->mouseButtons.left = true;
         } else if (touchEvent.getAction() == TouchAction::Up) {
             touchPos.x = static_cast<int32_t>(touchEvent.getPosX());
             touchPos.y = static_cast<int32_t>(touchEvent.getPosY());
             //   touchTimer = 0.0;
             //   touchDown = false;
-            camera->keys.up = false;
+            camera->keys.up           = false;
             camera->mouseButtons.left = false;
         } else if (touchEvent.getAction() == TouchAction::Move) {
             bool handled = false;
             if (gui) {
-                ImGuiIO &io = ImGui::GetIO();
-                handled = io.WantCaptureMouse;
+                ImGuiIO& io = ImGui::GetIO();
+                handled     = io.WantCaptureMouse;
             }
             if (!handled) {
                 int32_t eventX = static_cast<int32_t>(touchEvent.getPosX());
@@ -318,9 +317,12 @@ void Application::mainloop() {
         update();
     }
 }
+void Application::onResize(uint32_t width, uint32_t height) {
+    this->mWidth  = width;
+    this->mHeight = height;
+}
 
-Application::~Application()
-{
+Application::~Application() {
     scene.reset();
     camera.reset();
     renderContext.reset();
@@ -331,11 +333,10 @@ Application::~Application()
 }
 
 void Application::handleMouseMove(float x, float y) {
-    bool handled = false;
-    float dx = static_cast<int32_t>(mousePos.x) - x;
-    float dy = static_cast<int32_t>(mousePos.y) - y;
+    bool  handled = false;
+    float dx      = static_cast<int32_t>(mousePos.x) - x;
+    float dy      = static_cast<int32_t>(mousePos.y) - y;
     onMouseMove();
-
 
     if (camera->mouseButtons.left) {
         rotation.x += dy * 1.25f * rotationSpeed;
@@ -355,7 +356,6 @@ void Application::handleMouseMove(float x, float y) {
 }
 
 void Application::onUpdateGUI() {
-    
 }
 
 void Application::onMouseMove() {

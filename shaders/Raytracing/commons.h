@@ -45,7 +45,7 @@ struct RTMaterial {
     vec3 emissiveFactor;
     vec3 albedo;
 
-    uint texture_id;
+    uint texture_id = -1;
     uint bsdf_type;
 };
 

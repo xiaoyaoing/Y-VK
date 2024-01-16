@@ -4,12 +4,12 @@
 
 #ifndef VULKANDEMO_RENDERPRIMITIVE_H
 #define VULKANDEMO_RENDERPRIMITIVE_H
+#include "Core/BoundingBox.h"
 #include "Core/Buffer.h"
 
 class Material;
 
-enum  class PRIMITIVE_TYPE : uint8_t
-{
+enum class PRIMITIVE_TYPE : uint8_t {
     E_TRIANGLE_LIST,
 };
 
@@ -22,31 +22,25 @@ struct VertexAttribute {
 };
 
 #define POSITION_ATTRIBUTE_NAME "position"
-#define INDEX_ATTRIBUTE_NAME "indices"
-#define NORMAL_ATTRIBUTE_NAME "normal"
-#define TANGENT_ATTRIBUTE_NAME "tangent"
+#define INDEX_ATTRIBUTE_NAME    "indices"
+#define NORMAL_ATTRIBUTE_NAME   "normal"
+#define TANGENT_ATTRIBUTE_NAME  "tangent"
 #define TEXCOORD_ATTRIBUTE_NAME "texcoord_0"
 
 struct Primitive {
-    uint32_t firstIndex{};
-    uint32_t indexCount{};
-    uint32_t firstVertex{};
-    uint32_t vertexCount{};
-    Material &material;
+    uint32_t  firstIndex{};
+    uint32_t  indexCount{};
+    uint32_t  firstVertex{};
+    uint32_t  vertexCount{};
+    Material& material;
     glm::mat4 matrix{};
-    uint32_t materialIndex{0};
+    uint32_t  materialIndex{0};
 
     PRIMITIVE_TYPE primitiveType{PRIMITIVE_TYPE::E_TRIANGLE_LIST};
 
     VkIndexType indexType{VK_INDEX_TYPE_UINT16};
 
-    struct Dimensions {
-        glm::vec3 min = glm::vec3(FLT_MAX);
-        glm::vec3 max = glm::vec3(-FLT_MAX);
-        glm::vec3 size;
-        glm::vec3 center;
-        float radius;
-    } dimensions;
+    BBox dimensions;
 
     std::unordered_map<std::string, VertexAttribute> vertexAttributes;
 
@@ -54,20 +48,20 @@ struct Primitive {
 
     std::unique_ptr<Buffer> indexBuffer;
 
-    bool getVertexAttribute(const std::string &name, VertexAttribute &attribute) const;
+    bool getVertexAttribute(const std::string& name, VertexAttribute& attribute) const;
 
-    void setVertxAttribute(const std::string &name, VertexAttribute &attribute);
+    void setVertxAttribute(const std::string& name, VertexAttribute& attribute);
 
-    void setVertexBuffer(const std::string &name, std::unique_ptr<Buffer> &buffer);
+    void setVertexBuffer(const std::string& name, std::unique_ptr<Buffer>& buffer);
 
-    Buffer &getVertexBuffer(const std::string &name) const;
+    Buffer& getVertexBuffer(const std::string& name) const;
 
     void setDimensions(glm::vec3 min, glm::vec3 max);
 
-    Primitive(uint32_t firstIndex, uint32_t indexCount, Material &material) : firstIndex(firstIndex),
+    Primitive(uint32_t firstIndex, uint32_t indexCount, Material& material) : firstIndex(firstIndex),
                                                                               indexCount(indexCount),
                                                                               material(material), dimensions({}) {
     }
 };
 
-#endif //VULKANDEMO_RENDERPRIMITIVE_H
+#endif//VULKANDEMO_RENDERPRIMITIVE_H

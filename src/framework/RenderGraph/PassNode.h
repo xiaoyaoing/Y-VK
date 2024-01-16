@@ -8,10 +8,8 @@
 #include "Core/RenderTarget.h"
 #include "Core/RayTracing/Accel.h"
 
-
 class PipelineLayout;
 class RenderGraph;
-
 
 struct RenderGraphSubpassInfo {
     std::vector<RenderGraphHandle> inputAttachments{};
@@ -22,104 +20,99 @@ struct RenderGraphSubpassInfo {
 };
 
 struct RenderGraphPassDescriptor {
-    std::vector<RenderGraphHandle> textures;
+    std::vector<RenderGraphHandle>      textures;
     std::vector<RenderGraphSubpassInfo> subpasses;
-    
+
     size_t getSubpassCount() const {
         return subpasses.size();
     }
 
-    RenderGraphPassDescriptor & addSubpass(const RenderGraphSubpassInfo &subpassInfo) {
+    RenderGraphPassDescriptor& addSubpass(const RenderGraphSubpassInfo& subpassInfo) {
         subpasses.push_back(subpassInfo);
         return *this;
     }
 };
 
-
 class PassNode : public RenderGraphNode {
 public:
-    virtual void execute(RenderGraph &renderGraph, CommandBuffer &commandBuffer) = 0;
-
+    PassNode(const char* passName);
     ~PassNode() override = default;
+    void resolveTextureUsages(RenderGraph& renderGraph, CommandBuffer& commandBuffer);
+    void addResourceUsage(ResourceNode* texture, uint16_t usage);
 
+    virtual void execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) = 0;
+    bool         active() { return mActive & getRefCount() > 0; }
+    void         setActive(bool active) { mActive = active; }
 
-    void resolveTextureUsages(RenderGraph &renderGraph, CommandBuffer &commandBuffer);
-
-    std::vector<ResourceNode *> devirtualize; // resources need to be create before executing
-    std::vector<ResourceNode *> destroy; // resources need to be destroy after executing
-
-    // void addTextureUsage(const RenderGraphTexture *texture, RenderGraphTexture::Usage usage);
-    void addResourceUsage( ResourceNode *texture, uint16_t usage);
+    std::vector<ResourceNode*> devirtualize{};// resources need to be create before executing
+    std::vector<ResourceNode*> destroy{};     // resources need to be destroy after executing
+    const char*                mPassName{nullptr};
 
 protected:
-    std::unordered_map< ResourceNode *, uint16_t> resourceUsages;
+    bool                                        mActive{true};
+    std::unordered_map<ResourceNode*, uint16_t> mResourceUsage;
 };
 
 class ImageCopyPassNode : public PassNode {
 public:
-    void execute(RenderGraph &renderGraph, CommandBuffer &commandBuffer) override;
-    ImageCopyPassNode(RenderGraphHandle src,RenderGraphHandle dst);
+    void execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) override;
+    ImageCopyPassNode(RenderGraphHandle src, RenderGraphHandle dst);
+
 protected:
     RenderGraphHandle src, dst;
 };
 
-
 class RenderPassNode final : public PassNode {
-    virtual void declareRenderTarget(const char *name, const RenderGraphPassDescriptor &descriptor);
+    virtual void declareRenderTarget(const char* name, const RenderGraphPassDescriptor& descriptor);
 
 public:
-    void execute(RenderGraph &renderGraph, CommandBuffer &commandBuffer) override;
+    void execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) override;
 
-    RenderPassNode(RenderGraph &renderGraph, const char *name, RenderGraphPassBase *base);
+    RenderPassNode(RenderGraph& renderGraph, const char* name, RenderGraphPassBase* base);
 
     ~RenderPassNode() override {
         delete mRenderPass;
     }
 
-    void declareRenderPass(const char *name, const RenderGraphPassDescriptor &descriptor);
+    void declareRenderPass(const RenderGraphPassDescriptor& descriptor);
 
 private:
     class RenderPassData {
     public:
         static constexpr size_t ATTACHMENT_COUNT = 6;
-        const char *name = {};
-        bool imported = false;
+        const char*             name             = {};
+        bool                    imported         = false;
 
         RenderGraphPassDescriptor desc;
 
-        void devirtualize(RenderGraph &renderGraph, const RenderPassNode &node);
+        void devirtualize(RenderGraph& renderGraph, const RenderPassNode& node);
 
         std::unique_ptr<RenderTarget> renderTarget;
 
-        RenderTarget &getRenderTarget();
+        RenderTarget& getRenderTarget();
     };
 
-    RenderPassData renderPassData{};
-    RenderGraphPassBase *mRenderPass{nullptr};
-    const char *name;
+    RenderPassData       renderPassData{};
+    RenderGraphPassBase* mRenderPass{nullptr};
+    const char*          name;
 };
 
-
-class ComputePassNode final : public PassNode
-{
+class ComputePassNode final : public PassNode {
 public:
     void execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) override;
-    ComputePassNode(RenderGraph &renderGraph, const char *name, ComputeRenderGraphPass *base);
-    ~ComputePassNode() override {delete mPass;}
+    ComputePassNode(RenderGraph& renderGraph, const char* name, ComputeRenderGraphPass* base);
+    ~ComputePassNode() override { delete mPass; }
+
 private:
-    ComputeRenderGraphPass *mPass{nullptr};
-    const char *name;
+    ComputeRenderGraphPass* mPass{nullptr};
 };
 
-
-class RayTracingPassNode final : public  PassNode
-{
+class RayTracingPassNode final : public PassNode {
 public:
     void execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) override;
-    RayTracingPassNode(RenderGraph &renderGraph, const char *name, RaytracingRenderGraphPass *base);
-    ~RayTracingPassNode() override {delete mPass;}
+    RayTracingPassNode(RenderGraph& renderGraph, const char* name, RaytracingRenderGraphPass* base);
+    ~RayTracingPassNode() override { delete mPass; }
     // ~RayTracingPassNode() override;
 private:
-    RaytracingRenderGraphPass * mPass{nullptr};
+    RaytracingRenderGraphPass* mPass{nullptr};
 };
-

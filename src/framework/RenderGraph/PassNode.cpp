@@ -105,24 +105,25 @@ void RenderPassNode::declareRenderTarget(const char *name, const RenderGraphPass
     renderPassData.desc = descriptor;
 }
 
-RenderPassNode::RenderPassNode(RenderGraph &renderGraph, const char *name, RenderGraphPassBase *base) : mRenderPass(
+RenderPassNode::RenderPassNode(RenderGraph &renderGraph, const char *name, RenderGraphPassBase *base) :PassNode(name), mRenderPass(
         base), name(name) {
 }
 
-void RenderPassNode::declareRenderPass(const char *name, const RenderGraphPassDescriptor &descriptor) {
+void RenderPassNode::declareRenderPass(const RenderGraphPassDescriptor &descriptor) {
     renderPassData.desc = descriptor;
 }
 
+PassNode::PassNode(const char *passName):mPassName(passName) {}
 
 void PassNode::resolveTextureUsages(RenderGraph &renderGraph, CommandBuffer &commandBuffer) {
-    for (auto &textureIt: resourceUsages) {
+    for (auto &textureIt: mResourceUsage) {
         textureIt.first->resloveUsage(commandBuffer, textureIt.second);
     }
 }
 
 void PassNode::addResourceUsage(ResourceNode* texture, uint16_t usage)
 {
-    resourceUsages.emplace(texture,usage);
+    mResourceUsage.emplace(texture,usage);
 }
 
 
@@ -143,7 +144,7 @@ void ImageCopyPassNode::execute(RenderGraph &renderGraph, CommandBuffer &command
                     dstVkImage.getHandle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
 }
 
-ImageCopyPassNode::ImageCopyPassNode(RenderGraphHandle src, RenderGraphHandle dst):src(src),dst(dst)
+ImageCopyPassNode::ImageCopyPassNode(RenderGraphHandle src, RenderGraphHandle dst):PassNode("Image Copy"), src(src),dst(dst)
 {
 }
 
@@ -170,11 +171,11 @@ void RayTracingPassNode::execute(RenderGraph& renderGraph, CommandBuffer& comman
 }
 
 
-ComputePassNode::ComputePassNode(RenderGraph& renderGraph, const char* name, ComputeRenderGraphPass* base):mPass(base)
+ComputePassNode::ComputePassNode(RenderGraph& renderGraph, const char* name, ComputeRenderGraphPass* base):PassNode(name), mPass(base)
 {
 }
 
-RayTracingPassNode::RayTracingPassNode(RenderGraph& renderGraph, const char* name, RaytracingRenderGraphPass *base):mPass(base)
+RayTracingPassNode::RayTracingPassNode(RenderGraph& renderGraph, const char* name, RaytracingRenderGraphPass *base):PassNode(name),mPass(base)
 {
 }
 

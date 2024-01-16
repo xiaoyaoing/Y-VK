@@ -6,7 +6,10 @@ get_filename_component(GRANDPARENT_DIR ${PARENT_DIR} PATH)
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_VK_RESOURCES_DIR")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_MYSYMBOL")
 
-add_executable(${FOLDER_NAME} vxgi.cpp vxgi.h ${shaders_src} ) 
+
+file(GLOB_RECURSE VXGI_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
+
+add_executable(${FOLDER_NAME} ${VXGI_FILES} ${shaders_src} ) 
 
 target_link_libraries(${FOLDER_NAME} framework)
 #target_include_directories(${FOLDER_NAME} PUBLIC "E:\\code\\VulkanFrameWorkLearn\\ext\\vma\\src")

@@ -8,8 +8,8 @@
 enum RENDER_GRAPH_RESOURCE_TYPE
 {
     UNDEFINED,
-    TEXTURE,
-    BUFFER,
+    ETexture,
+    EBuffer,
     COUNT
 };
 

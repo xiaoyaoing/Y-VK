@@ -4,7 +4,6 @@
 
 class Device;
 
-
 //Type without binding point: Input Output PushConstant SpecializationConstant
 
 enum class ShaderResourceType {
@@ -27,27 +26,31 @@ struct ShaderResource {
     VkShaderStageFlags stages;
     ShaderResourceType type;
     // ShaderResourceMode mode;
-    uint32_t set;
-    uint32_t binding;
-    uint32_t location;
-    uint32_t inputAttachmentIndex;
-    uint32_t columns;
-    uint32_t arraySize;
-    uint32_t offset;
-    uint32_t size;
-    uint32_t constantId;
-    uint32_t qualifiers;
+    uint32_t    set;
+    uint32_t    binding;
+    uint32_t    location;
+    uint32_t    inputAttachmentIndex;
+    uint32_t    columns;
+    uint32_t    arraySize;
+    uint32_t    offset;
+    uint32_t    size;
+    uint32_t    constantId;
+    uint32_t    qualifiers;
     std::string name;
 };
 
-struct ShaderResourceQualifiers
-{
-    enum : uint32_t
-    {
+struct ShaderResourceQualifiers {
+    enum : uint32_t {
         None        = 0,
         NonReadable = 1,
         NonWritable = 2,
     };
+};
+
+class ShaderSource {
+};
+
+class ShaderVarint {
 };
 
 class Shader {
@@ -57,8 +60,9 @@ public:
         ORIGIN_SHADER
     };
 
-    Shader(Device &device, std::string path);
+    Shader(Device& device, std::string path);
 
+    Shader(const ShaderSource& source, const ShaderVarint& varint);
 
     //  Shader(Shader & other) = delete;
 
@@ -66,8 +70,7 @@ public:
 
     VkPipelineShaderStageCreateInfo PipelineShaderStageCreateInfo() const;
 
-
-    const std::vector<ShaderResource> &getShaderResources() const {
+    const std::vector<ShaderResource>& getShaderResources() const {
         return resources;
     }
 
@@ -75,17 +78,14 @@ public:
 
     VkShaderStageFlagBits getStage() const;
 
-    Shader operator = (const Shader &other)
-    {
+    Shader operator=(const Shader& other) {
         return *this;
     }
 
-
 private:
-
     VkShaderModule shader{VK_NULL_HANDLE};
 
-    Device &device;
+    Device& device;
 
     VkShaderStageFlagBits stage;
 

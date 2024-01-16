@@ -6,4 +6,10 @@
 	url = https://github.com/KhronosGroup/SPIRV-Cross
 [submodule "ext/spdlog"]
 	path = ext/spdlog
-	url = git@github.com:gabime/spdlog.git
+	url = git@github.com:gabime/spdlog.git	
+	
+	
+[submodule "ext/imgui"]
+	path = ext/imgui
+	url = https://github.com/ocornut/imgui
+	branch = docking

@@ -14,7 +14,7 @@ layout(binding = 2, set = 0) uniform SceneUboBuffer {SceneUbo scene_ubo;};
 layout(binding = 3, set = 0) uniform SceneDescBuffer {SceneDesc scene_desc;};
 layout(binding = 4, set = 0) readonly buffer Lights {RTLight lights[];};
 //todo fix this 
-layout(binding = 5, set = 0) uniform sampler2D scene_textures[25];
+layout(binding = 5, set = 0) uniform sampler2D scene_textures[];
 
 
 layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer InstanceInfo{ RTPrimitive p[];} ;

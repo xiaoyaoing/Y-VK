@@ -48,7 +48,7 @@ std::string RenderGraphTexture::getName() const
 
 RENDER_GRAPH_RESOURCE_TYPE RenderGraphTexture::getType() const
 {
-    return TEXTURE;
+    return ETexture;
 }
 
 

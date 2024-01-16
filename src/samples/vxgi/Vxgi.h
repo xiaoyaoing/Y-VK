@@ -3,25 +3,31 @@
 //
 #pragma once
 
+#include "VoxelRegion.h"
+#include "VxgiCommon.h"
 #include "App/Application.h"
 
-class Example : public Application
-{
+class Example : public Application {
 public:
     void prepare() override;
 
     Example();
 
 protected:
-    bool useSubpass{true};
-
-
-    struct
-    {
-        std::unique_ptr<PipelineLayout> gBuffer, lighting;
-    } pipelineLayouts;
-
-
     void onUpdateGUI() override;
-    void drawFrame(RenderGraph &renderGraph) override;
+    void drawFrame(RenderGraph& renderGraph) override;
+    void updateClipRegions();
+    // void addVoxelizationPass(RenderGraph& rg);
+    // void addVoxelConeTracingPass(RenderGraph& rg);
+    // void addLightInjectionPass(RenderGraph& rg);
+
+    BBox getBBox(uint32_t clipmapLevel);
+
+    std::unique_ptr<SgImage> mVoxelizationImage{nullptr};
+
+    std::unique_ptr<PipelineLayout> mVoxelizationPipelineLayout{nullptr};
+
+    std::vector<std::unique_ptr<VxgiPassBase>> passes{};
+    std::vector<BBox>                          mBBoxes{};
+    std::vector<VoxelRegion>                   mClipRegions{};
 };

@@ -24,6 +24,7 @@ layout(set = 0, binding = 0) uniform GlobalUniform {
     mat4 model;
     mat4 view;
     mat4 proj;
+    mat4 mvp;
 } global_uniform;
 
 layout (location = 0) out vec4 o_pos;

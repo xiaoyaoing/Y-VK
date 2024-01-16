@@ -31,7 +31,7 @@ std::string RenderGraphBuffer::getName() const
 
 RENDER_GRAPH_RESOURCE_TYPE RenderGraphBuffer::getType() const
 {
-    return BUFFER;
+    return EBuffer;
 }
 
 void RenderGraphBuffer::resloveUsage(CommandBuffer& commandBuffer,uint16_t usage)

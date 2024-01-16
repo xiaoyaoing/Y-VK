@@ -30,5 +30,6 @@ add_subdirectory(src/RayTracer)
 add_subdirectory(src/samples/renderGraphTest)
 add_subdirectory(src/samples/computePipelineTest)
 add_subdirectory(src/samples/vxgi)
+#add_subdirectory(src/samples/vxgiapp)
 
 file(COPY shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

@@ -24,6 +24,7 @@ set(IMGUI_FILES
         "${IMGUI_DIR}/imgui_demo.cpp"
         "${IMGUI_DIR}/imgui_draw.cpp"
         "${IMGUI_DIR}/imgui_widgets.cpp"
+        "${IMGUI_DIR}/imgui_tables.cpp"
         "${IMGUI_DIR}/imconfig.h"
         "${IMGUI_DIR}/imgui.h"
         "${IMGUI_DIR}/imgui_internal.h"
