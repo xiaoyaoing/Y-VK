@@ -69,7 +69,7 @@ std::unique_ptr<Texture>  Texture::loadTexture(Device& device, const std::string
 
     texture->getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY, subresourceRange);
     
-    RenderContext::g_context->submit(commandBuffer);
+    g_context->submit(commandBuffer);
     texture->sampler = std::make_unique<Sampler>(device, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, mipmaps.size());
 
     

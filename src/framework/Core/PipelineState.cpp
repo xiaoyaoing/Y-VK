@@ -50,9 +50,9 @@ bool operator!=(const InputAssemblyState &lhs, const InputAssemblyState &rhs) {
 
 bool operator!=(const RasterizationState &lhs, const RasterizationState &rhs) {
     return std::tie(lhs.cullMode, lhs.depthBiasEnable, lhs.depthClampEnable, lhs.frontFace, lhs.frontFace,
-                    lhs.polygonMode, lhs.rasterizerDiscardEnable) !=
+                    lhs.polygonMode, lhs.rasterizerDiscardEnable,lhs.pNext) !=
            std::tie(rhs.cullMode, rhs.depthBiasEnable, rhs.depthClampEnable, rhs.frontFace, rhs.frontFace,
-                    rhs.polygonMode, rhs.rasterizerDiscardEnable);
+                    rhs.polygonMode, rhs.rasterizerDiscardEnable,rhs.pNext);
 }
 
 bool operator!=(const ViewportState &lhs, const ViewportState &rhs) {

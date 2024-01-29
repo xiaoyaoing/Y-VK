@@ -12,6 +12,7 @@
 
 const std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
 
+Device * g_device= nullptr;
 
 Device::~Device()
 {

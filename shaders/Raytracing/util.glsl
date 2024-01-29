@@ -8,7 +8,7 @@
 #define INF 1e10
 #define EPS 0.001
 #define SHADOW_EPS 2 / 65536.
-#define sqrt2 1.41421356237309504880
+#define sqrt2 1.4v1421356237309504880
 #define EPS 0.001
 
 
@@ -71,7 +71,7 @@ struct SurfaceScatterEvent{
 
 SurfaceScatterEvent make_suface_scatter_event(const HitPayload hit_pay_load, const vec3 wo){
     SurfaceScatterEvent event;
-    
+
     event.frame = make_frame(hit_pay_load.n_s);
     event.wo = to_local(event.frame, wo);
     event.p = hit_pay_load.p;

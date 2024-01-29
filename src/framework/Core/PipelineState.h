@@ -6,15 +6,13 @@
 
 class RenderPass;
 
-
 struct VertexInputState {
     std::vector<VkVertexInputBindingDescription> bindings;
 
     std::vector<VkVertexInputAttributeDescription> attributes;
 };
 
-class SpecializationConstantState
-{
+class SpecializationConstantState {
 public:
     void reset();
 
@@ -22,17 +20,16 @@ public:
 
     void clearDirty();
 
-    template <class T>
-    void setConstant(uint32_t constantId, const T &data)
-    {
+    template<class T>
+    void setConstant(uint32_t constantId, const T& data) {
         setConstant(constantId, toUint32(static_cast<std::uint32_t>(data)));
     }
 
-    void setConstant(uint32_t constantId, const std::vector<uint8_t> &data);
+    void setConstant(uint32_t constantId, const std::vector<uint8_t>& data);
 
-    void setSpecializationConstantState(const std::map<uint32_t, std::vector<uint8_t>> &state);
+    void setSpecializationConstantState(const std::map<uint32_t, std::vector<uint8_t>>& state);
 
-    const std::map<uint32_t, std::vector<uint8_t>> &getSpecializationConstantState() const;
+    const std::map<uint32_t, std::vector<uint8_t>>& getSpecializationConstantState() const;
 
 private:
     bool dirty{false};
@@ -58,6 +55,9 @@ struct RasterizationState {
     VkFrontFace frontFace{VK_FRONT_FACE_COUNTER_CLOCKWISE};
 
     VkBool32 depthBiasEnable{VK_FALSE};
+
+    //For ext
+    const void* pNext{nullptr};
 };
 
 struct ViewportState {
@@ -96,7 +96,7 @@ struct DepthStencilState {
     VkBool32 depthWriteEnable{VK_TRUE};
 
     // Note: Using reversed depth-buffer for increased precision, so Greater depth values are kept
-    VkCompareOp depthCompareOp{VK_COMPARE_OP_LESS_OR_EQUAL};
+    VkCompareOp depthCompareOp{VK_COMPARE_OP_GREATER_OR_EQUAL};
 
     VkBool32 depthBoundsTestEnable{VK_FALSE};
 
@@ -123,17 +123,14 @@ struct ColorBlendAttachmentState {
     VkBlendOp alphaBlendOp{VK_BLEND_OP_ADD};
 
     VkColorComponentFlags colorWriteMask{
-            VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
-    };
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT};
 };
 
-
-struct RTPipelineSettings 
-{
-    std::vector<Shader> shaders;
+struct RTPipelineSettings {
+    std::vector<Shader>        shaders;
     VkAccelerationStructureKHR accel;
-    uint32_t maxDepth;
-    VkExtent3D dims;
+    uint32_t                   maxDepth;
+    VkExtent3D                 dims;
 };
 
 struct ColorBlendState {
@@ -144,63 +141,59 @@ struct ColorBlendState {
     std::vector<ColorBlendAttachmentState> attachments;
 };
 
-enum  class PIPELINE_TYPE : uint8_t
-{
+enum class PIPELINE_TYPE : uint8_t {
     E_GRAPHICS,
     E_COMPUTE,
     E_RAY_TRACING
 };
 
-
-
-
 struct PipelineState {
 public:
     void reset();
-    
-    PipelineState & setPipelineLayout(PipelineLayout &pipelineLayout);
 
-    PipelineState & setRenderPass(const RenderPass &renderPass);
+    PipelineState& setPipelineLayout(PipelineLayout& pipelineLayout);
 
-    PipelineState & setSpecializationConstant(uint32_t constantId, const std::vector<uint8_t> &data);
+    PipelineState& setRenderPass(const RenderPass& renderPass);
 
-    PipelineState & setVertexInputState(const VertexInputState &vertexInputState);
+    PipelineState& setSpecializationConstant(uint32_t constantId, const std::vector<uint8_t>& data);
 
-    PipelineState & setInputAssemblyState(const InputAssemblyState &inputAssemblyState);
+    PipelineState& setVertexInputState(const VertexInputState& vertexInputState);
 
-    PipelineState & setRasterizationState(const RasterizationState &rasterizationState);
+    PipelineState& setInputAssemblyState(const InputAssemblyState& inputAssemblyState);
 
-    PipelineState & setViewportState(const ViewportState &viewportState);
+    PipelineState& setRasterizationState(const RasterizationState& rasterizationState);
 
-    PipelineState & setMultisampleState(const MultisampleState &multisampleState);
+    PipelineState& setViewportState(const ViewportState& viewportState);
 
-    PipelineState & setDepthStencilState(const DepthStencilState &depthStencilState);
+    PipelineState& setMultisampleState(const MultisampleState& multisampleState);
 
-    PipelineState & setColorBlendState(const ColorBlendState &colorBlendState);
+    PipelineState& setDepthStencilState(const DepthStencilState& depthStencilState);
 
-    PipelineState & setSubpassIndex(uint32_t subpassIndex);
+    PipelineState& setColorBlendState(const ColorBlendState& colorBlendState);
 
-    PipelineState & setPipelineType(PIPELINE_TYPE pipelineType);
+    PipelineState& setSubpassIndex(uint32_t subpassIndex);
 
-    const PipelineLayout &getPipelineLayout() const;
+    PipelineState& setPipelineType(PIPELINE_TYPE pipelineType);
 
-    const RenderPass *getRenderPass() const;
+    const PipelineLayout& getPipelineLayout() const;
 
-    const SpecializationConstantState &getSpecializationConstantState() const;
+    const RenderPass* getRenderPass() const;
 
-    const VertexInputState &getVertexInputState() const;
+    const SpecializationConstantState& getSpecializationConstantState() const;
 
-    const InputAssemblyState &getInputAssemblyState() const;
+    const VertexInputState& getVertexInputState() const;
 
-    const RasterizationState &getRasterizationState() const;
+    const InputAssemblyState& getInputAssemblyState() const;
 
-    const ViewportState &getViewportState() const;
+    const RasterizationState& getRasterizationState() const;
 
-    const MultisampleState &getMultisampleState() const;
+    const ViewportState& getViewportState() const;
 
-    const DepthStencilState &getDepthStencilState() const;
+    const MultisampleState& getMultisampleState() const;
 
-    const ColorBlendState &getColorBlendState() const;
+    const DepthStencilState& getDepthStencilState() const;
+
+    const ColorBlendState& getColorBlendState() const;
 
     uint32_t getSubpassIndex() const;
 
@@ -208,12 +201,12 @@ public:
 
     bool isDirty() const;
 
-    PipelineState & clearDirty();
+    PipelineState& clearDirty();
 
 private:
-    PipelineLayout *pipelineLayout{nullptr};
+    PipelineLayout* pipelineLayout{nullptr};
 
-    const RenderPass *renderPass{nullptr};
+    const RenderPass* renderPass{nullptr};
 
     SpecializationConstantState specializationConstantState{};
 
@@ -232,15 +225,15 @@ private:
     ColorBlendState colorBlendState{};
 
 public:
-    const RTPipelineSettings & getrTPipelineSettings() const;
-    PipelineState & setrTPipelineSettings(const RTPipelineSettings& rTPipelineSettings);
+    const RTPipelineSettings& getrTPipelineSettings() const;
+    PipelineState&            setrTPipelineSettings(const RTPipelineSettings& rTPipelineSettings);
 
 private:
     uint32_t subpassIndex{0U};
-    
+
     RTPipelineSettings rTPipelineSettings{};
 
     PIPELINE_TYPE pipelineType{PIPELINE_TYPE::E_GRAPHICS};
-    
+
     bool dirty{false};
 };

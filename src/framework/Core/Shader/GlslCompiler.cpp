@@ -66,8 +66,8 @@ inline EShLanguage FindShaderLanguage(VkShaderStageFlagBits stage) {
     }
 }
 
-glslang::EShTargetLanguage        GlslCompiler::env_target_language         = glslang::EShTargetLanguage::EShTargetNone;
-glslang::EShTargetLanguageVersion GlslCompiler::env_target_language_version = glslang::EShTargetLanguageVersion::EShTargetSpv_1_0;
+glslang::EShTargetLanguage        GlslCompiler::env_target_language         = glslang::EShTargetSpv;
+glslang::EShTargetLanguageVersion GlslCompiler::env_target_language_version = glslang::EShTargetLanguageVersion::EShTargetSpv_1_5;
 
 bool GlslCompiler::compileToSpirv(VkShaderStageFlagBits stage, const std::vector<uint8_t>& glsl_source, const std::string& entry_point, std::vector<std::uint32_t>& spirv, std::string& info_log, const std::filesystem::path& shader_path) {
     //return false;

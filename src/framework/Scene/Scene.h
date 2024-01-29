@@ -27,6 +27,8 @@ struct Material {
     glm::vec3 emissiveFactor  = glm::vec3(0.0f);
 
     std::unordered_map<std::string, const Texture&> textures{};
+
+    static Material getDefaultMaterial();
 };
 
 class Scene {
@@ -57,3 +59,5 @@ private:
 
     std::vector<std::shared_ptr<Camera>> cameras;
 };
+
+std::unique_ptr<Scene> loadDefaultTriangleScene(Device& device);

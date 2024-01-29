@@ -28,9 +28,8 @@ void Example::drawFrame(RenderGraph& rg) {
 }
 
 BBox Example::getBBox(uint32_t clipmapLevel) {
-    auto&     region = mClipRegions[clipmapLevel];
-    glm::vec3 delta  = glm::vec3(region.extent) * region.voxelSize * 0.5f;
-    return {camera->position - delta, camera->position + delta};
+    float halfSize = 0.5f * m_clipRegionBBoxExtentL0 * std::exp2f(float(clipmapLevel));
+    return {camera->position - halfSize, camera->position + halfSize};
 }
 
 void Example::prepare() {
@@ -39,6 +38,10 @@ void Example::prepare() {
     scene = GltfLoading::LoadSceneFromGLTFFile(
         *device, FileUtils::getResourcePath("sponza/Sponza01.gltf"));
 
+    view = std::make_unique<View>(*device);
+    view->setScene(scene.get());
+    view->setCamera(camera.get());
+
     for (uint32_t i = 0; i < CLIP_MAP_LEVEL; i++) {
         mBBoxes[i] = getBBox(i);
     }
@@ -46,13 +49,12 @@ void Example::prepare() {
     VoxelizationPass pass;
     VxgiPassBase*    base = &pass;
     passes.emplace_back(std::make_unique<VoxelizationPass>());
-    passes.emplace_back(std::make_unique<GBufferPass>());
-    passes.emplace_back(std::make_unique<LightInjectionPass>());
+    //passes.emplace_back(std::make_unique<LightInjectionPass>());
     passes.emplace_back(std::make_unique<FinalLightingPass>());
 
-    gManager->putPtr("scene", scene.get());
-    gManager->putPtr("camera", camera.get());
-    gManager->putPtr("bboxes", &mBBoxes);
+    g_manager->putPtr("scene", scene.get());
+    g_manager->putPtr("camera", camera.get());
+    g_manager->putPtr("bboxes", &mBBoxes);
 }
 
 Example::Example() : Application("Drawing Triangle", 1024, 1024) {

@@ -5,6 +5,7 @@
 #include <glm/vec2.hpp>
 
 #include "InputEvent.h"
+#include "Core/PipelineState.h"
 #include "Core/Texture.h"
 #include "Core/Descriptor/DescriptorSet.h"
 //#include "App/Application.h"

@@ -23,11 +23,13 @@ protected:
 
     BBox getBBox(uint32_t clipmapLevel);
 
-    std::unique_ptr<SgImage> mVoxelizationImage{nullptr};
-
-    std::unique_ptr<PipelineLayout> mVoxelizationPipelineLayout{nullptr};
+    // std::unique_ptr<SgImage> mVoxelizationImage{nullptr};
+    // std::unique_ptr<SgImage> normalImage{nullptr};
+    // std::unique_ptr<SgImage> depthImage{nullptr};
+    // std::unique_ptr<>
 
     std::vector<std::unique_ptr<VxgiPassBase>> passes{};
     std::vector<BBox>                          mBBoxes{};
     std::vector<VoxelRegion>                   mClipRegions{};
+    constexpr uint32_t                         m_clipRegionBBoxExtentL0 = 16;
 };

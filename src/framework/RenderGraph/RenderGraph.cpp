@@ -1,9 +1,9 @@
 #include "RenderGraph.h"
 #include "Core/CommandBuffer.h"
-#include <stack>
-
 #include "Core/Pipeline.h"
 #include "Core/Texture.h"
+
+#include <stack>
 
 // void RenderGraph::Builder::read(VirtualResource* resource, PassNode* node)
 // {
@@ -13,7 +13,7 @@
 // {
 // }
 
-void RenderGraph::Builder::declare(const char* name, const RenderGraphPassDescriptor& desc) {
+void RenderGraph::Builder::declare(const RenderGraphPassDescriptor& desc) {
     auto rNode = static_cast<RenderPassNode*>(node);
     rNode->declareRenderPass(desc);
 
@@ -85,6 +85,7 @@ RenderGraphHandle RenderGraph::addBuffer(RenderGraphBuffer* buffer) {
     const RenderGraphHandle handle(mResources.size());
     buffer->handle = handle;
     mResources.push_back(buffer);
+    mBlackBoard->put(buffer->getName(), handle);
     return handle;
 }
 
@@ -159,6 +160,7 @@ RenderGraphHandle RenderGraph::addTexture(RenderGraphTexture* texture) {
     const RenderGraphHandle handle(mResources.size());
     // if (texture->getName() == "depth")
     //     texture->addRef();
+    mBlackBoard->put(texture->getName(), handle);
     texture->handle = handle;
     mResources.push_back(texture);
     return handle;
@@ -308,11 +310,27 @@ void RenderGraph::clearPass() {
 Device& RenderGraph::getDevice() const {
     return device;
 }
+std::vector<const char*> RenderGraph::getResourceNames(RENDER_GRAPH_RESOURCE_TYPE type) const {
+    std::vector<const char*> names{};
+    for (const auto& resource : mResources) {
+        if (any(resource->getType() & type))
+            names.push_back(resource->getName());
+    }
+    return names;
+}
+
+std::vector<const char*> RenderGraph::getPasseNames(RENDER_GRAPH_PASS_TYPE type) const {
+
+    std::vector<const char*> names{};
+    for (const auto& passNode : mPassNodes) {
+        if (any(passNode->getType() & type))
+            names.push_back(passNode->getName());
+    }
+    return names;
+}
 
 void RenderGraph::execute(CommandBuffer& commandBuffer) {
     //todo handle compile
-
-    compile();
 
     auto first = mPassNodes.begin();
     while (first != mActivePassNodesEnd) {

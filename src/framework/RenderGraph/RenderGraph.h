@@ -52,8 +52,7 @@ public:
 
         // void addSubpass(const RenderGraphSubpassInfo&);
 
-        void declare(const char*                      name,
-                     const RenderGraphPassDescriptor& desc);
+        void declare(const RenderGraphPassDescriptor& desc);
 
         Builder(PassNode* node, RenderGraph& renderGraph)
             : node(node),
@@ -135,7 +134,13 @@ public:
     //     setup(builder,pass->getData());
     // }
 
-    // template< typename Setup, typename Execute>
+    // rg.addPass("TrianglePass",
+    // [&](RenderGraph::Builder& builder, GraphicPassSettings& settings){
+    //
+    // },
+    // [&](RenderPassContext& context) {
+    //
+    // });
     void addPass(const char* name, const GraphicSetup& setup, GraphicsExecute&& execute);
 
     void addComputePass(const char* name, const ComputeSetUp& setup, ComputeExecute&& execute);
@@ -148,6 +153,9 @@ public:
     void clearPass();
 
     Device& getDevice() const;
+
+    std::vector<const char*> getResourceNames(RENDER_GRAPH_RESOURCE_TYPE type) const;
+    std::vector<const char*> getPasseNames(RENDER_GRAPH_PASS_TYPE type) const;
 
     ~RenderGraph() {
         for (const auto& passNode : mPassNodes)

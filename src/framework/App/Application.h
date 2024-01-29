@@ -36,12 +36,21 @@
 #include <imgui.h>
 
 #include "Common/Timer.h"
+#include "Core/View.h"
 
 // #ifdef _WIN32
 // #include <minwindef.h>
 // #include <WinUser.h>
 // #include <windef.h>
 // #endif
+
+#define EXAMPLE_MAIN                  \
+    int main(int argc, char** argv) { \
+        Example app;                  \
+        app.prepare();                \
+        app.mainloop();               \
+        return 0;                     \
+    }
 
 class Application {
     void initWindow(const char* name, uint32_t width, uint32_t height);
@@ -60,6 +69,7 @@ public:
     void setFocused(bool focused);
     void mainloop();
     void onResize(uint32_t width, uint32_t height);
+    void initView();
 
 protected:
     inline void addDeviceExtension(const char* extension, bool optional = true) {
@@ -77,6 +87,7 @@ protected:
     virtual void onUpdateGUI();
     virtual void onMouseMove();
     virtual void onViewUpdated();
+    virtual void preparePerViewData();
 
     void updateGUI();
     void createRenderContext();
@@ -98,6 +109,7 @@ protected:
     std::shared_ptr<Camera>               camera;
 
     std::unique_ptr<Scene> scene;
+    std::unique_ptr<View>  view;
     std::unique_ptr<Gui>   gui;
 
     VkSurfaceKHR surface{};

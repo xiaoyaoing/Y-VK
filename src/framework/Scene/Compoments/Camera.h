@@ -39,31 +39,18 @@ public:
     glm::vec4 viewPos{0};
 
     glm::vec3 position{0}, rotation{0};
-
-
     
     void updateViewMatrix();
-
     void update(float deltaTime);
-
     bool moving() const;
-
     void setPerspective(float fov, float aspect, float zNear, float zFar);
-
     void setRotation(glm::vec3 rotation);
-
     void setRotationByCamFront(glm::vec3 camFront);
-
     void setTranslation(glm::vec3 translation);
-
     void translate(const glm::vec3 &delta);
-
     void rotate(const glm::vec3 &delta);
-
     void setMoveSpeed(float moveSpeed);
-
     float getMoveSpeed() const;
-
     float rotationSpeed{1};
 
 private:

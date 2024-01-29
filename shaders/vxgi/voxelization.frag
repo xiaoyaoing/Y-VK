@@ -15,11 +15,15 @@ precision mediump float;
 
 
 
-layout(set = 0, binding = 1) uniform _VoxelizationParamater{
+layout(set = 0, binding = 2) uniform _VoxelizationParamater{
     VoxelizationParamater paramater;
 } voxelization_paramater;
 
-layout(binding = 1, set = 0, rgba32f) writeonly uniform image3D opacity_image;
+layout(binding = 0, set = 1, rgba32f) readonly  uniform sampler2D baseColorTexture;
+layout(binding = 1, set = 1, rgba32f) writeonly uniform image3D opacity_image;
+layout(binding = 2, set = 1, rgba32f) writeonly uniform image3D radiance_image;
+
+
 
 uint clip_map_resoultion = voxelization_paramater.paramater.voxelResolution;
 uint clipmap_level = voxelization_paramater.paramater.clipmapLevel;
@@ -50,8 +54,8 @@ bool pos_in_clipmap(vec3 world_pos){
 }
 
 void main(){
-    vec4 clip = (global_uniform.view_proj_inv * vec4(gl_FragCoord.xy, gl_FragDepth, 1.0));
-    vec3 world_pos = (global_uniform.view_proj_inv * clip).xyz;
+    vec4 clip = (global_uniform.inv_view_proj * vec4(gl_FragCoord.xy, gl_FragDepth, 1.0));
+    vec3 world_pos = (global_uniform.inv_view_proj * clip).xyz;
 
     if (!pos_in_clipmap(world_pos)){
         discard;

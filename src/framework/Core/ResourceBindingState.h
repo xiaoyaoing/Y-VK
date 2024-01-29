@@ -1,7 +1,7 @@
 //
 // Created by pc on 2023/10/7.
 //
-#pragma  once
+#pragma once
 
 #include <unordered_map>
 #include "Core/Vulkan.h"
@@ -20,17 +20,17 @@ class Accel;
 struct ResourceInfo {
     bool dirty{false};
 
-    const Buffer *buffer{nullptr};
+    const Buffer* buffer{nullptr};
 
     VkDeviceSize offset{0};
 
     VkDeviceSize range{0};
 
-    const ImageView *image_view{nullptr};
+    const ImageView* image_view{nullptr};
 
-    const Sampler *sampler{nullptr};
+    const Sampler* sampler{nullptr};
 
-    const Accel * accel{nullptr};
+    const Accel* accel{nullptr};
 
     VkImageLayout layout{VK_IMAGE_LAYOUT_UNDEFINED};
 };
@@ -38,22 +38,21 @@ struct ResourceInfo {
 struct ResourceSet {
 public:
     void
-    bindBuffer(const Buffer &buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t binding, uint32_t array_element);
+    bindBuffer(const Buffer& buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t binding, uint32_t array_element);
 
-    void bindImage(const ImageView &view, const Sampler &sampler, uint32_t binding, uint32_t array_element);
+    void bindImage(const ImageView& view, const Sampler& sampler, uint32_t binding, uint32_t array_element);
 
-    void bindInput(const ImageView &view, uint32_t binding, uint32_t array_element);
+    void bindInput(const ImageView& view, uint32_t binding, uint32_t array_element);
 
     // void bindAccel(const Accel &accel, uint32_t binding, uint32_t array_element);
-  //   void bindAccel(const Accel &accel, uint32_t binding, uint32_t array_element);
-     void bindAccel1(const Accel &accel, uint32_t binding, uint32_t array_element)
-     {
-         resourceBindings[binding][array_element].dirty = true;
-         resourceBindings[binding][array_element].accel = &accel;
-         dirty = true;
-     }
+    //   void bindAccel(const Accel &accel, uint32_t binding, uint32_t array_element);
+    void bindAccel(const Accel& accel, uint32_t binding, uint32_t array_element) {
+        resourceBindings[binding][array_element].dirty = true;
+        resourceBindings[binding][array_element].accel = &accel;
+        dirty                                          = true;
+    }
 
-    const BindingMap<ResourceInfo> &getResourceBindings() const;
+    const BindingMap<ResourceInfo>& getResourceBindings() const;
 
     bool isDirty() const;
 
@@ -65,17 +64,12 @@ private:
 
 class ResourceBindingState {
 public:
-
-    
-    
-    void bindBuffer(uint32_t setId, const Buffer &buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t binding,
-                    uint32_t array_element);
+    void bindBuffer(uint32_t setId, const Buffer& buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t binding, uint32_t array_element);
 
     void
-    bindImage(uint32_t setId, const ImageView &view, const Sampler &sampler, uint32_t binding, uint32_t array_element);
+    bindImage(uint32_t setId, const ImageView& view, const Sampler& sampler, uint32_t binding, uint32_t array_element);
 
-
-    const std::unordered_map<uint32_t, ResourceSet> &getResourceSets() const;
+    const std::unordered_map<uint32_t, ResourceSet>& getResourceSets() const;
 
 private:
     std::unordered_map<uint32_t, ResourceSet> resourceSets;

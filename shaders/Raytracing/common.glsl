@@ -8,16 +8,16 @@
 #include "bsdf.glsl"
 
 
-layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
-layout(binding = 1, set = 0, rgba32f) uniform image2D image;
-layout(binding = 2, set = 0) uniform SceneUboBuffer {SceneUbo scene_ubo;};
-layout(binding = 3, set = 0) uniform SceneDescBuffer {SceneDesc scene_desc;};
-layout(binding = 4, set = 0) readonly buffer Lights {RTLight lights[];};
+layout(binding = 0, set = 3) uniform accelerationStructureEXT tlas;
+layout(binding = 1, set = 2, rgba32f) uniform image2D image;
+layout(binding = 2, set = 0) uniform SceneUboBuffer { SceneUbo scene_ubo; };
+layout(binding = 3, set = 0) uniform SceneDescBuffer { SceneDesc scene_desc; };
+layout(binding = 4, set = 0) readonly buffer Lights { RTLight lights[]; };
 //todo fix this 
 layout(binding = 5, set = 0) uniform sampler2D scene_textures[];
 
 
-layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer InstanceInfo{ RTPrimitive p[];} ;
+layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer InstanceInfo{ RTPrimitive p[]; };
 layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer Vertices { vec3 v[]; };
 layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer Indices { uint i[]; };
 layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer Normals { vec3 n[]; };
@@ -38,9 +38,9 @@ struct LightSample{
     vec3 indensity;
     vec3 wi;
     float pdf;
-    
+
     uint triangle_idx;
-    
+
     vec3 p;
     vec3 n;
     float dist;
@@ -99,7 +99,7 @@ vec4 rand4(inout uvec4 rng_state) {
 }
 
 
-MeshSampleRecord uniform_sample_on_mesh(uint mesh_idx,vec3 rands,in mat4 world_matrix,uint triangle_idx){
+MeshSampleRecord uniform_sample_on_mesh(uint mesh_idx, vec3 rands, in mat4 world_matrix, uint triangle_idx){
 
     MeshSampleRecord result;
 
@@ -108,7 +108,7 @@ MeshSampleRecord uniform_sample_on_mesh(uint mesh_idx,vec3 rands,in mat4 world_m
     RTPrimitive mesh_info = prim_infos.p[mesh_idx];
 
     uint triangle_count = mesh_info.index_count / 3;
-    
+
     uint index_offset = mesh_info.index_offset + triangle_idx * 3;
 
     ivec3 ind = ivec3(indices.i[index_offset + 0], indices.i[index_offset + 1],
@@ -134,9 +134,9 @@ MeshSampleRecord uniform_sample_on_mesh(uint mesh_idx,vec3 rands,in mat4 world_m
 
     vec4 n = inv_tr_mat * vec4(normalize(n0 * barycentrics.x + n1 * barycentrics.y + n2 * barycentrics.z), 0.0);
 
-    float area = 0.5f * cross(p1 - p0, p2 - p0).length() ;
+    float area = 0.5f * cross(p1 - p0, p2 - p0).length();
 
-    result.pdf  = 1.f / float(triangle_count) / area ;
+    result.pdf  = 1.f / float(triangle_count) / area;
     result.n =  normalize(vec3(inv_tr_mat * n));
 
     //  result.n = normalize(n0 * barycentrics.x + n1 * barycentrics.y + n2 * barycentrics.z);
@@ -144,34 +144,34 @@ MeshSampleRecord uniform_sample_on_mesh(uint mesh_idx,vec3 rands,in mat4 world_m
     //    result.n = vec3(normalize(n0));
 
     vec3 pos =  p0 * barycentrics.x + p1 * barycentrics.y + p2 * barycentrics.z;
-    result.p = (world_matrix * vec4(pos,1.f)).xyz;
+    result.p = (world_matrix * vec4(pos, 1.f)).xyz;
 
     //result.n = normalize(n.xyz);
 
     result.triangle_idx = triangle_idx;
 
     return result;
- }
+}
 
 
 //return sample position,pdf,normal
-MeshSampleRecord uniform_sample_on_mesh(uint mesh_idx,vec3 rands,in mat4 world_matrix){
-    
+MeshSampleRecord uniform_sample_on_mesh(uint mesh_idx, vec3 rands, in mat4 world_matrix){
+
     MeshSampleRecord result;
-    
+
     //first choose one triangle
-    
+
     RTPrimitive mesh_info = prim_infos.p[mesh_idx];
 
     uint triangle_count = mesh_info.index_count / 3;
 
     uint triangle_idx = uint(rands.x * triangle_count);
-    
+
     uint index_offset = mesh_info.index_offset + triangle_idx * 3;
 
     ivec3 ind = ivec3(indices.i[index_offset + 0], indices.i[index_offset + 1],
     indices.i[index_offset + 2]);
-    
+
     uint vertex_offset = mesh_info.vertex_offset;
 
     ind += ivec3(vertex_offset);
@@ -183,83 +183,83 @@ MeshSampleRecord uniform_sample_on_mesh(uint mesh_idx,vec3 rands,in mat4 world_m
     const vec3 n0 = normals.n[ind.x];
     const vec3 n1 = normals.n[ind.y];
     const vec3 n2 = normals.n[ind.z];
-    
+
     float u = 1 - sqrt(rands.y);
     float v = rands.z * sqrt(rands.y);
     const vec3 barycentrics = vec3(1.0 - u - v, u, v);
-    
+
     mat4x4 inv_tr_mat = transpose(inverse(world_matrix));
-    
+
     vec4 n = inv_tr_mat * vec4(normalize(n0 * barycentrics.x + n1 * barycentrics.y + n2 * barycentrics.z), 0.0);
-    
-    
-    float area = 0.5f * cross(p1 - p0, p2 - p0).length() ;
-    
-    result.pdf  = 1.f / float(triangle_count) / area ;
+
+
+    float area = 0.5f * cross(p1 - p0, p2 - p0).length();
+
+    result.pdf  = 1.f / float(triangle_count) / area;
     result.n =  normalize(vec3(inv_tr_mat * n));
-    
-    
+
+
     vec3 pos =  p0 * barycentrics.x + p1 * barycentrics.y + p2 * barycentrics.z;
-    result.p = (world_matrix * vec4(pos,1.f)).xyz;
-    
+    result.p = (world_matrix * vec4(pos, 1.f)).xyz;
+
     //result.n = normalize(n.xyz);
-    
+
     result.triangle_idx = triangle_idx;
-    
+
     return result;
 }
 
 
-float get_triangle_area(const uint prim_idx,const uint triangle_idx){
-        
-        RTPrimitive mesh_info = prim_infos.p[prim_idx];
-    
-        uint triangle_count = mesh_info.index_count / 3;
-    
-        uint index_offset = mesh_info.index_offset + triangle_idx * 3;
-    
-        ivec3 ind = ivec3(indices.i[index_offset + 0], indices.i[index_offset + 1],
-        indices.i[index_offset + 2]);
-        
-        uint vertex_offset = mesh_info.vertex_offset;
-    
-        ind += ivec3(vertex_offset);
-    
-        const vec3 p0 = vertices.v[ind.x];
-        const vec3 p1 = vertices.v[ind.y];
-        const vec3 p2 = vertices.v[ind.z];
-    
-        return 0.5f * cross(p1 - p0, p2 - p0).length() ;
+float get_triangle_area(const uint prim_idx, const uint triangle_idx){
+
+    RTPrimitive mesh_info = prim_infos.p[prim_idx];
+
+    uint triangle_count = mesh_info.index_count / 3;
+
+    uint index_offset = mesh_info.index_offset + triangle_idx * 3;
+
+    ivec3 ind = ivec3(indices.i[index_offset + 0], indices.i[index_offset + 1],
+    indices.i[index_offset + 2]);
+
+    uint vertex_offset = mesh_info.vertex_offset;
+
+    ind += ivec3(vertex_offset);
+
+    const vec3 p0 = vertices.v[ind.x];
+    const vec3 p1 = vertices.v[ind.y];
+    const vec3 p2 = vertices.v[ind.z];
+
+    return 0.5f * cross(p1 - p0, p2 - p0).length();
 }
 
 
-LightSample sample_li(const RTLight light,const SurfaceScatterEvent event,const vec3 rand){
+LightSample sample_li(const RTLight light, const SurfaceScatterEvent event, const vec3 rand){
 
     LightSample result;
 
 
-  //  result.indensity = light_idx == 0 ? vec3(1.f) : vec3(0.f);
+    //  result.indensity = light_idx == 0 ? vec3(1.f) : vec3(0.f);
     result.indensity = light.L;
     //return result;
-    
+
     float pdf;
     //sample one point on primitive 
     MeshSampleRecord record  = uniform_sample_on_mesh(light.prim_idx, rand, light.world_matrix);
 
-//    record.n = -record.n;
+    //    record.n = -record.n;
 
-    vec3 light_p = record.p; 
+    vec3 light_p = record.p;
     vec3 p = event.p;
-    
+
     vec3 wi = light_p - p;
     float dist = length(wi);
-    
+
     wi /= dist;
-    
+
     dist -=  EPS;
 
-//    result.indensity = abs( record.n);
-//    return result;
+    //    result.indensity = abs( record.n);
+    //    return result;
 
     float cos_theta_light = dot(record.n, -wi);
     if (cos_theta_light <= 0.0){
@@ -269,7 +269,7 @@ LightSample sample_li(const RTLight light,const SurfaceScatterEvent event,const 
         return result;
     }
     //convert pdf
-    pdf = record.pdf * dist * dist / abs(cos_theta_light)  ;
+    pdf = record.pdf * dist * dist / abs(cos_theta_light);
 
     result.wi = wi;
     result.n = record.n;
@@ -278,7 +278,7 @@ LightSample sample_li(const RTLight light,const SurfaceScatterEvent event,const 
     result.indensity = light.L;
     result.dist = dist;
     result.triangle_idx = record.triangle_idx;
-    
+
     return result;
 }
 

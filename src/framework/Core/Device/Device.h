@@ -15,7 +15,6 @@ class ResourceCache;
 
 class Device {
 public:
-
     Device(VkPhysicalDevice physicalDevice,
            VkSurfaceKHR surface,
            VkInstance instance,
@@ -58,3 +57,6 @@ protected:
 
     bool isExtensionSupported(const std::string &extensionName);
 };
+
+extern Device * g_device;
+

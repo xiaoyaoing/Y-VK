@@ -53,12 +53,39 @@ struct alignas(16) GlobalUniform {
     glm::mat4 model;
     glm::mat4 view;
     glm::mat4 proj;
-    glm::mat4 view_proj_inv;
+    glm::mat4 inv_view_proj;
     glm::mat4 mvp;
 };
 
 struct PerViewUnifom {
-    glm::mat4 view_proj_inv;
+    glm::mat4  view_proj;
+    glm::mat4  inv_view_proj;
+    glm::ivec2 resolution;
+    glm::ivec2 inv_resolution;
+
+    uint32_t light_count;
+};
+
+enum class UniformBindingPoints : uint8_t {
+    PER_VIEW                = 0,// uniforms updated per view
+    PER_RENDERABLE          = 1,// uniforms updated per renderable
+    PER_RENDERABLE_BONES    = 2,// bones data, per renderable
+    PER_RENDERABLE_MORPHING = 3,// morphing uniform/sampler updated per render primitive
+    LIGHTS                  = 4,// lights data array
+    SHADOW                  = 5,// punctual shadow data
+    FROXEL_RECORDS          = 6,
+    FROXELS                 = 7,
+    PER_MATERIAL_INSTANCE   = 8,// uniforms updates per material
+    // Update utils::Enum::count<>() below when adding values here
+    // These are limited by CONFIG_BINDING_COUNT (currently 10)
+};
+
+enum class DescriptorSetPoints : uint32_t {
+    UNIFORM      = 0,
+    SAMPLER      = 1,
+    INPUT        = 2,
+    ACCELERATION = 3,
+    COUNT        = 4
 };
 
 class RenderContext {
@@ -67,29 +94,17 @@ public:
 
     RenderContext(Device& device, VkSurfaceKHR surface, Window& window);
 
-    static RenderContext* g_context;
-
-    inline static RenderContext& get() { return *g_context; }
-
     RenderContext& bindBuffer(uint32_t binding, const Buffer& buffer, VkDeviceSize offset = 0, VkDeviceSize range = 0, uint32_t setId = 0, uint32_t array_element = 0);
-
     RenderContext& bindAcceleration(uint32_t binding, const Accel& acceleration, uint32_t setId = 0, uint32_t array_element = 0);
-
-    // RenderContext & bindAcceleration(uint32_t setId, const Accel& acceleration, uint32_t binding,
-    //                       uint32_t array_element);
-
     RenderContext& bindImageSampler(uint32_t binding, const ImageView& view, const Sampler& sampler, uint32_t setId = 0, uint32_t array_element = 0);
-
     RenderContext& bindImage(uint32_t binding, const ImageView& view, uint32_t setId = 0, uint32_t array_element = 0);
-
     RenderContext& bindMaterial(const Material& material);
-
     RenderContext& bindPrimitive(CommandBuffer& commandBuffer, const Primitive& primitive);
-
     template<typename T>
     RenderContext& bindLight(const std::vector<SgLight>& lights, uint32_t setId, uint32_t binding);
-
     RenderContext& bindPushConstants(std::vector<uint8_t>& pushConstants);
+
+    RenderContext& preparePerViewData();
 
     void flushPipelineState(CommandBuffer& commandBuffer);
 
@@ -128,7 +143,7 @@ public:
 
     void flushDescriptorState(CommandBuffer& commandBuffer, VkPipelineBindPoint pipeline_bind_point);
 
-    void flushAndDrawIndexed(CommandBuffer& commandBuffer, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance);
+    void flushAndDrawIndexed(CommandBuffer& commandBuffer, uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0);
 
     void flushAndDraw(CommandBuffer& commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
 
@@ -148,6 +163,7 @@ public:
 
     CommandBuffer& getGraphicCommandBuffer();
     CommandBuffer& getComputeCommandBuffer();
+    Device&        getDevice();
 
     void handleSurfaceChanges();
 
@@ -188,21 +204,26 @@ private:
     uint32_t                                  maxPushConstantSize;
 };
 
+extern RenderContext* g_context;
+
 template<typename T>
 RenderContext& RenderContext::bindLight(const std::vector<SgLight>& lights, uint32_t setId, uint32_t binding) {
+
+    binding = static_cast<uint32_t>(UniformBindingPoints::LIGHTS);
+
     const auto buffer = allocateBuffer(sizeof(T), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
-    std::vector<LightUBO> directionalLights, pointLights, spotLights;
+    std::vector<LightUib> directionalLights, pointLights, spotLights;
 
     for (const auto& light : lights) {
-        LightUBO lightUBO{};
+        LightUib lightUBO{};
         switch (light.type) {
             case LIGHT_TYPE::Point:
                 lightUBO = {
                     .color     = glm::vec4(light.lightProperties.color, light.lightProperties.intensity),
                     .position  = glm::vec4(light.lightProperties.position, 1),
                     .direction = glm::vec4(0.0f),
-                    .info      = glm::vec2(0.0f)};
+                    .info      = glm::vec4(0.0f)};
                 pointLights.push_back(lightUBO);
             default:
                 break;//todo

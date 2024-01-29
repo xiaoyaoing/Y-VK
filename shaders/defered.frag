@@ -1,4 +1,6 @@
-#version 320 es
+#version 460 core
+#extension GL_GOOGLE_include_directive : enable
+
 /* Copyright (c) 2019, Arm Limited and Contributors
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -15,31 +17,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+//#include "perFrame.glsl"
 
 precision highp float;
 
 // #ifdef HAS_baseColorTexture
-layout (set=0, binding=1) uniform sampler2D baseColorTexture;
+layout (set=1, binding=0) uniform sampler2D baseColorTexture;
 // #endif
 
-layout (location = 0) in vec4 in_pos;
-layout (location = 1) in vec2 in_uv;
-layout (location = 2) in vec3 in_normal;
+layout (location = 0) in vec2 in_uv;
+layout (location = 1) in vec3 in_normal;
 
 layout (location = 0) out vec4 o_albedo;
-layout (location = 2) out vec4 o_normal;
-
-//layout(set = 0, binding = 1) uniform GlobalUniform {
-//    mat4 model;
-//    mat4 view_proj;
-//    vec3 camera_position;
-//} global_uniform;
-
-//layout(push_constant, std430) uniform PBRMaterialUniform {
-//    vec4 base_color_factor;
-//    float metallic_factor;
-//    float roughness_factor;
-//} pbr_material_uniform;
+layout (location = 1) out vec4 o_normal;
 
 void main(void)
 {
@@ -47,11 +37,10 @@ void main(void)
     // Transform normals from [-1, 1] to [0, 1]
     o_normal = vec4(0.5 * normal + 0.5, 1.0);
 
-    vec4 base_color = vec4(1.0, 0.0, 0.0, 1.0);
+    vec4 base_color = texture(baseColorTexture, in_uv);
 
-    base_color = texture(baseColorTexture, in_uv);
-    
     o_albedo = base_color;
-  //  o_albedo = vec4(in_uv, 0.0, 1.0);
-    
+    //    o_normal =  o_albedo;
+
+
 }

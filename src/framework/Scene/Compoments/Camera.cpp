@@ -14,7 +14,7 @@ void Camera::update(float deltaTime) {
             camFront.x = -cos(glm::radians(rotation.x)) * sin(glm::radians(rotation.y));
             camFront.y = sin(glm::radians(rotation.x));
             camFront.z = cos(glm::radians(rotation.x)) * cos(glm::radians(rotation.y));
-            camFront = glm::normalize(camFront);
+            camFront   = glm::normalize(camFront);
 
             float moveDistance = deltaTime * mMoveSpeed++;
 
@@ -36,12 +36,12 @@ void Camera::update(float deltaTime) {
 }
 
 bool Camera::moving() const {
-    return keys.up || keys.down || keys.left || keys.right ||  mouseButtons.left || mouseButtons.right || mouseButtons.middle;
+    return keys.up || keys.down || keys.left || keys.right || mouseButtons.left || mouseButtons.right || mouseButtons.middle;
 }
 
 void Camera::updateViewMatrix() {
     //    if (dirty) {
-    auto rotM = glm::mat4(1.0f);
+    auto      rotM = glm::mat4(1.0f);
     glm::mat4 transM{1};
 
     rotM = glm::rotate(rotM, glm::radians(rotation.x * (flipY ? -1.0f : 1.0f)), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -50,18 +50,17 @@ void Camera::updateViewMatrix() {
 
     transM = glm::translate(transM, position);
 
-    if(mode == FIRST_PERSON)
+    if (mode == FIRST_PERSON)
         matrices.view = rotM * transM;
-    else if(mode == THIRD_PERSON)
+    else if (mode == THIRD_PERSON)
         matrices.view = transM * rotM;
-
 }
 
 void Camera::setPerspective(float fov, float aspect, float znear, float zfar) {
-    this->fov = fov;
-    this->zNear = znear;
-    this->zFar = zfar;
-    matrices.perspective = glm::perspective(glm::radians(fov), aspect, zfar,znear);
+    this->fov            = fov;
+    this->zNear          = znear;
+    this->zFar           = zfar;
+    matrices.perspective = glm::perspective(glm::radians(fov), aspect, zfar, znear);
     if (flipY) {
         matrices.perspective[1][1] *= -1.0f;
     }
@@ -90,22 +89,20 @@ void Camera::setRotationByCamFront(glm::vec3 camFront) {
     //    updateViewMatrix();
 }
 
-void Camera::translate(const glm::vec3 &delta) {
+void Camera::translate(const glm::vec3& delta) {
     position += delta;
     updateViewMatrix();
 }
 
-void Camera::rotate(const glm::vec3 &delta) {
+void Camera::rotate(const glm::vec3& delta) {
     rotation += delta;
     updateViewMatrix();
 }
 
-void Camera::setMoveSpeed(float moveSpeed)
-{
+void Camera::setMoveSpeed(float moveSpeed) {
     mMoveSpeed = moveSpeed;
 }
 
-float Camera::getMoveSpeed() const
-{
+float Camera::getMoveSpeed() const {
     return mMoveSpeed;
 }

@@ -2,6 +2,7 @@
 
 #include "VxgiCommon.h"
 #include "Core/RenderContext.h"
+#include "Core/View.h"
 
 void VoxelizationPass::init() {
 
@@ -27,7 +28,7 @@ void VoxelizationPass::init() {
         clipRegion.minPos += delta;
     }
 
-    Device& device = VxgiContext::getInstance().device;
+    Device& device = g_context->getDevice();
 
     mVoxelizationPipelineLayout = std::make_unique<PipelineLayout>(device, std::vector<std::string>{"vxgi/voxelization.vert", "vxgi/voxelization.frag"});
 
@@ -36,32 +37,48 @@ void VoxelizationPass::init() {
                                   VOXEL_RESOLUTION};
 
     mVoxelizationImage = std::make_unique<SgImage>(
-        device, std::string("opacityImage"), imageResolution, VK_FORMAT_R32_UINT, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_VIEW_TYPE_3D);
+        device, std::string("opacityImage"), imageResolution, VK_FORMAT_R32_SFLOAT, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_VIEW_TYPE_3D);
+    mVoxelRadianceImage = std::make_unique<SgImage>(
+        device, std::string("voxelRadianceImage"), imageResolution, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_VIEW_TYPE_3D);
+    mVoxelParamBuffer = std::make_unique<Buffer>(device, sizeof(VoxelizationParamater), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+    mVoxelParam       = VoxelizationParamater{
+        VOXEL_RESOLUTION,
+        0,
+        0.f,
+    };
 }
 
 void VoxelizationPass::render(RenderGraph& rg) {
-    RenderContext* renderContext = RenderContext::g_context;
+    RenderContext* renderContext = g_context;
     Blackboard&    blackboard    = rg.getBlackBoard();
-    const auto*    scene         = gManager->fetchPtr<Scene>("scene");
+    const auto*    view          = g_manager->fetchPtr<View>("view");
     auto&          commandBuffer = renderContext->getGraphicCommandBuffer();
-
     rg.addPass(
         "voxelization pass",
         [&](auto& builder, auto& setting) {
             auto opacity = rg.importTexture("opacity", mVoxelizationImage.get());
-            blackboard.put("opacity", opacity);
             builder.writeTexture(opacity);
-            RenderGraphPassDescriptor desc{.textures = {opacity}};
-            desc.addSubpass({.outputAttachments = {opacity}});
-            builder.declare(desc);
+            RenderGraphPassDescriptor desc{};
+            desc.addSubpass({});
+            builder.declare("voxelization", desc);
         },
         [&](auto& passContext) {
-            renderContext->getPipelineState().setPipelineLayout(
-                *mVoxelizationPipelineLayout);
-            renderContext->bindImage(0, blackboard.getImageView("opacity"));
-            for (const auto& primitive : scene->getPrimitives()) {
-                renderContext->bindPrimitive(commandBuffer, *primitive)
-                    .flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, 0, 0, 0);
+            renderContext->bindImage(1, mVoxelizationImage->getVkImageView()).bindImage(2, mVoxelRadianceImage->getVkImageView());
+
+            for (int i = 0; i < CLIP_MAP_LEVEL; i++) {
+                mVoxelParam.clipmapLevel   = i;
+                mVoxelParam.clipmapMaxPos  = mClipRegions[i].getMaxPos();
+                mVoxelParam.clipmapMinPos  = mClipRegions[i].minPos;
+                mVoxelParam.voxelSize      = mClipRegions[i].voxelSize;
+                mVoxelParam.maxExtentWorld = mClipRegions[i].getExtentWorld().x;
+                mVoxelParamBuffer->uploadData(&mVoxelParam, sizeof(VoxelizationParamater));
+
+                renderContext->getPipelineState().setPipelineLayout(
+                    *mVoxelizationPipelineLayout);
+                for (const auto& primitive : view->getMVisiblePrimitives()) {
+                    g_context->bindPrimitive(commandBuffer, *primitive).bindMaterial(primitive->material);
+                    renderContext->flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, 0, 0, 0);
+                }
             }
         });
 }

@@ -3,25 +3,23 @@
 #include "Common/Enums.h"
 #include "Core/Device/Device.h"
 
-class RenderGraphBuffer : public  ResourceNode
-{
+class RenderGraphBuffer : public ResourceNode {
 public:
     using Usage = BufferUsage;
-    struct Descriptor
-    {
-        VkDeviceSize size{};
-        Usage usage;
+    struct Descriptor {
+        VkDeviceSize   size{};
+        Usage          usage;
         VmaMemoryUsage memoryUsage{VMA_MEMORY_USAGE_GPU_ONLY};
     };
     RenderGraphBuffer(const std::string& name, const Descriptor& descriptor);
-    RenderGraphBuffer(const std::string& name,  Buffer *  hwBuffer);
-    void devirtualize() override;
-    void destroy() override;
-    std::string getName() const override;
+    RenderGraphBuffer(const std::string& name, Buffer* hwBuffer);
+    void                       devirtualize() override;
+    void                       destroy() override;
     RENDER_GRAPH_RESOURCE_TYPE getType() const override;
-    void resloveUsage(CommandBuffer& commandBuffer,uint16_t usage) override;
-    Buffer * getHwBuffer();
+    void                       resloveUsage(CommandBuffer& commandBuffer, uint16_t usage) override;
+    Buffer*                    getHwBuffer();
+
 private:
     Descriptor mDesc;
-    Buffer * mBuffer{nullptr};
+    Buffer*    mBuffer{nullptr};
 };

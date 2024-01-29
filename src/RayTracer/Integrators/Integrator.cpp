@@ -3,7 +3,7 @@
 #include "Scene/Compoments/Camera.h"
 #include "src/RayTracer/Utils/RTSceneUtil.h"
 
-Integrator::Integrator(Device & device):renderContext(RenderContext::g_context),device(device)
+Integrator::Integrator(Device & device):renderContext(g_context),device(device)
 {
    // init();
    // storageImage = std::make_unique<SgImage>(device,"",VkExtent3D{width,height,1},VK_FORMAT_B8G8R8A8_UNORM,VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,VMA_MEMORY_USAGE_GPU_ONLY,VK_IMAGE_VIEW_TYPE_2D);
@@ -342,14 +342,14 @@ void Integrator::bindRaytracingResources(CommandBuffer& commandBuffer)
     sceneUbo.viewInverse = glm::inverse(camera->matrices.view);
     sceneUboBuffer->uploadData(&sceneUbo,sizeof(sceneUbo));
     
-    RenderContext::g_context->bindAcceleration(0,tlas,0,0)
+    g_context->bindAcceleration(0,tlas,0,0)
                             .bindBuffer(2,*sceneUboBuffer,0,sizeof(sceneUbo))
                             .bindBuffer(3,*sceneDescBuffer)
                             .bindBuffer(4,*rtLightBuffer);
     uint32_t arrayElement=0;
     for(const auto & texture : this->textures)
     {
-        RenderContext::g_context->bindImageSampler(5,texture->getImage().getVkImageView(),texture->getSampler(),0,arrayElement++);
+        g_context->bindImageSampler(5,texture->getImage().getVkImageView(),texture->getSampler(),0,arrayElement++);
     }
 }
 

@@ -4,6 +4,13 @@
 #include "VxgiCommon.h"
 #include "Core/BoundingBox.h"
 #include "Scene/Scene.h"
+#include "shaders/vxgi/vxgi_common.h"
+
+struct VxgiConfig {
+    int voxelResolution : 128;
+    int clipMapLevel : 6;
+    int level0MaxExtent : 16;
+};
 
 #define VOXEL_RESOLUTION 128
 #define CLIP_MAP_LEVEL   6
@@ -19,6 +26,10 @@ private:
     std::vector<BBox>*       mBBoxes{};
     std::vector<VoxelRegion> mClipRegions{};
 
+    std::unique_ptr<Buffer> mVoxelParamBuffer{nullptr};
+    VoxelizationParamater   mVoxelParam{};
+
     std::unique_ptr<SgImage>        mVoxelizationImage{nullptr};
+    std::unique_ptr<SgImage>        mVoxelRadianceImage{nullptr};
     std::unique_ptr<PipelineLayout> mVoxelizationPipelineLayout{nullptr};
 };

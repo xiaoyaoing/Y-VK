@@ -1,4 +1,6 @@
-#version 320 es
+#version  320 es
+#extension GL_GOOGLE_include_directive : enable
+
 /* Copyright (c) 2019, Arm Limited and Contributors
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -15,30 +17,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "perFrame.glsl"
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 normal;
 layout(location = 2) in vec2 texcoord_0;
 
-layout(set = 0, binding = 0) uniform GlobalUniform {
-    mat4 model;
-    mat4 view;
-    mat4 proj;
-    mat4 mvp;
-} global_uniform;
 
-layout (location = 0) out vec4 o_pos;
-layout (location = 1) out vec2 o_uv;
-layout (location = 2) out vec3 o_normal;
+layout (location = 0) out vec2 o_uv;
+layout (location = 1) out vec3 o_normal;
 
 void main(void)
 {
-    o_pos = global_uniform.model * vec4(position, 1.0f);
+    vec4 pos = per_primitive.model * vec4(position, 1.0f);
 
     o_uv = texcoord_0;
 
-    o_normal = mat3(global_uniform.model) * normal;
+    o_normal = mat3(per_primitive.model) * normal;
 
-    gl_Position =global_uniform.proj *  global_uniform.view * o_pos;
+    gl_Position = per_frame.view_proj * pos;
     //gl_Position.z = 1.f / gl_Position.z;
 }

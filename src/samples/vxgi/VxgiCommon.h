@@ -6,12 +6,12 @@
 
 class Scene;
 
-struct VxgiContext {
-    Scene*              scene;
-    std::vector<BBox>*  bboxes;
-    Device&             device;
-    static VxgiContext& getInstance();
-};
+// struct VxgiContext {
+//     Scene*              scene;
+//     std::vector<BBox>*  bboxes;
+//     Device&             device;
+//     static VxgiContext& getInstance();
+// };
 
 class VxgiPassBase {
 public:
@@ -36,5 +36,5 @@ public:
 protected:
     std::unordered_map<std::string_view, void*> mPointersMap;
 };
-inline VxgiPtrManangr* gManager = nullptr;
+inline VxgiPtrManangr* g_manager = nullptr;
 // VxgiPtrManangr * VxgiPtrManangr::gManager = nullptr;

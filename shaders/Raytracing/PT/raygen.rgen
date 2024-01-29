@@ -17,7 +17,7 @@
 
 layout(location = 0) rayPayloadEXT HitPayload hitPayload;
 layout(location = 1) rayPayloadEXT AnyHitPayload any_hit_payload;
-layout(push_constant) uniform _PushConstantRay {PCPath pc_ray;};
+layout(push_constant) uniform _PushConstantRay {PCPath pc_ray;};;
 
 
 #include "pt_commons.glsl"

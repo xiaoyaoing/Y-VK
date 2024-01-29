@@ -94,13 +94,14 @@ bool Gui::inputEvent(const InputEvent& input_event) {
     auto  capture_move_event = false;
 
     if (input_event.getSource() == EventSource::KeyBoard) {
-        const auto& key_event = static_cast<const KeyInputEvent&>(input_event);
-
-        if (key_event.getAction() == KeyAction::Down) {
-            io.KeysDown[static_cast<int>(key_event.getCode())] = true;
-        } else if (key_event.getAction() == KeyAction::Up) {
-            io.KeysDown[static_cast<int>(key_event.getCode())] = false;
-        }
+        //not support yet
+        // const auto& key_event = static_cast<const KeyInputEvent&>(input_event);
+        //
+        // if (key_event.getAction() == KeyAction::Down) {
+        //     io.KeysDown[static_cast<int>(key_event.getCode())] = true;
+        // } else if (key_event.getAction() == KeyAction::Up) {
+        //     io.KeysDown[static_cast<int>(key_event.getCode())] = false;
+        // }
     } else if (input_event.getSource() == EventSource::Mouse) {
         const auto& mouse_button = static_cast<const MouseButtonInputEvent&>(input_event);
 
@@ -207,19 +208,6 @@ void Gui::prepareResoucrces(Application* app) {
     colorBlendAttachmentState.alphaBlendOp        = VK_BLEND_OP_ADD;
 
     colorBlendState.attachments = {colorBlendAttachmentState};
-
-    // Descriptor pool
-    // std::vector<VkDescriptorPoolSize> poolSizes = {
-    //     vkCommon::initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1)
-    // };
-
-    // descriptorPool = std::make_unique<DescriptorPool>(device, poolSizes, 2);
-    //
-    //
-    // descriptorSet = std::make_unique<DescriptorSet>(device, *descriptorPool, *descriptorLayout, 1);
-    //
-    // descriptorSet->updateImage({vkCommon::initializers::descriptorImageInfo(fontTexture)}, 0,
-    //                            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 }
 
 bool Gui::update() {
@@ -257,7 +245,7 @@ bool Gui::update() {
 }
 
 void Gui::draw(CommandBuffer& commandBuffer) {
-    auto&       renderContext = *RenderContext::g_context;
+    auto&       renderContext = *g_context;
     ImDrawData* imDrawData    = ImGui::GetDrawData();
     int32_t     vertexOffset  = 0;
     int32_t     indexOffset   = 0;
@@ -304,16 +292,14 @@ void Gui::draw(CommandBuffer& commandBuffer) {
 }
 
 void Gui::addGuiPass(RenderGraph& graph) {
-    auto& renderContext = *RenderContext::g_context;
+    auto& renderContext = *g_context;
     graph.addPass(
         "Gui Pass",
         [&graph](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
             auto output = graph.getBlackBoard()[SWAPCHAIN_IMAGE_NAME];
-
-            std::vector<RenderGraphSubpassInfo> subpassInfos;
-            subpassInfos.push_back(RenderGraphSubpassInfo{
-                .outputAttachments = {output}});
-            builder.declare("gui pass", {.textures = {output}, .subpasses = subpassInfos});
+            builder.readTexture(output);
+            builder.writeTexture(output);
+            builder.declare(RenderGraphPassDescriptor({output}, RenderGraphSubpassInfo{.outputAttachments = {output}}));
         },
         [&renderContext, this](const RenderPassContext& context) {
             ImDrawData* imDrawData   = ImGui::GetDrawData();
@@ -324,10 +310,7 @@ void Gui::addGuiPass(RenderGraph& graph) {
             }
             const ImGuiIO& io = ImGui::GetIO();
 
-            renderContext.getPipelineState().setPipelineLayout(*pipelineLayout);
-            renderContext.getPipelineState().setVertexInputState(vertexInputState);
-            renderContext.getPipelineState().setColorBlendState(colorBlendState);
-            renderContext.getPipelineState().setRasterizationState({.cullMode = VK_CULL_MODE_NONE});
+            renderContext.getPipelineState().setPipelineLayout(*pipelineLayout).setVertexInputState(vertexInputState).setColorBlendState(colorBlendState).setRasterizationState({.cullMode = VK_CULL_MODE_NONE});
 
             pushConstBlock.scale     = glm::vec2(2.0f / io.DisplaySize.x, 2.0f / io.DisplaySize.y);
             pushConstBlock.translate = glm::vec2(-1.0f);

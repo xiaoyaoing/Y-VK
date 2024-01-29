@@ -9,6 +9,7 @@
 #include "Core/RenderTarget.h"
 #include "Core/Shader/Shader.h"
 #include "Core/Texture.h"
+#include "Core/Shader/GlslCompiler.h"
 #include "Scene/Compoments/Camera.h"
 #include "Scene/SceneLoader/gltfloader.h"
 
@@ -87,12 +88,12 @@ void Application::updateGUI() {
     onUpdateGUI();
     ImGui::End();
     ImGui::PopStyleVar();
-    ImGui::End();
-
-    ImGui::Render();
 
     bool showDeomWindow = true;
     ImGui::ShowDemoWindow(&showDeomWindow);
+
+    ImGui::Render();
+    ImGui::EndFrame();
 
     if (gui->update() || gui->updated) {
         gui->updated = false;
@@ -135,12 +136,12 @@ void Application::update() {
 }
 
 void Application::createRenderContext() {
-    renderContext            = std::make_unique<RenderContext>(*device, surface, *window);
-    RenderContext::g_context = renderContext.get();
+    renderContext = std::make_unique<RenderContext>(*device, surface, *window);
+    g_context     = renderContext.get();
 }
 
 void Application::setFocused(bool focused) {
-    m_focused = focused;
+    //m_focused = focused;
 }
 
 // void Application::loadScene(const std::string& path,const SceneLoadingConfig & config)
@@ -321,6 +322,15 @@ void Application::onResize(uint32_t width, uint32_t height) {
     this->mWidth  = width;
     this->mHeight = height;
 }
+void Application::initView() {
+    view = std::make_unique<View>(*device);
+    if (scene->getCameras().empty()) {
+        camera = std::make_shared<Camera>();
+        camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 0.1f, 256.0f);
+    }
+    view->setScene(scene.get());
+    view->setCamera(camera.get());
+}
 
 Application::~Application() {
     scene.reset();
@@ -362,4 +372,6 @@ void Application::onMouseMove() {
 }
 
 void Application::onViewUpdated() {
+}
+void Application::preparePerViewData() {
 }

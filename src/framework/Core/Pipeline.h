@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include "Core/Vulkan.h"
 #include "RenderTarget.h"
 #include "Core/CommandBuffer.h"
@@ -9,30 +8,26 @@
 #include "PipelineLayout.h"
 #include "RayTracing/SbtWarpper.h"
 
-
 class Device;
-
 class Subpass;
-
 class RenderPass;
-
 class FrameBuffer;
+class PipelineState;
 
 // class SbtWarpper;
-
 
 class Pipeline {
 public:
     VkPipeline getHandle() const { return pipeline; }
 
-    Pipeline(Device &device, const PipelineState &pipelineState);
+    Pipeline(Device& device, const PipelineState& pipelineState);
 
-    SbtWarpper &getSbtWarpper() { return *mSbtWarpper; }
+    SbtWarpper& getSbtWarpper() { return *mSbtWarpper; }
+
 protected:
     VkPipeline pipeline;
-    Device &device;
-    
-    //For ray tracing pipeline 
+    Device&    device;
+
+    //For ray tracing pipeline
     std::unique_ptr<SbtWarpper> mSbtWarpper{nullptr};
 };
-

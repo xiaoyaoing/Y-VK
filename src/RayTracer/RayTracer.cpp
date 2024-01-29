@@ -87,6 +87,7 @@ void RayTracer::drawFrame(RenderGraph& renderGraph) {
 
     gui->addGuiPass(renderGraph);
 
+    renderGraph.compile();
     renderGraph.execute(commandBuffer);
 }
 
