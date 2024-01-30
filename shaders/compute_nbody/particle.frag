@@ -11,13 +11,13 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or impliedm
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
-layout (binding = 0) uniform sampler2D samplerColorMap;
-layout (binding = 1) uniform sampler2D samplerGradientRamp;
+layout (binding = 0,set = 1) uniform sampler2D samplerColorMap;
+layout (binding = 1,set = 1) uniform sampler2D samplerGradientRamp;
 
 layout (location = 0) in float inGradientPos;
 
