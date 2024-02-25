@@ -34,11 +34,20 @@ public:
 
     class Builder {
     public:
-        RenderGraphHandle readTexture(RenderGraphHandle         input,
+        Builder & readTexture(RenderGraphHandle         input,
                                       RenderGraphTexture::Usage usage =
                                           RenderGraphTexture::Usage::NONE);
 
-        RenderGraphHandle writeTexture(RenderGraphHandle         output,
+        Builder & writeTexture(RenderGraphHandle         output,
+                                       RenderGraphTexture::Usage usage =
+                                           RenderGraphTexture::Usage::NONE);
+
+        Builder &readTextures(const std::vector<RenderGraphHandle> &        inputs,
+                                       RenderGraphTexture::Usage usage =
+                                           RenderGraphTexture::Usage::NONE);
+ 
+
+        Builder & writeTextures(const std::vector<RenderGraphHandle> &         output,
                                        RenderGraphTexture::Usage usage =
                                            RenderGraphTexture::Usage::NONE);
 
@@ -143,7 +152,24 @@ public:
     // });
     void addPass(const char* name, const GraphicSetup& setup, GraphicsExecute&& execute);
 
+    
+    // rg.addPass("TrianglePass",
+    // [&](RenderGraph::Builder& builder, ComputePassSettings& settings){
+    //
+    // },
+    // [&](RenderPassContext& context) {
+    //
+    // });
+    
     void addComputePass(const char* name, const ComputeSetUp& setup, ComputeExecute&& execute);
+
+    // rg.addRayTracingPass("TrianglePass",
+    // [&](RenderGraph::Builder& builder, RayTracingPassSettings& settings){
+    //
+    // },
+    // [&](RenderPassContext& context) {
+    //
+    // });
     void addRaytracingPass(const char* name, const RayTracingSetup& setup, RaytracingExecute&& execute);
     void addImageCopyPass(RenderGraphHandle src, RenderGraphHandle dst);
 
@@ -162,6 +188,8 @@ public:
             delete passNode;
     }
 
+    bool getCutUnUsedResources() const;
+    void setCutUnUsedResources(const bool cut_un_used_resources);
 private:
     RenderGraphHandle addTexture(RenderGraphTexture* texture);
     RenderGraphHandle addBuffer(RenderGraphBuffer* buffer);
@@ -231,6 +259,9 @@ private:
     Device&                   device;
 
     std::vector<Edge> edges;
+
+    //when an algothrim is not completed,some resource may be cutted,which is not desired for debug process
+    bool cutUnUsedResources{true};
 
     // std::vector<std::unique_ptr<Vi>>
 };

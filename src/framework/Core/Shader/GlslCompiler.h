@@ -7,7 +7,7 @@
 #include "Core/Vulkan.h"
 #include <glslang/Public/ShaderLang.h>
 
-class  GlslCompiler {
+class ShaderVarint;class  GlslCompiler {
 public:
     static bool compileToSpirv(VkShaderStageFlagBits stage, const std::vector<uint8_t> &glsl_source,
                         const std::string &entry_point,

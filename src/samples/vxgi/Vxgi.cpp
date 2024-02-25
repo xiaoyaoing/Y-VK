@@ -38,23 +38,30 @@ void Example::prepare() {
     scene = GltfLoading::LoadSceneFromGLTFFile(
         *device, FileUtils::getResourcePath("sponza/Sponza01.gltf"));
 
+    camera = scene->getCameras()[0];
+
     view = std::make_unique<View>(*device);
     view->setScene(scene.get());
     view->setCamera(camera.get());
 
     for (uint32_t i = 0; i < CLIP_MAP_LEVEL; i++) {
-        mBBoxes[i] = getBBox(i);
+        mBBoxes.push_back(getBBox(i));
     }
 
-    VoxelizationPass pass;
-    VxgiPassBase*    base = &pass;
+    passes.emplace_back(std::make_unique<GBufferPass>());
     passes.emplace_back(std::make_unique<VoxelizationPass>());
-    //passes.emplace_back(std::make_unique<LightInjectionPass>());
+    passes.emplace_back(std::make_unique<LightInjectionPass>());
     passes.emplace_back(std::make_unique<FinalLightingPass>());
 
+    g_manager = new VxgiPtrManangr();
+    
     g_manager->putPtr("scene", scene.get());
     g_manager->putPtr("camera", camera.get());
     g_manager->putPtr("bboxes", &mBBoxes);
+
+    for(auto &  pass : passes) {
+        pass->init();
+    }
 }
 
 Example::Example() : Application("Drawing Triangle", 1024, 1024) {

@@ -31,5 +31,5 @@ protected:
     std::vector<std::unique_ptr<VxgiPassBase>> passes{};
     std::vector<BBox>                          mBBoxes{};
     std::vector<VoxelRegion>                   mClipRegions{};
-    constexpr uint32_t                         m_clipRegionBBoxExtentL0 = 16;
+    inline  static  uint32_t                         m_clipRegionBBoxExtentL0 = 16;
 };

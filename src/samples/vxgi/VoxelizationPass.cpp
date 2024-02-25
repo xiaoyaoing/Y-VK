@@ -6,6 +6,8 @@
 
 void VoxelizationPass::init() {
 
+    mBBoxes = g_manager->fetchPtr<std::vector<BBox>>("bboxes");
+    
     mClipRegions.resize(CLIP_MAP_LEVEL);
     constexpr float extentWorldLevel0 = 16.f;
 
@@ -57,13 +59,19 @@ void VoxelizationPass::render(RenderGraph& rg) {
         "voxelization pass",
         [&](auto& builder, auto& setting) {
             auto opacity = rg.importTexture("opacity", mVoxelizationImage.get());
+            auto radiance  = rg.importTexture("radiance", mVoxelRadianceImage.get());
+            auto depth = rg.createTexture("depth", {
+                           .extent = renderContext->getSwapChainExtent(),
+                           .useage = TextureUsage::SUBPASS_INPUT |
+                                     TextureUsage::DEPTH_ATTACHMENT
+                   });
             builder.writeTexture(opacity);
-            RenderGraphPassDescriptor desc{};
-            desc.addSubpass({});
-            builder.declare("voxelization", desc);
+            builder.writeTexture(radiance);
+            RenderGraphPassDescriptor desc({opacity, radiance,depth},{.outputAttachments = {depth}});
+            builder.declare( desc);
         },
         [&](auto& passContext) {
-            renderContext->bindImage(1, mVoxelizationImage->getVkImageView()).bindImage(2, mVoxelRadianceImage->getVkImageView());
+            renderContext->bindImage(1, rg.getBlackBoard().getImageView("opacity")).bindImage(2, rg.getBlackBoard().getImageView("radiance"));
 
             for (int i = 0; i < CLIP_MAP_LEVEL; i++) {
                 mVoxelParam.clipmapLevel   = i;
@@ -73,11 +81,13 @@ void VoxelizationPass::render(RenderGraph& rg) {
                 mVoxelParam.maxExtentWorld = mClipRegions[i].getExtentWorld().x;
                 mVoxelParamBuffer->uploadData(&mVoxelParam, sizeof(VoxelizationParamater));
 
+                g_manager->putPtr("voxel_param_buffer", mVoxelParamBuffer.get());
+                g_context->bindBuffer(5, *mVoxelParamBuffer);
+
                 renderContext->getPipelineState().setPipelineLayout(
                     *mVoxelizationPipelineLayout);
                 for (const auto& primitive : view->getMVisiblePrimitives()) {
-                    g_context->bindPrimitive(commandBuffer, *primitive).bindMaterial(primitive->material);
-                    renderContext->flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, 0, 0, 0);
+                    g_context->bindPrimitiveGeom(commandBuffer, *primitive).flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, 0, 0, 0);
                 }
             }
         });

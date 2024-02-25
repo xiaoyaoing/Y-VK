@@ -1,6 +1,6 @@
 #include "BoundingBox.h"
 #include <algorithm>
-#include <glm/ext.hpp>
+#include <ext.hpp>
 
 BBox::BBox() noexcept
     : m_min(FLT_MAX, FLT_MAX, FLT_MAX),

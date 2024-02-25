@@ -2,7 +2,7 @@
 
 #include <cstdint>
 #include <string>
-#include <volk/volk.h>
+#include <volk.h>
 
 class SgImage;
 

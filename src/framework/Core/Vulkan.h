@@ -10,7 +10,7 @@
  */
 #pragma once
 
-#include <volk/volk.h>
+#include <volk.h>
 
 
 #include <memory>
@@ -20,7 +20,7 @@
 #include <cstdarg>
 #include <stdexcept>
 #include <algorithm>
-#include <glm/fwd.hpp>
+#include <fwd.hpp>
 
 #include "Common/Log.h"
 #include "Common/DebugUtils.h"

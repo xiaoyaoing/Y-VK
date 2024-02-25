@@ -15,7 +15,11 @@ target_include_directories(stb_image INTERFACE ${STB_DIR})
 
 add_subdirectory(glfw)
 add_subdirectory(spdlog)
+
+
 add_subdirectory(glm)
+set(GLM_DIR ${CMAKE_CURRENT_SOURCE_DIR}/glm)
+target_include_directories(glm INTERFACE ${GLM_DIR})
 
 # imgui
 set(IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/imgui")

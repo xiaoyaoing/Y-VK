@@ -7,9 +7,9 @@
 #include "shaders/vxgi/vxgi_common.h"
 
 struct VxgiConfig {
-    int voxelResolution : 128;
-    int clipMapLevel : 6;
-    int level0MaxExtent : 16;
+    int voxelResolution{128};
+    int clipMapLevel{6};
+    int level0MaxExtent{16};
 };
 
 #define VOXEL_RESOLUTION 128

@@ -25,6 +25,7 @@ class FrameBuffer;
 class Sampler;
 
 class Scene;
+class View;
 
 struct FrameResource {
     static constexpr uint32_t BUFFER_POOL_BLOCK_SIZE = 256;
@@ -73,12 +74,14 @@ enum class UniformBindingPoints : uint8_t {
     PER_RENDERABLE_MORPHING = 3,// morphing uniform/sampler updated per render primitive
     LIGHTS                  = 4,// lights data array
     SHADOW                  = 5,// punctual shadow data
-    FROXEL_RECORDS          = 6,
+    MATERIALS          = 6,
     FROXELS                 = 7,
     PER_MATERIAL_INSTANCE   = 8,// uniforms updates per material
     // Update utils::Enum::count<>() below when adding values here
     // These are limited by CONFIG_BINDING_COUNT (currently 10)
 };
+
+enum  class SamplerBinding { };
 
 enum class DescriptorSetPoints : uint32_t {
     UNIFORM      = 0,
@@ -99,12 +102,17 @@ public:
     RenderContext& bindImageSampler(uint32_t binding, const ImageView& view, const Sampler& sampler, uint32_t setId = 0, uint32_t array_element = 0);
     RenderContext& bindImage(uint32_t binding, const ImageView& view, uint32_t setId = 0, uint32_t array_element = 0);
     RenderContext& bindMaterial(const Material& material);
-    RenderContext& bindPrimitive(CommandBuffer& commandBuffer, const Primitive& primitive);
+    RenderContext& bindView(const View & view );
+    RenderContext& bindPrimitiveGeom(CommandBuffer & commandBuffer, const Primitive& primitive);
+    RenderContext& bindPrimitiveShading(CommandBuffer& commandBuffer, const Primitive& primitive);
     template<typename T>
     RenderContext& bindLight(const std::vector<SgLight>& lights, uint32_t setId, uint32_t binding);
+    template<typename  T>
+    RenderContext& bindPushConstants(const T & t) {
+        return bindPushConstants(toBytes(t));
+    }
     RenderContext& bindPushConstants(std::vector<uint8_t>& pushConstants);
 
-    RenderContext& preparePerViewData();
 
     void flushPipelineState(CommandBuffer& commandBuffer);
 

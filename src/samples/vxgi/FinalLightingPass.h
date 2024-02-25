@@ -5,8 +5,6 @@ class FinalLightingPass : public VxgiPassBase {
 public:
     void init() override;
     void render(RenderGraph& rg) override;
+protected:
+    std::unique_ptr<PipelineLayout> mFinalLightingPipelineLayout{nullptr};
 };
-inline void FinalLightingPass::init() {
-}
-inline void FinalLightingPass::render(RenderGraph& rg) {
-}

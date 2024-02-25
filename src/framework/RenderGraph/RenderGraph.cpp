@@ -31,20 +31,33 @@ RenderGraph::RenderGraph(Device& device) : device(device) {
     mBlackBoard = std::make_unique<Blackboard>(*this);
 }
 
-RenderGraphHandle RenderGraph::Builder::readTexture(RenderGraphHandle input, RenderGraphTexture::Usage usage) {
+RenderGraph::Builder & RenderGraph::Builder::readTexture(RenderGraphHandle input, RenderGraphTexture::Usage usage) {
     auto texture = renderGraph.getTexture(input);
     if (usage == RenderGraphTexture::Usage::NONE)
         usage = texture->isDepthStencilTexture() ? RenderGraphTexture::Usage::DEPTH_READ_ONLY : RenderGraphTexture::Usage::READ_ONLY;
     renderGraph.edges.emplace_back(Edge{.pass = node, .resource = texture, .usage = static_cast<uint16_t>(usage), .read = true});
-    return input;
+    return *this;
 }
 
-RenderGraphHandle RenderGraph::Builder::writeTexture(RenderGraphHandle output, RenderGraphTexture::Usage usage) {
+RenderGraph::Builder & RenderGraph::Builder::writeTexture(RenderGraphHandle output, RenderGraphTexture::Usage usage) {
     auto texture = renderGraph.getTexture(output);
     if (usage == RenderGraphTexture::Usage::NONE)
         usage = texture->isDepthStencilTexture() ? RenderGraphTexture::Usage::DEPTH_ATTACHMENT : RenderGraphTexture::Usage::COLOR_ATTACHMENT;
     renderGraph.edges.emplace_back(Edge{.pass = node, .resource = texture, .usage = static_cast<uint16_t>(usage), .read = false});
-    return output;
+    return *this;
+}
+RenderGraph::Builder & RenderGraph::Builder::readTextures(const std::vector<RenderGraphHandle>& inputs, RenderGraphTexture::Usage usage) {
+    for (auto & input : inputs) {
+        readTexture(input, usage);
+    }
+    return *this;
+    
+}
+RenderGraph::Builder & RenderGraph::Builder::writeTextures(const std::vector<RenderGraphHandle>& output, RenderGraphTexture::Usage usage) {
+    for (auto & out : output) {
+        writeTexture(out, usage);
+    }
+    return *this;
 }
 
 RenderGraphHandle RenderGraph::Builder::readBuffer(RenderGraphHandle input, RenderGraphBuffer::Usage usage) {
@@ -52,6 +65,8 @@ RenderGraphHandle RenderGraph::Builder::readBuffer(RenderGraphHandle input, Rend
     renderGraph.edges.emplace_back(Edge{.pass = node, .resource = buffer, .usage = static_cast<uint16_t>(usage), .read = true});
     return input;
 }
+
+
 
 RenderGraphHandle RenderGraph::Builder::writeBuffer(RenderGraphHandle output, RenderGraphBuffer::Usage usage) {
     auto buffer = renderGraph.getBuffer(output);
@@ -156,10 +171,16 @@ std::vector<const RenderGraph::Edge*> RenderGraph::getEdges(RenderGraphNode* nod
     return results;
 }
 
+bool RenderGraph::getCutUnUsedResources() const {
+    return cutUnUsedResources;
+}
+void RenderGraph::setCutUnUsedResources(const bool cut_un_used_resources) {
+    cutUnUsedResources = cut_un_used_resources;
+}
 RenderGraphHandle RenderGraph::addTexture(RenderGraphTexture* texture) {
     const RenderGraphHandle handle(mResources.size());
-    // if (texture->getName() == "depth")
-    //     texture->addRef();
+    if (strcmp(texture->getName(),"depth") == 0)
+        texture->addRef();
     mBlackBoard->put(texture->getName(), handle);
     texture->handle = handle;
     mResources.push_back(texture);
@@ -238,23 +259,27 @@ void RenderGraph::compile() {
             edge.pass->addRef();
     }
 
-    std::stack<RenderGraphNode*> stack;
-    for (const auto& node : mResources)
-        if (node->getRefCount() == 0)
-            stack.push(node);
-    for (const auto& node : mPassNodes)
-        if (node->getRefCount() == 0 || !node->active())
-            stack.push(node);
-    while (!stack.empty()) {
-        const auto node = stack.top();
-        stack.pop();
-        for (auto inComingNode : getInComingNodes(node)) {
-            if (--inComingNode->refCount == 0)
-                stack.push(inComingNode);
+    if(cutUnUsedResources) {
+        std::stack<RenderGraphNode*> stack;
+        for (const auto& node : mResources)
+            if (node->getRefCount() == 0)
+                stack.push(node);
+        for (const auto& node : mPassNodes)
+            if (node->getRefCount() == 0 || !node->active())
+                stack.push(node);
+        while (!stack.empty()) {
+            const auto node = stack.top();
+            stack.pop();
+            for (auto inComingNode : getInComingNodes(node)) {
+                if (--inComingNode->refCount == 0)
+                    stack.push(inComingNode);
+            }
         }
     }
 
-    mActivePassNodesEnd = std::stable_partition(this->mPassNodes.begin(), mPassNodes.end(), [](const auto& passNode) { return passNode->active(); });
+    mActivePassNodesEnd = std::stable_partition(this->mPassNodes.begin(), mPassNodes.end(), [](const auto& passNode) {
+        return passNode->active();
+    });
 
     auto       first = mPassNodes.begin();
     const auto last  = mActivePassNodesEnd;
@@ -331,6 +356,7 @@ std::vector<const char*> RenderGraph::getPasseNames(RENDER_GRAPH_PASS_TYPE type)
 
 void RenderGraph::execute(CommandBuffer& commandBuffer) {
     //todo handle compile
+    compile();
 
     auto first = mPassNodes.begin();
     while (first != mActivePassNodesEnd) {

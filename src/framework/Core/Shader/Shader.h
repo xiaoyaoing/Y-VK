@@ -48,9 +48,16 @@ struct ShaderResourceQualifiers {
 };
 
 class ShaderSource {
+public:
+    ShaderSource(const std::string & path);
+protected:
+    std::vector<std::uint32_t>& spirvCode;
 };
 
 class ShaderVarint {
+    void addDefine();
+protected:
+    std::string define;
 };
 
 class Shader {

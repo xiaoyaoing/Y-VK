@@ -33,11 +33,15 @@ void View::setScene(const Scene* scene) {
     for (const auto& primitive : mScene->getPrimitives()) {
         mVisiblePrimitives.emplace_back(primitive.get());
     }
+    for(const auto & texture : mScene->getTextures()){
+        mTextures.emplace_back(texture.get());
+    }
+    mMaterials = scene->getGltfMaterials();
 }
 void View::setCamera(const Camera* camera) {
     mCamera = camera;
 }
-void View::bindViewBuffer() {
+View & View::bindViewBuffer() {
     PerViewUnifom perViewUnifom{};
     perViewUnifom.view_proj      = mCamera->matrices.perspective * mCamera->matrices.view;
     perViewUnifom.inv_view_proj  = glm::inverse(perViewUnifom.view_proj);
@@ -51,6 +55,22 @@ void View::bindViewBuffer() {
     RenderContext* context = g_context;
     context->bindBuffer(static_cast<uint32_t>(UniformBindingPoints::LIGHTS), *mLightBuffer, 0, mLightBuffer->getSize(), 0);
     context->bindBuffer(static_cast<uint32_t>(UniformBindingPoints::PER_VIEW), *mPerViewBuffer, 0, mPerViewBuffer->getSize(), 0);
+
+    return *this;
+
+}
+View & View::bindViewShading() {
+    auto materials = GetMMaterials();
+    BufferAllocation allocation = g_context->allocateBuffer(sizeof(GltfMaterial) * materials.size(),VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    allocation.buffer->uploadData(materials.data(),allocation.size,allocation.offset);
+    g_context->bindBuffer(2,*allocation.buffer,allocation.offset);
+    
+    const auto & textures = GetMTextures();
+    for(uint32_t i = 0; i < textures.size(); i++) {
+        g_context->bindImageSampler(0,textures[i]->getImage().getVkImageView(),textures[i]->getSampler(),1,i);
+    }
+
+    return *this;
 }
 const Camera* View::getMCamera() const {
     return mCamera;
@@ -63,4 +83,10 @@ std::vector<const Primitive*> View::getMVisiblePrimitives() const {
 }
 void View::setMVisiblePrimitives(const std::vector<const Primitive*>& mVisiblePrimitives) {
     this->mVisiblePrimitives = mVisiblePrimitives;
+}
+std::vector<const Texture*> View::GetMTextures() const {
+    return mTextures;
+}
+std::vector< GltfMaterial> View::GetMMaterials() const {
+    return mMaterials;
 }

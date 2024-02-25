@@ -1,7 +1,7 @@
 #pragma once
 
-#include <glm/mat4x4.hpp>
-#include <glm/ext/matrix_transform.hpp>
+#include <mat4x4.hpp>
+#include <ext/matrix_transform.hpp>
 
 class Camera {
     enum Mode {

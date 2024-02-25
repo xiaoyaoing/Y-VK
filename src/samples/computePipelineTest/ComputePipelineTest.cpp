@@ -125,7 +125,7 @@ void Example::drawFrame(RenderGraph& rg) {
             RenderGraphPassDescriptor desc{};
             desc.textures  = {handle, depth};
             desc.subpasses = {{.outputAttachments = {handle, depth}}};
-            builder.declare("", desc);
+            builder.declare( desc);
         },
         [&](auto& context) {
             auto& commandBuffer = context.commandBuffer;

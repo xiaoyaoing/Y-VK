@@ -8,6 +8,7 @@
 #include "Queue.h"
 #include "Core/Images/Image.h"
 #include "RenderTarget.h"
+#include "View.h"
 #include "Core/FrameBuffer.h"
 #include "Core/Buffer.h"
 
@@ -278,8 +279,21 @@ RenderContext& RenderContext::bindMaterial(const Material& material) {
     }
     return *this;
 }
+RenderContext& RenderContext::bindView(const View& view) {
+    //materials and textures
+    auto materials =  view.GetMMaterials();
+    BufferAllocation allocation = allocateBuffer(sizeof(GltfMaterial) * materials.size(),VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    allocation.buffer->uploadData(materials.data(),allocation.size,allocation.offset);
+    bindBuffer(2,*allocation.buffer,allocation.offset);
 
-RenderContext& RenderContext::bindPrimitive(CommandBuffer& commandBuffer, const Primitive& primitive) {
+    const auto & textures =  view.GetMTextures();
+    for(uint32_t i = 0; i < textures.size(); i++) {
+        bindImageSampler(0,textures[i]->getImage().getVkImageView(),textures[i]->getSampler(),1,i);
+    }
+    return *this;
+}
+
+RenderContext& RenderContext::bindPrimitiveGeom(CommandBuffer& commandBuffer, const Primitive& primitive) {
     VertexInputState vertexInputState;
 
     for (const auto& inputResource : pipelineState.getPipelineLayout().getShaderResources(ShaderResourceType::Input,
@@ -302,17 +316,23 @@ RenderContext& RenderContext::bindPrimitive(CommandBuffer& commandBuffer, const 
 
         vertexInputState.bindings.push_back(vertex_binding);
 
-        if (primitive.vertexBuffers.contains(inputResource.name)) {
+        if (primitive.hasVertexBuffer(inputResource.name)) {
             std::vector<const Buffer*> buffers = {&primitive.getVertexBuffer(inputResource.name)};
             commandBuffer.bindVertexBuffer(inputResource.location, buffers, {0});
         }
     }
-    commandBuffer.bindIndicesBuffer(*primitive.indexBuffer, 0, primitive.indexType);
+    commandBuffer.bindIndicesBuffer(primitive.getIndexBuffer(), 0, primitive.getIndexType());
 
     pipelineState.setVertexInputState(vertexInputState);
 
-    bindBuffer(static_cast<uint32_t>(UniformBindingPoints::PER_RENDERABLE), *primitive.uniformBuffer, 0, sizeof(PerPrimitiveUniform));
-    return bindMaterial(primitive.material);
+    bindPushConstants(primitive);
+    bindBuffer(static_cast<uint32_t>(UniformBindingPoints::PER_RENDERABLE), primitive.getUniformBuffer(), 0, sizeof(PerPrimitiveUniform));
+    return *this;
+    // return bindMaterial(primitive.material);
+}
+RenderContext& RenderContext::bindPrimitiveShading(CommandBuffer& commandBuffer, const Primitive& primitive) {
+    bindPushConstants(primitive.materialIndex);
+    return *this;
 }
 
 const std::unordered_map<uint32_t, ResourceSet>& RenderContext::getResourceSets() const {

@@ -130,6 +130,7 @@ Pipeline::Pipeline(Device& device, const PipelineState& pipelineState) : device(
         createInfo.renderPass = pipelineState.getRenderPass()->getHandle();
         createInfo.subpass    = pipelineState.getSubpassIndex();
 
+
         //todo add pipeline cache
         VK_CHECK_RESULT(vkCreateGraphicsPipelines(device.getHandle(), nullptr, 1, &createInfo, nullptr, &pipeline))
 

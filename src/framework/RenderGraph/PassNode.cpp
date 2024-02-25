@@ -8,10 +8,23 @@
 #include "RenderGraph/RenderGraph.h"
 #include "Core/Images/ImageUtil.h"
 
+#include <unordered_set>
+
 void RenderPassNode::RenderPassData::devirtualize(RenderGraph& renderGraph, const RenderPassNode& node) {
     std::vector<SgImage*>   images;
     std::vector<Attachment> attachments;
-    for (const auto& color : desc.textures) {
+    
+    std::unordered_set<RenderGraphHandle,RenderGraphHandle::Hash> attachment_textures;
+    for(auto& subpass : desc.subpasses){
+        for(auto& handle : subpass.inputAttachments){
+            attachment_textures.insert(handle);
+        }
+        for(auto& handle : subpass.outputAttachments){
+            attachment_textures.insert(handle);
+        }
+    }
+    
+    for (const auto& color : attachment_textures) {
         auto texture   = renderGraph.getTexture(color);
         auto hwTexture = texture->getHwTexture();
 

@@ -1,5 +1,7 @@
-#include <glm/ext/matrix_clip_space.hpp>
+#include <ext/matrix_clip_space.hpp>
 #include "Camera.h"
+
+#include <vec3.hpp>
 
 Camera::Camera() {
 }

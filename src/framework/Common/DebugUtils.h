@@ -1,5 +1,5 @@
 #include <iostream>
-#include <volk/volk.h>
+#include <volk.h>
 #pragma once
 
 #define VK_CHECK_RESULT(f)                                                                                                                    \

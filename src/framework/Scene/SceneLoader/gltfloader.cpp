@@ -30,7 +30,7 @@ static std::unordered_map<VkFormat, uint32_t> formatStrideMap = {{VK_FORMAT_R8_U
 
 static std::unordered_map<VkIndexType, uint32_t> indexStrideMap = {{VK_INDEX_TYPE_UINT16, 2}, {VK_INDEX_TYPE_UINT32, 4}};
 
-inline std::vector<uint8_t> convertIndexData(const std::vector<uint8_t>& src_data, VkIndexType targetType, VkFormat format, VkIndexType& type) {
+inline std::vector<uint8_t> convertIndexData(const std::vector<uint8_t>& src_data, VkIndexType targetType, VkFormat format, VkIndexType type) {
     if (targetType == VK_INDEX_TYPE_NONE_KHR) {
         switch (format) {
             case VK_FORMAT_R8_UINT: {
@@ -276,7 +276,8 @@ struct GLTFLoadingImpl {
 
     std::vector<std::unique_ptr<Texture>> textures;
     std::vector<SgLight>                  lights;
-    std::vector<Material>                 materials;
+   // std::vector<Material>                 materials;
+    std::vector<GltfMaterial>                 materials;
 
     std::vector<std::shared_ptr<Camera>> cameras;
 
@@ -349,46 +350,31 @@ void GLTFLoadingImpl::loadFromFile(const std::string& path) {
 }
 
 void GLTFLoadingImpl::loadMaterials(tinygltf::Model& gltfModel) {
-    //   materials.resize(gltfModel.materials.size());
-    for (auto mat : gltfModel.materials) {
-        Material material{};
 
-        for (auto& tex : mat.values) {
-            if (tex.first.find("Texture") != std::string::npos)
-                material.textures.emplace(
-                    tex.first, *getTexture(gltfModel.textures[tex.second.TextureIndex()].source));
-        }
+    materials.reserve(gltfModel.materials.size());
 
-        if (mat.values.find("metallicFactor") != mat.values.end()) {
-            material.metallicFactor = static_cast<float>(mat.values["metallicFactor"].Factor());
-        }
-        if (mat.values.find("baseColorFactor") != mat.values.end()) {
-            material.baseColorFactor = glm::make_vec4(mat.values["baseColorFactor"].ColorFactor().data());
-        }
-
-        if (mat.values.find("emissiveFactor") != mat.values.end()) {
-            material.emissiveFactor = glm::make_vec3(mat.values["emissiveFactor"].ColorFactor().data());
-        }
-
-        if (mat.additionalValues.find("alphaMode") != mat.additionalValues.end()) {
-            tinygltf::Parameter param = mat.additionalValues["alphaMode"];
-            if (param.string_value == "BLEND") {
-                material.alphaMode = Material::ALPHAMODE_BLEND;
-            }
-            if (param.string_value == "MASK") {
-                material.alphaMode = Material::ALPHAMODE_MASK;
-            }
-        }
-        if (mat.additionalValues.find("alphaCutoff") != mat.additionalValues.end()) {
-            material.alphaCutoff = static_cast<float>(mat.additionalValues["alphaCutoff"].Factor());
-        }
-
-        if (mat.additionalValues.find("emissiveFactor") != mat.additionalValues.end()) {
-            material.emissiveFactor = glm::make_vec3(mat.additionalValues["emissiveFactor"].ColorFactor().data());
-        }
-
-        materials.push_back(std::move(material));
+    for (const auto& mat : gltfModel.materials)
+    {
+        GltfMaterial material;
+        material.alphaCutoff				= static_cast<float>(mat.alphaCutoff);
+        material.alphaMode					= mat.alphaMode == "MASK" ? 1 : (mat.alphaMode == "BLEND" ? 2 : 0);
+        material.doubleSided				= mat.doubleSided ? 1 : 0;
+        material.emissiveFactor				= glm::vec3(mat.emissiveFactor[0], mat.emissiveFactor[1], mat.emissiveFactor[2]);
+        material.emissiveTexture			= mat.emissiveTexture.index;
+        material.normalTexture				= mat.normalTexture.index;
+        material.normalTextureScale			= static_cast<float>(mat.normalTexture.scale);
+        material.occlusionTexture			= mat.occlusionTexture.index;
+        material.occlusionTextureStrength	= static_cast<float>(mat.occlusionTexture.strength);
+			
+        auto& pbr = mat.pbrMetallicRoughness;
+        material.pbrBaseColorFactor			= glm::vec4(pbr.baseColorFactor[0], pbr.baseColorFactor[1], pbr.baseColorFactor[2], pbr.baseColorFactor[3]);
+        material.pbrBaseColorTexture			= pbr.baseColorTexture.index;
+        material.pbrMetallicFactor				= static_cast<float>(pbr.metallicFactor);
+        material.pbrMetallicRoughnessTexture	= pbr.metallicRoughnessTexture.index;
+        material.pbrRoughnessFactor			= static_cast<float>(pbr.roughnessFactor);
+        materials.emplace_back(material);
     }
+    //   materials.resize(gltfModel.materials.size());
 }
 
 GLTFLoadingImpl::~GLTFLoadingImpl() {
@@ -466,13 +452,14 @@ void GLTFLoadingImpl::loadNode(const tinygltf::Node& node, const tinygltf::Model
             if (primitive.indices < 0) {
                 continue;
             }
-            uint32_t  indexCount  = 0;
             uint32_t  vertexCount = 0;
             glm::vec3 posMin{};
             glm::vec3 posMax{};
 
-            auto newPrimitive           = std::make_unique<Primitive>(0, indexCount, primitive.material > -1 ? materials[primitive.material] : materials.back());
-            newPrimitive->materialIndex = primitive.material;
+            const tinygltf::Accessor&   accessor   = model.accessors[primitive.indices];
+            uint32_t indexCount = accessor.count;
+            
+            auto newPrimitive           = std::make_unique<Primitive>(0, 0,indexCount, primitive.material );
             // Vertices
             {
                 const float*    bufferNormals   = nullptr;
@@ -502,7 +489,7 @@ void GLTFLoadingImpl::loadNode(const tinygltf::Node& node, const tinygltf::Model
                         auto buffer = std::make_unique<Buffer>(device, DATA_SIZE(data), bufferUsageFlags, VMA_MEMORY_USAGE_CPU_TO_GPU);
                         buffer->uploadData(data.data(), DATA_SIZE(data));
 
-                        newPrimitive->vertexBuffers.emplace(attributeName, std::move(buffer));
+                        newPrimitive->setVertexBuffer(attributeName, buffer);
 
                         VertexAttribute attribute{};
                         attribute.format = getAttributeFormat(&model, attr.second);
@@ -522,12 +509,14 @@ void GLTFLoadingImpl::loadNode(const tinygltf::Node& node, const tinygltf::Model
                     std::vector<uint8_t> data(model.buffers[view.buffer].data.begin() + startByte,
                                               model.buffers[view.buffer].data.begin() + endByte);
 
-                    data = convertIndexData(data, config.indexType, getAttributeFormat(&model, primitive.indices), newPrimitive->indexType);
+                    data = convertIndexData(data, config.indexType, getAttributeFormat(&model, primitive.indices), newPrimitive->getIndexType());
 
                     VkBufferUsageFlags bufferUsageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | getBufferUsageFlags(config);
 
-                    newPrimitive->indexBuffer = std::make_unique<Buffer>(device, DATA_SIZE(data), bufferUsageFlags, VMA_MEMORY_USAGE_CPU_TO_GPU);
-                    newPrimitive->indexBuffer->uploadData(data.data(), DATA_SIZE(data));
+                    
+                    auto indexBuffer = std::make_unique<Buffer>(device, DATA_SIZE(data), bufferUsageFlags, VMA_MEMORY_USAGE_CPU_TO_GPU);
+                    indexBuffer->uploadData(data.data(), DATA_SIZE(data));
+                    newPrimitive->setIndexBuffer(indexBuffer);
                 }
 
                 // Position attribute is required
@@ -543,23 +532,17 @@ void GLTFLoadingImpl::loadNode(const tinygltf::Node& node, const tinygltf::Model
 
                 vertexCount = static_cast<uint32_t>(posAccessor.count);
             }
-            const tinygltf::Accessor&   accessor   = model.accessors[primitive.indices];
-            const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
-            const tinygltf::Buffer&     buffer     = model.buffers[bufferView.buffer];
 
-            newPrimitive->indexCount = static_cast<uint32_t>(accessor.count);
-
-            newPrimitive->firstVertex = 0;
-            newPrimitive->vertexCount = vertexCount;
             newPrimitive->setDimensions(posMin, posMax);
+            
+            auto matrix =  getTransformMatrix(node);
 
-            newPrimitive->matrix = getTransformMatrix(node);
+            auto transformBuffer = std::make_unique<Buffer>(device, sizeof(glm::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR, VMA_MEMORY_USAGE_CPU_TO_GPU, &matrix);
 
-            auto transformBuffer = std::make_unique<Buffer>(device, sizeof(glm::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR, VMA_MEMORY_USAGE_CPU_TO_GPU, &newPrimitive->matrix);
+            // newPrimitive->vertexBuffers.emplace("transform", std::move(transformBuffer));
+            newPrimitive->setVertexBuffer("transform", transformBuffer);
 
-            newPrimitive->vertexBuffers.emplace("transform", std::move(transformBuffer));
-
-            PerPrimitiveUniform primitiveUniform{newPrimitive->matrix};
+            PerPrimitiveUniform primitiveUniform{matrix};
             auto                primitiveUniformBuffer = std::make_unique<Buffer>(device, sizeof(PerPrimitiveUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR, VMA_MEMORY_USAGE_CPU_TO_GPU, &primitiveUniform);
             newPrimitive->setUniformBuffer(primitiveUniformBuffer);
 
