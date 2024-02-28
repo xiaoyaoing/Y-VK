@@ -4,6 +4,7 @@
 
 #include "Vxgi.h"
 
+#include "CopyAlphaPass.h"
 #include "FinalLightingPass.h"
 #include "GBufferPass.h"
 #include "LightInjectionPass.h"
@@ -24,6 +25,7 @@ void Example::drawFrame(RenderGraph& rg) {
         pass->render(rg);
     gui->addGuiPass(rg);
 
+    rg.setCutUnUsedResources(false);
     rg.execute(commandBuffer);
 }
 
@@ -51,21 +53,23 @@ void Example::prepare() {
     passes.emplace_back(std::make_unique<GBufferPass>());
     passes.emplace_back(std::make_unique<VoxelizationPass>());
     passes.emplace_back(std::make_unique<LightInjectionPass>());
+    passes.emplace_back(std::make_unique<CopyAlphaPass>());
     passes.emplace_back(std::make_unique<FinalLightingPass>());
 
     g_manager = new VxgiPtrManangr();
-    
+
     g_manager->putPtr("scene", scene.get());
+    g_manager->putPtr("view", view.get());
     g_manager->putPtr("camera", camera.get());
     g_manager->putPtr("bboxes", &mBBoxes);
 
-    for(auto &  pass : passes) {
+    for (auto& pass : passes) {
         pass->init();
     }
 }
 
 Example::Example() : Application("Drawing Triangle", 1024, 1024) {
-    addDeviceExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    // addDeviceExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
 }
 
 void Example::onUpdateGUI() {

@@ -4,7 +4,7 @@
 #include "Core/View.h"
 void GBufferPass::init() {
     // mNormal = std::make_unique<SgImage>(device,"normal",VKExt, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-    Device & device = g_context->getDevice();
+    Device&             device = g_context->getDevice();
     std::vector<Shader> shaders{
         Shader(device, FileUtils::getShaderPath("defered.vert")),
         Shader(device, FileUtils::getShaderPath("defered_pbr.frag"))};
@@ -14,63 +14,49 @@ void GBufferPass::init() {
 void GBufferPass::render(RenderGraph& rg) {
     auto& blackBoard    = rg.getBlackBoard();
     auto& renderContext = g_context;
-    View* view;
     rg.addPass(
         "GBufferPass", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
-                    auto diffuse = rg.createTexture("diffuse",
-                                                      {
-                                                              .extent = renderContext->getSwapChainExtent(),
-                                                              .useage = TextureUsage::SUBPASS_INPUT |
-                                                                        TextureUsage::COLOR_ATTACHMENT
-                                                      });
+            auto diffuse = rg.createTexture("diffuse",
+                                            {.extent = renderContext->getSwapChainExtent(),
+                                             .useage = TextureUsage::SUBPASS_INPUT |
+                                                       TextureUsage::COLOR_ATTACHMENT});
 
-                    auto specular = rg.createTexture("specular",
-                                                      {
-                                                              .extent = renderContext->getSwapChainExtent(),
-                                                              .useage = TextureUsage::SUBPASS_INPUT |
-                                                                        TextureUsage::COLOR_ATTACHMENT
-                                                      });
+            auto specular = rg.createTexture("specular",
+                                             {.extent = renderContext->getSwapChainExtent(),
+                                              .useage = TextureUsage::SUBPASS_INPUT |
+                                                        TextureUsage::COLOR_ATTACHMENT});
 
-                    
+            auto normal = rg.createTexture("normal",
+                                           {.extent = renderContext->getSwapChainExtent(),
+                                            .useage = TextureUsage::SUBPASS_INPUT |
+                                                      TextureUsage::COLOR_ATTACHMENT
 
-                    auto normal = rg.createTexture("normal",
-                                                      {
-                                                              .extent = renderContext->getSwapChainExtent(),
-                                                              .useage = TextureUsage::SUBPASS_INPUT |
-                                                                        TextureUsage::COLOR_ATTACHMENT
+                                           });
 
-                                                      });
+            auto emission = rg.createTexture("emission",
+                                             {.extent = renderContext->getSwapChainExtent(),
+                                              .useage = TextureUsage::SUBPASS_INPUT |
+                                                        TextureUsage::COLOR_ATTACHMENT});
 
-                    auto emission = rg.createTexture("emission",
-                                                      {
-                                                              .extent = renderContext->getSwapChainExtent(),
-                                                              .useage = TextureUsage::SUBPASS_INPUT |
-                                                                        TextureUsage::COLOR_ATTACHMENT
-                                                      });
-                    
-                    auto depth = rg.createTexture("depth", {
-                            .extent = renderContext->getSwapChainExtent(),
-                            .useage = TextureUsage::SUBPASS_INPUT |
-                                      TextureUsage::DEPTH_ATTACHMENT
+            auto depth = rg.createTexture("depth", {.extent = renderContext->getSwapChainExtent(), .useage = TextureUsage::SUBPASS_INPUT | TextureUsage::DEPTH_ATTACHMENT
 
-                    });
+                                                   });
 
-                   // RenderGraphPassDescriptor desc{.textures = {depth, albedo, depth, normal}};
-                    RenderGraphPassDescriptor desc({diffuse,specular,normal,emission,depth}, {.outputAttachments =  {diffuse,specular,normal,emission,depth}});
-                    builder.declare( desc);
+            // RenderGraphPassDescriptor desc{.textures = {depth, albedo, depth, normal}};
+            RenderGraphPassDescriptor desc({diffuse, specular, normal, emission, depth}, {.outputAttachments = {diffuse, specular, normal, emission, depth}});
+            builder.declare(desc);
 
+            builder.writeTextures({diffuse, specular, emission, depth}, TextureUsage::COLOR_ATTACHMENT).writeTexture(depth, TextureUsage::DEPTH_ATTACHMENT);
 
-                    builder.writeTextures({diffuse,specular,emission,depth},TextureUsage::COLOR_ATTACHMENT).writeTexture(depth,TextureUsage::DEPTH_ATTACHMENT);
-            
-                    // blackBoard.put("albedo", albedo);
-                    // blackBoard.put("normal", normal);
-                    // blackBoard.put("depth", depth);
-    }
-                    ,
-                    [&](RenderPassContext& context) {
+            // blackBoard.put("albedo", albedo);
+            // blackBoard.put("normal", normal);
+            // blackBoard.put("depth", depth);
+        },
+        [&](RenderPassContext& context) {
                     //   renderContext->beginRenderPass(commandBuffer, context.renderTarget, {});
                     renderContext->getPipelineState().setPipelineLayout(*mPipelineLayout).setDepthStencilState({.depthCompareOp =  VK_COMPARE_OP_GREATER});
-
+                    View* view = g_manager->fetchPtr<View>("view");
+                    view->bindViewShading().bindViewBuffer();
                     for(const auto & primitive : view->getMVisiblePrimitives()) {
                         // const auto allocation = renderContext->allocateBuffer(
                         //         sizeof(PerPrimitiveUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);

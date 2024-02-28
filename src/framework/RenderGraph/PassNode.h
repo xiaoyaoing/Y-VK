@@ -91,6 +91,8 @@ private:
         static constexpr size_t ATTACHMENT_COUNT = 6;
         const char*             name             = {};
         bool                    imported         = false;
+        std::unordered_map<RenderGraphHandle,size_t, RenderGraphHandle::Hash> attachment_textures;
+
 
         RenderGraphPassDescriptor desc;
 
@@ -99,11 +101,15 @@ private:
         std::unique_ptr<RenderTarget> renderTarget;
 
         RenderTarget& getRenderTarget();
+        const std::unordered_map<RenderGraphHandle,size_t, RenderGraphHandle::Hash> & getAttachmentTextures() const {
+            return attachment_textures;
+        }
     };
 
     RenderPassData       renderPassData{};
     RenderGraphPassBase* mRenderPass{nullptr};
     const char*          name;
+
 };
 
 class ComputePassNode final : public PassNode {

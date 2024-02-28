@@ -21,8 +21,11 @@
 
 precision highp float;
 
+#include "perFrameShading.glsl"
+
+
 // #ifdef HAS_baseColorTexture
-layout (set=1, binding=0) uniform sampler2D baseColorTexture;
+//layout (set=1, binding=0) uniform sampler2D baseColorTexture;
 // #endif
 
 layout (location = 0) in vec2 in_uv;
@@ -31,14 +34,29 @@ layout (location = 1) in vec3 in_normal;
 layout (location = 0) out vec4 o_albedo;
 layout (location = 1) out vec4 o_normal;
 
+layout(push_constant) uniform PushConstants {
+    uint material_index;
+};
+
 void main(void)
 {
     vec3 normal = normalize(in_normal);
     // Transform normals from [-1, 1] to [0, 1]
     o_normal = vec4(0.5 * normal + 0.5, 1.0);
 
-    vec4 base_color = texture(baseColorTexture, in_uv);
+    GltfMaterial material = scene_materials[material_index];
+    vec4 base_color = vec4(0);
+    
 
+    if(material.pbrBaseColorTexture != -1)
+    {
+        base_color = texture(sampler2D(scene_textures[material.pbrBaseColorTexture].texture, scene_textures[material.pbrBaseColorTexture].sampler), in_uv);
+    }
+    else
+    {
+        base_color = pbrBaseColorFactor;
+    }
+    
     o_albedo = base_color;
     //    o_normal =  o_albedo;
 

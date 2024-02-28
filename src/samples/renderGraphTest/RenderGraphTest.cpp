@@ -74,7 +74,7 @@ void Example::drawFrame(RenderGraph& rg) {
             renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.gBuffer).setDepthStencilState({.depthCompareOp =  VK_COMPARE_OP_GREATER});
 
             for(const auto & primitive : view->getMVisiblePrimitives()) {
-                renderContext->bindPrimitiveGeom(context.commandBuffer, *primitive).bindMaterial(primitive->material).flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, 0, 0, 0);
+                renderContext->bindPrimitiveGeom(context.commandBuffer, *primitive).bindPrimitiveShading(context.commandBuffer,*primitive).flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, 0, 0, 0);
             }              
             renderContext->nextSubpass(commandBuffer);
             renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.lighting);
@@ -127,10 +127,8 @@ void Example::drawFrame(RenderGraph& rg) {
                     builder.declare( desc);
  
 
-                    normal = builder.writeTexture(normal, TextureUsage::COLOR_ATTACHMENT);
-                    albedo = builder.writeTexture(albedo, TextureUsage::COLOR_ATTACHMENT);
-                    depth = builder.writeTexture(depth, TextureUsage::DEPTH_ATTACHMENT);
-
+                    builder.writeTextures({albedo, normal, depth});
+                    
 
                     blackBoard.put("albedo", albedo);
                     blackBoard.put("normal", normal);
@@ -139,7 +137,7 @@ void Example::drawFrame(RenderGraph& rg) {
                     renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.gBuffer).setDepthStencilState({.depthCompareOp =  VK_COMPARE_OP_GREATER});
                     scene->IteratePrimitives([&](const Primitive &primitive) {
                             //todo: use camera data here
-                            renderContext->bindPrimitiveGeom(context.commandBuffer,primitive).bindMaterial(primitive.material).flushAndDrawIndexed(commandBuffer, primitive.indexCount);
+                            renderContext->bindPrimitiveGeom(context.commandBuffer,primitive).bindPrimitiveShading(context.commandBuffer,primitive).flushAndDrawIndexed(commandBuffer, primitive.indexCount);
                                              }
                     ); });
 
@@ -152,12 +150,9 @@ void Example::drawFrame(RenderGraph& rg) {
 
                 rg.getBlackBoard().put(SWAPCHAIN_IMAGE_NAME, output);
 
-                output = builder.writeTexture(output, TextureUsage::COLOR_ATTACHMENT);
-                output = builder.readTexture(output, TextureUsage::COLOR_ATTACHMENT);
-
-                normal = builder.readTexture(normal);
-                albedo = builder.readTexture(albedo);
-                depth  = builder.readTexture(depth);
+                builder.readTextures({depth, normal, albedo});
+                builder.writeTexture(output);
+                
 
                 RenderGraphPassDescriptor desc{};
                 desc.setTextures({output, albedo, depth, normal}).addSubpass({.inputAttachments = {albedo, depth, normal}, .outputAttachments = {output}, .disableDepthTest = true});

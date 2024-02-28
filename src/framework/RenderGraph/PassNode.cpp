@@ -8,23 +8,32 @@
 #include "RenderGraph/RenderGraph.h"
 #include "Core/Images/ImageUtil.h"
 
+#include <set>
 #include <unordered_set>
 
 void RenderPassNode::RenderPassData::devirtualize(RenderGraph& renderGraph, const RenderPassNode& node) {
     std::vector<SgImage*>   images;
     std::vector<Attachment> attachments;
-    
-    std::unordered_set<RenderGraphHandle,RenderGraphHandle::Hash> attachment_textures;
-    for(auto& subpass : desc.subpasses){
-        for(auto& handle : subpass.inputAttachments){
-            attachment_textures.insert(handle);
+
+
+    std::unordered_set<RenderGraphHandle,RenderGraphHandle::Hash> attachment_textures_set;
+    for (auto& subpass : desc.subpasses) {
+        for (auto& handle : subpass.inputAttachments) {
+            // if(!attachment_textures.contains(handle))
+            //     attachment_textures[handle] = index++;
+            attachment_textures_set.insert(handle);
         }
-        for(auto& handle : subpass.outputAttachments){
-            attachment_textures.insert(handle);
+        for (auto& handle : subpass.outputAttachments) {
+            // if(!attachment_textures.contains(handle))
+            //     attachment_textures[handle] = index++;
+            attachment_textures_set.insert(handle);
         }
     }
     
-    for (const auto& color : attachment_textures) {
+    uint32_t index = 0;
+    for (const auto& color : attachment_textures_set) {
+        // auto color = pair.first;
+        
         auto texture   = renderGraph.getTexture(color);
         auto hwTexture = texture->getHwTexture();
 
@@ -49,8 +58,10 @@ void RenderPassNode::RenderPassData::devirtualize(RenderGraph& renderGraph, cons
 
         images.push_back(hwTexture);
         attachments.push_back(attachment);
+        attachment_textures[color] = index++;
     }
-    renderTarget = std::make_unique<RenderTarget>(images, attachments);
+    
+    renderTarget = std::make_unique<RenderTarget>(images, attachments, g_context->getSwapChainExtent());
 }
 
 RenderTarget& RenderPassNode::RenderPassData::getRenderTarget() {
@@ -69,13 +80,20 @@ void RenderPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuf
     {
         auto& renderGraphSubpassInfos = renderPassData.desc.subpasses;
 
-        //  subpassInfos.resize(renderPassData.desc.getSubpassCount());
+        std::unordered_map<RenderGraphHandle, size_t, RenderGraphHandle::Hash> attachmentMap = renderPassData.getAttachmentTextures();
 
-        std::unordered_map<RenderGraphHandle, size_t, RenderGraphHandle::Hash> attachmentMap;
-
-        for (size_t i = 0; i < renderPassData.desc.textures.size(); i++) {
-            attachmentMap.insert_or_assign(renderPassData.desc.textures[i], i);
-        }
+        uint32_t index = 0;
+        //For a render pass,texture may be used as attachment,also may be used as storage image
+        // for (auto& subpass : renderGraphSubpassInfos) {
+        //     for (auto& handle : subpass.inputAttachments) {
+        //         if (!attachmentMap.contains(handle))
+        //             attachmentMap[handle] = index++;
+        //     }
+        //     for (auto& handle : subpass.outputAttachments) {
+        //         if (!attachmentMap.contains(handle))
+        //             attachmentMap[handle] = index++;
+        //     }
+        // }
 
         std::ranges::transform(renderGraphSubpassInfos.begin(), renderGraphSubpassInfos.end(), std::back_inserter(subpassInfos), [&](const auto& renderGraphSubassInfo) {
             SubpassInfo subpassInfo{};
@@ -100,6 +118,9 @@ void RenderPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuf
 
     auto hwTextures = renderTarget.getHwTextures();
     g_context->getPipelineState().setPipelineType(PIPELINE_TYPE::E_GRAPHICS);
+    if(std::strcmp(name, "Final Lighting Pass") == 0){
+        int k =1;
+    }
     g_context->beginRenderPass(commandBuffer, renderTarget, subpassInfos);
 
     RenderPassContext context = {
@@ -133,9 +154,10 @@ void PassNode::resolveTextureUsages(RenderGraph& renderGraph, CommandBuffer& com
 }
 
 void PassNode::addResourceUsage(ResourceNode* texture, uint16_t usage) {
-    if(mResourceUsage.contains(texture))
+    if (mResourceUsage.contains(texture))
         mResourceUsage[texture] |= usage;
-    else  mResourceUsage.emplace(texture, usage);
+    else
+        mResourceUsage.emplace(texture, usage);
 }
 
 void ImageCopyPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) {

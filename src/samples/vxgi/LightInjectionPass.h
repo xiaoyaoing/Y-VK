@@ -9,6 +9,5 @@ public:
 protected:
     std::unique_ptr<PipelineLayout> mLightInjectionPipelineLayout{nullptr};
     // std::unique_ptr<SgImage>        mVoxelizationImage{nullptr};
-    std::unique_ptr<SgImage>        mLightInjectionImage{nullptr};
-    Scene const*                    mScene;
+    std::unique_ptr<SgImage> mLightInjectionImage{nullptr};
 };

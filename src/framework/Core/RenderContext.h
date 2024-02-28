@@ -58,15 +58,6 @@ struct alignas(16) GlobalUniform {
     glm::mat4 mvp;
 };
 
-struct PerViewUnifom {
-    glm::mat4  view_proj;
-    glm::mat4  inv_view_proj;
-    glm::ivec2 resolution;
-    glm::ivec2 inv_resolution;
-
-    uint32_t light_count;
-};
-
 enum class UniformBindingPoints : uint8_t {
     PER_VIEW                = 0,// uniforms updated per view
     PER_RENDERABLE          = 1,// uniforms updated per renderable
@@ -74,14 +65,14 @@ enum class UniformBindingPoints : uint8_t {
     PER_RENDERABLE_MORPHING = 3,// morphing uniform/sampler updated per render primitive
     LIGHTS                  = 4,// lights data array
     SHADOW                  = 5,// punctual shadow data
-    MATERIALS          = 6,
+    MATERIALS               = 6,
     FROXELS                 = 7,
     PER_MATERIAL_INSTANCE   = 8,// uniforms updates per material
     // Update utils::Enum::count<>() below when adding values here
     // These are limited by CONFIG_BINDING_COUNT (currently 10)
 };
 
-enum  class SamplerBinding { };
+enum class SamplerBinding {};
 
 enum class DescriptorSetPoints : uint32_t {
     UNIFORM      = 0,
@@ -102,17 +93,17 @@ public:
     RenderContext& bindImageSampler(uint32_t binding, const ImageView& view, const Sampler& sampler, uint32_t setId = 0, uint32_t array_element = 0);
     RenderContext& bindImage(uint32_t binding, const ImageView& view, uint32_t setId = 0, uint32_t array_element = 0);
     RenderContext& bindMaterial(const Material& material);
-    RenderContext& bindView(const View & view );
-    RenderContext& bindPrimitiveGeom(CommandBuffer & commandBuffer, const Primitive& primitive);
+    RenderContext& bindView(const View& view);
+    RenderContext& bindPrimitiveGeom(CommandBuffer& commandBuffer, const Primitive& primitive);
     RenderContext& bindPrimitiveShading(CommandBuffer& commandBuffer, const Primitive& primitive);
     template<typename T>
     RenderContext& bindLight(const std::vector<SgLight>& lights, uint32_t setId, uint32_t binding);
-    template<typename  T>
-    RenderContext& bindPushConstants(const T & t) {
-        return bindPushConstants(toBytes(t));
+    template<typename T>
+    RenderContext& bindPushConstants(const T& pushConstants) {
+        return bindPushConstants(toBytes(pushConstants));
     }
-    RenderContext& bindPushConstants(std::vector<uint8_t>& pushConstants);
-
+    template<>
+    RenderContext& bindPushConstants<std::vector<uint8_t>>(const std::vector<uint8_t>& pushConstants);
 
     void flushPipelineState(CommandBuffer& commandBuffer);
 

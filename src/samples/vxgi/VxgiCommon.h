@@ -13,6 +13,9 @@ class Scene;
 //     static VxgiContext& getInstance();
 // };
 
+#define VOXEL_RESOLUTION 128
+#define CLIP_MAP_LEVEL   6
+
 class VxgiPassBase {
 public:
     virtual void render(RenderGraph& rg) = 0;
@@ -36,5 +39,12 @@ public:
 protected:
     std::unordered_map<std::string_view, void*> mPointersMap;
 };
+
+struct VxgiConfig {
+    inline static int voxelResolution{128};
+    inline static int clipMapLevelCount{6};
+    inline static int level0MaxExtent{16};
+};
+
 inline VxgiPtrManangr* g_manager = nullptr;
 // VxgiPtrManangr * VxgiPtrManangr::gManager = nullptr;

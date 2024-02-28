@@ -2,6 +2,7 @@
 #include "Core/CommandBuffer.h"
 #include "Core/Pipeline.h"
 #include "Core/Texture.h"
+#include "Scene/SceneLoader/gltfloader.h"
 
 #include <stack>
 
@@ -31,7 +32,7 @@ RenderGraph::RenderGraph(Device& device) : device(device) {
     mBlackBoard = std::make_unique<Blackboard>(*this);
 }
 
-RenderGraph::Builder & RenderGraph::Builder::readTexture(RenderGraphHandle input, RenderGraphTexture::Usage usage) {
+RenderGraph::Builder& RenderGraph::Builder::readTexture(RenderGraphHandle input, RenderGraphTexture::Usage usage) {
     auto texture = renderGraph.getTexture(input);
     if (usage == RenderGraphTexture::Usage::NONE)
         usage = texture->isDepthStencilTexture() ? RenderGraphTexture::Usage::DEPTH_READ_ONLY : RenderGraphTexture::Usage::READ_ONLY;
@@ -39,22 +40,21 @@ RenderGraph::Builder & RenderGraph::Builder::readTexture(RenderGraphHandle input
     return *this;
 }
 
-RenderGraph::Builder & RenderGraph::Builder::writeTexture(RenderGraphHandle output, RenderGraphTexture::Usage usage) {
+RenderGraph::Builder& RenderGraph::Builder::writeTexture(RenderGraphHandle output, RenderGraphTexture::Usage usage) {
     auto texture = renderGraph.getTexture(output);
     if (usage == RenderGraphTexture::Usage::NONE)
         usage = texture->isDepthStencilTexture() ? RenderGraphTexture::Usage::DEPTH_ATTACHMENT : RenderGraphTexture::Usage::COLOR_ATTACHMENT;
     renderGraph.edges.emplace_back(Edge{.pass = node, .resource = texture, .usage = static_cast<uint16_t>(usage), .read = false});
     return *this;
 }
-RenderGraph::Builder & RenderGraph::Builder::readTextures(const std::vector<RenderGraphHandle>& inputs, RenderGraphTexture::Usage usage) {
-    for (auto & input : inputs) {
+RenderGraph::Builder& RenderGraph::Builder::readTextures(const std::vector<RenderGraphHandle>& inputs, RenderGraphTexture::Usage usage) {
+    for (auto& input : inputs) {
         readTexture(input, usage);
     }
     return *this;
-    
 }
-RenderGraph::Builder & RenderGraph::Builder::writeTextures(const std::vector<RenderGraphHandle>& output, RenderGraphTexture::Usage usage) {
-    for (auto & out : output) {
+RenderGraph::Builder& RenderGraph::Builder::writeTextures(const std::vector<RenderGraphHandle>& output, RenderGraphTexture::Usage usage) {
+    for (auto& out : output) {
         writeTexture(out, usage);
     }
     return *this;
@@ -65,8 +65,6 @@ RenderGraphHandle RenderGraph::Builder::readBuffer(RenderGraphHandle input, Rend
     renderGraph.edges.emplace_back(Edge{.pass = node, .resource = buffer, .usage = static_cast<uint16_t>(usage), .read = true});
     return input;
 }
-
-
 
 RenderGraphHandle RenderGraph::Builder::writeBuffer(RenderGraphHandle output, RenderGraphBuffer::Usage usage) {
     auto buffer = renderGraph.getBuffer(output);
@@ -178,8 +176,11 @@ void RenderGraph::setCutUnUsedResources(const bool cut_un_used_resources) {
     cutUnUsedResources = cut_un_used_resources;
 }
 RenderGraphHandle RenderGraph::addTexture(RenderGraphTexture* texture) {
+    if (mBlackBoard->contains(texture->getName())) {
+        LOGE("Texture with name %s already exists in render graph", texture->getName());
+    }
     const RenderGraphHandle handle(mResources.size());
-    if (strcmp(texture->getName(),"depth") == 0)
+    if (strcmp(texture->getName(), "depth") == 0)
         texture->addRef();
     mBlackBoard->put(texture->getName(), handle);
     texture->handle = handle;
@@ -259,7 +260,7 @@ void RenderGraph::compile() {
             edge.pass->addRef();
     }
 
-    if(cutUnUsedResources) {
+    if (cutUnUsedResources) {
         std::stack<RenderGraphNode*> stack;
         for (const auto& node : mResources)
             if (node->getRefCount() == 0)
@@ -315,6 +316,10 @@ void RenderGraph::compile() {
                 resource->first->devirtualize.push_back(resource);
             if (resource->last)
                 resource->last->destroy.push_back(resource);
+        } else {
+            auto incoming  = getInComingNodes(resource);
+            auto outComing = getOutComingNodes(resource);
+            LOGI("Resource %s is not used", resource->getName());
         }
     }
 
@@ -366,6 +371,9 @@ void RenderGraph::execute(CommandBuffer& commandBuffer) {
         for (const auto& resource : pass->devirtualize) {
             resource->devirtualize();
             //getBlackBoard().put(resource->getName(), resource->handle);
+        }
+        if(std::strcmp(pass->mPassName, "Final Lighting Pass") == 0){
+            int k =1;
         }
         pass->resolveTextureUsages(*this, commandBuffer);
         pass->execute(*this, commandBuffer);

@@ -13,14 +13,8 @@ layout(input_attachment_index = 0, binding = 0, set=2) uniform subpassInput i_al
 layout(input_attachment_index = 1, binding = 1, set=2) uniform subpassInput i_depth;
 layout(input_attachment_index = 2, binding = 2, set=2) uniform subpassInput i_normal;
 
-//layout(set = 0, binding = 3) uniform GlobalUniform {
-//    vec3 viewPos;
-//    vec3 lightPos;
-//} poses;
-
 layout(location = 0) in vec2 in_uv;
 layout(location = 0) out vec4 o_color;
-//#include "lighting.h"
 
 layout(binding = 4) uniform LightsInfo
 {

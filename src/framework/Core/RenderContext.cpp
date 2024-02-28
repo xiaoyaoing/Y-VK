@@ -281,15 +281,15 @@ RenderContext& RenderContext::bindMaterial(const Material& material) {
 }
 RenderContext& RenderContext::bindView(const View& view) {
     //materials and textures
-    auto materials =  view.GetMMaterials();
-    BufferAllocation allocation = allocateBuffer(sizeof(GltfMaterial) * materials.size(),VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-    allocation.buffer->uploadData(materials.data(),allocation.size,allocation.offset);
-    bindBuffer(2,*allocation.buffer,allocation.offset);
-
-    const auto & textures =  view.GetMTextures();
-    for(uint32_t i = 0; i < textures.size(); i++) {
-        bindImageSampler(0,textures[i]->getImage().getVkImageView(),textures[i]->getSampler(),1,i);
-    }
+    // auto             materials  = view.GetMMaterials();
+    // BufferAllocation allocation = allocateBuffer(sizeof(GltfMaterial) * materials.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    // allocation.buffer->uploadData(materials.data(), allocation.size, allocation.offset);
+    // bindBuffer(2, *allocation.buffer, allocation.offset);
+    //
+    // const auto& textures = view.GetMTextures();
+    // for (uint32_t i = 0; i < textures.size(); i++) {
+    //     bindImageSampler(0, textures[i]->getImage().getVkImageView(), textures[i]->getSampler(), 1, i);
+    // }
     return *this;
 }
 
@@ -298,8 +298,16 @@ RenderContext& RenderContext::bindPrimitiveGeom(CommandBuffer& commandBuffer, co
 
     for (const auto& inputResource : pipelineState.getPipelineLayout().getShaderResources(ShaderResourceType::Input,
                                                                                           VK_SHADER_STAGE_VERTEX_BIT)) {
+
+        auto inputResourceName = inputResource.name;
+        //resource name in shader is in_XXX,so we need to remove the prefix
+        auto splitPos = inputResourceName.find("in_");
+        if (splitPos != std::string::npos){
+            inputResourceName = inputResourceName.substr(splitPos);
+        }
+
         VertexAttribute attribute{};
-        if (!primitive.getVertexAttribute(inputResource.name, attribute)) {
+        if (!primitive.getVertexAttribute(inputResourceName, attribute)) {
             continue;
         }
         VkVertexInputAttributeDescription vertex_attribute{};
@@ -316,8 +324,8 @@ RenderContext& RenderContext::bindPrimitiveGeom(CommandBuffer& commandBuffer, co
 
         vertexInputState.bindings.push_back(vertex_binding);
 
-        if (primitive.hasVertexBuffer(inputResource.name)) {
-            std::vector<const Buffer*> buffers = {&primitive.getVertexBuffer(inputResource.name)};
+        if (primitive.hasVertexBuffer(inputResourceName)) {
+            std::vector<const Buffer*> buffers = {&primitive.getVertexBuffer(inputResourceName)};
             commandBuffer.bindVertexBuffer(inputResource.location, buffers, {0});
         }
     }
@@ -325,7 +333,7 @@ RenderContext& RenderContext::bindPrimitiveGeom(CommandBuffer& commandBuffer, co
 
     pipelineState.setVertexInputState(vertexInputState);
 
-    bindPushConstants(primitive);
+    //  bindPushConstants(primitive);
     bindBuffer(static_cast<uint32_t>(UniformBindingPoints::PER_RENDERABLE), primitive.getUniformBuffer(), 0, sizeof(PerPrimitiveUniform));
     return *this;
     // return bindMaterial(primitive.material);
@@ -387,7 +395,7 @@ void RenderContext::flushDescriptorState(CommandBuffer& commandBuffer, VkPipelin
                 auto& imageView = resourceInfo.image_view;
                 auto& accel     = resourceInfo.accel;
 
-                if (!descriptorSetLayout.hasLayoutBinding(bindingIndex))
+                if (!descriptorSetLayout.hasLayoutBinding(bindingIndex) || descriptorSetLayout.getLayoutBindingInfo(bindingIndex).descriptorCount <= arrayElement)
                     continue;
                 auto& bindingInfo = descriptorSetLayout.getLayoutBindingInfo(bindingIndex);
 
@@ -546,8 +554,8 @@ void RenderContext::clearPassResources() {
     storePushConstants.clear();
     pipelineState.reset();
 }
-
-RenderContext& RenderContext::bindPushConstants(std::vector<uint8_t>& pushConstants) {
+template<>
+RenderContext& RenderContext::bindPushConstants(const std::vector<uint8_t>& pushConstants) {
     auto size = pushConstants.size() + storePushConstants.size();
     if (size > maxPushConstantSize) {
         LOGE("Push Constant Size is too large,device support {},but current size is {}", maxPushConstantSize, size);

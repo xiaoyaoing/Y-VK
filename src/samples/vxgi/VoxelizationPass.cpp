@@ -7,7 +7,7 @@
 void VoxelizationPass::init() {
 
     mBBoxes = g_manager->fetchPtr<std::vector<BBox>>("bboxes");
-    
+
     mClipRegions.resize(CLIP_MAP_LEVEL);
     constexpr float extentWorldLevel0 = 16.f;
 
@@ -40,8 +40,7 @@ void VoxelizationPass::init() {
 
     mVoxelizationImage = std::make_unique<SgImage>(
         device, std::string("opacityImage"), imageResolution, VK_FORMAT_R32_SFLOAT, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_VIEW_TYPE_3D);
-    mVoxelRadianceImage = std::make_unique<SgImage>(
-        device, std::string("voxelRadianceImage"), imageResolution, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_VIEW_TYPE_3D);
+
     mVoxelParamBuffer = std::make_unique<Buffer>(device, sizeof(VoxelizationParamater), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
     mVoxelParam       = VoxelizationParamater{
         VOXEL_RESOLUTION,
@@ -51,27 +50,21 @@ void VoxelizationPass::init() {
 }
 
 void VoxelizationPass::render(RenderGraph& rg) {
-    RenderContext* renderContext = g_context;
-    Blackboard&    blackboard    = rg.getBlackBoard();
-    const auto*    view          = g_manager->fetchPtr<View>("view");
-    auto&          commandBuffer = renderContext->getGraphicCommandBuffer();
+    Blackboard& blackboard    = rg.getBlackBoard();
+    auto&       commandBuffer = g_context->getGraphicCommandBuffer();
     rg.addPass(
         "voxelization pass",
         [&](auto& builder, auto& setting) {
             auto opacity = rg.importTexture("opacity", mVoxelizationImage.get());
-            auto radiance  = rg.importTexture("radiance", mVoxelRadianceImage.get());
-            auto depth = rg.createTexture("depth", {
-                           .extent = renderContext->getSwapChainExtent(),
-                           .useage = TextureUsage::SUBPASS_INPUT |
-                                     TextureUsage::DEPTH_ATTACHMENT
-                   });
+            // auto radiance = rg.importTexture("radiance", mVoxelRadianceImage.get());
+            auto depth = rg.getBlackBoard().getHandle("depth");
             builder.writeTexture(opacity);
-            builder.writeTexture(radiance);
-            RenderGraphPassDescriptor desc({opacity, radiance,depth},{.outputAttachments = {depth}});
-            builder.declare( desc);
+            // builder.writeTexture(radiance);
+            RenderGraphPassDescriptor desc({opacity, depth}, {.outputAttachments = {}});
+            builder.declare(desc);
         },
         [&](auto& passContext) {
-            renderContext->bindImage(1, rg.getBlackBoard().getImageView("opacity")).bindImage(2, rg.getBlackBoard().getImageView("radiance"));
+            g_context->bindImage(1, rg.getBlackBoard().getImageView("opacity"));//.bindImage(2, rg.getBlackBoard().getImageView("radiance"));
 
             for (int i = 0; i < CLIP_MAP_LEVEL; i++) {
                 mVoxelParam.clipmapLevel   = i;
@@ -84,8 +77,10 @@ void VoxelizationPass::render(RenderGraph& rg) {
                 g_manager->putPtr("voxel_param_buffer", mVoxelParamBuffer.get());
                 g_context->bindBuffer(5, *mVoxelParamBuffer);
 
-                renderContext->getPipelineState().setPipelineLayout(
+                g_context->getPipelineState().setPipelineLayout(
                     *mVoxelizationPipelineLayout);
+                auto* view = g_manager->fetchPtr<View>("view");
+                view->bindViewBuffer();
                 for (const auto& primitive : view->getMVisiblePrimitives()) {
                     g_context->bindPrimitiveGeom(commandBuffer, *primitive).flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, 0, 0, 0);
                 }

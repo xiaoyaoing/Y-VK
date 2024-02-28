@@ -33,7 +33,7 @@ void View::setScene(const Scene* scene) {
     for (const auto& primitive : mScene->getPrimitives()) {
         mVisiblePrimitives.emplace_back(primitive.get());
     }
-    for(const auto & texture : mScene->getTextures()){
+    for (const auto& texture : mScene->getTextures()) {
         mTextures.emplace_back(texture.get());
     }
     mMaterials = scene->getGltfMaterials();
@@ -41,7 +41,7 @@ void View::setScene(const Scene* scene) {
 void View::setCamera(const Camera* camera) {
     mCamera = camera;
 }
-View & View::bindViewBuffer() {
+View& View::bindViewBuffer() {
     PerViewUnifom perViewUnifom{};
     perViewUnifom.view_proj      = mCamera->matrices.perspective * mCamera->matrices.view;
     perViewUnifom.inv_view_proj  = glm::inverse(perViewUnifom.view_proj);
@@ -49,25 +49,26 @@ View & View::bindViewBuffer() {
     perViewUnifom.inv_resolution = glm::vec2(1.0f / perViewUnifom.resolution.x, 1.0f / perViewUnifom.resolution.y);
     perViewUnifom.light_count    = mScene->getLights().size();
 
+    if (perViewUnifom != mPerViewUniform) {
+        mPerViewBuffer->uploadData(&perViewUnifom, sizeof(PerViewUnifom), 0);
+    }
     //perViewUnif
-    mPerViewBuffer->uploadData(&perViewUnifom, sizeof(PerViewUnifom), 0);
 
     RenderContext* context = g_context;
     context->bindBuffer(static_cast<uint32_t>(UniformBindingPoints::LIGHTS), *mLightBuffer, 0, mLightBuffer->getSize(), 0);
     context->bindBuffer(static_cast<uint32_t>(UniformBindingPoints::PER_VIEW), *mPerViewBuffer, 0, mPerViewBuffer->getSize(), 0);
 
     return *this;
-
 }
-View & View::bindViewShading() {
-    auto materials = GetMMaterials();
-    BufferAllocation allocation = g_context->allocateBuffer(sizeof(GltfMaterial) * materials.size(),VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-    allocation.buffer->uploadData(materials.data(),allocation.size,allocation.offset);
-    g_context->bindBuffer(2,*allocation.buffer,allocation.offset);
-    
-    const auto & textures = GetMTextures();
-    for(uint32_t i = 0; i < textures.size(); i++) {
-        g_context->bindImageSampler(0,textures[i]->getImage().getVkImageView(),textures[i]->getSampler(),1,i);
+View& View::bindViewShading() {
+    auto             materials  = GetMMaterials();
+    BufferAllocation allocation = g_context->allocateBuffer(sizeof(GltfMaterial) * materials.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    allocation.buffer->uploadData(materials.data(), allocation.size, allocation.offset);
+    g_context->bindBuffer(2, *allocation.buffer, allocation.offset);
+
+    const auto& textures = GetMTextures();
+    for (uint32_t i = 0; i < textures.size(); i++) {
+        g_context->bindImageSampler(0, textures[i]->getImage().getVkImageView(), textures[i]->getSampler(), 1, i);
     }
 
     return *this;
@@ -87,6 +88,6 @@ void View::setMVisiblePrimitives(const std::vector<const Primitive*>& mVisiblePr
 std::vector<const Texture*> View::GetMTextures() const {
     return mTextures;
 }
-std::vector< GltfMaterial> View::GetMMaterials() const {
+std::vector<GltfMaterial> View::GetMMaterials() const {
     return mMaterials;
 }

@@ -6,15 +6,6 @@
 #include "Scene/Scene.h"
 #include "shaders/vxgi/vxgi_common.h"
 
-struct VxgiConfig {
-    int voxelResolution{128};
-    int clipMapLevel{6};
-    int level0MaxExtent{16};
-};
-
-#define VOXEL_RESOLUTION 128
-#define CLIP_MAP_LEVEL   6
-
 class VoxelizationPass : public VxgiPassBase {
 
 public:

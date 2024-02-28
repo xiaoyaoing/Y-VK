@@ -69,7 +69,7 @@ Instance::Instance(const std::string& application_name,
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "Y PBR";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = 3;
+    appInfo.apiVersion = VK_API_VERSION_1_3;
 
     //todo check extension support
     uint32_t extensionCount;
