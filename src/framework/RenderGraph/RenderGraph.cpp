@@ -360,6 +360,9 @@ std::vector<const char*> RenderGraph::getPasseNames(RENDER_GRAPH_PASS_TYPE type)
 }
 
 void RenderGraph::execute(CommandBuffer& commandBuffer) {
+
+    // DebugUtils::CmdInsertLabel(commandBuffer, "RenderGraph")
+    
     //todo handle compile
     compile();
 
@@ -371,9 +374,6 @@ void RenderGraph::execute(CommandBuffer& commandBuffer) {
         for (const auto& resource : pass->devirtualize) {
             resource->devirtualize();
             //getBlackBoard().put(resource->getName(), resource->handle);
-        }
-        if(std::strcmp(pass->mPassName, "Final Lighting Pass") == 0){
-            int k =1;
         }
         pass->resolveTextureUsages(*this, commandBuffer);
         pass->execute(*this, commandBuffer);

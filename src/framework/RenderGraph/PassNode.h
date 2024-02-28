@@ -54,7 +54,6 @@ public:
 
     std::vector<ResourceNode*> devirtualize{};// resources need to be create before executing
     std::vector<ResourceNode*> destroy{};     // resources need to be destroy after executing
-    const char*                mPassName{nullptr};
 
 protected:
     bool                                        mActive{true};

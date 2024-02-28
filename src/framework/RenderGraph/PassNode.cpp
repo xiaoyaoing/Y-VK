@@ -11,6 +11,10 @@
 #include <set>
 #include <unordered_set>
 
+std::string getPassName(const char * passType,const char * passName) {
+    return std::string(passType) + " " + passName;
+}
+
 void RenderPassNode::RenderPassData::devirtualize(RenderGraph& renderGraph, const RenderPassNode& node) {
     std::vector<SgImage*>   images;
     std::vector<Attachment> attachments;
@@ -118,14 +122,15 @@ void RenderPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuf
 
     auto hwTextures = renderTarget.getHwTextures();
     g_context->getPipelineState().setPipelineType(PIPELINE_TYPE::E_GRAPHICS);
-    if(std::strcmp(name, "Final Lighting Pass") == 0){
-        int k =1;
-    }
     g_context->beginRenderPass(commandBuffer, renderTarget, subpassInfos);
 
     RenderPassContext context = {
         .commandBuffer = g_context->getGraphicCommandBuffer()};
+
+    auto passName = getPassName("Render Pass", getName());
+    DebugUtils::CmdBeginLabel(context.commandBuffer.getHandle(),passName , {1, 0, 0, 1});
     mRenderPass->execute(context);
+    DebugUtils::CmdEndLabel(context.commandBuffer.getHandle());
 
     g_context->endRenderPass(commandBuffer, renderTarget);
 }
@@ -145,7 +150,9 @@ void RenderPassNode::declareRenderPass(const RenderGraphPassDescriptor& descript
     renderPassData.desc = descriptor;
 }
 
-PassNode::PassNode(const char* passName) : mPassName(passName) {}
+PassNode::PassNode(const char* passName)  {
+    setName(passName);
+}
 
 void PassNode::resolveTextureUsages(RenderGraph& renderGraph, CommandBuffer& commandBuffer) {
     for (auto& textureIt : mResourceUsage) {
@@ -181,8 +188,13 @@ ImageCopyPassNode::ImageCopyPassNode(RenderGraphHandle src, RenderGraphHandle ds
 void ComputePassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) {
     g_context->getPipelineState().setPipelineType(PIPELINE_TYPE::E_COMPUTE);
 
-    RenderPassContext context{.commandBuffer = g_context->getGraphicCommandBuffer()};
+    RenderPassContext context{.commandBuffer = g_context->getComputeCommandBuffer()};
+
+    auto passName = getPassName("Compute Pass", getName());
+    DebugUtils::CmdBeginLabel(commandBuffer.getHandle(),passName , {1, 0, 0, 1});
     mPass->execute(context);
+    DebugUtils::CmdEndLabel(context.commandBuffer.getHandle());
+    
     g_context->clearPassResources();
 }
 
@@ -190,8 +202,13 @@ void RayTracingPassNode::execute(RenderGraph& renderGraph, CommandBuffer& comman
     auto& settings = mPass->getData();
     g_context->getPipelineState().setPipelineType(PIPELINE_TYPE::E_RAY_TRACING).setPipelineLayout(*settings.pipelineLayout).setrTPipelineSettings(settings.rTPipelineSettings);
     g_context->bindAcceleration(0, *settings.accel, 0, 0);
-    RenderPassContext context{.commandBuffer = g_context->getComputeCommandBuffer()};
+    RenderPassContext context{.commandBuffer = g_context->getGraphicCommandBuffer()};
+
+    auto passName = getPassName("RayTracing Pass", getName());
+    DebugUtils::CmdBeginLabel(context.commandBuffer.getHandle(),passName , {1, 0, 0, 1});
     mPass->execute(context);
+    DebugUtils::CmdEndLabel(context.commandBuffer.getHandle());
+    
     g_context->clearPassResources();
     // g_context->getPipelineState().setPipelineType(PIPELINE_TYPE::E_RAY_TRACING).setPipelineLayout(*layout).setrTPipelineSettings({.maxDepth = 5,.dims = {width,height,1}});
     // renderContext->getPipelineState().setPipelineType(PIPELINE_TYPE::E_RAY_TRACING).setPipelineLayout(*layout).setrTPipelineSettings({.maxDepth = 5,.dims = {width,height,1}});

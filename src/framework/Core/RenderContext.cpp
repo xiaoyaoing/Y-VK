@@ -180,6 +180,8 @@ void RenderContext::submitAndPresent(CommandBuffer& commandBuffer, VkFence fence
     compute_submit_info.signalSemaphoreCount = 1;
     compute_submit_info.pSignalSemaphores    = &semaphores.computeFinishedSem;
     computeQueue.submit({compute_submit_info}, VK_NULL_HANDLE);
+
+    computeQueue.wait();
 }
 
 void RenderContext::submit(CommandBuffer& commandBuffer, bool waiteFence) {

@@ -3,10 +3,11 @@
 //
 
 #include "DebugUtils.h"
+#define VK_EXT_debug_utils
 
 std::string DebugUtils::errorString(VkResult errorCode) {
     switch (errorCode) {
-#define STR(r) case VK_ ##r: return #r
+#define STR(r) case VK_ ## r: return #r
         STR(NOT_READY);
         STR(TIMEOUT);
         STR(EVENT_SET);
@@ -34,4 +35,44 @@ std::string DebugUtils::errorString(VkResult errorCode) {
         default:
             return "UNKNOWN_ERROR";
     }
+}
+
+void DebugUtils::Setup(VkInstance instance){
+    
+}
+
+void DebugUtils::CmdBeginLabel(VkCommandBuffer cmd_buffer, const std::string& caption, const glm::vec4& color){
+    VkDebugUtilsLabelEXT label_info{};
+    label_info.sType      = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+    label_info.pLabelName = caption.c_str();
+    memcpy(label_info.color, &color[0], sizeof(float) * 4);
+    vkCmdBeginDebugUtilsLabelEXT(cmd_buffer, &label_info);
+    
+}void DebugUtils::CmdInsertLabel(VkCommandBuffer cmd_buffer, const std::string& caption, const glm::vec4& color){
+    if (!vkCmdInsertDebugUtilsLabelEXT) {
+        return;
+    }
+    VkDebugUtilsLabelEXT label_info{};
+    label_info.sType      = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+    label_info.pLabelName = caption.c_str();
+    memcpy(label_info.color, &color[0], sizeof(float) * 4);
+    vkCmdInsertDebugUtilsLabelEXT(cmd_buffer, &label_info);
+}
+
+void DebugUtils::CmdEndLabel(VkCommandBuffer cmd_buffer){
+    if (!vkCmdEndDebugUtilsLabelEXT) {
+        return;
+    }
+    vkCmdEndDebugUtilsLabelEXT(cmd_buffer);
+}
+void DebugUtils::SetObjectName(VkDevice device, uint64_t object, VkObjectType object_type, const std::string& name){
+    if (!vkSetDebugUtilsObjectNameEXT) {
+        return;
+    }
+    VkDebugUtilsObjectNameInfoEXT name_info{};
+    name_info.sType        = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+    name_info.objectType   = object_type;
+    name_info.objectHandle = object;
+    name_info.pObjectName  = name.c_str();
+    vkSetDebugUtilsObjectNameEXT(device, &name_info);
 }

@@ -62,6 +62,6 @@ void GBufferPass::render(RenderGraph& rg) {
                         //         sizeof(PerPrimitiveUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
                         renderContext->bindPrimitiveGeom(context.commandBuffer, *primitive).bindPrimitiveShading(context.commandBuffer,*primitive)
-                                .flushAndDrawIndexed(context.commandBuffer, primitive->getIndexType(), 1, 0, 0, 0);
+                                .flushAndDrawIndexed(context.commandBuffer, primitive->indexCount, 1, 0, 0, 0);
                     } });
 }
