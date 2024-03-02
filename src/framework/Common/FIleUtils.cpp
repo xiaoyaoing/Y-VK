@@ -12,7 +12,7 @@
 
 namespace FileUtils {
 
-    std::vector<uint8_t> read_binary_file(const std::string &filename, const uint32_t count) {
+    std::vector<uint8_t> read_binary_file(const std::string& filename, const uint32_t count) {
         std::vector<uint8_t> data;
 
         std::ifstream file;
@@ -31,33 +31,31 @@ namespace FileUtils {
         }
 
         data.resize(static_cast<size_t>(read_count));
-        file.read(reinterpret_cast<char *>(data.data()), read_count);
+        file.read(reinterpret_cast<char*>(data.data()), read_count);
         file.close();
 
         return data;
     }
 
-    std::string getFileTimeStr(const std::string& path, const std::string& format)
-    {
-        const auto fileTime = std::filesystem::last_write_time(path);
+    std::string getFileTimeStr(const std::string& path, const std::string& format) {
+        const auto fileTime   = std::filesystem::last_write_time(path);
         const auto systemTime = std::chrono::clock_cast<std::chrono::system_clock>(fileTime);
-        const auto time = std::chrono::system_clock::to_time_t(systemTime);
+        const auto time       = std::chrono::system_clock::to_time_t(systemTime);
 
         struct tm stime;
         localtime_s(&stime, &time);
 
-        char tmp[32] = { NULL };
+        char tmp[32] = {NULL};
         strftime(tmp, sizeof(tmp), format.c_str(), &stime);
 
         return tmp;
     }
 
-
     std::vector<uint8_t> readShaderBinary(const std::string filename) {
         return read_binary_file(filename, 0);
     }
 
-    std::string getFileExt(const std::string &filepath) {
+    std::string getFileExt(const std::string& filepath) {
         return filepath.substr(filepath.find('.') + 1);
     }
 
@@ -69,14 +67,13 @@ namespace FileUtils {
 #endif
     }
 
-    std::string getResourcePath(const std::string &path) {
+    std::string getResourcePath(const std::string& path) {
         return getResourcePath() + path;
     }
 
-    std::string getShaderPath(const std::string &path) {
+    std::string getShaderPath(const std::string& path) {
         return getShaderPath() + path;
     }
-
 
     std::string getShaderPath() {
 #ifdef VK_SHADERS_DIR
@@ -84,7 +81,6 @@ namespace FileUtils {
 #else
         return "./../shaders";
 #endif
-
     }
 
-}
+}// namespace FileUtils

@@ -3,7 +3,7 @@
 //
 #pragma once
 
-#include "VoxelRegion.h"
+#include "ClipmapRegion.h"
 #include "VxgiCommon.h"
 #include "App/Application.h"
 
@@ -30,6 +30,6 @@ protected:
 
     std::vector<std::unique_ptr<VxgiPassBase>> passes{};
     std::vector<BBox>                          mBBoxes{};
-    std::vector<VoxelRegion>                   mClipRegions{};
-    inline  static  uint32_t                         m_clipRegionBBoxExtentL0 = 16;
+    std::vector<ClipmapRegion>                 mClipRegions{};
+    inline static uint32_t                     m_clipRegionBBoxExtentL0 = 16;
 };

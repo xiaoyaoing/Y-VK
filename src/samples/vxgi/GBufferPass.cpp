@@ -42,15 +42,11 @@ void GBufferPass::render(RenderGraph& rg) {
 
                                                    });
 
-            // RenderGraphPassDescriptor desc{.textures = {depth, albedo, depth, normal}};
             RenderGraphPassDescriptor desc({diffuse, specular, normal, emission, depth}, {.outputAttachments = {diffuse, specular, normal, emission, depth}});
             builder.declare(desc);
 
             builder.writeTextures({diffuse, specular, emission, depth}, TextureUsage::COLOR_ATTACHMENT).writeTexture(depth, TextureUsage::DEPTH_ATTACHMENT);
-
-            // blackBoard.put("albedo", albedo);
-            // blackBoard.put("normal", normal);
-            // blackBoard.put("depth", depth);
+            
         },
         [&](RenderPassContext& context) {
                     //   renderContext->beginRenderPass(commandBuffer, context.renderTarget, {});

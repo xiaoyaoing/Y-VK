@@ -2,7 +2,6 @@
 
 #extension GL_GOOGLE_include_directive : enable 
 
-#include "vxgi.glsl"
 #include "../perFrame.glsl"
 #include "../shadow.glsl"
 
@@ -19,6 +18,37 @@ layout(binding = 4, set = 0) uniform LightsInfo
 {
     Light lights[MAX_LIGHTS];
 }lights_info;
+
+
+layout (push_constant) uniform PushConstants
+{
+    vec3  volume_center;// 12
+    uint  uRenderingMode;// 16
+    float voxel_size;// 20
+    float clip_map_resoultion;// 24
+    float uTraceStartOffset;// 28
+    float uIndirectDiffuseIntensity;// 32
+    float uAmbientOcclusionFactor;// 36
+    float uMinTraceStepFactor;// 40
+    float uIndirectSpecularIntensity;// 44
+    float uOcclusionDecay;// 48
+    int   uEnable32Cones;// 52
+};
+
+//layout(push_constant) uniform PushConstants
+//{
+//    vec3  volume_center;// 12
+//    uint  uRenderingMode;// 16
+//    float voxel_size;// 20
+//    float clip_map_resoultion;// 24
+//    float uTraceStartOffset;// 28
+//    float uIndirectDiffuseIntensity;// 32
+//    float uAmbientOcclusionFactor;// 36
+//    float uMinTraceStepFactor;// 40
+//    float uIndirectSpecularIntensity;// 44
+//    float uOcclusionDecay;// 48
+//    int   uEnable32Cones;// 52
+//} push_constants;
 
 
 
@@ -269,12 +299,11 @@ vec4 traceCone(vec3 startPos, vec3 direction, float aperture, float maxDistance,
     float curSegmentLength    = cur_voxel_size;
     float minRadius        = voxel_size  * 0.5;
 
-    vec3 clip_map_center = (clipmap_max_pos + clipmap_min_pos) * 0.5;
 
     while ((step < maxDistance) && (occlusion < 1.0))
     {
         vec3  position                = startPos + direction * step;
-        float distanceToVoxelCenter = length(clipmap_level - position);
+        float distanceToVoxelCenter = length(volume_center - position);
         float min_level                = ceil(log2(distanceToVoxelCenter / minRadius));
 
         curLevel = log2(diameter / voxel_size);

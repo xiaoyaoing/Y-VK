@@ -26,11 +26,14 @@ public:
 
 protected:
     struct PerViewUnifom {
-        glm::mat4  view_proj;
-        glm::mat4  inv_view_proj;
+        glm::mat4 view_proj;
+        glm::mat4 inv_view_proj;
+
+        glm::vec3 camera_pos;
+        uint32_t  light_count;
+
         glm::ivec2 resolution;
         glm::ivec2 inv_resolution;
-        uint32_t   light_count;
 
         bool operator!=(const PerViewUnifom& other) const {
             return memcmp(this, &other, sizeof(PerViewUnifom)) != 0;

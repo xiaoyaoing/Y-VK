@@ -36,10 +36,10 @@ void main(void)
 
     GltfMaterial material = scene_materials[u_materialIndex];
 
-    vec3 diffuseColor			= vec3(0.0);
-    vec3 specularColor			= vec3(0.0);
-    vec4 baseColor				= vec4(0.0, 0.0, 0.0, 1.0);
-    vec3 f0						= vec3(0.04);
+    vec3 diffuseColor            = vec3(0.0);
+    vec3 specularColor            = vec3(0.0);
+    vec4 baseColor                = vec4(0.0, 0.0, 0.0, 1.0);
+    vec3 f0                        = vec3(0.04);
     float perceptualRoughness;
     float metallic;
 
@@ -69,7 +69,7 @@ void main(void)
 
     if (material.alphaMode > 0 && baseColor.a < material.alphaCutoff)
     {
-        discard;
+        //        discard;
     }
 
     o_diffuse  = vec4(diffuseColor, perceptualRoughness);
@@ -79,7 +79,7 @@ void main(void)
     //    vec4 tangent = vec4(normalize(fs_in.tangent.xyz), fs_in.tangent.w);
     //    gbufferTangent = vec4(tangent * 0.5 + 0.5);
 
-    vec3 emissionColor 			= material.emissiveFactor;
+    vec3 emissionColor            = material.emissiveFactor;
     if (material.emissiveTexture > -1)
     {
         emissionColor *= SRGBtoLinear(texture(scene_textures[material.emissiveTexture], in_uv), 2.2).rgb;

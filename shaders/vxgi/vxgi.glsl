@@ -1,10 +1,14 @@
-layout( set = 0, binding = 5) uniform VoxelizationDesc {
-    uint clip_map_resoultion;
-    uint clipmap_level;
+layout(std140, set = 0, binding = 5) uniform VoxelizationDesc {
+    vec3 prev_clipmap_min_world_pos;
+    int clipmap_level;
+
+    vec3 prev_clipmap_max_world_pos;
     float voxel_size;
+
+    vec3 clipmap_min_world_pos;
+    int clip_map_resoultion;
+    vec3 clipmap_max_world_pos;
     float max_extent_world;
-    vec3 clipmap_min_pos;
-    vec3 clipmap_max_pos;
 };
 
 
@@ -18,5 +22,5 @@ ivec3 computeImageCoords(vec3 world_pos){
 }
 
 bool pos_in_clipmap(vec3 world_pos){
-    return all(lessThan(world_pos, clipmap_max_pos)) && all(greaterThan(world_pos, clipmap_min_pos));
+    return all(lessThan(world_pos, clipmap_max_world_pos)) && all(greaterThan(world_pos, clipmap_min_world_pos));
 }

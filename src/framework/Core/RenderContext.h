@@ -43,8 +43,8 @@ struct FrameResource {
 
     void reset();
 
-    std::unique_ptr<CommandBuffer> graphicComputeBuffer{nullptr};
-    std::unique_ptr<CommandBuffer> computeComputeBuffer{nullptr};
+    std::unique_ptr<CommandBuffer> graphicCommandBuffer{nullptr};
+    // std::unique_ptr<CommandBuffer> computeComputeBuffer{nullptr};
 
     std::unordered_map<VkBufferUsageFlags, std::unique_ptr<BufferPool>> bufferPools{};
     // CommandBuffer commandBuffer;

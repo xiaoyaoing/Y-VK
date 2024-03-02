@@ -1,4 +1,4 @@
-#version 460 core
+#version 450
 #extension GL_GOOGLE_include_directive : require
 //#extension GLSL_EXT_shader_image_int64 : require
 
@@ -17,7 +17,7 @@ layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 normal;
 layout(location = 2) in vec2 texCoord;
 
-layout(binding = 2, set = 2, rgba32f) writeonly uniform image3D radiance_image;
+layout(binding = 2, set = 2, r32ui) volatile uniform uimage3D radiance_image;
 
 layout(binding = 4, set = 0) uniform LightsInfo
 {
@@ -50,23 +50,22 @@ vec4 convRGBA8ToVec4(uint val)
 
 void imageAtomicRGBA8Avg(ivec3 coords, vec4 value)
 {
-    imageStore(radiance_image, coords, value);
-    //value.rgb *= 255.0;
-//    uint newVal = convVec4ToRGBA8(value);
-//    uint prevStoredVal = 0; uint curStoredVal;
-//    
-//    
-//
-//    // Loop as long as destination value gets changed by other threads
-//    while ((curStoredVal = imageAtomicCompSwap(radiance_image, coords, prevStoredVal, newVal)) != prevStoredVal)
-//    {
-//        prevStoredVal = curStoredVal;
-//        vec4 rval = convRGBA8ToVec4(curStoredVal);
-//        rval.xyz = (rval.xyz * rval.w);// Denormalize
-//        vec4 curValF = rval + value;// Add new value
-//        curValF.xyz /= (curValF.w);// Renormalize
-//        newVal = convVec4ToRGBA8(curValF);
-//    }
+    // imageStore(radiance_image, coords, value);
+    value.rgb *= 255.0;
+    uint newVal = convVec4ToRGBA8(value);
+    uint prevStoredVal = 0;
+    uint curStoredVal;
+
+    // Loop as long as destination value gets changed by other threads
+    while ((curStoredVal = imageAtomicCompSwap(radiance_image, coords, prevStoredVal, newVal)) != prevStoredVal)
+    {
+        prevStoredVal = curStoredVal;
+        vec4 rval = convRGBA8ToVec4(curStoredVal);
+        rval.xyz = (rval.xyz * rval.w);// Denormalize
+        vec4 curValF = rval + value;// Add new value
+        curValF.xyz /= (curValF.w);// Renormalize
+        newVal = convVec4ToRGBA8(curValF);
+    }
 }
 
 void voxelAtomicRGBA8Avg(ivec3 imageCoord, ivec3 faceIndex, vec4 color, vec3 weight)
@@ -88,6 +87,7 @@ void voxelAtomicRGBA8Avg6Faces(ivec3 imageCoord, vec4 color)
 
 ivec3 calculateVoxelFaceIndex(vec3 normal)
 {
+
     return ivec3(
     normal.x > 0.0 ? 0 : 1,
     normal.y > 0.0 ? 2 : 3,

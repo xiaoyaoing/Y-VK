@@ -48,9 +48,11 @@ View& View::bindViewBuffer() {
     perViewUnifom.resolution     = glm::ivec2(g_context->getSwapChainExtent().width, g_context->getSwapChainExtent().height);
     perViewUnifom.inv_resolution = glm::vec2(1.0f / perViewUnifom.resolution.x, 1.0f / perViewUnifom.resolution.y);
     perViewUnifom.light_count    = mScene->getLights().size();
+    perViewUnifom.camera_pos     = mCamera->position;
 
     if (perViewUnifom != mPerViewUniform) {
         mPerViewBuffer->uploadData(&perViewUnifom, sizeof(PerViewUnifom), 0);
+        mPerViewUniform = perViewUnifom;
     }
     //perViewUnif
 

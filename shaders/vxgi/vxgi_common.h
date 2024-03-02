@@ -18,13 +18,4 @@ using uvec2 = glm::uvec2;
 #define ALIGN16
 #endif
 
-struct VoxelizationParamater {
-    uint  voxelResolution;
-    uint  clipmapLevel;
-    float voxelSize;
-    float maxExtentWorld;
-    vec3  clipmapMinPos;
-    vec3  clipmapMaxPos;
-};
-
 #endif

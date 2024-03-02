@@ -7,7 +7,8 @@
 
 std::string DebugUtils::errorString(VkResult errorCode) {
     switch (errorCode) {
-#define STR(r) case VK_ ## r: return #r
+#define STR(r) \
+    case VK_##r: return #r
         STR(NOT_READY);
         STR(TIMEOUT);
         STR(EVENT_SET);
@@ -37,35 +38,41 @@ std::string DebugUtils::errorString(VkResult errorCode) {
     }
 }
 
-void DebugUtils::Setup(VkInstance instance){
-    
+void DebugUtils::Setup(VkInstance instance) {
 }
 
-void DebugUtils::CmdBeginLabel(VkCommandBuffer cmd_buffer, const std::string& caption, const glm::vec4& color){
+namespace DebugColors {
+    static constexpr glm::vec4 colors[]    = {glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f)};
+    static size_t              color_index = 0;
+    static constexpr int       color_sizes = sizeof(colors) / sizeof(glm::vec4);
+}// namespace DebugColors
+
+void DebugUtils::CmdBeginLabel(VkCommandBuffer cmd_buffer, const std::string& caption, const glm::vec4& color) {
     VkDebugUtilsLabelEXT label_info{};
     label_info.sType      = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
     label_info.pLabelName = caption.c_str();
-    memcpy(label_info.color, &color[0], sizeof(float) * 4);
+    // label_info.color = DebugColors::colors[0];
+    memcpy(label_info.color, &DebugColors::colors[DebugColors::color_index++ % DebugColors::color_sizes], sizeof(float) * 4);
     vkCmdBeginDebugUtilsLabelEXT(cmd_buffer, &label_info);
-    
-}void DebugUtils::CmdInsertLabel(VkCommandBuffer cmd_buffer, const std::string& caption, const glm::vec4& color){
+}
+void DebugUtils::CmdInsertLabel(VkCommandBuffer cmd_buffer, const std::string& caption, const glm::vec4& color) {
     if (!vkCmdInsertDebugUtilsLabelEXT) {
         return;
     }
     VkDebugUtilsLabelEXT label_info{};
     label_info.sType      = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
     label_info.pLabelName = caption.c_str();
-    memcpy(label_info.color, &color[0], sizeof(float) * 4);
+    memcpy(label_info.color, &DebugColors::colors[DebugColors::color_index++ % DebugColors::color_sizes], sizeof(float) * 4);
     vkCmdInsertDebugUtilsLabelEXT(cmd_buffer, &label_info);
 }
 
-void DebugUtils::CmdEndLabel(VkCommandBuffer cmd_buffer){
+void DebugUtils::CmdEndLabel(VkCommandBuffer cmd_buffer) {
     if (!vkCmdEndDebugUtilsLabelEXT) {
         return;
     }
     vkCmdEndDebugUtilsLabelEXT(cmd_buffer);
 }
-void DebugUtils::SetObjectName(VkDevice device, uint64_t object, VkObjectType object_type, const std::string& name){
+void DebugUtils::SetObjectName(VkDevice device, uint64_t object, VkObjectType object_type, const std::string& name) {
     if (!vkSetDebugUtilsObjectNameEXT) {
         return;
     }

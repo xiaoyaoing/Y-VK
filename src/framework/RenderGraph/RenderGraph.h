@@ -34,22 +34,21 @@ public:
 
     class Builder {
     public:
-        Builder & readTexture(RenderGraphHandle         input,
-                                      RenderGraphTexture::Usage usage =
-                                          RenderGraphTexture::Usage::NONE);
+        Builder& readTexture(RenderGraphHandle         input,
+                             RenderGraphTexture::Usage usage =
+                                 RenderGraphTexture::Usage::NONE);
 
-        Builder & writeTexture(RenderGraphHandle         output,
-                                       RenderGraphTexture::Usage usage =
-                                           RenderGraphTexture::Usage::NONE);
+        Builder& writeTexture(RenderGraphHandle         output,
+                              RenderGraphTexture::Usage usage =
+                                  RenderGraphTexture::Usage::NONE);
 
-        Builder &readTextures(const std::vector<RenderGraphHandle> &        inputs,
-                                       RenderGraphTexture::Usage usage =
-                                           RenderGraphTexture::Usage::NONE);
- 
+        Builder& readTextures(const std::vector<RenderGraphHandle>& inputs,
+                              RenderGraphTexture::Usage             usage =
+                                  RenderGraphTexture::Usage::NONE);
 
-        Builder & writeTextures(const std::vector<RenderGraphHandle> &         output,
-                                       RenderGraphTexture::Usage usage =
-                                           RenderGraphTexture::Usage::NONE);
+        Builder& writeTextures(const std::vector<RenderGraphHandle>& output,
+                               RenderGraphTexture::Usage             usage =
+                                   RenderGraphTexture::Usage::NONE);
 
         RenderGraphHandle readBuffer(RenderGraphHandle        input,
                                      RenderGraphBuffer::Usage usage =
@@ -143,7 +142,7 @@ public:
     //     setup(builder,pass->getData());
     // }
 
-    // rg.addPass("TrianglePass",
+    // rg.addPass("",
     // [&](RenderGraph::Builder& builder, GraphicPassSettings& settings){
     //
     // },
@@ -152,18 +151,17 @@ public:
     // });
     void addPass(const char* name, const GraphicSetup& setup, GraphicsExecute&& execute);
 
-    
-    // rg.addPass("TrianglePass",
+    // rg.addComputePass("",
     // [&](RenderGraph::Builder& builder, ComputePassSettings& settings){
     //
     // },
     // [&](RenderPassContext& context) {
     //
     // });
-    
+
     void addComputePass(const char* name, const ComputeSetUp& setup, ComputeExecute&& execute);
 
-    // rg.addRayTracingPass("TrianglePass",
+    // rg.addRayTracingPass("",
     // [&](RenderGraph::Builder& builder, RayTracingPassSettings& settings){
     //
     // },
@@ -190,6 +188,7 @@ public:
 
     bool getCutUnUsedResources() const;
     void setCutUnUsedResources(const bool cut_un_used_resources);
+
 private:
     RenderGraphHandle addTexture(RenderGraphTexture* texture);
     RenderGraphHandle addBuffer(RenderGraphBuffer* buffer);

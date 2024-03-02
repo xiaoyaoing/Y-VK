@@ -9,7 +9,6 @@
 
 #include "Core/Images/Image.h"
 
-
 struct Mipmap {
     /// Mipmap level
     uint32_t level = 0;
@@ -23,52 +22,47 @@ struct Mipmap {
 
 class SgImage {
 public:
-    
     /**
      * \brief load from hardware texture
      */
-    SgImage(Device &device, const std::string &path, VkImageViewType viewType);
+    SgImage(Device& device, const std::string& path, VkImageViewType viewType);
 
     /**
      * \brief create from image attribute 
      */
-    SgImage(Device &device,
-           const std::string &name,
-           const VkExtent3D &extent,
-           VkFormat format,
-           VkImageUsageFlags image_usage,
-           VmaMemoryUsage memory_usage,
-           VkImageViewType viewType,
-           VkSampleCountFlagBits sample_count = VK_SAMPLE_COUNT_1_BIT,
-           uint32_t mip_levels = 1,
-           uint32_t array_layers = 1,
-           VkImageCreateFlags flags = 0);
+    SgImage(Device&               device,
+            const std::string&    name,
+            const VkExtent3D&     extent,
+            VkFormat              format,
+            VkImageUsageFlags     image_usage,
+            VmaMemoryUsage        memory_usage,
+            VkImageViewType       viewType,
+            VkSampleCountFlagBits sample_count = VK_SAMPLE_COUNT_1_BIT,
+            uint32_t              mip_levels   = 1,
+            uint32_t              array_layers = 1,
+            VkImageCreateFlags    flags        = 0);
 
     /**
      * \brief load from existing image.Mainly from swapChainImage
      */
 
-    
-    SgImage(Device &device,
-            VkImage handle,
-            const VkExtent3D &extent,
-            VkFormat format,
-            VkImageUsageFlags image_usage,
+    SgImage(Device&               device,
+            VkImage               handle,
+            const VkExtent3D&     extent,
+            VkFormat              format,
+            VkImageUsageFlags     image_usage,
             VkSampleCountFlagBits sample_count = VK_SAMPLE_COUNT_1_BIT,
-            VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D);
+            VkImageViewType       viewType     = VK_IMAGE_VIEW_TYPE_2D);
 
     ~SgImage();
 
-    SgImage(SgImage &&other);
+    SgImage(SgImage&& other);
 
-    SgImage(SgImage &other) = delete;
+    SgImage(SgImage& other) = delete;
 
-    
-   
-    void createVkImage(Device &device, VkImageViewType image_view_type = VK_IMAGE_VIEW_TYPE_2D,
-                       VkImageCreateFlags flags = 0);
+    void createVkImage(Device& device, VkImageViewType imageViewType = VK_IMAGE_VIEW_TYPE_2D, VkImageCreateFlags flags = 0);
 
-    std::vector<uint8_t> &getData();
+    std::vector<uint8_t>& getData();
 
     uint64_t getBufferSize() const;
 
@@ -76,15 +70,19 @@ public:
 
     VkExtent2D getExtent2D() const;
 
-    Image &getVkImage() const;
+    Image& getVkImage() const;
 
-    ImageView &getVkImageView() const;
+    // ImageView &getVkImageView() const;
+
+    ImageView& getVkImageView(VkImageViewType view_type = VK_IMAGE_VIEW_TYPE_MAX_ENUM, VkFormat format = VK_FORMAT_UNDEFINED, uint32_t mip_level = 0, uint32_t base_array_layer = 0, uint32_t n_mip_levels = 0, uint32_t n_array_layers = 0) const;
+
+    void createImageView(VkImageViewType view_type = VK_IMAGE_VIEW_TYPE_MAX_ENUM, VkFormat format = VK_FORMAT_UNDEFINED, uint32_t mip_level = 0, uint32_t base_array_layer = 0, uint32_t n_mip_levels = 0, uint32_t n_array_layers = 0);
 
     VkFormat getFormat() const;
 
-    const std::vector<std::vector<VkDeviceSize>> &getOffsets() const;
+    const std::vector<std::vector<VkDeviceSize>>& getOffsets() const;
 
-    const std::vector<Mipmap> &getMipMaps() const;
+    const std::vector<Mipmap>& getMipMaps() const;
 
     uint32_t getLayers() const;
 
@@ -92,18 +90,18 @@ public:
 
     void generateMipMap();
 
-    void setExtent(const VkExtent3D & extent3D);
+    void setExtent(const VkExtent3D& extent3D);
 
-    void loadResources(const std::string &path);
+    void loadResources(const std::string& path);
 
 private:
-
 protected:
     friend class AstcImageHelper;
 
     std::unique_ptr<Image> vkImage{nullptr};
 
-    std::unique_ptr<ImageView> vkImageView{nullptr};
+    std::unordered_map<size_t, std::unique_ptr<ImageView>> vkImageViews{};
+    size_t                                                 firstImageViewHash;
 
     std::vector<uint8_t> data;
 
@@ -111,14 +109,13 @@ protected:
 
     VkExtent3D mExtent3D;
 
-
     std::vector<Mipmap> mipMaps{{}};
 
     std::vector<std::vector<VkDeviceSize>> offsets;
 
     std::string name;
 
-    Device &device;
+    Device& device;
 
 protected:
     uint32_t layers{1};

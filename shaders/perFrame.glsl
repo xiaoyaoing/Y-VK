@@ -3,11 +3,13 @@ layout(set = 0, binding = 0) uniform _GlobalFrameUniform {
     mat4 inv_view_proj;
 
     vec3 camera_pos;
-    
+
+    uint light_count;
+
+
     ivec2 resolution;
     ivec2 inv_resolution;
-    
-    uint light_count;
+
 } per_frame;
 
 layout(set = 0, binding = 1) uniform _GlobalPrimitiveUniform {

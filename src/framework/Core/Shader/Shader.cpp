@@ -71,7 +71,7 @@ Shader::Shader(Device& device, std::string path) : device(device) {
             auto spvUpdateTime    = std::filesystem::last_write_time(spvPath);
             auto shaderUpdateTime = std::filesystem::last_write_time(path);
             // localtime_s(spvUpdateTime);
-            if (spvUpdateTime > shaderUpdateTime) {
+            if (spvUpdateTime > shaderUpdateTime && !GlslCompiler::forceRecompile) {
                 mode = SPV;
                 LOGI("Cached shader spv found: {},Spv last update time {}", path, FileUtils::getFileTimeStr(spvPath));
             }

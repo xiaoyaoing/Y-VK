@@ -77,8 +77,7 @@ RenderContext::RenderContext(Device& device, VkSurfaceKHR surface, Window& windo
 
     for (uint32_t i = 0; i < getSwapChainImageCount(); i++) {
         frameResources.emplace_back(std::make_unique<FrameResource>(device));
-        frameResources.back()->graphicComputeBuffer = std::make_unique<CommandBuffer>(vkGraphicCommandBuffers[i]);
-        frameResources.back()->computeComputeBuffer = std::make_unique<CommandBuffer>(vkComputeCommandBuffers[i]);
+        frameResources.back()->graphicCommandBuffer = std::make_unique<CommandBuffer>(vkGraphicCommandBuffers[i]);
     }
 
     maxPushConstantSize = device.getProperties().limits.maxPushConstantsSize;
@@ -94,7 +93,7 @@ void RenderContext::beginFrame() {
     frameResources[activeFrameIndex]->reset();
     clearPassResources();
 
-    getComputeCommandBuffer().beginRecord(0);
+    //  getComputeCommandBuffer().beginRecord(0);
 
     auto& commandBuffer = getGraphicCommandBuffer();
     commandBuffer.beginRecord(0);
@@ -125,20 +124,20 @@ void RenderContext::submitAndPresent(CommandBuffer& commandBuffer, VkFence fence
     getCurHwtexture().getVkImage().transitionLayout(commandBuffer, VulkanLayout::PRESENT, getCurHwtexture().getVkImageView().getSubResourceRange());
     commandBuffer.endRecord();
 
-    getComputeCommandBuffer().endRecord();
+    //  getComputeCommandBuffer().endRecord();
 
     auto queue = device.getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0);
 
     VkSubmitInfo         submitInfo{VK_STRUCTURE_TYPE_SUBMIT_INFO};
-    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    VkSemaphore          waitSems[]   = {semaphores.computeFinishedSem, semaphores.presentFinishedSem};
-    VkSemaphore          signalSems[] = {semaphores.graphicFinishedSem, semaphores.renderFinishedSem};
+    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    VkSemaphore          waitSems[]   = {semaphores.presentFinishedSem};
+    VkSemaphore          signalSems[] = {semaphores.renderFinishedSem};
 
-    submitInfo.waitSemaphoreCount = 2;
+    submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores    = waitSems;
     submitInfo.pWaitDstStageMask  = waitStages;
 
-    submitInfo.signalSemaphoreCount = 2;
+    submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores    = signalSems;
 
     submitInfo.commandBufferCount = 1;
@@ -166,22 +165,22 @@ void RenderContext::submitAndPresent(CommandBuffer& commandBuffer, VkFence fence
 
     queue.wait();
 
-    auto& computeQueue = device.getQueueByFlag(VK_QUEUE_COMPUTE_BIT, 0);
-
-    VkPipelineStageFlags wait_stage_mask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-
-    // Submit compute commands
-    VkSubmitInfo compute_submit_info{VK_STRUCTURE_TYPE_SUBMIT_INFO};
-    compute_submit_info.commandBufferCount   = 1;
-    compute_submit_info.pCommandBuffers      = getComputeCommandBuffer().getHandlePointer();
-    compute_submit_info.waitSemaphoreCount   = 1;
-    compute_submit_info.pWaitSemaphores      = &semaphores.graphicFinishedSem;
-    compute_submit_info.pWaitDstStageMask    = &wait_stage_mask;
-    compute_submit_info.signalSemaphoreCount = 1;
-    compute_submit_info.pSignalSemaphores    = &semaphores.computeFinishedSem;
-    computeQueue.submit({compute_submit_info}, VK_NULL_HANDLE);
-
-    computeQueue.wait();
+    // auto& computeQueue = device.getQueueByFlag(VK_QUEUE_COMPUTE_BIT, 0);
+    //
+    // VkPipelineStageFlags wait_stage_mask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+    //
+    // // Submit compute commands
+    // VkSubmitInfo compute_submit_info{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+    // compute_submit_info.commandBufferCount   = 1;
+    // compute_submit_info.pCommandBuffers      = getComputeCommandBuffer().getHandlePointer();
+    // compute_submit_info.waitSemaphoreCount   = 1;
+    // compute_submit_info.pWaitSemaphores      = &semaphores.graphicFinishedSem;
+    // compute_submit_info.pWaitDstStageMask    = &wait_stage_mask;
+    // compute_submit_info.signalSemaphoreCount = 1;
+    // compute_submit_info.pSignalSemaphores    = &semaphores.computeFinishedSem;
+    // computeQueue.submit({compute_submit_info}, VK_NULL_HANDLE);
+    //
+    // computeQueue.wait();
 }
 
 void RenderContext::submit(CommandBuffer& commandBuffer, bool waiteFence) {
@@ -304,12 +303,13 @@ RenderContext& RenderContext::bindPrimitiveGeom(CommandBuffer& commandBuffer, co
         auto inputResourceName = inputResource.name;
         //resource name in shader is in_XXX,so we need to remove the prefix
         auto splitPos = inputResourceName.find("in_");
-        if (splitPos != std::string::npos){
-            inputResourceName = inputResourceName.substr(splitPos);
+        if (splitPos != std::string::npos) {
+            inputResourceName = inputResourceName.substr(splitPos + 3);
         }
 
         VertexAttribute attribute{};
         if (!primitive.getVertexAttribute(inputResourceName, attribute)) {
+            LOGW("Primitive does not have vertex buffer for input resource {}", inputResourceName);
             continue;
         }
         VkVertexInputAttributeDescription vertex_attribute{};
@@ -573,11 +573,11 @@ BufferAllocation RenderContext::allocateBuffer(VkDeviceSize allocateSize, VkBuff
 }
 
 CommandBuffer& RenderContext::getGraphicCommandBuffer() {
-    return *frameResources[activeFrameIndex]->graphicComputeBuffer;
+    return *frameResources[activeFrameIndex]->graphicCommandBuffer;
 }
 
 CommandBuffer& RenderContext::getComputeCommandBuffer() {
-    return *frameResources[activeFrameIndex]->computeComputeBuffer;
+    return *frameResources[activeFrameIndex]->graphicCommandBuffer;
 }
 
 Device& RenderContext::getDevice() {

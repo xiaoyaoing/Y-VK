@@ -276,8 +276,8 @@ struct GLTFLoadingImpl {
 
     std::vector<std::unique_ptr<Texture>> textures;
     std::vector<SgLight>                  lights;
-   // std::vector<Material>                 materials;
-    std::vector<GltfMaterial>                 materials;
+    // std::vector<Material>                 materials;
+    std::vector<GltfMaterial> materials;
 
     std::vector<std::shared_ptr<Camera>> cameras;
 
@@ -353,25 +353,24 @@ void GLTFLoadingImpl::loadMaterials(tinygltf::Model& gltfModel) {
 
     materials.reserve(gltfModel.materials.size());
 
-    for (const auto& mat : gltfModel.materials)
-    {
+    for (const auto& mat : gltfModel.materials) {
         GltfMaterial material;
-        material.alphaCutoff				= static_cast<float>(mat.alphaCutoff);
-        material.alphaMode					= mat.alphaMode == "MASK" ? 1 : (mat.alphaMode == "BLEND" ? 2 : 0);
-        material.doubleSided				= mat.doubleSided ? 1 : 0;
-        material.emissiveFactor				= glm::vec3(mat.emissiveFactor[0], mat.emissiveFactor[1], mat.emissiveFactor[2]);
-        material.emissiveTexture			= mat.emissiveTexture.index;
-        material.normalTexture				= mat.normalTexture.index;
-        material.normalTextureScale			= static_cast<float>(mat.normalTexture.scale);
-        material.occlusionTexture			= mat.occlusionTexture.index;
-        material.occlusionTextureStrength	= static_cast<float>(mat.occlusionTexture.strength);
-			
-        auto& pbr = mat.pbrMetallicRoughness;
-        material.pbrBaseColorFactor			= glm::vec4(pbr.baseColorFactor[0], pbr.baseColorFactor[1], pbr.baseColorFactor[2], pbr.baseColorFactor[3]);
-        material.pbrBaseColorTexture			= pbr.baseColorTexture.index;
-        material.pbrMetallicFactor				= static_cast<float>(pbr.metallicFactor);
-        material.pbrMetallicRoughnessTexture	= pbr.metallicRoughnessTexture.index;
-        material.pbrRoughnessFactor			= static_cast<float>(pbr.roughnessFactor);
+        material.alphaCutoff              = static_cast<float>(mat.alphaCutoff);
+        material.alphaMode                = mat.alphaMode == "MASK" ? 1 : (mat.alphaMode == "BLEND" ? 2 : 0);
+        material.doubleSided              = mat.doubleSided ? 1 : 0;
+        material.emissiveFactor           = glm::vec3(mat.emissiveFactor[0], mat.emissiveFactor[1], mat.emissiveFactor[2]);
+        material.emissiveTexture          = mat.emissiveTexture.index;
+        material.normalTexture            = mat.normalTexture.index;
+        material.normalTextureScale       = static_cast<float>(mat.normalTexture.scale);
+        material.occlusionTexture         = mat.occlusionTexture.index;
+        material.occlusionTextureStrength = static_cast<float>(mat.occlusionTexture.strength);
+
+        auto& pbr                            = mat.pbrMetallicRoughness;
+        material.pbrBaseColorFactor          = glm::vec4(pbr.baseColorFactor[0], pbr.baseColorFactor[1], pbr.baseColorFactor[2], pbr.baseColorFactor[3]);
+        material.pbrBaseColorTexture         = pbr.baseColorTexture.index;
+        material.pbrMetallicFactor           = static_cast<float>(pbr.metallicFactor);
+        material.pbrMetallicRoughnessTexture = pbr.metallicRoughnessTexture.index;
+        material.pbrRoughnessFactor          = static_cast<float>(pbr.roughnessFactor);
         materials.emplace_back(material);
     }
     //   materials.resize(gltfModel.materials.size());
@@ -456,10 +455,10 @@ void GLTFLoadingImpl::loadNode(const tinygltf::Node& node, const tinygltf::Model
             glm::vec3 posMin{};
             glm::vec3 posMax{};
 
-            const tinygltf::Accessor&   accessor   = model.accessors[primitive.indices];
-            uint32_t indexCount = accessor.count;
-            
-            auto newPrimitive           = std::make_unique<Primitive>(0, 0,indexCount, primitive.material );
+            const tinygltf::Accessor& accessor   = model.accessors[primitive.indices];
+            uint32_t                  indexCount = accessor.count;
+
+            auto newPrimitive = std::make_unique<Primitive>(0, 0, indexCount, primitive.material);
             // Vertices
             {
                 const float*    bufferNormals   = nullptr;
@@ -513,7 +512,6 @@ void GLTFLoadingImpl::loadNode(const tinygltf::Node& node, const tinygltf::Model
 
                     VkBufferUsageFlags bufferUsageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | getBufferUsageFlags(config);
 
-                    
                     auto indexBuffer = std::make_unique<Buffer>(device, DATA_SIZE(data), bufferUsageFlags, VMA_MEMORY_USAGE_CPU_TO_GPU);
                     indexBuffer->uploadData(data.data(), DATA_SIZE(data));
                     newPrimitive->setIndexBuffer(indexBuffer);
@@ -534,10 +532,10 @@ void GLTFLoadingImpl::loadNode(const tinygltf::Node& node, const tinygltf::Model
             }
 
             newPrimitive->setDimensions(posMin, posMax);
-            
-            auto matrix =  getTransformMatrix(node);
 
-            if(config.bufferAddressAble) {
+            auto matrix = getTransformMatrix(node);
+
+            if (config.bufferAddressAble) {
                 auto transformBuffer = std::make_unique<Buffer>(device, sizeof(glm::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR, VMA_MEMORY_USAGE_CPU_TO_GPU, &matrix);
                 newPrimitive->setVertexBuffer("transform", transformBuffer);
             }
@@ -545,7 +543,7 @@ void GLTFLoadingImpl::loadNode(const tinygltf::Node& node, const tinygltf::Model
             // newPrimitive->vertexBuffers.emplace("transform", std::move(transformBuffer));
 
             PerPrimitiveUniform primitiveUniform{matrix};
-            auto                primitiveUniformBuffer = std::make_unique<Buffer>(device, sizeof(PerPrimitiveUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT  | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR, VMA_MEMORY_USAGE_CPU_TO_GPU, &primitiveUniform);
+            auto                primitiveUniformBuffer = std::make_unique<Buffer>(device, sizeof(PerPrimitiveUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR, VMA_MEMORY_USAGE_CPU_TO_GPU, &primitiveUniform);
             newPrimitive->setUniformBuffer(primitiveUniformBuffer);
 
             primitives.push_back(std::move(newPrimitive));
@@ -600,4 +598,9 @@ Mesh::Mesh(Device& device, glm::mat4 matrix) : device(device) {
 }
 
 void Primitive::setDimensions(glm::vec3 min, glm::vec3 max) {
+    dimensions = BBox(min, max);
+}
+
+const BBox& Primitive::getDimensions() const {
+    return dimensions;
 }

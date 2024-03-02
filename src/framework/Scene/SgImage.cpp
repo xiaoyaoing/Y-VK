@@ -19,9 +19,7 @@
 
 #include "imgui.h"
 #include "Images/AstcImageHelper.h"
-#include "Gui/Gui.h"
 #include "Images/KtxFormat.h"
-#include "ktx.h"
 
 struct CallbackData final {
     ktxTexture*          texture;
@@ -116,12 +114,29 @@ static KTX_error_code KTXAPIENTRY callBack(int mipLevel, int face, int width, in
 //
 //     return KTX_SUCCESS;
 // }
+static size_t ImageViewHash(const VkImageViewType& view_type, const VkFormat& format, const uint32_t& mip_level, const uint32_t& base_array_layer, const uint32_t& n_mip_levels, const uint32_t& n_array_layers) {
+    size_t hashValue = 0;
 
-void SgImage::createVkImage(Device& device, VkImageViewType image_view_type, VkImageCreateFlags flags) {
+    //todo optimize this
+    hashValue = view_type << 2 | format << 4 | mip_level << 10 | base_array_layer << 16 | n_mip_levels << 20 | n_array_layers << 24;
+
+    // std::hash<std::underlying_type<VkImageViewType>::type> hasher;
+    //
+    // glm::detail::hash_combine( hashValue,hasher(view_type));
+    // glm::detail::hash_combine(hashValue, static_cast<std::underlying_type<VkFormat>::type>(format));
+    // glm::detail::hash_combine(hashValue, std::hash<uint32_t>(mip_level));
+    // glm::detail::hash_combine(hashValue, base_array_layer);
+    // glm::detail::hash_combine(hashValue, n_mip_levels);
+    // glm::detail::hash_combine(hashValue, n_array_layers);
+    return hashValue;
+}
+
+void SgImage::createVkImage(Device& device, VkImageViewType imageViewType, VkImageCreateFlags flags) {
     assert(vkImage == nullptr && "Image has been created");
-    assert(vkImageView == nullptr && "ImageView has been created");
-    vkImage     = std::make_unique<Image>(device, mExtent3D, format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_SAMPLE_COUNT_1_BIT, toUint32(mipMaps.size()), layers, flags);
-    vkImageView = std::make_unique<ImageView>(*vkImage, image_view_type);
+    //   assert(vkImageView == nullptr && "ImageView has been created");
+    vkImage = std::make_unique<Image>(device, mExtent3D, format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_SAMPLE_COUNT_1_BIT, toUint32(mipMaps.size()), layers, flags);
+
+    createImageView();
 }
 
 SgImage::SgImage(Device& device, const std::string& path, VkImageViewType viewType) : device(device) {
@@ -134,18 +149,17 @@ SgImage::~SgImage() {
     // if(vkImageView) delete vkImageView.get();
 }
 
-SgImage::SgImage(SgImage&& other) : vkImage(std::move(other.vkImage)), vkImageView(std::move(other.vkImageView)),
+SgImage::SgImage(SgImage&& other) : vkImage(std::move(other.vkImage)), vkImageViews(std::move(other.vkImageViews)),
                                     data(std::move(other.data)),
                                     format(other.format), mExtent3D(other.mExtent3D),
                                     mipMaps(std::move(other.mipMaps)), offsets(std::move(other.offsets)),
                                     device(other.device), layers(other.layers) {
-    other.vkImage     = nullptr;
-    other.vkImageView = nullptr;
+    other.vkImage = nullptr;
 }
 
 SgImage::SgImage(Device& device, const std::string& name, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags image_usage, VmaMemoryUsage memory_usage, VkImageViewType viewType, VkSampleCountFlagBits sample_count, uint32_t mipLevels, uint32_t array_layers, VkImageCreateFlags flags) : format(format), mExtent3D(extent), name(name), device(device) {
-    vkImage     = std::make_unique<Image>(device, extent, format, image_usage, memory_usage, sample_count, mipLevels, array_layers, flags);
-    vkImageView = std::make_unique<ImageView>(*vkImage, viewType);
+    vkImage = std::make_unique<Image>(device, extent, format, image_usage, memory_usage, sample_count, mipLevels, array_layers, flags);
+    createImageView();
 
     this->format    = format;
     this->mExtent3D = extent;
@@ -171,8 +185,48 @@ Image& SgImage::getVkImage() const {
     return *vkImage;
 }
 
-ImageView& SgImage::getVkImageView() const {
-    return *vkImageView;
+VkImageViewType GetViewType(VkImageType type) {
+    switch (type) {
+        case VK_IMAGE_TYPE_1D:
+            return VK_IMAGE_VIEW_TYPE_1D;
+        case VK_IMAGE_TYPE_2D:
+            return VK_IMAGE_VIEW_TYPE_2D;
+        case VK_IMAGE_TYPE_3D:
+            return VK_IMAGE_VIEW_TYPE_3D;
+        default:
+            return VK_IMAGE_VIEW_TYPE_MAX_ENUM;
+    }
+}
+
+ImageView& SgImage::getVkImageView(VkImageViewType view_type, VkFormat format, uint32_t mip_level, uint32_t base_array_layer, uint32_t n_mip_levels, uint32_t n_array_layers) const {
+
+    if (view_type == VK_IMAGE_VIEW_TYPE_MAX_ENUM) {
+        view_type = GetViewType(vkImage->getImageType());
+    }
+    if (format == VK_FORMAT_UNDEFINED) {
+        format = vkImage->getFormat();
+    }
+
+    size_t hashValue = ImageViewHash(view_type, format, mip_level, base_array_layer, n_mip_levels, n_array_layers);
+
+    if (!vkImageViews.contains(hashValue)) {
+        LOGE("No image view found for hash value: {}", hashValue);
+    }
+    return *vkImageViews.at(hashValue);
+}
+
+void SgImage::createImageView(VkImageViewType view_type, VkFormat format, uint32_t mip_level, uint32_t base_array_layer, uint32_t n_mip_levels, uint32_t n_array_layers) {
+    if (view_type == VK_IMAGE_VIEW_TYPE_MAX_ENUM) {
+        view_type = GetViewType(vkImage->getImageType());
+    }
+    if (format == VK_FORMAT_UNDEFINED) {
+        format = vkImage->getFormat();
+    }
+    size_t hashValue = ImageViewHash(view_type, format, mip_level, base_array_layer, n_mip_levels, n_array_layers);
+    if (vkImageViews.contains(hashValue)) {
+        LOGW("Image view already created for hash value: {}", hashValue);
+    }
+    vkImageViews[hashValue] = std::make_unique<ImageView>(*vkImage, view_type, format, mip_level, base_array_layer, n_mip_levels, n_array_layers);
 }
 
 VkFormat SgImage::getFormat() const {
@@ -326,8 +380,8 @@ void SgImage::loadResources(const std::string& path) {
 }
 
 SgImage::SgImage(Device& device, VkImage handle, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags image_usage, VkSampleCountFlagBits sample_count, VkImageViewType viewType) : device(device) {
-    vkImage      = std::make_unique<Image>(device, handle, extent, format, image_usage, sample_count);
-    vkImageView  = std::make_unique<ImageView>(*vkImage, viewType);
+    vkImage = std::make_unique<Image>(device, handle, extent, format, image_usage, sample_count);
+    createImageView();
     this->format = format;
     setExtent(extent);
 }
