@@ -107,7 +107,7 @@ protected:
 
     VkExtent3D extent{};
 
-    VkImageType type{};
+    VkImageType type{VK_IMAGE_TYPE_MAX_ENUM};
 
     VkFormat format{};
 

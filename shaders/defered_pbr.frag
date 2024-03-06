@@ -5,9 +5,6 @@
 
 precision highp float;
 
-// #ifdef HAS_baseColorTexture
-//layout (set=1, binding=0) uniform sampler2D baseColorTexture;
-// #endif
 #define MIN_ROUGHNESS 0.04
 
 

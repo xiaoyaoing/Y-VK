@@ -23,8 +23,15 @@ void View::setScene(const Scene* scene) {
                     .color     = glm::vec4(light.lightProperties.color, light.lightProperties.intensity),
                     .position  = glm::vec4(light.lightProperties.position, 1),
                     .direction = glm::vec4(0.0f),
-                    .info      = glm::vec4(0.0f)};
+                    .info      = glm::vec4(2)};
                 lights.push_back(LightUib);
+             case  LIGHT_TYPE::Directional :
+                LightUib = {
+                    .color     = glm::vec4(light.lightProperties.color, light.lightProperties.intensity),
+                    .direction = glm::vec4(light.lightProperties.direction,1),
+                    .info =  glm::vec4(1)
+                };
+            lights.push_back(LightUib);
             default:
                 break;//todo
         }

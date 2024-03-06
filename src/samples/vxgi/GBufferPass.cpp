@@ -46,7 +46,6 @@ void GBufferPass::render(RenderGraph& rg) {
             builder.declare(desc);
 
             builder.writeTextures({diffuse, specular, emission, depth}, TextureUsage::COLOR_ATTACHMENT).writeTexture(depth, TextureUsage::DEPTH_ATTACHMENT);
-            
         },
         [&](RenderPassContext& context) {
                     //   renderContext->beginRenderPass(commandBuffer, context.renderTarget, {});
@@ -56,7 +55,6 @@ void GBufferPass::render(RenderGraph& rg) {
                     for(const auto & primitive : view->getMVisiblePrimitives()) {
                         // const auto allocation = renderContext->allocateBuffer(
                         //         sizeof(PerPrimitiveUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-
                         renderContext->bindPrimitiveGeom(context.commandBuffer, *primitive).bindPrimitiveShading(context.commandBuffer,*primitive)
                                 .flushAndDrawIndexed(context.commandBuffer, primitive->indexCount, 1, 0, 0, 0);
                     } });

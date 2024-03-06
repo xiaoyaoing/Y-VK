@@ -17,7 +17,7 @@
 //                          &_image, &_allocation, nullptr) == VK_SUCCESS, "Create image");
 //}
 
-inline VkImageType find_image_type(VkExtent3D extent) {
+inline VkImageType findImageType(VkExtent3D extent) {
     VkImageType result{};
 
     uint32_t dim_num{0};
@@ -58,7 +58,7 @@ Image::Image(Device &device, const VkExtent3D &extent, VkFormat format, VkImageU
              uint32_t array_layers, VkImageCreateFlags flags) :
         device(device),
         extent{extent},
-        type{find_image_type(extent)},
+        type{findImageType(extent)},
         format{format},
         usage{image_usage},
         sample_count{sample_count},
@@ -94,8 +94,8 @@ Image::Image(Device &device, const VkExtent3D &extent, VkFormat format, VkImageU
                                    &image, &memory,
                                    nullptr));
 
-    LOGI("Image created: %dx%d, %d mips, %d layers, format %d, usage %d, memory usage %d",
-         extent.width, extent.height, mip_levels, array_layers, format, image_usage, memory_usage);
+    LOGI("Image created: {}x{}, {} mips, {} layers, format {}",
+         extent.width, extent.height, mip_levels, array_layers, format);
 }
 
 Image::Image(Device &device, VkImage handle, const VkExtent3D &extent, VkFormat format,
@@ -103,6 +103,7 @@ Image::Image(Device &device, VkImage handle, const VkExtent3D &extent, VkFormat 
                                                                                   extent(extent), format(format),
                                                                                   usage(image_usage),
                                                                                   sample_count(sample_count) {
+    type = findImageType(extent);
     subresource.mipLevel = 1;
     subresource.arrayLayer = 1;
 }

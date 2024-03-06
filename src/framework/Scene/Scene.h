@@ -41,6 +41,7 @@ public:
     Scene(std::vector<std::unique_ptr<Primitive>>&& primitives, std::vector<std::unique_ptr<Texture>>&& textures, std::vector<GltfMaterial>&& materials, std::vector<SgLight>&& lights, std::vector<std::shared_ptr<Camera>>&& cameras);
 
     void addLight(const SgLight& light);
+    void addDirectionalLight(vec3 direction, vec3 color, float intensity);
 
     const std::vector<SgLight>& getLights() const;
 
@@ -48,10 +49,10 @@ public:
     const std::vector<std::unique_ptr<Texture>>&   getTextures() const;
     const std::vector<Material>&                   getMaterials() const;
     const std::vector<GltfMaterial>&               getGltfMaterials() const;
-    std::vector<std::shared_ptr<Camera>>& getCameras();
+    std::vector<std::shared_ptr<Camera>>&          getCameras();
 
 private:
-    std::vector<Material> materials;
+    std::vector<Material>     materials;
     std::vector<GltfMaterial> gltfMaterials;
 
     std::vector<SgLight> lights;

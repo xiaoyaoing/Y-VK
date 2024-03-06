@@ -319,7 +319,7 @@ void RenderGraph::compile() {
         } else {
             auto incoming  = getInComingNodes(resource);
             auto outComing = getOutComingNodes(resource);
-            LOGI("Resource %s is not used", resource->getName());
+            LOGI("Resource {0} is not used", resource->getName());
         }
     }
 

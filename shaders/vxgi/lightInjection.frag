@@ -50,22 +50,27 @@ vec4 convRGBA8ToVec4(uint val)
 
 void imageAtomicRGBA8Avg(ivec3 coords, vec4 value)
 {
-    // imageStore(radiance_image, coords, value);
+   //  imageStore(radiance_image, coords, convVec4ToRGBA8(value));
+    
+    
     value.rgb *= 255.0;
     uint newVal = convVec4ToRGBA8(value);
     uint prevStoredVal = 0;
     uint curStoredVal;
 
-    // Loop as long as destination value gets changed by other threads
-    while ((curStoredVal = imageAtomicCompSwap(radiance_image, coords, prevStoredVal, newVal)) != prevStoredVal)
-    {
-        prevStoredVal = curStoredVal;
-        vec4 rval = convRGBA8ToVec4(curStoredVal);
-        rval.xyz = (rval.xyz * rval.w);// Denormalize
-        vec4 curValF = rval + value;// Add new value
-        curValF.xyz /= (curValF.w);// Renormalize
-        newVal = convVec4ToRGBA8(curValF);
-    }
+    imageAtomicCompSwap(radiance_image, coords, prevStoredVal, newVal);
+
+    //
+//    // Loop as long as destination value gets changed by other threads
+//    while ((curStoredVal = imageAtomicCompSwap(radiance_image, coords, prevStoredVal, newVal)) != prevStoredVal)
+//    {
+//        prevStoredVal = curStoredVal;
+//        vec4 rval = convRGBA8ToVec4(curStoredVal);
+//        rval.xyz = (rval.xyz * rval.w);// Denormalize
+//        vec4 curValF = rval + value;// Add new value
+//        curValF.xyz /= (curValF.w);// Renormalize
+//        newVal = convVec4ToRGBA8(curValF);
+//    }
 }
 
 void voxelAtomicRGBA8Avg(ivec3 imageCoord, ivec3 faceIndex, vec4 color, vec3 weight)
@@ -137,6 +142,8 @@ void main(){
             Light light = lights_info.lights[i];
             lightContribution += apply_light(light, position, normal) * calcute_shadow(light, position);
         }
+
+        lightContribution = vec3(1.0f);
 
         if (all(equal(lightContribution, vec3(0.0))))
         discard;

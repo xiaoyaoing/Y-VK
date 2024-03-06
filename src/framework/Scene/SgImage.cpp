@@ -77,43 +77,6 @@ static KTX_error_code KTXAPIENTRY callBack(int mipLevel, int face, int width, in
     return KTX_SUCCESS;
 }
 
-// struct CallbackData final
-// {
-//     ktxTexture *         texture;
-//     std::vector<Mipmap> *mipmaps;
-// };
-//
-// /// Row padding is different between KTX (pad to 4) and Vulkan (none).
-// /// Also region->bufferOffset, i.e. the start of each image, has
-// /// to be a multiple of 4 and also a multiple of the element size.
-// static ktx_error_code_t KTX_APIENTRY optimal_tiling_callback(int          mipLevel,
-//                                                              int          face,
-//                                                              int          width,
-//                                                              int          height,
-//                                                              int          depth,
-//                                                              ktx_uint64_t face_lod_size,
-//                                                              void *       pixels,
-//                                                              void *       user_data)
-// {
-//     auto *callback_data = reinterpret_cast<CallbackData *>(user_data);
-//     assert(static_cast<size_t>(mipLevel) < callback_data->mipmaps->size() && "Not enough space in the mipmap vector");
-//
-//     ktx_size_t mipmap_offset = 0;
-//     auto       result        = ktxTexture_GetImageOffset(callback_data->texture, mipLevel, 0, face, &mipmap_offset);
-//     if (result != KTX_SUCCESS)
-//     {
-//         return result;
-//     }
-//
-//     auto &mipmap         = callback_data->mipmaps->at(mipLevel);
-//     mipmap.level         = mipLevel;
-//     mipmap.offset        = to_u32(mipmap_offset);
-//     mipmap.extent.width  = width;
-//     mipmap.extent.height = height;
-//     mipmap.extent.depth  = depth;
-//
-//     return KTX_SUCCESS;
-// }
 static size_t ImageViewHash(const VkImageViewType& view_type, const VkFormat& format, const uint32_t& mip_level, const uint32_t& base_array_layer, const uint32_t& n_mip_levels, const uint32_t& n_array_layers) {
     size_t hashValue = 0;
 
@@ -153,6 +116,7 @@ SgImage::SgImage(SgImage&& other) : vkImage(std::move(other.vkImage)), vkImageVi
                                     data(std::move(other.data)),
                                     format(other.format), mExtent3D(other.mExtent3D),
                                     mipMaps(std::move(other.mipMaps)), offsets(std::move(other.offsets)),
+                                    name(std::move(other.name)),
                                     device(other.device), layers(other.layers) {
     other.vkImage = nullptr;
 }
@@ -287,7 +251,7 @@ void SgImage::generateMipMap() {
         next_height = std::max<uint32_t>(1u, next_height / 2);
         next_size   = next_width * next_height * channels;
 
-        if (next_width == 1 && next_height == 1) {
+        if (next_width <= 1 && next_height <= 1) {
             break;
         }
     }

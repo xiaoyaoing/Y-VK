@@ -6,28 +6,7 @@
 #include "Image.h"
 #include "ImageUtil.h"
 #include "Common/VkUtils.h"
-//ImageView::ImageView(ptr<Device> &device, const ptr<Image> &targetImage, VkImageAspectFlags aspect,
-//                     uint32_t mipLevels) {
-//    _device = device;
-//
-//    VkImageViewCreateInfo imageViewInfo = {};
-//    imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-//    imageViewInfo.pNext = nullptr;
-//    imageViewInfo.viewType = static_cast<VkImageViewType>(targetImage->getImageType());
-//    imageViewInfo.format = targetImage->getFormat();
-//    imageViewInfo.image = targetImage->getHandle();
-//    imageViewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-//    imageViewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-//    imageViewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-//    imageViewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-//    imageViewInfo.subresourceRange.aspectMask = aspect;
-//    imageViewInfo.subresourceRange.baseMipLevel = 0;
-//    imageViewInfo.subresourceRange.levelCount = mipLevels;
-//    imageViewInfo.subresourceRange.baseArrayLayer = 0;
-//    imageViewInfo.subresourceRange.layerCount = 1;
-//
-//    ASSERT(vkCreateImageView(_device.getHandle(), &imageViewInfo, nullptr, &_view) == VK_SUCCESS, "create imageView");
-//}
+
 
 ImageView::ImageView(Image& image, VkImageViewType view_type, VkFormat format, uint32_t mip_level, uint32_t base_array_layer, uint32_t n_mip_levels, uint32_t n_array_layers) : image(image),
                                                                                                                                                                                 _device(image.getDevice()),
@@ -56,6 +35,9 @@ ImageView::ImageView(Image& image, VkImageViewType view_type, VkFormat format, u
     imageViewInfo.format           = format;
     imageViewInfo.subresourceRange = subResourceRange;
 
+    if(view_type == VK_IMAGE_VIEW_TYPE_1D) {
+        DebugBreak();
+    }
     VK_CHECK_RESULT(vkCreateImageView(_device.getHandle(), &imageViewInfo, nullptr, &_view));
     image.addView(this);
 }

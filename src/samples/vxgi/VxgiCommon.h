@@ -19,6 +19,7 @@ class VxgiPassBase {
 public:
     virtual void render(RenderGraph& rg) = 0;
     virtual void init()                  = 0;
+    virtual void updateGui() {}
     virtual void update() {}
     virtual ~VxgiPassBase() = default;
 };
@@ -47,9 +48,9 @@ struct VxgiConfig {
 
 struct alignas(16) VoxelizationParamater {
     //using vec3 and float/int layout avoid alignment problem of vec3 in std140 glsl layout
-    glm::vec3 prevClipmapMinWorldPos;
+    glm::vec3 prevClipmapMinWorldPos{};
     int       clipmapLevel;
-    glm::vec3 prevClipmapMaxWorldPos;
+    glm::vec3 prevClipmapMaxWorldPos{};
     float     voxelSize;
     glm::vec3 clipmapMinWorldPos;
     int       voxelResolution;

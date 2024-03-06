@@ -3,3 +3,7 @@
 //
 
 #include "Log.h"
+
+void DebugBreak() {
+    __debugbreak();
+}

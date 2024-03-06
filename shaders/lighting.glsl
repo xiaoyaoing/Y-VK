@@ -41,12 +41,16 @@ vec3 apply_spot_light(Light light, vec3 pos, vec3 normal)
 
 vec3 apply_light(Light light, vec3 pos, vec3 normal)
 {
-    if (light.position.w == 0.0)
+    if (light.info.x == 1)
     {
         return apply_directional_light(light, normal);
     }
-    else
+    else if (light.info.x == 2)
     {
         return apply_point_light(light, pos, normal);
     }
+    else if(light.info.x == 3){
+        return apply_point_light(light, pos, normal);
+    }
+    return vec3(0);
 }

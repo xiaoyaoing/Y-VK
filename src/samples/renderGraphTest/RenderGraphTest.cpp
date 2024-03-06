@@ -30,7 +30,6 @@ void Example::drawFrame(RenderGraph& rg) {
     };
 
     if (useSubpass) {
-        view->bindViewBuffer();
 
         rg.addPass(
             "gbuffer", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
@@ -71,6 +70,9 @@ void Example::drawFrame(RenderGraph& rg) {
             blackBoard.put("normal", normal);
             blackBoard.put("depth", depth);
             blackBoard.put(SWAPCHAIN_IMAGE_NAME, output); }, [&](RenderPassContext& context) {
+
+            view->bindViewBuffer().bindViewShading();
+
             renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.gBuffer).setDepthStencilState({.depthCompareOp =  VK_COMPARE_OP_GREATER});
 
             for(const auto & primitive : view->getMVisiblePrimitives()) {
@@ -81,17 +83,11 @@ void Example::drawFrame(RenderGraph& rg) {
             renderContext->getPipelineState().setDepthStencilState({.depthTestEnable = false});
 
                 
-            renderContext->bindImage(0, blackBoard.getImageView("albedo"));
-            renderContext->bindImage(1, blackBoard.getImageView("depth"));
-            renderContext->bindImage(2, blackBoard.getImageView("normal"));
+            renderContext->bindImage(0, blackBoard.getImageView("albedo")).bindImage(1, blackBoard.getImageView("depth")).bindImage(2, blackBoard.getImageView("normal"));
                 
-            // renderContext->bindLight<DeferredLights>(scene->getLights(), 0,4);
-
-
             renderContext->getPipelineState().setRasterizationState({
                                                                             .cullMode = VK_CULL_MODE_NONE
                                                                     });
-
             renderContext->flushAndDraw(commandBuffer, 3, 1, 0, 0); });
     }
 
@@ -135,6 +131,7 @@ void Example::drawFrame(RenderGraph& rg) {
                     blackBoard.put("depth", depth); }, [&](RenderPassContext& context) {
                     //   renderContext->beginRenderPass(commandBuffer, context.renderTarget, {});
                     renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.gBuffer).setDepthStencilState({.depthCompareOp =  VK_COMPARE_OP_GREATER});
+                    view->bindViewBuffer().bindViewShading();    
                     scene->IteratePrimitives([&](const Primitive &primitive) {
                             //todo: use camera data here
                             renderContext->bindPrimitiveGeom(context.commandBuffer,primitive).bindPrimitiveShading(context.commandBuffer,primitive).flushAndDrawIndexed(commandBuffer, primitive.indexCount);
@@ -146,10 +143,8 @@ void Example::drawFrame(RenderGraph& rg) {
                 auto depth  = blackBoard["depth"];
                 auto normal = blackBoard["normal"];
                 auto albedo = blackBoard["albedo"];
-                auto output = rg.importTexture(SWAPCHAIN_IMAGE_NAME, &renderContext->getCurHwtexture());
-
-                rg.getBlackBoard().put(SWAPCHAIN_IMAGE_NAME, output);
-
+                auto output = blackBoard.getHandle(SWAPCHAIN_IMAGE_NAME);
+                
                 builder.readTextures({depth, normal, albedo});
                 builder.writeTexture(output);
                 
@@ -161,7 +156,7 @@ void Example::drawFrame(RenderGraph& rg) {
             },
             [&](RenderPassContext& context) {
                 renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.lighting).setRasterizationState({.cullMode = VK_CULL_MODE_NONE}).setDepthStencilState({.depthTestEnable = false});
-
+                view->bindViewBuffer();
                 renderContext->bindImage(0, blackBoard.getImageView("albedo"))
                     .bindImage(1, blackBoard.getImageView("depth"))
                     .bindImage(2, blackBoard.getImageView("normal"))

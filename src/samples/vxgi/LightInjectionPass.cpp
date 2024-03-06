@@ -10,7 +10,8 @@ constexpr uint32_t kUpdateRegionLevelOffsets[CLIP_MAP_LEVEL_COUNT]{
     1 << 2,
     1 << 3,
     1 << 4,
-    1 << 5};
+    1 << 5
+};
 
 void LightInjectionPass::render(RenderGraph& rg) {
     auto& commandBuffer = g_context->getGraphicCommandBuffer();
@@ -32,16 +33,17 @@ void LightInjectionPass::render(RenderGraph& rg) {
                                 g_context->bindImage(2, rg.getBlackBoard().getHwImage("radiance").getVkImageView(VK_IMAGE_VIEW_TYPE_3D,VK_FORMAT_R32_UINT));
                 for(uint32_t i = 0 ;i<CLIP_MAP_LEVEL_COUNT;i++) {
                     // auto buffer = g_manager->fetchPtr<Buffer>("voxel_param_buffer");
-                    if(frameIndex % kUpdateRegionLevelOffsets[i] == 0) {
+                    if(frameIndex % kUpdateRegionLevelOffsets[i] == 0 || true) {
                         auto buffer = g_context->allocateBuffer(sizeof(VoxelizationParamater), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
                         auto & clipRegion =  clipRegions->operator[](i);
                         auto voxelParam =  clipRegion.getVoxelizationParam();
+                        voxelParam.clipmapLevel = i;
                         buffer.buffer->uploadData(&voxelParam, buffer.size,buffer.offset);
                         g_context->bindBuffer(5, *buffer.buffer,buffer.offset,buffer.size);
                         for(auto& primitive : view.getMVisiblePrimitives()) {
                             if(primitive->getDimensions().overlaps(clipRegion.getBoundingBox()))
-                                g_context->bindPrimitiveGeom(commandBuffer,*primitive).flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, 0, 0, 0);
+                                g_context->bindPrimitiveGeom(commandBuffer,*primitive).bindPrimitiveShading(commandBuffer,*primitive).flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, 0, 0, 0);
                         }
                     }
                 }

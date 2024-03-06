@@ -8,6 +8,7 @@ public:
     void init() override;
     void render(RenderGraph& rg) override;
     void pushFinalLightingParam();
+    void updateGui() override;
 
 protected:
     struct FinalLightingParam {
@@ -22,6 +23,8 @@ protected:
         float     uIndirectSpecularIntensity{1};// 44
         float     uOcclusionDecay{1};           // 48
         int       uEnable32Cones{0};
+        int       uDirectLighting{1};
+        int       uIndirectLighting{1};
     };
     std::unique_ptr<PipelineLayout> mFinalLightingPipelineLayout{nullptr};
     std::unique_ptr<Sampler>        mRadianceMapSampler{nullptr};

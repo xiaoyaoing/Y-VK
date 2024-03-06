@@ -29,6 +29,14 @@ Scene::Scene(std::vector<std::unique_ptr<Primitive>>&& primitives, std::vector<s
 void Scene::addLight(const SgLight& light) {
     lights.emplace_back(light);
 }
+void Scene::addDirectionalLight(vec3 direction, vec3 color, float intensity) {
+    SgLight light{};
+    light.lightProperties.color     = color;
+    light.lightProperties.intensity = intensity;
+    light.lightProperties.direction = direction;
+    light.type                      = LIGHT_TYPE::Directional;
+    lights.emplace_back(light);
+}
 
 const std::vector<SgLight>& Scene::getLights() const {
     return lights;
@@ -94,18 +102,18 @@ bool Primitive::hasVertexBuffer(const std::string& name) const {
     return vertexBuffers.contains(name);
 }
 
-const Buffer& Primitive::getIndexBuffer() const{
+const Buffer& Primitive::getIndexBuffer() const {
     return *indexBuffer;
 }
 
-const Buffer & Primitive::getUniformBuffer() const{
+const Buffer& Primitive::getUniformBuffer() const {
     return *uniformBuffer;
 }
 
 std::unique_ptr<Scene> loadDefaultTriangleScene(Device& device) {
     Material                                mat        = Material::getDefaultMaterial();
     std::vector<std::unique_ptr<Primitive>> primitives = {};
-    primitives.push_back(std::make_unique<Primitive>(0,0,3,0));
+    primitives.push_back(std::make_unique<Primitive>(0, 0, 3, 0));
 
     const uint32_t bufferSize      = sizeof(float) * 3 * 3;
     const uint32_t indexBufferSize = sizeof(uint32_t) * 3;
@@ -125,7 +133,7 @@ std::unique_ptr<Scene> loadDefaultTriangleScene(Device& device) {
     indexBuffer->uploadData(index.data());
     uniformBuffer->uploadData(&uniform);
 
-    auto& prim        = primitives[0];
+    auto& prim = primitives[0];
     prim->setIndexBuffer(indexBuffer);
     prim->setVertexBuffer(POSITION_ATTRIBUTE_NAME, positionBuffer);
     prim->setVertexBuffer("color", colorBuffer);
@@ -133,6 +141,6 @@ std::unique_ptr<Scene> loadDefaultTriangleScene(Device& device) {
     prim->setVertxAttribute(POSITION_ATTRIBUTE_NAME, VertexAttribute{.format = VK_FORMAT_R32G32B32_SFLOAT, .stride = sizeof(float) * 3, .offset = 0});
     prim->setVertxAttribute("color", VertexAttribute{.format = VK_FORMAT_R32G32B32_SFLOAT, .stride = sizeof(float) * 3, .offset = 0});
     prim->setIndexType(VK_INDEX_TYPE_UINT32);
-    auto scene      = new Scene(std::move(primitives), {}, {mat}, {}, {});
+    auto scene = new Scene(std::move(primitives), {}, {mat}, {}, {});
     return std::unique_ptr<Scene>(scene);
 }

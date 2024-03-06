@@ -4,8 +4,7 @@
 #include "Core/RenderContext.h"
 #include "Core/View.h"
 
-void VoxelizationPass::init() {
-
+void VoxelizationPass::initClipRegions() {
     mBBoxes = g_manager->fetchPtr<std::vector<BBox>>("bboxes");
 
     mClipRegions.resize(CLIP_MAP_LEVEL_COUNT);
@@ -29,6 +28,10 @@ void VoxelizationPass::init() {
         glm::ivec3 delta = computeChangeDeltaV(clipmapLevel);
         clipRegion.minCoord += delta;
     }
+}
+
+void VoxelizationPass::init() {
+    initClipRegions();
 
     Device& device = g_context->getDevice();
 
@@ -174,6 +177,7 @@ void VoxelizationPass::updateVoxelization() {
     mRevoxelizationRegions.resize(CLIP_MAP_LEVEL_COUNT, {});
 
     if (mFullRevoxelization) {
+        initClipRegions();
         for (uint32_t clipmapLevel = 0; clipmapLevel < CLIP_MAP_LEVEL_COUNT; ++clipmapLevel) {
             mRevoxelizationRegions[clipmapLevel].emplace_back(mClipRegions[clipmapLevel]);
         }

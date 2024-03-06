@@ -1,6 +1,7 @@
 #include "FinalLightingPass.h"
 
 #include "ClipmapRegion.h"
+#include "imgui.h"
 #include "Core/RenderContext.h"
 #include "Core/View.h"
 
@@ -55,12 +56,12 @@ void FinalLightingPass::render(RenderGraph& rg) {
             auto& blackBoard  = rg.getBlackBoard();
             auto& radianceMap = blackBoard.getHwImage("radiance");
 
-            g_context->getPipelineState().setPipelineLayout(*mFinalLightingPipelineLayout).setDepthStencilState({.depthTestEnable = false});
+            g_context->getPipelineState().setPipelineLayout(*mFinalLightingPipelineLayout).setDepthStencilState({.depthTestEnable = false}).setRasterizationState({.cullMode = VK_CULL_MODE_NONE});
             g_context->bindImage(0, blackBoard.getImageView("diffuse"))
                 .bindImage(1, blackBoard.getImageView("specular"))
                 .bindImage(2, blackBoard.getImageView("normal"))
-                .bindImage(3, blackBoard.getImageView("depth"))
-                .bindImage(4, blackBoard.getImageView("emission"))
+                .bindImage(3, blackBoard.getImageView("emission"))
+                .bindImage(4, blackBoard.getImageView("depth"))
                 .bindImageSampler(0, radianceMap.getVkImageView(), *mRadianceMapSampler);
             pushFinalLightingParam();
             g_context->flushAndDraw(context.commandBuffer, 3, 1, 0, 0);
@@ -74,7 +75,12 @@ void FinalLightingPass::pushFinalLightingParam() {
 
     mVoxelParam.volume_center       = region.getBoundingBox().center();
     mVoxelParam.voxel_size          = region.voxelSize;
-    mVoxelParam.clip_map_resoultion = region.getExtentWorld().x;
+    mVoxelParam.clip_map_resoultion = VOXEL_RESOLUTION;
 
     g_context->bindPushConstants(mVoxelParam);
+}
+
+void FinalLightingPass::updateGui() {
+    ImGui::InputInt("Direct intensity", &mVoxelParam.uDirectLighting);
+    ImGui::InputInt("Indirect intensity", &mVoxelParam.uIndirectLighting);
 }

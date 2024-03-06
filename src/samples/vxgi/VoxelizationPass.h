@@ -19,6 +19,7 @@ protected:
 class VoxelizationPass : public VxgiPassBase {
 
 public:
+    void       initClipRegions();
     void       init() override;
     void       render(RenderGraph& rg) override;
     glm::ivec3 computeChangeDeltaV(uint32_t clipmapLevel);

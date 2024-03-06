@@ -50,11 +50,11 @@ void main(void)
 
     if(material.pbrBaseColorTexture != -1)
     {
-        base_color = texture(sampler2D(scene_textures[material.pbrBaseColorTexture].texture, scene_textures[material.pbrBaseColorTexture].sampler), in_uv);
+        base_color = texture(scene_textures[material.pbrBaseColorTexture], in_uv);
     }
     else
     {
-        base_color = pbrBaseColorFactor;
+        base_color = material.pbrBaseColorFactor;
     }
     
     o_albedo = base_color;

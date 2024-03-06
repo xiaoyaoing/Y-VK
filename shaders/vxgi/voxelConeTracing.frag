@@ -33,6 +33,8 @@ layout (push_constant) uniform PushConstants
     float uIndirectSpecularIntensity;// 44
     float uOcclusionDecay;// 48
     int   uEnable32Cones;// 52
+    int       uDirectLighting;
+    int       uIndirectLighting;
 };
 
 //layout(push_constant) uniform PushConstants
@@ -229,7 +231,8 @@ void main(){
         //        float visibility = calcute_shadow()
         //        directContribution += microfacetBRDF(pbr) * visibility;
     }
-    out_color = vec4(direct_contribution + indirect_contribution, 1);
+    out_color = vec4(direct_contribution * uDirectLighting + indirect_contribution * uIndirectLighting, 1);
+    // out_color += vec4(diffuse_color,1);
 }
 
 vec3  worldPosFromDepth    (float depth){
