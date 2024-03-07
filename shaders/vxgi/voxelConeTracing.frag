@@ -3,7 +3,9 @@
 #extension GL_GOOGLE_include_directive : enable 
 
 #include "../perFrame.glsl"
-#include "../shadow.glsl"
+//#include "../shadow.glsl"
+#include "../lighting.glsl"
+#include "../brdf.glsl"
 
 precision mediump float;
 
@@ -59,11 +61,11 @@ layout (push_constant) uniform PushConstants
 
 
 
-layout(input_attachment_index = 0, binding = 0, set=2) uniform subpassInput gbuffer_diffuse;
-layout(input_attachment_index = 1, binding = 1, set=2) uniform subpassInput gbuffer_specular;
-layout(input_attachment_index = 2, binding = 2, set=2) uniform subpassInput gbuffer_normal;
-layout(input_attachment_index = 3, binding = 3, set=2) uniform subpassInput gbuffer_emission;
-layout(input_attachment_index = 4, binding = 4, set=2) uniform subpassInput gbuffer_depth;
+layout(input_attachment_index = 0, binding = 0, set=2) uniform subpassInput gbuffer_diffuse_roughness;
+//layout(input_attachment_index = 1, binding = 1, set=2) uniform subpassInput gbuffer_specular;
+layout(input_attachment_index = 2, binding = 1, set=2) uniform subpassInput gbuffer_normal_metalic;
+layout(input_attachment_index = 3, binding = 2, set=2) uniform subpassInput gbuffer_emission;
+layout(input_attachment_index = 4, binding = 3, set=2) uniform subpassInput gbuffer_depth;
 
 
 // Get Fixed voxel cone directions from 
@@ -140,10 +142,11 @@ float calcmin_level        (vec3 worldPos);
 vec4  min_levelToColor    (float min_level);
 
 void main(){
-    vec4  diffuse  = subpassLoad(gbuffer_diffuse);
-    vec4  specular = subpassLoad(gbuffer_specular);
-    vec3  normal   = subpassLoad(gbuffer_normal).xyz;
-    normal      = normalize(2.0 * normal - 1.0);
+    vec4  diffuse_roughness  = subpassLoad(gbuffer_diffuse_roughness);
+    vec4  normal_metalic    = subpassLoad(gbuffer_normal_metalic);
+    vec3 normal      = normalize(2.0 * normal_metalic.xyz - 1.0);
+    float metallic    = normal_metalic.w;
+
     vec3  emission = subpassLoad(gbuffer_emission).rgb;
     float depth    = subpassLoad(gbuffer_depth).x;
 
@@ -166,23 +169,21 @@ void main(){
     }
     indirect_contribution /= DIFFUSE_CONE_COUNT_16;
 
-    vec3 specular_color = specular.xyz;
-    float metallic = specular.a;
 
-    vec3 diffuse_color = diffuse.xyz;
-    float perceptual_roughness = diffuse.a;
+    vec3 diffuse_color = diffuse_roughness.xyz;
+    float perceptual_roughness = diffuse_roughness.a;
 
     vec3 view_dir = per_frame.camera_pos - world_pos;
     vec3 indirect_specular_contribution = vec3(0.0);
     float roughness = sqrt(2.0 / (metallic + 2.0));
-    if (any(greaterThan(specular_color, vec3(1e-6))) && metallic > 1e-6)
+    if (metallic > 1e-6)
     {
         vec3 specular_cone_direction = reflect(-view_dir, normal);
         indirect_specular_contribution += traceCone(
         start_pos, specular_cone_direction,
         MIN_SPECULAR_FACTOR,
         MAX_TRACE_DISTANCE, min_level, voxel_size
-        ).rgb * specular_color;
+        ).rgb;
     }
     //specular cone 
     indirect_contribution += indirect_specular_contribution;
@@ -191,52 +192,54 @@ void main(){
     vec3 direct_contribution = vec3(0.0);
 
     bool has_emission = any(greaterThan(emission, vec3(1e-6)));
-    if (has_emission)
-    {
-        direct_contribution+= emission;
-    }
-    else
+    //    if (has_emission)
+    //    {
+    //        direct_contribution+= emission;
+    //    }
+    //    else
     {
         // calculate Microfacet BRDF model
         // Roughness is authored as perceptual roughness; as is convention
         // convert to material roughness by squaring the perceptual roughness [2].
         // for 
+
+        vec3 view_dir = normalize(per_frame.camera_pos - world_pos);
+
+        PBRInfo pbr_info;
+        // why use abs here?
+        pbr_info.NdotV = clamp(abs(dot(normal, view_dir)), 0.001, 1.0);
+
+        pbr_info.F0 = mix(vec3(0.04), diffuse_color, metallic);
+        pbr_info.F90 = vec3(1.0);
+        pbr_info.alphaRoughness = perceptual_roughness * perceptual_roughness;
+        pbr_info.diffuseColor = diffuse_color;
+        //        pbr_info.specularColor = specular_color;
+
+
         for (uint i = 0U; i < per_frame.light_count; ++i)
         {
-            direct_contribution += apply_light(lights_info.lights[i], world_pos, normal);
+            vec3 light_dir = calcuate_light_dir(lights_info.lights[i], world_pos);
+
+            vec3 half_vector = normalize(light_dir + view_dir);
+
+            pbr_info.NdotL = clamp(dot(normal, light_dir), 0.001, 1.0);
+            pbr_info.NdotH = clamp(dot(normal, half_vector), 0.0, 1.0);
+            pbr_info.LdotH = clamp(dot(light_dir, half_vector), 0.0, 1.0);
+            pbr_info.VdotH = clamp(dot(view_dir, half_vector), 0.0, 1.0);
+
+            vec3 light_contribution = microfacetBRDF(pbr_info) * calcuate_light_intensity(lights_info.lights[i], world_pos) * calcute_shadow(lights_info.lights[i], world_pos);
+
+            direct_contribution += light_contribution;
         }
-        //        float alphaRoughness = perceptualRoughness * perceptualRoughness;
-        //
-        //        // For typical incident reflectance range (between 4% to 100%) set the grazing reflectance to 100% for typical fresnel effect.
-        //        // For very low reflectance range on highly diffuse objects (below 4%), incrementally reduce grazing reflectance to 0%;
-        //        float reflectance = max(max(specularColor.r, specularColor.g), specularColor.b);
-        //        vec3 specularEnvironmentR0 = specularColor.rgb;
-        //        vec3 specularEnvironmentR90 = vec3(clamp(reflectance * 50.0, 0.0, 1.0));
-        //
-        //        vec3 light = normalize(-uDirectionalLight.direction);
-        //        vec3 h = normalize(light + view);
-        //        vec3 reflection = -normalize(reflect(view, normal));
-        //        reflection.y *= -1.0f;
-        //
-        //        float NdotL = clamp(dot(normal, light),		0.001, 1.0);
-        //        float NdotV = clamp(abs(dot(normal, view)), 0.001, 1.0);
-        //        float NdotH = clamp(dot(normal, h),			  0.0, 1.0);
-        //        float LdotH = clamp(dot(light, h),			  0.0, 1.0);
-        //        float VdotH = clamp(dot(view, h),			  0.0, 1.0);
-        //
-        //        PBRInfo pbr = PBRInfo(NdotL, NdotV, NdotH, LdotH, VdotH, perceptualRoughness,
-        //                              metallic, specularEnvironmentR0, specularEnvironmentR90,
-        //                              alphaRoughness, diffuseColor, specularColor);
-        //
-        //        float visibility = calcute_shadow()
-        //        directContribution += microfacetBRDF(pbr) * visibility;
+        direct_contribution = vec3(1);
     }
     out_color = vec4(direct_contribution * uDirectLighting + indirect_contribution * uIndirectLighting, 1);
+    //out_color = vec4(1);
     // out_color += vec4(diffuse_color,1);
 }
 
 vec3  worldPosFromDepth    (float depth){
-    vec4  clip         = vec4(in_uv * 2.0 - 1.0, subpassLoad(gbuffer_depth).x, 1.0);
+    vec4  clip         = vec4(in_uv * 2.0 - 1.0, depth, 1.0);
     vec4 world_w = per_frame.inv_view_proj * clip;
     vec3 pos     = world_w.xyz / world_w.w;
     return pos;

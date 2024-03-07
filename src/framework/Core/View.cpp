@@ -16,25 +16,23 @@ void View::setScene(const Scene* scene) {
     lights.reserve(CONFIG_MAX_LIGHT_COUNT);
     //uint32_t curLightCount = 0;
     for (const auto& light : mScene->getLights()) {
-        LightUib LightUib{};
+        LightUib lightUib;
         switch (light.type) {
             case LIGHT_TYPE::Point:
-                LightUib = {
+                lightUib = {
                     .color     = glm::vec4(light.lightProperties.color, light.lightProperties.intensity),
                     .position  = glm::vec4(light.lightProperties.position, 1),
                     .direction = glm::vec4(0.0f),
                     .info      = glm::vec4(2)};
-                lights.push_back(LightUib);
-             case  LIGHT_TYPE::Directional :
-                LightUib = {
+            case LIGHT_TYPE::Directional:
+                lightUib = {
                     .color     = glm::vec4(light.lightProperties.color, light.lightProperties.intensity),
-                    .direction = glm::vec4(light.lightProperties.direction,1),
-                    .info =  glm::vec4(1)
-                };
-            lights.push_back(LightUib);
+                    .direction = glm::vec4(light.lightProperties.direction, 1),
+                    .info      = glm::vec4(1)};
             default:
                 break;//todo
         }
+        lights.emplace_back(lightUib);
     }
     mLightBuffer->uploadData(lights.data(), mLightBuffer->getSize(), 0);
     for (const auto& primitive : mScene->getPrimitives()) {
@@ -50,8 +48,14 @@ void View::setCamera(const Camera* camera) {
 }
 View& View::bindViewBuffer() {
     PerViewUnifom perViewUnifom{};
-    perViewUnifom.view_proj      = mCamera->matrices.perspective * mCamera->matrices.view;
-    perViewUnifom.inv_view_proj  = glm::inverse(perViewUnifom.view_proj);
+    perViewUnifom.view_proj     = mCamera->matrices.perspective * mCamera->matrices.view;
+    perViewUnifom.inv_view_proj = glm::inverse(perViewUnifom.view_proj);
+
+    vec3 position = vec3(mCamera->position + 1.f);
+    //auto p = glm::vec4(position,1) * perViewUnifom.view_proj * perViewUnifom.inv_view_proj;
+
+    //  assert(glm::vec4(position,1) * perViewUnifom.view_proj * perViewUnifom.inv_view_proj == glm::vec4(position,1));
+
     perViewUnifom.resolution     = glm::ivec2(g_context->getSwapChainExtent().width, g_context->getSwapChainExtent().height);
     perViewUnifom.inv_resolution = glm::vec2(1.0f / perViewUnifom.resolution.x, 1.0f / perViewUnifom.resolution.y);
     perViewUnifom.light_count    = mScene->getLights().size();

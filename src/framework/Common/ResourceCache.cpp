@@ -37,6 +37,26 @@ SgImage& ResourceCache::requestSgImage(const std::string& path, VkImageViewType 
 }
 
 SgImage& ResourceCache::requestSgImage(const std::string& name, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags image_usage, VmaMemoryUsage memory_usage, VkImageViewType viewType, VkSampleCountFlagBits sample_count, uint32_t mip_levels, uint32_t array_layers, VkImageCreateFlags flags) {
+    // std::lock_guard<std::mutex> mutex(sgImageMutex);
+    // size_t hash{};
+    // hash_combine(hash, name);
+    // hash_combine(hash, extent);
+    // hash_combine(hash, format);
+    // hash_combine(hash, image_usage);
+    // hash_combine(hash, memory_usage);
+    // hash_combine(hash, viewType);
+    // hash_combine(hash, sample_count);
+    // hash_combine(hash, mip_levels);
+    // hash_combine(hash, array_layers);
+    // hash_combine(hash, flags);
+    //
+    // if(auto res = state.sgImages.find(hash); res != state.sgImages.end()) {
+    //     return res->second;
+    // }
+    // SgImage resource(device, name, extent, format, image_usage, memory_usage, viewType, sample_count, mip_levels, array_layers, flags);
+    // auto res_it = state.sgImages.emplace(hash, std::move(resource));
+    // return res_it.first->second;
+    
     return requestResource(device, sgImageMutex, state.sgImages, name, extent, format, image_usage, memory_usage, viewType, sample_count, mip_levels, array_layers, flags);
 }
 

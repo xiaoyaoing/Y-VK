@@ -62,6 +62,8 @@ void Camera::setPerspective(float fov, float aspect, float znear, float zfar) {
     this->fov            = fov;
     this->zNear          = znear;
     this->zFar           = zfar;
+    
+    //inverse znear and zfar 
     matrices.perspective = glm::perspective(glm::radians(fov), aspect, zfar, znear);
     if (flipY) {
         matrices.perspective[1][1] *= -1.0f;

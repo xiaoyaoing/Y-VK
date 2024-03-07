@@ -225,17 +225,18 @@ bool Gui::update() {
         return false;
     }
 
-    if (!vertexBuffer || !indexBuffer || vertexBuffer->getSize() != vertexBufferSize ||
-        indexBuffer->getSize() != indexBufferSize) {
-        if (!vertexBuffer || vertexBuffer->getSize() != vertexBufferSize)
-            vertexBuffer = std::make_unique<Buffer>(device, vertexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-        if (!indexBuffer || indexBuffer->getSize() != indexBufferSize)
-            indexBuffer = std::make_unique<Buffer>(device, indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-        uint64_t vtxOffset = 0, idxOffset = 0;
+    if ( mvertexBuffer.size != vertexBufferSize ||
+        mIndexBuffer.size != indexBufferSize) {
+        if (mvertexBuffer.size != vertexBufferSize) {
+            mvertexBuffer = g_context->allocateBuffer(vertexBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+        }
+        if (mIndexBuffer.size != indexBufferSize)
+            mIndexBuffer = g_context->allocateBuffer(indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+        uint64_t vtxOffset = mvertexBuffer.offset, idxOffset = mIndexBuffer.offset;
         for (int n = 0; n < imDrawData->CmdListsCount; n++) {
             const ImDrawList* cmd_list = imDrawData->CmdLists[n];
-            vertexBuffer->uploadData(cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert), vtxOffset);
-            indexBuffer->uploadData(cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx), idxOffset);
+            mvertexBuffer.buffer->uploadData(cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert), vtxOffset);
+            mIndexBuffer.buffer->uploadData(cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx), idxOffset);
             vtxOffset += cmd_list->VtxBuffer.Size * sizeof(ImDrawVert);
             idxOffset += cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx);
         }
@@ -268,10 +269,10 @@ void Gui::draw(CommandBuffer& commandBuffer) {
 
     renderContext.bindImageSampler(0, fontTexture->getImage().getVkImageView(), fontTexture->getSampler(), 0, 0);
 
-    std::vector<const Buffer*> vertexBuffers = {vertexBuffer.get()};
+    std::vector<const Buffer*> vertexBuffers = {mvertexBuffer.buffer};
 
-    commandBuffer.bindVertexBuffer(vertexBuffers, {0});
-    commandBuffer.bindIndicesBuffer(*indexBuffer, 0);
+    commandBuffer.bindVertexBuffer(vertexBuffers, {mvertexBuffer.offset});
+    commandBuffer.bindIndicesBuffer(*mIndexBuffer.buffer, mIndexBuffer.offset);
 
     for (int32_t i = 0; i < imDrawData->CmdListsCount; i++) {
         const ImDrawList* cmd_list = imDrawData->CmdLists[i];
@@ -321,10 +322,10 @@ void Gui::addGuiPass(RenderGraph& graph) {
 
             renderContext.bindImageSampler(0, fontTexture->getImage().getVkImageView(), fontTexture->getSampler(), 0, 0);
 
-            std::vector<const Buffer*> vertexBuffers = {vertexBuffer.get()};
+            std::vector<const Buffer*> vertexBuffers = {mvertexBuffer.buffer};
 
-            context.commandBuffer.bindVertexBuffer(vertexBuffers, {0});
-            context.commandBuffer.bindIndicesBuffer(*indexBuffer, 0);
+            context.commandBuffer.bindVertexBuffer(vertexBuffers, {mvertexBuffer.offset});
+            context.commandBuffer.bindIndicesBuffer( *mIndexBuffer.buffer, mIndexBuffer.offset);
 
             for (int32_t i = 0; i < imDrawData->CmdListsCount; i++) {
                 const ImDrawList* cmd_list = imDrawData->CmdLists[i];

@@ -21,10 +21,10 @@ void GBufferPass::render(RenderGraph& rg) {
                                              .useage = TextureUsage::SUBPASS_INPUT |
                                                        TextureUsage::COLOR_ATTACHMENT});
 
-            auto specular = rg.createTexture("specular",
-                                             {.extent = renderContext->getSwapChainExtent(),
-                                              .useage = TextureUsage::SUBPASS_INPUT |
-                                                        TextureUsage::COLOR_ATTACHMENT});
+            // auto specular = rg.createTexture("specular",
+            //                                  {.extent = renderContext->getSwapChainExtent(),
+            //                                   .useage = TextureUsage::SUBPASS_INPUT |
+            //                                             TextureUsage::COLOR_ATTACHMENT});
 
             auto normal = rg.createTexture("normal",
                                            {.extent = renderContext->getSwapChainExtent(),
@@ -42,12 +42,10 @@ void GBufferPass::render(RenderGraph& rg) {
 
                                                    });
 
-            RenderGraphPassDescriptor desc({diffuse, specular, normal, emission, depth}, {.outputAttachments = {diffuse, specular, normal, emission, depth}});
+            RenderGraphPassDescriptor desc({diffuse,  normal, emission, depth}, {.outputAttachments = {diffuse,  normal, emission, depth}});
             builder.declare(desc);
 
-            builder.writeTextures({diffuse, specular, emission, depth}, TextureUsage::COLOR_ATTACHMENT).writeTexture(depth, TextureUsage::DEPTH_ATTACHMENT);
-        },
-        [&](RenderPassContext& context) {
+            builder.writeTextures({diffuse,  emission, depth}, TextureUsage::COLOR_ATTACHMENT).writeTexture(depth, TextureUsage::DEPTH_ATTACHMENT); }, [&](RenderPassContext& context) {
                     //   renderContext->beginRenderPass(commandBuffer, context.renderTarget, {});
                     renderContext->getPipelineState().setPipelineLayout(*mPipelineLayout).setDepthStencilState({.depthCompareOp =  VK_COMPARE_OP_GREATER});
                     View* view = g_manager->fetchPtr<View>("view");

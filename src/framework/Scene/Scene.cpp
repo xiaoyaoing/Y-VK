@@ -61,9 +61,10 @@ std::vector<std::shared_ptr<Camera>>& Scene::getCameras() {
     return cameras;
 }
 
-bool Primitive::getVertexAttribute(const std::string& name, VertexAttribute& attribute) const {
+bool Primitive::getVertexAttribute(const std::string& name, VertexAttribute* attribute) const {
     if (vertexAttributes.contains(name)) {
-        attribute = vertexAttributes.at(name);
+        if (attribute)
+            *attribute = vertexAttributes.at(name);
         return true;
     }
     return false;

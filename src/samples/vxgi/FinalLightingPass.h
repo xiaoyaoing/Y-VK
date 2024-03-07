@@ -24,7 +24,7 @@ protected:
         float     uOcclusionDecay{1};           // 48
         int       uEnable32Cones{0};
         int       uDirectLighting{1};
-        int       uIndirectLighting{1};
+        int       uIndirectLighting{0};
     };
     std::unique_ptr<PipelineLayout> mFinalLightingPipelineLayout{nullptr};
     std::unique_ptr<Sampler>        mRadianceMapSampler{nullptr};

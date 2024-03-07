@@ -11,10 +11,9 @@ precision highp float;
 layout (location = 0) in vec2 in_uv;
 layout (location = 1) in vec3 in_normal;
 
-layout (location = 0) out vec4 o_diffuse;
-layout (location = 1) out vec4 o_specular;
-layout (location = 2) out vec4 o_normal;
-layout (location = 3) out vec4 o_emssion;
+layout (location = 0) out vec4 o_diffuse_roughness;
+layout (location = 1) out vec4 o_normal_metalic;
+layout (location = 2) out vec4 o_emssion;
 
 layout(push_constant) uniform PushConstantBlock {
     uint u_materialIndex;
@@ -29,7 +28,7 @@ void main(void)
 {
     vec3 normal = normalize(in_normal);
     // Transform normals from [-1, 1] to [0, 1]
-    o_normal = vec4(0.5 * normal + 0.5, 1.0);
+    //    o_normal_metalic = vec4(0.5 * normal + 0.5, 1.0);
 
     GltfMaterial material = scene_materials[u_materialIndex];
 
@@ -62,27 +61,20 @@ void main(void)
         baseColor *= texture(scene_textures[material.pbrBaseColorTexture], in_uv);
     }
     diffuseColor = baseColor.rgb * (vec3(1.0) - f0) * (1.0 - metallic);
-    specularColor = mix(f0, baseColor.rgb, metallic);
 
-    if (material.alphaMode > 0 && baseColor.a < material.alphaCutoff)
-    {
-        //        discard;
-    }
+    //    if (material.alphaMode > 0 && baseColor.a < material.alphaCutoff)
+    //    {
+    //                discard;
+    //    }
 
-    o_diffuse  = vec4(diffuseColor, perceptualRoughness);
-    o_specular = vec4(specularColor, metallic);
-    // gbufferNormal = vec4(normalize(fs_in.normal) * 0.5 + 0.5, 1.0);
-
-    //    vec4 tangent = vec4(normalize(fs_in.tangent.xyz), fs_in.tangent.w);
-    //    gbufferTangent = vec4(tangent * 0.5 + 0.5);
-
+    o_diffuse_roughness  = vec4(diffuseColor, perceptualRoughness);
+    o_normal_metalic = vec4(normal * 0.5f  + 0.5f, metallic);
     vec3 emissionColor            = material.emissiveFactor;
     if (material.emissiveTexture > -1)
     {
         emissionColor *= SRGBtoLinear(texture(scene_textures[material.emissiveTexture], in_uv), 2.2).rgb;
     }
     o_emssion = vec4(emissionColor, 1.0);
-    //    o_normal =  o_albedo;
 
 
 }

@@ -42,10 +42,10 @@ void RTSceneEntryImpl::initScene(Scene& scene) {
     uint32_t positionBufferSize = 0;
     uint32_t indexBufferSize    = 0;
     for (const auto& primitive : scene.getPrimitives()) {
-        if (primitive->vertexAttributes.contains(POSITION_ATTRIBUTE_NAME))
-            positionBufferSize += primitive->vertexBuffers.at(POSITION_ATTRIBUTE_NAME)->getSize();
+        if (primitive->getVertexAttribute(POSITION_ATTRIBUTE_NAME))
+            positionBufferSize += primitive->getVertexBuffer(POSITION_ATTRIBUTE_NAME).getSize();
         // if(primitive->vertexAttributes.contains(INDEX_ATTRIBUTE_NAME))
-        indexBufferSize += primitive->indexBuffer->getSize();
+        indexBufferSize += primitive->getIndexBuffer().getSize();
     }
     vertexBuffer = std::make_unique<Buffer>(device, positionBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
     indexBuffer  = std::make_unique<Buffer>(device, indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
@@ -65,7 +65,7 @@ void RTSceneEntryImpl::initScene(Scene& scene) {
 
     uint32 vertexOffset{0}, indexOffset{0}, normalOffset{0};
 
-    auto copyBuffer = [&](Buffer& dstBuffer, Buffer& srcBuffer, uint32_t& offset) {
+    auto copyBuffer = [&](Buffer& dstBuffer, const Buffer& srcBuffer, uint32_t& offset) {
         VkBufferCopy copy{.srcOffset = 0, .dstOffset = offset, .size = srcBuffer.getSize()};
         vkCmdCopyBuffer(commandBuffer.getHandle(), srcBuffer.getHandle(), dstBuffer.getHandle(), 1, &copy);
         offset += srcBuffer.getSize();///stride;
@@ -75,17 +75,17 @@ void RTSceneEntryImpl::initScene(Scene& scene) {
 
         primitives.emplace_back(RTPrimitive{.material_index = primitive->materialIndex, .vertex_offset = vertexOffset, .vertex_count = primitive->vertexCount, .index_offset = indexOffset, .index_count = primitive->indexCount, .world_matrix = primitive->matrix});
 
-        copyBuffer(*vertexBuffer, *primitive->vertexBuffers.at(POSITION_ATTRIBUTE_NAME), vertexBufferOffset);
-        copyBuffer(*indexBuffer, *primitive->indexBuffer, indexBufferOffset);
-        copyBuffer(*normalBuffer, *primitive->vertexBuffers.at(NORMAL_ATTRIBUTE_NAME), normalBufferOffset);
-        copyBuffer(*uvBuffer, *primitive->vertexBuffers.at(TEXCOORD_ATTRIBUTE_NAME), uvBufferOffset);
+        copyBuffer(*vertexBuffer, primitive->getVertexBuffer(POSITION_ATTRIBUTE_NAME), vertexBufferOffset);
+        copyBuffer(*indexBuffer, primitive->getIndexBuffer(), indexBufferOffset);
+        copyBuffer(*normalBuffer, primitive->getVertexBuffer(NORMAL_ATTRIBUTE_NAME), normalBufferOffset);
+        copyBuffer(*uvBuffer, primitive->getVertexBuffer(TEXCOORD_ATTRIBUTE_NAME), uvBufferOffset);
 
         vertexOffset += primitive->vertexCount;
         indexOffset += primitive->indexCount;
 
         transformBuffers.emplace_back(Buffer{device, sizeof(glm::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR, VMA_MEMORY_USAGE_CPU_TO_GPU, &primitive->matrix});
-        auto& trBuffer = primitive->vertexBuffers.at("transform");
-        transformBuffers.push_back(std::move(*trBuffer));
+        auto& trBuffer = primitive->getVertexBuffer("transform");
+        transformBuffers.push_back(std::move(trBuffer));
     }
 
     renderContext->submit(commandBuffer);

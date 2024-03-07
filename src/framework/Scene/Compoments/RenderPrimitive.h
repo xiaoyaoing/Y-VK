@@ -51,7 +51,7 @@ public:
     glm::mat4 matrix{};
     uint32_t  materialIndex{0};
 
-    bool          getVertexAttribute(const std::string& name, VertexAttribute& attribute) const;
+    bool          getVertexAttribute(const std::string& name, VertexAttribute* attribute = nullptr) const;
     void          setVertxAttribute(const std::string& name, const VertexAttribute& attribute);
     void          setVertexBuffer(const std::string& name, std::unique_ptr<Buffer>& buffer);
     void          setUniformBuffer(std::unique_ptr<Buffer>& buffer);

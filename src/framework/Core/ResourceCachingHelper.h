@@ -494,6 +494,6 @@ inline void hash_param(size_t& seed, const T& value) {
 template<typename T, typename... Args>
 inline void hash_param(size_t& seed, const T& first_arg, const Args&... args) {
     hash_param(seed, first_arg);
-
+    LOGI(seed);
     hash_param(seed, args...);
 }

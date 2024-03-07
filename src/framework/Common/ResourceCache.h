@@ -52,12 +52,16 @@ T& requestResource(Device& device, std::unordered_map<std::size_t, T>& resources
     if (res != resources.end()) {
         return res->second;
     }
-
+    
     LOGI("Creating resource of type {0}", typeid(T).name());
 
     T    resource(device, args...);
     auto res_it = resources.emplace(hash, std::move(resource));
 
+    hash = 0;
+    hash_param(hash, args...);
+
+    
     res = res_it.first;
     return res->second;
 

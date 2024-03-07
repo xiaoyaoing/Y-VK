@@ -67,7 +67,7 @@ void Example::prepare() {
                 props.intensity = 0.2f;
                 props.position  = pos;
 
-                //  scene->addLight(SgLight{.type = LIGHT_TYPE::Point, .lightProperties = props});
+                scene->addLight(SgLight{.type = LIGHT_TYPE::Point, .lightProperties = props});
             }
         }
     }

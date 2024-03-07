@@ -37,16 +37,16 @@ void FinalLightingPass::render(RenderGraph& rg) {
             auto& blackBoard = rg.getBlackBoard();
             auto  radiance   = blackBoard.getHandle("radiance");
             auto  diffuse    = blackBoard.getHandle("diffuse");
-            auto  specular   = blackBoard.getHandle("specular");
-            auto  normal     = blackBoard.getHandle("normal");
-            auto  depth      = blackBoard.getHandle("depth");
-            auto  emission   = blackBoard.getHandle("emission");
+            //    auto  specular   = blackBoard.getHandle("specular");
+            auto normal   = blackBoard.getHandle("normal");
+            auto depth    = blackBoard.getHandle("depth");
+            auto emission = blackBoard.getHandle("emission");
 
             auto output = blackBoard.getHandle(SWAPCHAIN_IMAGE_NAME);
 
-            builder.readTextures({radiance, diffuse, specular, normal, depth, emission}).writeTexture(output);
+            builder.readTextures({radiance, diffuse, normal, depth, emission}).writeTexture(output);
 
-            RenderGraphPassDescriptor desc({radiance, diffuse, specular, normal, depth, emission, output}, {.inputAttachments = {diffuse, specular, normal, depth, emission}, .outputAttachments = {output}});
+            RenderGraphPassDescriptor desc({radiance, diffuse, normal, depth, emission, output}, {.inputAttachments = {diffuse, normal, depth, emission}, .outputAttachments = {output}});
             builder.declare(desc);
         },
         [&](RenderPassContext& context) {
@@ -58,10 +58,10 @@ void FinalLightingPass::render(RenderGraph& rg) {
 
             g_context->getPipelineState().setPipelineLayout(*mFinalLightingPipelineLayout).setDepthStencilState({.depthTestEnable = false}).setRasterizationState({.cullMode = VK_CULL_MODE_NONE});
             g_context->bindImage(0, blackBoard.getImageView("diffuse"))
-                .bindImage(1, blackBoard.getImageView("specular"))
-                .bindImage(2, blackBoard.getImageView("normal"))
-                .bindImage(3, blackBoard.getImageView("emission"))
-                .bindImage(4, blackBoard.getImageView("depth"))
+                //  .bindImage(1, blackBoard.getImageView("specular"))
+                .bindImage(1, blackBoard.getImageView("normal"))
+                .bindImage(2, blackBoard.getImageView("emission"))
+                .bindImage(3, blackBoard.getImageView("depth"))
                 .bindImageSampler(0, radianceMap.getVkImageView(), *mRadianceMapSampler);
             pushFinalLightingParam();
             g_context->flushAndDraw(context.commandBuffer, 3, 1, 0, 0);
