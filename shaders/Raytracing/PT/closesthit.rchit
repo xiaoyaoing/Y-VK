@@ -29,7 +29,7 @@
 #include "../util.glsl"
 
 hitAttributeEXT vec2 attribs;
-layout(location = 0) rayPayloadInEXT HitPayload payload;
+layout(location = 0) rayPayloadInEXT HitPayload payload;  
 
 layout(set = 0, binding = 3, scalar)  uniform SceneDesc_ {
     SceneDesc scene_desc;

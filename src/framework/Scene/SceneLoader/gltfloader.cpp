@@ -30,7 +30,7 @@ static std::unordered_map<VkFormat, uint32_t> formatStrideMap = {{VK_FORMAT_R8_U
 
 static std::unordered_map<VkIndexType, uint32_t> indexStrideMap = {{VK_INDEX_TYPE_UINT16, 2}, {VK_INDEX_TYPE_UINT32, 4}};
 
-inline std::vector<uint8_t> convertIndexData(const std::vector<uint8_t>& src_data, VkIndexType targetType, VkFormat format, VkIndexType type) {
+inline std::vector<uint8_t> convertIndexData(const std::vector<uint8_t>& src_data, VkIndexType targetType, VkFormat format, VkIndexType & type) {
     if (targetType == VK_INDEX_TYPE_NONE_KHR) {
         switch (format) {
             case VK_FORMAT_R8_UINT: {
@@ -508,7 +508,9 @@ void GLTFLoadingImpl::loadNode(const tinygltf::Node& node, const tinygltf::Model
                     std::vector<uint8_t> data(model.buffers[view.buffer].data.begin() + startByte,
                                               model.buffers[view.buffer].data.begin() + endByte);
 
-                    data = convertIndexData(data, config.indexType, getAttributeFormat(&model, primitive.indices), newPrimitive->getIndexType());
+                    VkIndexType type;
+                    data = convertIndexData(data, config.indexType, getAttributeFormat(&model, primitive.indices), type);
+                    // newPrimitive->setIndexType();
 
                     VkBufferUsageFlags bufferUsageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | getBufferUsageFlags(config);
 
@@ -528,7 +530,7 @@ void GLTFLoadingImpl::loadNode(const tinygltf::Node& node, const tinygltf::Model
                 posMin = glm::vec3(posAccessor.minValues[0], posAccessor.minValues[1], posAccessor.minValues[2]);
                 posMax = glm::vec3(posAccessor.maxValues[0], posAccessor.maxValues[1], posAccessor.maxValues[2]);
 
-                vertexCount = static_cast<uint32_t>(posAccessor.count);
+                newPrimitive->vertexCount = static_cast<uint32_t>(posAccessor.count);
             }
 
             newPrimitive->setDimensions(posMin, posMax);
@@ -542,6 +544,7 @@ void GLTFLoadingImpl::loadNode(const tinygltf::Node& node, const tinygltf::Model
 
             // newPrimitive->vertexBuffers.emplace("transform", std::move(transformBuffer));
 
+            newPrimitive->matrix = matrix;
             PerPrimitiveUniform primitiveUniform{matrix};
             auto                primitiveUniformBuffer = std::make_unique<Buffer>(device, sizeof(PerPrimitiveUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR, VMA_MEMORY_USAGE_CPU_TO_GPU, &primitiveUniform);
             newPrimitive->setUniformBuffer(primitiveUniformBuffer);

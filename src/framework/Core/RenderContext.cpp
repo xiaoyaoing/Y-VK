@@ -308,7 +308,7 @@ RenderContext& RenderContext::bindPrimitiveGeom(CommandBuffer& commandBuffer, co
         }
 
         VertexAttribute attribute{};
-        if (!primitive.getVertexAttribute(inputResourceName, attribute)) {
+        if (!primitive.getVertexAttribute(inputResourceName, &attribute)) {
             LOGW("Primitive does not have vertex buffer for input resource {}", inputResourceName);
             continue;
         }

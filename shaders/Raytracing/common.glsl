@@ -9,12 +9,13 @@
 
 
 layout(binding = 0, set = 3) uniform accelerationStructureEXT tlas;
-layout(binding = 1, set = 2, rgba32f) uniform image2D image;
+
 layout(binding = 2, set = 0) uniform SceneUboBuffer { SceneUbo scene_ubo; };
 layout(binding = 3, set = 0) uniform SceneDescBuffer { SceneDesc scene_desc; };
 layout(binding = 4, set = 0) readonly buffer Lights { RTLight lights[]; };
 //todo fix this 
-layout(binding = 5, set = 0) uniform sampler2D scene_textures[];
+layout(binding = 0, set = 2, rgba32f) uniform image2D image;
+layout(binding = 0, set = 1) uniform sampler2D scene_textures[];
 
 
 layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer InstanceInfo{ RTPrimitive p[]; };

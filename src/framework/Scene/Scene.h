@@ -47,7 +47,7 @@ public:
 
     const std::vector<std::unique_ptr<Primitive>>& getPrimitives() const;
     const std::vector<std::unique_ptr<Texture>>&   getTextures() const;
-    const std::vector<Material>&                   getMaterials() const;
+   // const std::vector<Material>&                   getMaterials() const;
     const std::vector<GltfMaterial>&               getGltfMaterials() const;
     std::vector<std::shared_ptr<Camera>>&          getCameras();
 

@@ -50,9 +50,7 @@ const std::vector<std::unique_ptr<Texture>>& Scene::getTextures() const {
     return textures;
 }
 
-const std::vector<Material>& Scene::getMaterials() const {
-    return materials;
-}
+
 const std::vector<GltfMaterial>& Scene::getGltfMaterials() const {
     return gltfMaterials;
 }
@@ -61,9 +59,13 @@ std::vector<std::shared_ptr<Camera>>& Scene::getCameras() {
     return cameras;
 }
 
-bool Primitive::getVertexAttribute(const std::string& name, VertexAttribute& attribute) const {
+bool Primitive::Validate() const {
+    return  vertexBuffers.size() > 0 && indexBuffer != nullptr && uniformBuffer != nullptr && vertexCount > 0 && indexCount > 0;
+}
+bool Primitive::getVertexAttribute(const std::string& name, VertexAttribute * attribute) const {
     if (vertexAttributes.contains(name)) {
-        attribute = vertexAttributes.at(name);
+        if(attribute != nullptr)
+            *attribute = vertexAttributes.at(name);
         return true;
     }
     return false;

@@ -33,7 +33,7 @@ void PathIntegrator::render(RenderGraph& renderGraph)
 
         auto pushConstant = toBytes(pcPath);
         renderContext->bindPushConstants(pushConstant);
-        renderContext->bindImage(1,renderGraph.getBlackBoard().getImageView("RT"));
+        renderContext->bindImage(0,renderGraph.getBlackBoard().getImageView("RT"));
         renderContext->traceRay(commandBuffer,{width,height,1});
 
         pcPath.frame_num++;
