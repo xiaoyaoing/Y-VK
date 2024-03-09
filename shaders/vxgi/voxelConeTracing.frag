@@ -213,7 +213,8 @@ void main(){
         pbr_info.F90 = vec3(1.0);
         pbr_info.alphaRoughness = perceptual_roughness * perceptual_roughness;
         pbr_info.diffuseColor = diffuse_color;
-        //        pbr_info.specularColor = specular_color;
+
+
 
 
         for (uint i = 0U; i < per_frame.light_count; ++i)
@@ -231,10 +232,10 @@ void main(){
 
             direct_contribution += light_contribution;
         }
-        direct_contribution = vec3(1);
+        //  direct_contribution = vec3(1);
     }
     out_color = vec4(direct_contribution * uDirectLighting + indirect_contribution * uIndirectLighting, 1);
-    //out_color = vec4(1);
+    out_color = vec4(indirect_contribution, 1);
     // out_color += vec4(diffuse_color,1);
 }
 

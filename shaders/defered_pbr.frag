@@ -62,10 +62,6 @@ void main(void)
     }
     diffuseColor = baseColor.rgb * (vec3(1.0) - f0) * (1.0 - metallic);
 
-    //    if (material.alphaMode > 0 && baseColor.a < material.alphaCutoff)
-    //    {
-    //                discard;
-    //    }
 
     o_diffuse_roughness  = vec4(diffuseColor, perceptualRoughness);
     o_normal_metalic = vec4(normal * 0.5f  + 0.5f, metallic);

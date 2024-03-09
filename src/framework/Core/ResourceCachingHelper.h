@@ -8,9 +8,10 @@
 #include "Core/Descriptor/DescriptorPool.h"
 #include "RenderPass.h"
 
-template<class> inline constexpr bool is_vector_v = false;
-template<class T, class A> inline constexpr bool is_vector_v<std::vector<T, A>> = true;
-
+template<class>
+inline constexpr bool is_vector_v = false;
+template<class T, class A>
+inline constexpr bool is_vector_v<std::vector<T, A>> = true;
 
 template<class T>
 inline void hash_combine(size_t& seed, const T& v) {
@@ -137,8 +138,8 @@ namespace std {
             hash_combine(hash, attachment.initial_layout);
             hash_combine(hash, attachment.samples);
             hash_combine(hash, attachment.usage);
-            hash_combine(hash,attachment.loadOp);
-            hash_combine(hash,attachment.storeOp);
+            hash_combine(hash, attachment.loadOp);
+            hash_combine(hash, attachment.storeOp);
 
             return hash;
         }
@@ -437,11 +438,9 @@ namespace std {
                 result,
                 static_cast<std::underlying_type<VkFrontFace>::type>(
                     pipelineState.getRasterizationState().frontFace));
-            hash_combine(result,static_cast<std::underlying_type<VkPolygonMode>::type>(
-                    pipelineState.getRasterizationState().polygonMode));
+            hash_combine(result, static_cast<std::underlying_type<VkPolygonMode>::type>(pipelineState.getRasterizationState().polygonMode));
             hash_combine(result, pipelineState.getRasterizationState().rasterizerDiscardEnable);
             hash_combine(result, pipelineState.getRasterizationState().pNext);
-            
 
             // VkPipelineMultisampleStateCreateInfo
             hash_combine(result, pipelineState.getMultisampleState().alphaToCoverageEnable);
@@ -489,11 +488,9 @@ inline void hash_param(size_t& seed, const T& value) {
     hash_combine(seed, value);
 }
 
-
-
 template<typename T, typename... Args>
 inline void hash_param(size_t& seed, const T& first_arg, const Args&... args) {
     hash_param(seed, first_arg);
-    LOGI(seed);
+   // LOGI("{} {} hash", typeid(T).name(), seed);
     hash_param(seed, args...);
 }

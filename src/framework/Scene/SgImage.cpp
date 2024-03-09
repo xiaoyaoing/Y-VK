@@ -131,36 +131,38 @@ SgImage::SgImage(Device& device, const std::string& name, const VkExtent3D& exte
 
     size_t hash{0U};
     hash_combine(hash, name);
-    LOGI(hash);
+    LOGI("name {} hash = {}", name, hash);
     hash_combine(hash, extent);
+    // LOGI(hash);
+
+    hash_combine(hash, format);// LOGI(hash);
+
+    hash_combine(hash, image_usage);// LOGI(hash);
+
+    hash_combine(hash, memory_usage);//LOGI(hash);
+
+    hash_combine(hash, viewType);// LOGI(hash);
+
+    hash_combine(hash, sample_count);
     LOGI(hash);
 
-    hash_combine(hash, format);    LOGI(hash);
+    hash_combine(hash, mipLevels);
+    LOGI(hash);
 
-    hash_combine(hash, image_usage);    LOGI(hash);
+    hash_combine(hash, array_layers);
+    LOGI(hash);
 
-    hash_combine(hash, memory_usage);    LOGI(hash);
+    hash_combine(hash, flags);
+    LOGI(hash);
 
-    hash_combine(hash, viewType);    LOGI(hash);
-
-    hash_combine(hash, sample_count);    LOGI(hash);
-
-    hash_combine(hash, mipLevels);    LOGI(hash);
-
-    hash_combine(hash, array_layers);    LOGI(hash);
-
-    hash_combine(hash, flags);    LOGI(hash);
-
-    
-
-    auto extent_string = std::to_string(extent.width) + "x" + std::to_string(extent.height) + "x" + std::to_string(extent.depth) + std::to_string(hash);
-    auto format_string = std::to_string(format);
-    auto image_usage_string = std::to_string(image_usage);
+    auto extent_string       = std::to_string(extent.width) + "x" + std::to_string(extent.height) + "x" + std::to_string(extent.depth) + std::to_string(hash);
+    auto format_string       = std::to_string(format);
+    auto image_usage_string  = std::to_string(image_usage);
     auto memory_usage_string = std::to_string(memory_usage);
     auto sample_count_string = std::to_string(sample_count);
-    auto mipLevels_string = std::to_string(mipLevels);
+    auto mipLevels_string    = std::to_string(mipLevels);
     auto array_layers_string = std::to_string(array_layers);
-    auto flags_string = std::to_string(flags);
+    auto flags_string        = std::to_string(flags);
     LOGI("SgImage::SgImage: name = {}, extent = {}, format = {}, image_usage = {}, memory_usage = {}, sample_count = {}, mipLevels = {}, array_layers = {}, flags = {}", name, extent_string, format_string, image_usage_string, memory_usage_string, sample_count_string, mipLevels_string, array_layers_string, flags_string);
 }
 

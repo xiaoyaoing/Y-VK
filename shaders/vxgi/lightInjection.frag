@@ -12,10 +12,14 @@ precision mediump float;
 #include "../PerFrameShading.glsl"
 #include "vxgi.glsl"
 #include "../shadow.glsl"
+#include "../brdf.glsl"
+#include "../lighting.glsl"
 
-layout(location = 0) in vec3 position;
-layout(location = 1) in vec3 normal;
-layout(location = 2) in vec2 texCoord;
+#define MIN_ROUGHNESS 0.04
+
+layout(location = 0) in vec3 in_position;
+layout(location = 1) in vec3 in_normal;
+layout(location = 2) in vec2 in_uv;
 
 layout(binding = 2, set = 2, r32ui) volatile uniform uimage3D radiance_image;
 
@@ -50,27 +54,25 @@ vec4 convRGBA8ToVec4(uint val)
 
 void imageAtomicRGBA8Avg(ivec3 coords, vec4 value)
 {
-   //  imageStore(radiance_image, coords, convVec4ToRGBA8(value));
-    
-    
+    //  imageStore(radiance_image, coords, convVec4ToRGBA8(value));
+
+
     value.rgb *= 255.0;
     uint newVal = convVec4ToRGBA8(value);
     uint prevStoredVal = 0;
     uint curStoredVal;
 
-    imageAtomicCompSwap(radiance_image, coords, prevStoredVal, newVal);
-
-    //
-//    // Loop as long as destination value gets changed by other threads
-//    while ((curStoredVal = imageAtomicCompSwap(radiance_image, coords, prevStoredVal, newVal)) != prevStoredVal)
-//    {
-//        prevStoredVal = curStoredVal;
-//        vec4 rval = convRGBA8ToVec4(curStoredVal);
-//        rval.xyz = (rval.xyz * rval.w);// Denormalize
-//        vec4 curValF = rval + value;// Add new value
-//        curValF.xyz /= (curValF.w);// Renormalize
-//        newVal = convVec4ToRGBA8(curValF);
-//    }
+    //    imageAtomicCompSwap(radiance_image, coords, prevStoredVal, newVal);
+    //    // Loop as long as destination value gets changed by other threads
+    while ((curStoredVal = imageAtomicCompSwap(radiance_image, coords, prevStoredVal, newVal)) != prevStoredVal)
+    {
+        prevStoredVal = curStoredVal;
+        vec4 rval = convRGBA8ToVec4(curStoredVal);
+        rval.xyz = (rval.xyz * rval.w);// Denormalize
+        vec4 curValF = rval + value;// Add new value
+        curValF.xyz /= (curValF.w);// Renormalize
+        newVal = convVec4ToRGBA8(curValF);
+    }
 }
 
 void voxelAtomicRGBA8Avg(ivec3 imageCoord, ivec3 faceIndex, vec4 color, vec3 weight)
@@ -103,15 +105,12 @@ ivec3 calculateVoxelFaceIndex(vec3 normal)
 
 void main(){
 
-    if (!pos_in_clipmap(position)){
+    vec3 world_pos = in_position;
+
+    if (!pos_in_clipmap(world_pos)){
         discard;
     }
-    ivec3 image_coords = computeImageCoords(position);
-
-    //    for (int i = 0;i<6;i++){
-    //        imageStore(radiance_image, image_coords + ivec3(0, 0, i), vec4(1.0));
-    //        image_coords.x += int(clip_map_resoultion);
-    //    }
+    ivec3 image_coords = computeImageCoords(world_pos);
 
     GltfMaterial material = scene_materials[uMaterialIndex];
 
@@ -119,36 +118,78 @@ void main(){
         vec4 emission = vec4(material.emissiveFactor, 1.0);
         if (material.emissiveTexture > -1)
         {
-            emission.rgb = texture(scene_textures[material.emissiveTexture], texCoord).rgb;
+            emission.rgb = texture(scene_textures[material.emissiveTexture], in_uv).rgb;
         }
         emission.rgb = clamp(emission.rgb, 0.0, 1.0);
         voxelAtomicRGBA8Avg6Faces(image_coords, emission); }
     else {
 
 
-        vec4 color = material.pbrBaseColorFactor;
-        if (material.pbrBaseColorTexture > -1)
+        vec3 diffuse_color            = vec3(0.0);
+        vec3 specularColor            = vec3(0.0);
+        vec4 base_color                = vec4(0.0, 0.0, 0.0, 1.0);
+        vec3 f0                        = vec3(0.04);
+        float perceptual_roughness;
+        float metallic;
+
+        perceptual_roughness = material.pbrRoughnessFactor;
+        metallic = material.pbrMetallicFactor;
+        // Roughness is stored in the 'g' channel, metallic is stored in the 'b' channel
+        // This layout intentionally reserves the 'r' channel for (optional) occlusion map data
+        if (material.pbrMetallicRoughnessTexture > -1)
         {
-            color = texture(scene_textures[material.pbrBaseColorTexture], texCoord);
+            vec4 mrSample = texture(scene_textures[material.pbrMetallicRoughnessTexture], in_uv);
+            perceptual_roughness *= mrSample.g;
+            metallic *= mrSample.b;
+        }
+        else
+        {
+            perceptual_roughness = clamp(perceptual_roughness, MIN_ROUGHNESS, 1.0);
+            metallic = clamp(metallic, 0.0, 1.0);
         }
 
-        vec3 normal = normalize(normal);
+        base_color = material.pbrBaseColorFactor;
+        if (material.pbrBaseColorTexture > -1)
+        {
+            base_color *= texture(scene_textures[material.pbrBaseColorTexture], in_uv);
+        }
+        diffuse_color = base_color.rgb * (vec3(1.0) - f0) * (1.0 - metallic);
 
-        vec3 lightContribution = vec3(0.0);
+        vec3 normal = normalize(in_normal);
+
+        vec3 light_contribution = vec3(0.0);
         // Calculate light contribution here
+
+        vec3 view_dir = normalize(per_frame.camera_pos - world_pos);
+
+        PBRInfo pbr_info;
+        // why use abs here?
+        pbr_info.NdotV = clamp(abs(dot(normal, view_dir)), 0.001, 1.0);
+
+        pbr_info.F0 = mix(vec3(0.04), diffuse_color, metallic);
+        pbr_info.F90 = vec3(1.0);
+        pbr_info.alphaRoughness = perceptual_roughness * perceptual_roughness;
+        pbr_info.diffuseColor = diffuse_color;
 
         for (uint i = 0; i < per_frame.light_count; ++i)
         {
             Light light = lights_info.lights[i];
-            lightContribution += apply_light(light, position, normal) * calcute_shadow(light, position);
+            vec3 light_dir = calcuate_light_dir(lights_info.lights[i], world_pos);
+            vec3 half_vector = normalize(light_dir + view_dir);
+
+            pbr_info.NdotL = clamp(dot(normal, light_dir), 0.001, 1.0);
+            pbr_info.NdotH = clamp(dot(normal, half_vector), 0.0, 1.0);
+            pbr_info.LdotH = clamp(dot(light_dir, half_vector), 0.0, 1.0);
+            pbr_info.VdotH = clamp(dot(view_dir, half_vector), 0.0, 1.0);
+
+            light_contribution += microfacetBRDF(pbr_info) * calcuate_light_intensity(lights_info.lights[i], world_pos) * calcute_shadow(lights_info.lights[i], world_pos);
         }
 
-        lightContribution = vec3(1.0f);
 
-        if (all(equal(lightContribution, vec3(0.0))))
+        if (all(equal(light_contribution, vec3(0.0))))
         discard;
 
-        vec3 radiance = lightContribution * color.rgb * color.a;
+        vec3 radiance = light_contribution;
         radiance = clamp(radiance, 0.0, 1.0);
         ivec3 faceIndex = calculateVoxelFaceIndex(-normal);
         voxelAtomicRGBA8Avg(image_coords, faceIndex, vec4(radiance, 1.0), abs(normal));

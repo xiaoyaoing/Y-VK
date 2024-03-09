@@ -55,18 +55,44 @@ VkShaderStageFlagBits find_shader_stage(const std::string& ext) {
     }
 
     throw std::runtime_error("File extension `" + ext + "` does not have a vulkan shader stage.");
+
 }
 
+static  std::string SPV_CACHED_PATH = "spvcachedFiles/";
+
+static std::string GetSpvPathFromShaderPath(const std::string& path) {
+    static std::string shaderFolder = "shaders/";
+    size_t idx =  path.find(shaderFolder);
+    if (idx == std::string::npos) {
+        LOGE("Failed to find shaders folder in shader path: {}", path.c_str());
+    }
+    idx+= shaderFolder.size();
+    return   path.substr(0, idx) + SPV_CACHED_PATH + path.substr(idx) + ".spv";
+    
+}
+
+static std::ofstream OpenOrCreateFile(const std::string& path) {
+    std::filesystem::path folder = std::filesystem::path(path).parent_path();
+    while(true) {
+        if(std::filesystem::exists(folder)) {
+            break;
+        }
+        std::filesystem::create_directory(folder);
+        folder = folder.parent_path();
+    }
+    return std::ofstream(path, std::ios::binary);
+}
 Shader::Shader(Device& device, std::string path) : device(device) {
     auto                  mode = getShaderMode(FileUtils::getFileExt(path));
     std::vector<uint32_t> spirvCode;
 
-    std::string originShaderPath = path.ends_with("spv") ? path.substr(0, path.find_last_not_of('.')) : path;
+    std::string originShaderPath = path;
+    std::string         spvPath = GetSpvPathFromShaderPath(path);
+
     stage                        = find_shader_stage(FileUtils::getFileExt(originShaderPath));
     if (path.ends_with(".spv")) {
         mode = SPV;
     } else {
-        auto spvPath = originShaderPath + ".spv";
         if (std::filesystem::exists(spvPath)) {
             auto spvUpdateTime    = std::filesystem::last_write_time(spvPath);
             auto shaderUpdateTime = std::filesystem::last_write_time(path);
@@ -79,7 +105,7 @@ Shader::Shader(Device& device, std::string path) : device(device) {
     }
 
     if (mode == SHADER_LOAD_MODE::SPV) {
-        path = originShaderPath + ".spv";
+        path = spvPath;
         std::ifstream file(path, std::ios::ate | std::ios::binary);
         if (!file.is_open()) {
             LOGE("Failed  to open file", path.c_str());
@@ -109,7 +135,7 @@ Shader::Shader(Device& device, std::string path) : device(device) {
             LOGI("Shader compiled from source code succrssfully", path.c_str());
         }
 
-        std::ofstream file(path + ".spv", std::ios::binary);
+        std::ofstream file = OpenOrCreateFile(spvPath);
         file.write(reinterpret_cast<const char*>(spirvCode.data()), spirvCode.size() * sizeof(uint32_t));
         file.close();
     }

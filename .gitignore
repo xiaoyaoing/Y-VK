@@ -5,6 +5,7 @@
 cmake-build-debug-visual-studio--2022
 cmake-build-release-visual-studio--2022
 /cmake-build-debug-mingw
+/shaders/spvcachedFiles
 /build
 /build-vs2022
 .idea
