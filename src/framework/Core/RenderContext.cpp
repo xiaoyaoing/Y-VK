@@ -409,7 +409,7 @@ RenderContext& RenderContext::bindScene(CommandBuffer& commandBuffer, const Scen
     return *this;
 }
 RenderContext& RenderContext::bindPrimitiveShading(CommandBuffer& commandBuffer, const Primitive& primitive) {
-    //   bindPushConstants(primitive.materialIndex);
+    bindPushConstants(primitive.materialIndex);
     return *this;
 }
 

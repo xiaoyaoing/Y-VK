@@ -20,7 +20,7 @@
 //#include "Mesh.h"
 
 struct SceneLoadingConfig {
-    std::unordered_set<std::string> requiredVertexAttribute{"position", "normal", "texcoord_0"};
+    std::unordered_set<std::string> requiredVertexAttribute{"position", "normal", "texcoord_0", "indices"};
     VkIndexType                     indexType{VK_INDEX_TYPE_NONE_KHR};
     bool                            bufferAddressAble{false};
     bool                            bufferForAccel{false};

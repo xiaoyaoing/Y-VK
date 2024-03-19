@@ -13,9 +13,9 @@ layout(set = 0, binding = 0) uniform _GlobalFrameUniform {
 } per_frame;
 
 
-//layout(set = 0, binding = 1) uniform _GlobalPrimitiveUniform {
-//    mat4 model;
-//} per_primitive;
+layout(set = 0, binding = 1) uniform _GlobalPrimitiveUniform {
+    mat4 model;
+} per_primitive;
 
 
 struct PerPrimitive {

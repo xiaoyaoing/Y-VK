@@ -77,7 +77,7 @@ void Example::drawFrame(RenderGraph& rg) {
 
             uint32_t instance_count= 0;    
             for(const auto & primitive : view->getMVisiblePrimitives()) {
-                renderContext->bindPrimitiveShading(context.commandBuffer,*primitive).flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, primitive->firstIndex, primitive->firstVertex,instance_count++);
+                renderContext->flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, primitive->firstIndex, primitive->firstVertex,instance_count++);
             }              
             renderContext->nextSubpass(commandBuffer);
             renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.lighting);
@@ -138,7 +138,7 @@ void Example::drawFrame(RenderGraph& rg) {
 
                 uint32_t instance_count= 0;    
                 for(const auto & primitive : view->getMVisiblePrimitives()) {
-                    renderContext->bindPrimitiveShading(context.commandBuffer,*primitive).flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, primitive->firstIndex, primitive->firstVertex,instance_count++);
+                    renderContext->flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, primitive->firstIndex, primitive->firstVertex,instance_count++);
                 } });
 
         rg.addPass(

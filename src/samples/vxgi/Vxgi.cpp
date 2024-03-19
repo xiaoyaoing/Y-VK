@@ -43,11 +43,11 @@ void Example::prepare() {
     //     *device, FileUtils::getResourcePath("sponza/Sponza01.gltf"));
 
     scene = GltfLoading::LoadSceneFromGLTFFile(
-        *device, "E:/code/vk_vxgi/VFS/Scene/Sponza/Sponza.gltf");
+        *device, "E:/code/vk_vxgi/VFS/Scene/Sponza/Sponza.gltf", {.bufferRate = BufferRate::PER_PRIMITIVE});
 
     // scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));
 
-    //  GlslCompiler::forceRecompile = true;
+    GlslCompiler::forceRecompile = true;
 
     auto light_pos   = glm::vec3(0.0f, 128.0f, -225.0f);
     auto light_color = glm::vec3(1.0, 1.0, 1.0);
@@ -94,7 +94,6 @@ void Example::prepare() {
     camera->setRotation(glm::vec3(0.f, -15.f, 0.0f));
     camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 0.1f, 4000.f);
     camera->setMoveSpeed(0.05f);
-
 
     view = std::make_unique<View>(*device);
     view->setScene(scene.get());
