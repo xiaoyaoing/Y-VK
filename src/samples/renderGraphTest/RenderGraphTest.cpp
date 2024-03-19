@@ -55,7 +55,7 @@ void Example::drawFrame(RenderGraph& rg) {
 
                    });
                     
-             auto output = rg.importTexture(SWAPCHAIN_IMAGE_NAME, &renderContext->getCurHwtexture());
+             auto output = rg.getBlackBoard().getHandle(SWAPCHAIN_IMAGE_NAME);
 
             RenderGraphPassDescriptor desc;
             desc.setTextures({output, depth, albedo,normal}).addSubpass({.outputAttachments = {albedo, normal, depth}}).addSubpass({
@@ -144,10 +144,9 @@ void Example::drawFrame(RenderGraph& rg) {
                 auto normal = blackBoard["normal"];
                 auto albedo = blackBoard["albedo"];
                 auto output = blackBoard.getHandle(SWAPCHAIN_IMAGE_NAME);
-                
+
                 builder.readTextures({depth, normal, albedo});
                 builder.writeTexture(output);
-                
 
                 RenderGraphPassDescriptor desc{};
                 desc.setTextures({output, albedo, depth, normal}).addSubpass({.inputAttachments = {albedo, depth, normal}, .outputAttachments = {output}, .disableDepthTest = true});
@@ -172,7 +171,7 @@ void Example::drawFrame(RenderGraph& rg) {
     // rg.addImageCopyPass(blackBoard.getHandle("normal"), blackBoard.getHandle(SWAPCHAIN_IMAGE_NAME));
 
     gui->addGuiPass(rg);
-    
+
     rg.execute(commandBuffer);
 }
 
@@ -190,7 +189,10 @@ void Example::prepare() {
     pipelineLayouts.lighting = std::make_unique<PipelineLayout>(*device, shaders1);
 
     // scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("space_module/SpaceModule.gltf"));
-    scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"));
+    scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"),{.bufferRate = BufferRate::PER_PRIMITIVE});
+
+    // scene = GltfLoading::LoadSceneFromGLTFFile(
+    //     *device, "E:/code/vk_vxgi/VFS/Scene/Sponza/Sponza.gltf");
     // scene = GltfLoading::LoadSceneFromGLTFFile(*device, "E:/code/DirectX-Graphics-Samples/MiniEngine/ModelViewer/Sponza/pbr/sponza2.gltf");
     // scene = GltfLoading::LoadSceneFromGLTFFile(*device, "E:/code/DirectX-Graphics-Samples/MiniEngine/ModelViewer/Sponza/pbr/sponza2.gltf");
     //  scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));
@@ -224,11 +226,11 @@ void Example::prepare() {
     }
     camera        = scene->getCameras()[0];
     camera->flipY = true;
-    camera->setTranslation(glm::vec3(-494.f, -116.f, 99.f));
+    // camera->setTranslation(glm::vec3(-494.f, -116.f, 99.f));
     camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
     camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
     camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 1.f, 4000.f);
-    camera->setMoveSpeed(0.05f);
+    camera->setMoveSpeed(0.0005f);
 
     view = std::make_unique<View>(*device);
     view->setScene(scene.get());

@@ -4,6 +4,7 @@
 
 #include "Vxgi.h"
 
+#include "ClipmapCleaner.h"
 #include "CopyAlphaPass.h"
 #include "FinalLightingPass.h"
 #include "GBufferPass.h"
@@ -38,8 +39,11 @@ BBox Example::getBBox(uint32_t clipmapLevel) {
 void Example::prepare() {
     Application::prepare();
 
+    // scene = GltfLoading::LoadSceneFromGLTFFile(
+    //     *device, FileUtils::getResourcePath("sponza/Sponza01.gltf"));
+
     scene = GltfLoading::LoadSceneFromGLTFFile(
-        *device, FileUtils::getResourcePath("sponza/Sponza01.gltf"));
+        *device, "E:/code/vk_vxgi/VFS/Scene/Sponza/Sponza.gltf");
 
     // scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));
 
@@ -83,13 +87,14 @@ void Example::prepare() {
     // camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
     // camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
     // camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 1.f, 4000.f);
-    // camera->setMoveSpeed(0.05f);
 
     camera        = scene->getCameras()[0];
     camera->flipY = true;
     camera->setTranslation(glm::vec3(-2.5f, -3.34f, -20.f));
     camera->setRotation(glm::vec3(0.f, -15.f, 0.0f));
     camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 0.1f, 4000.f);
+    camera->setMoveSpeed(0.05f);
+
 
     view = std::make_unique<View>(*device);
     view->setScene(scene.get());
@@ -111,6 +116,9 @@ void Example::prepare() {
     g_manager->putPtr("view", view.get());
     g_manager->putPtr("camera", camera.get());
     g_manager->putPtr("bboxes", &mBBoxes);
+    g_manager->putPtr("clipmap_update_policy", &mClipmapUpdatePolicy);
+
+    ClipMapCleaner::init();
 
     for (auto& pass : passes) {
         pass->init();
@@ -119,6 +127,9 @@ void Example::prepare() {
 
 Example::Example() : Application("Drawing Triangle", 1024, 1024) {
     // addDeviceExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    addDeviceExtension(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
+    addInstanceExtension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    addDeviceExtension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);//   addInstanceExtension(VK_EXT_debug_utils);
 }
 
 void Example::onUpdateGUI() {

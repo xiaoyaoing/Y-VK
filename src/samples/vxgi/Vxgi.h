@@ -4,6 +4,7 @@
 #pragma once
 
 #include "ClipmapRegion.h"
+#include "ClipmapUpdatePolicy.h"
 #include "VxgiCommon.h"
 #include "App/Application.h"
 
@@ -31,5 +32,6 @@ protected:
     std::vector<std::unique_ptr<VxgiPassBase>> passes{};
     std::vector<BBox>                          mBBoxes{};
     std::vector<ClipmapRegion>                 mClipRegions{};
+    std::unique_ptr<ClipmapUpdatePolicy>       mClipmapUpdatePolicy{nullptr};
     inline static uint32_t                     m_clipRegionBBoxExtentL0 = 16;
 };

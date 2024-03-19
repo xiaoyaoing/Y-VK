@@ -148,7 +148,7 @@ uint32_t Image::getArrayLayerCount() const {
 void Image::transitionLayout(CommandBuffer &commandBuffer, VulkanLayout newLayout,
                              const VkImageSubresourceRange & subresourceRange ) {
     auto oldLayout = getLayout(subresourceRange);
-    //oldLayout = VulkanLayout::UNDEFINED;
+    //oldLayout = VulkanLayout::UNDEFINED; 
     auto [srcAccessMask, dstAccessMask, srcStage, dstStage, vkOldLayout, vkNewLayout]
             = ImageUtil::getVkTransition(oldLayout, newLayout);
 

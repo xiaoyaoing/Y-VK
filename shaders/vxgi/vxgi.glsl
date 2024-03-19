@@ -1,4 +1,4 @@
-layout(std140, set = 0, binding = 5) uniform VoxelizationDesc {
+layout(std140, set = 3, binding = 5) uniform VoxelizationDesc {
     vec3 prev_clipmap_min_world_pos;
     int clipmap_level;
 

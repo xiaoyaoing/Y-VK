@@ -31,6 +31,7 @@ layout(binding = 4, set = 0) uniform LightsInfo
 layout (push_constant) uniform PushConstants
 {
     uint uMaterialIndex;
+
 };
 
 uint convVec4ToRGBA8(vec4 val) {
@@ -77,6 +78,7 @@ void imageAtomicRGBA8Avg(ivec3 coords, vec4 value)
 
 void voxelAtomicRGBA8Avg(ivec3 imageCoord, ivec3 faceIndex, vec4 color, vec3 weight)
 {
+
     imageAtomicRGBA8Avg(imageCoord + ivec3((clip_map_resoultion) * faceIndex.x, 0, 0), vec4(color.xyz * weight.x, 1.0));
     imageAtomicRGBA8Avg(imageCoord + ivec3((clip_map_resoultion) * faceIndex.y, 0, 0), vec4(color.xyz * weight.y, 1.0));
     imageAtomicRGBA8Avg(imageCoord + ivec3((clip_map_resoultion) * faceIndex.z, 0, 0), vec4(color.xyz * weight.z, 1.0));

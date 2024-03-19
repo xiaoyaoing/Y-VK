@@ -12,10 +12,17 @@ layout(set = 0, binding = 0) uniform _GlobalFrameUniform {
 
 } per_frame;
 
+
 layout(set = 0, binding = 1) uniform _GlobalPrimitiveUniform {
     mat4 model;
 } per_primitive;
 
+
+//struct PerPrimitive {
+//    mat4 model;
+//};
+//
+//
 
 
 

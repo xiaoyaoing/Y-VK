@@ -61,7 +61,7 @@ struct alignas(16) GlobalUniform {
 enum class UniformBindingPoints : uint8_t {
     PER_VIEW                = 0,// uniforms updated per view
     PER_RENDERABLE          = 1,// uniforms updated per renderable
-    PER_RENDERABLE_BONES    = 2,// bones data, per renderable
+    PRIM_INFO    = 2,// bones data, per renderable
     PER_RENDERABLE_MORPHING = 3,// morphing uniform/sampler updated per render primitive
     LIGHTS                  = 4,// lights data array
     SHADOW                  = 5,// punctual shadow data
@@ -88,13 +88,14 @@ public:
 
     RenderContext(Device& device, VkSurfaceKHR surface, Window& window);
 
-    RenderContext& bindBuffer(uint32_t binding, const Buffer& buffer, VkDeviceSize offset = 0, VkDeviceSize range = 0, uint32_t setId = 0, uint32_t array_element = 0);
-    RenderContext& bindAcceleration(uint32_t binding, const Accel& acceleration, uint32_t setId = 0, uint32_t array_element = 0);
-    RenderContext& bindImageSampler(uint32_t binding, const ImageView& view, const Sampler& sampler, uint32_t setId = 0, uint32_t array_element = 0);
-    RenderContext& bindImage(uint32_t binding, const ImageView& view, uint32_t setId = 0, uint32_t array_element = 0);
-    RenderContext& bindMaterial(const Material& material);
+    RenderContext& bindBuffer(uint32_t binding, const Buffer& buffer, VkDeviceSize offset = 0, VkDeviceSize range = 0, uint32_t setId = -1, uint32_t array_element = 0);
+    RenderContext& bindAcceleration(uint32_t binding, const Accel& acceleration, uint32_t setId = -1, uint32_t array_element = 0);
+    RenderContext& bindImageSampler(uint32_t binding, const ImageView& view, const Sampler& sampler, uint32_t setId = -1, uint32_t array_element = 0);
+    RenderContext& bindImage(uint32_t binding, const ImageView& view, uint32_t setId = -1, uint32_t array_element = 0);
+    // RenderContext& bindMaterial(const Material& material);
     RenderContext& bindView(const View& view);
     RenderContext& bindPrimitiveGeom(CommandBuffer& commandBuffer, const Primitive& primitive);
+    RenderContext & bindScene(CommandBuffer & commandBuffer, const Scene & scene);
     RenderContext& bindPrimitiveShading(CommandBuffer& commandBuffer, const Primitive& primitive);
     template<typename T>
     RenderContext& bindLight(const std::vector<SgLight>& lights, uint32_t setId, uint32_t binding);
@@ -158,6 +159,13 @@ public:
 
     void endRenderPass(CommandBuffer& commandBuffer, RenderTarget& renderTarget);
 
+    //Allocate Buffer in Buffer Pool
+    //It's good design at first
+    //Different frame pass buffer may be allocated in allocation
+    //Because of resource cache,hash value for descriptor set may differ ,cause request too many descriptor set
+    //This situation is especially obvious when the buffer required by the rendering pass changes in different frames.
+    // Multiple bindings will cause the descriptor to be reallocated as long as one of the buffers is incorrectly allocated.
+    // Therefore, I recommend that the buffer resources in the pass be managed by the pass itself.
     BufferAllocation allocateBuffer(VkDeviceSize allocateSize, VkBufferUsageFlags usage);
 
     CommandBuffer& getGraphicCommandBuffer();
@@ -198,9 +206,12 @@ private:
 
     std::vector<SgImage> hwTextures;
 
-    std::unordered_map<uint32_t, ResourceSet> resourceSets;
-    std::vector<uint8_t>                      storePushConstants;
-    uint32_t                                  maxPushConstantSize;
+    std::unordered_map<uint32_t, DescriptorLayout*> descriptor_set_layout_binding_state;
+    std::unordered_map<uint32_t, ResourceSet>       resourceSets;
+    bool                                            resourceSetsDirty{false};
+
+    std::vector<uint8_t> storePushConstants;
+    uint32_t             maxPushConstantSize;
 };
 
 extern RenderContext* g_context;

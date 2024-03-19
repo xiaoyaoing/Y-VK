@@ -134,6 +134,7 @@ inline void readShaderResourceUniformBuffer(const spirv_cross::CompilerReflectio
         readResourceSize(compiler, spirvResource, resource);
         readResourceDecoration<spv::DecorationLocation>(compiler, spirvResource, resource);
         readResourceDecoration<spv::DecorationBinding>(compiler, spirvResource, resource);
+        readResourceDecoration<spv::DecorationDescriptorSet>(compiler, spirvResource, resource);
         resources.emplace_back(std::move(resource));
     }
 }

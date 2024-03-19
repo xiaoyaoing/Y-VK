@@ -1,6 +1,6 @@
 #version 460 core
 #extension GL_GOOGLE_include_directive : enable
-
+//#extension GL_EXT_nonuniform_qualifier : enable
 /* Copyright (c) 2019, Arm Limited and Contributors
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -46,9 +46,9 @@ void main(void)
 
     GltfMaterial material = scene_materials[material_index];
     vec4 base_color = vec4(0);
-    
 
-    if(material.pbrBaseColorTexture != -1)
+
+    if (material.pbrBaseColorTexture != -1)
     {
         base_color = texture(scene_textures[material.pbrBaseColorTexture], in_uv);
     }
@@ -56,7 +56,7 @@ void main(void)
     {
         base_color = material.pbrBaseColorFactor;
     }
-    
+
     o_albedo = base_color;
     //    o_normal =  o_albedo;
 

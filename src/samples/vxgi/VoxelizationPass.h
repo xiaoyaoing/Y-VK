@@ -6,16 +6,6 @@
 #include "Scene/Scene.h"
 #include "shaders/vxgi/vxgi_common.h"
 
-class ClipMapCleaner {
-public:
-    void clearClipMapRegions(RenderGraph& rg, const ClipmapRegion& clipRegion, RenderGraphHandle imageToClear, uint32_t clipLevel);
-    ClipMapCleaner();
-
-protected:
-    std::unique_ptr<PipelineLayout> mPipelineLayout{nullptr};
-    struct ImageCleaningDesc;
-};
-
 class VoxelizationPass : public VxgiPassBase {
 
 public:
@@ -31,6 +21,9 @@ private:
     std::vector<ClipmapRegion>              mClipRegions{};
     std::vector<std::vector<ClipmapRegion>> mRevoxelizationRegions{};
 
+    uint32_t                             mCurBufferIndex{0};
+    std::vector<std::unique_ptr<Buffer>> mVoxelParamBuffers{};
+
     // std::vector<std::unique_ptr<Buffer>> mVoxelParamBuffer{nullptr};
     VoxelizationParamater mVoxelParam{};
 
@@ -39,7 +32,8 @@ private:
     std::unique_ptr<PipelineLayout> mVoxelizationPipelineLayout{nullptr};
 
     bool  mFullRevoxelization{false};
+    bool  mInitVoxelization{false};
     ivec3 mMinVoxelChange{2, 2, 2};
 
-    std::unique_ptr<ClipMapCleaner> mClipMapCleaner{nullptr};
+    // std::unique_ptr<ClipMapCleaner> mClipMapCleaner{nullptr};
 };

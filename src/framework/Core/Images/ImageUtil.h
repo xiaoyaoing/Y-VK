@@ -43,7 +43,7 @@ public:
 
     static VulkanLayout chooseVulkanLayout(VulkanLayout layout,VulkanLayout defaultLayout);
 
-    inline static VulkanLayout getDefaultLayout(TextureUsage usage)
+    inline static VulkanLayout  getDefaultLayout(TextureUsage usage)
     {
         if(any(usage & TextureUsage::STORAGE))
             return VulkanLayout::READ_WRITE;

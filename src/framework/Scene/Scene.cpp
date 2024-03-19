@@ -2,33 +2,34 @@
 
 #include "Compoments/Camera.h"
 
-Material Material::getDefaultMaterial() {
-    Material material{};
-    return material;
-}
+// Material Material::getDefaultMaterial() {
+//     Material material{};
+//     return material;
+// }
 void Scene::IteratePrimitives(PrimitiveCallBack primitiveCallBack) const {
     for (const auto& prim : primitives) {
         primitiveCallBack(*prim);
     }
 }
 
-Scene::Scene(std::vector<std::unique_ptr<Primitive>>&& primitives, std::vector<std::unique_ptr<Texture>>&& textures, std::vector<Material>&& materials, std::vector<SgLight>&& lights, std::vector<std::shared_ptr<Camera>>&& cameras)
-    : materials(std::move(materials)), lights(std::move(lights)), primitives(std::move(primitives)), textures(std::move(textures)), cameras(std::move(cameras)) {
-    for (auto& prim : this->primitives) {
-        assert(prim->valid());
-    }
-}
-
-Scene::Scene(std::vector<std::unique_ptr<Primitive>>&& primitives, std::vector<std::unique_ptr<Texture>>&& textures, std::vector<GltfMaterial>&& materials, std::vector<SgLight>&& lights, std::vector<std::shared_ptr<Camera>>&& cameras)
-    : gltfMaterials(std::move(materials)), lights(std::move(lights)), primitives(std::move(primitives)), textures(std::move(textures)), cameras(std::move(cameras)) {
-    for (auto& prim : this->primitives) {
-        assert(prim->valid());
-    }
-}
+// Scene::Scene(std::vector<std::unique_ptr<Primitive>>&& primitives, std::vector<std::unique_ptr<Texture>>&& textures, std::vector<Material>&& materials, std::vector<SgLight>&& lights, std::vector<std::shared_ptr<Camera>>&& cameras)
+//     : materials(std::move(materials)), lights(std::move(lights)), primitives(std::move(primitives)), textures(std::move(textures)), cameras(std::move(cameras)) {
+//     for (auto& prim : this->primitives) {
+//         assert(prim->valid());
+//     }
+// }
+//
+// Scene::Scene(std::vector<std::unique_ptr<Primitive>>&& primitives, std::vector<std::unique_ptr<Texture>>&& textures, std::vector<GltfMaterial>&& materials, std::vector<SgLight>&& lights, std::vector<std::shared_ptr<Camera>>&& cameras)
+//     : materials(std::move(materials)), lights(std::move(lights)), primitives(std::move(primitives)), textures(std::move(textures)), cameras(std::move(cameras)) {
+//     for (auto& prim : this->primitives) {
+//         assert(prim->valid());
+//     }
+// }
 
 void Scene::addLight(const SgLight& light) {
     lights.emplace_back(light);
 }
+
 void Scene::addDirectionalLight(vec3 direction, vec3 color, float intensity) {
     SgLight light{};
     light.lightProperties.color     = color;
@@ -50,17 +51,38 @@ const std::vector<std::unique_ptr<Texture>>& Scene::getTextures() const {
     return textures;
 }
 
-const std::vector<Material>& Scene::getMaterials() const {
-    return materials;
-}
+
 const std::vector<GltfMaterial>& Scene::getGltfMaterials() const {
-    return gltfMaterials;
+    return materials;
 }
 
 std::vector<std::shared_ptr<Camera>>& Scene::getCameras() {
     return cameras;
+}bool Scene::hasVertexBuffer(const std::string& name) const{
+    return sceneVertexBuffer.contains(name);
 }
-
+bool Scene::getVertexAttribute(const std::string& name, VertexAttribute* attribute) const{
+    if (vertexAttributes.contains(name)) {
+        if (attribute)
+            *attribute = vertexAttributes.at(name);
+        return true;
+    }
+    return false;
+    
+}Buffer& Scene::getVertexBuffer(const std::string& name) const{
+    return *sceneVertexBuffer.at(name);
+}VkIndexType Scene::getIndexType() const{
+    return indexType;
+}const Buffer& Scene::getIndexBuffer() const{
+    return *sceneIndexBuffer;
+}const Buffer& Scene::getUniformBuffer() const{
+    return *sceneUniformBuffer;
+}const Buffer& Scene::getPrimitiveIdBuffer() const{
+    return *primitiveIdBuffer;
+}
+bool Scene::usePrimitiveIdBuffer() const{
+    return usePrimitiveId;
+}
 bool Primitive::getVertexAttribute(const std::string& name, VertexAttribute* attribute) const {
     if (vertexAttributes.contains(name)) {
         if (attribute)
@@ -112,7 +134,7 @@ const Buffer& Primitive::getUniformBuffer() const {
 }
 
 std::unique_ptr<Scene> loadDefaultTriangleScene(Device& device) {
-    Material                                mat        = Material::getDefaultMaterial();
+    GltfMaterial mat{};
     std::vector<std::unique_ptr<Primitive>> primitives = {};
     primitives.push_back(std::make_unique<Primitive>(0, 0, 3, 0));
 
@@ -142,6 +164,7 @@ std::unique_ptr<Scene> loadDefaultTriangleScene(Device& device) {
     prim->setVertxAttribute(POSITION_ATTRIBUTE_NAME, VertexAttribute{.format = VK_FORMAT_R32G32B32_SFLOAT, .stride = sizeof(float) * 3, .offset = 0});
     prim->setVertxAttribute("color", VertexAttribute{.format = VK_FORMAT_R32G32B32_SFLOAT, .stride = sizeof(float) * 3, .offset = 0});
     prim->setIndexType(VK_INDEX_TYPE_UINT32);
-    auto scene = new Scene(std::move(primitives), {}, {mat}, {}, {});
+    // auto scene = new Scene(std::move(primitives), {}, {mat}, {}, {});
+    auto scene = new Scene();
     return std::unique_ptr<Scene>(scene);
 }

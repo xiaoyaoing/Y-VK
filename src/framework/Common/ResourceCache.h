@@ -52,7 +52,7 @@ T& requestResource(Device& device, std::unordered_map<std::size_t, T>& resources
     if (res != resources.end()) {
         return res->second;
     }
-    
+
     LOGI("Creating resource of type {0}", typeid(T).name());
 
     T    resource(device, args...);
@@ -61,7 +61,6 @@ T& requestResource(Device& device, std::unordered_map<std::size_t, T>& resources
     // hash = 0;
     // hash_param(hash, args...);
 
-    
     res = res_it.first;
     return res->second;
 
@@ -168,6 +167,10 @@ public:
 
     void clearSgImages() {
         state.sgImages.clear();
+    }
+
+    ResourceCacheState& getState() {
+        return state;
     }
 
 private:

@@ -175,6 +175,8 @@ public:
 
     PipelineState& setPipelineType(PIPELINE_TYPE pipelineType);
 
+    PipelineState& enableConservativeRasterization(VkPhysicalDevice device);
+
     const PipelineLayout& getPipelineLayout() const;
 
     const RenderPass* getRenderPass() const;

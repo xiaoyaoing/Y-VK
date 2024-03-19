@@ -36,15 +36,13 @@ Accel RTSceneEntryImpl::createAccel(VkAccelerationStructureCreateInfoKHR& accel)
 }
 
 void RTSceneEntryImpl::initScene(Scene& scene) {
-    scene_                = &scene;
-    bool useStagingBuffer = true;
-    ;
+    scene_                      = &scene;
+    bool     useStagingBuffer   = true;
     uint32_t positionBufferSize = 0;
     uint32_t indexBufferSize    = 0;
     for (const auto& primitive : scene.getPrimitives()) {
         if (primitive->getVertexAttribute(POSITION_ATTRIBUTE_NAME))
             positionBufferSize += primitive->getVertexBuffer(POSITION_ATTRIBUTE_NAME).getSize();
-        // if(primitive->vertexAttributes.contains(INDEX_ATTRIBUTE_NAME))
         indexBufferSize += primitive->getIndexBuffer().getSize();
     }
     vertexBuffer = std::make_unique<Buffer>(device, positionBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY);

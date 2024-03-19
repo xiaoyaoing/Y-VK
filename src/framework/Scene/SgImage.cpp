@@ -129,33 +129,29 @@ SgImage::SgImage(Device& device, const std::string& name, const VkExtent3D& exte
     this->format    = format;
     this->mExtent3D = extent;
 
-    size_t hash{0U};
-    hash_combine(hash, name);
-    LOGI("name {} hash = {}", name, hash);
-    hash_combine(hash, extent);
-    // LOGI(hash);
+    // size_t hash{0U};
+    // hash_combine(hash, name);
+    // LOGI("name {} hash = {}", name, hash);
+    // hash_combine(hash, extent);
+    // // LOGI(hash);
+    //
+    // hash_combine(hash, format);// LOGI(hash);
+    //
+    // hash_combine(hash, image_usage);// LOGI(hash);
+    //
+    // hash_combine(hash, memory_usage);//LOGI(hash);
+    //
+    // hash_combine(hash, viewType);// LOGI(hash);
+    //
+    // hash_combine(hash, sample_count);
+    //
+    // hash_combine(hash, mipLevels);
+    //
+    // hash_combine(hash, array_layers);
+    //
+    // hash_combine(hash, flags);
 
-    hash_combine(hash, format);// LOGI(hash);
-
-    hash_combine(hash, image_usage);// LOGI(hash);
-
-    hash_combine(hash, memory_usage);//LOGI(hash);
-
-    hash_combine(hash, viewType);// LOGI(hash);
-
-    hash_combine(hash, sample_count);
-    LOGI(hash);
-
-    hash_combine(hash, mipLevels);
-    LOGI(hash);
-
-    hash_combine(hash, array_layers);
-    LOGI(hash);
-
-    hash_combine(hash, flags);
-    LOGI(hash);
-
-    auto extent_string       = std::to_string(extent.width) + "x" + std::to_string(extent.height) + "x" + std::to_string(extent.depth) + std::to_string(hash);
+    auto extent_string       = std::to_string(extent.width) + "x" + std::to_string(extent.height) + "x" + std::to_string(extent.depth);
     auto format_string       = std::to_string(format);
     auto image_usage_string  = std::to_string(image_usage);
     auto memory_usage_string = std::to_string(memory_usage);

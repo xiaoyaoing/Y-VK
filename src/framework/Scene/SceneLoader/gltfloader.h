@@ -26,6 +26,7 @@ struct SceneLoadingConfig {
     bool                            bufferForAccel{false};
     bool                            bufferForTransferSrc{false};
     bool                            bufferForTransferDst{false};
+    BufferRate                      bufferRate{BufferRate::PER_SCENE};
 };
 
 class GltfLoading {

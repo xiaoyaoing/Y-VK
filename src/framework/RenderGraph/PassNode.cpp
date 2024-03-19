@@ -87,17 +87,6 @@ void RenderPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuf
         std::unordered_map<RenderGraphHandle, size_t, RenderGraphHandle::Hash> attachmentMap = renderPassData.getAttachmentTextures();
 
         uint32_t index = 0;
-        //For a render pass,texture may be used as attachment,also may be used as storage image
-        // for (auto& subpass : renderGraphSubpassInfos) {
-        //     for (auto& handle : subpass.inputAttachments) {
-        //         if (!attachmentMap.contains(handle))
-        //             attachmentMap[handle] = index++;
-        //     }
-        //     for (auto& handle : subpass.outputAttachments) {
-        //         if (!attachmentMap.contains(handle))
-        //             attachmentMap[handle] = index++;
-        //     }
-        // }
 
         std::ranges::transform(renderGraphSubpassInfos.begin(), renderGraphSubpassInfos.end(), std::back_inserter(subpassInfos), [&](const auto& renderGraphSubassInfo) {
             SubpassInfo subpassInfo{};

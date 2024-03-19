@@ -59,6 +59,52 @@ namespace std {
     // 		return hash;
     // 	}
     // };
+    template<>
+    struct hash<VkWriteDescriptorSet> {
+        std::size_t operator()(const VkWriteDescriptorSet& write_descriptor_set) const {
+            std::size_t result = 0;
+
+            hash_combine(result, write_descriptor_set.dstSet);
+            hash_combine(result, write_descriptor_set.dstBinding);
+            hash_combine(result, write_descriptor_set.dstArrayElement);
+            hash_combine(result, write_descriptor_set.descriptorCount);
+            hash_combine(result, write_descriptor_set.descriptorType);
+
+            switch (write_descriptor_set.descriptorType) {
+                case VK_DESCRIPTOR_TYPE_SAMPLER:
+                case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+                case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+                case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+                case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+                    for (uint32_t i = 0; i < write_descriptor_set.descriptorCount; i++) {
+                        hash_combine(result, write_descriptor_set.pImageInfo[i]);
+                    }
+                    break;
+
+                case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+                case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+                    for (uint32_t i = 0; i < write_descriptor_set.descriptorCount; i++) {
+                        hash_combine(result, write_descriptor_set.pTexelBufferView[i]);
+                    }
+                    break;
+
+                case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+                case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+                case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+                case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+                    for (uint32_t i = 0; i < write_descriptor_set.descriptorCount; i++) {
+                        hash_combine(result, write_descriptor_set.pBufferInfo[i]);
+                    }
+                    break;
+
+                default:
+                    // Not implemented
+                    break;
+            }
+
+            return result;
+        }
+    };
 
     template<>
     struct hash<VkExtent3D> {
@@ -224,53 +270,6 @@ namespace std {
     };
 
     template<>
-    struct hash<VkWriteDescriptorSet> {
-        std::size_t operator()(const VkWriteDescriptorSet& write_descriptor_set) const {
-            std::size_t result = 0;
-
-            hash_combine(result, write_descriptor_set.dstSet);
-            hash_combine(result, write_descriptor_set.dstBinding);
-            hash_combine(result, write_descriptor_set.dstArrayElement);
-            hash_combine(result, write_descriptor_set.descriptorCount);
-            hash_combine(result, write_descriptor_set.descriptorType);
-
-            switch (write_descriptor_set.descriptorType) {
-                case VK_DESCRIPTOR_TYPE_SAMPLER:
-                case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-                case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-                case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-                case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
-                    for (uint32_t i = 0; i < write_descriptor_set.descriptorCount; i++) {
-                        hash_combine(result, write_descriptor_set.pImageInfo[i]);
-                    }
-                    break;
-
-                case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
-                case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
-                    for (uint32_t i = 0; i < write_descriptor_set.descriptorCount; i++) {
-                        hash_combine(result, write_descriptor_set.pTexelBufferView[i]);
-                    }
-                    break;
-
-                case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-                case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-                case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
-                case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
-                    for (uint32_t i = 0; i < write_descriptor_set.descriptorCount; i++) {
-                        hash_combine(result, write_descriptor_set.pBufferInfo[i]);
-                    }
-                    break;
-
-                default:
-                    // Not implemented
-                    break;
-            }
-
-            return result;
-        }
-    };
-
-    template<>
     struct hash<VkWriteDescriptorSetAccelerationStructureKHR> {
         std::size_t operator()(const VkWriteDescriptorSetAccelerationStructureKHR& write_descriptor_set) const {
             std::size_t result = 0;
@@ -282,6 +281,7 @@ namespace std {
             return result;
         }
     };
+    
 
     template<>
     struct hash<SpecializationConstantState> {
@@ -491,6 +491,6 @@ inline void hash_param(size_t& seed, const T& value) {
 template<typename T, typename... Args>
 inline void hash_param(size_t& seed, const T& first_arg, const Args&... args) {
     hash_param(seed, first_arg);
-   // LOGI("{} {} hash", typeid(T).name(), seed);
+    // LOGI("{} {} hash", typeid(T).name(), seed);
     hash_param(seed, args...);
 }

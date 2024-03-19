@@ -20,18 +20,21 @@ public:
 
     bool hasLayout(const uint32_t setIndex) const;
 
-    const DescriptorLayout& getDescriptorLayout(const uint32_t setIndex) const;
+    DescriptorLayout& getDescriptorLayout(const uint32_t setIndex) const;
 
     const std::vector<ShaderResource> getShaderResources(const ShaderResourceType& type  = ShaderResourceType::All,
                                                          VkShaderStageFlagBits     stage = VK_SHADER_STAGE_ALL) const;
 
     VkShaderStageFlags getPushConstantRangeStage(uint32_t size) const;
 
+    const std::map<std::uint32_t, std::vector<ShaderResource>>& getShaderSets() const;
+
 private:
     void create();
 
-    VkPipelineLayout               layout;
-    Device&                        device;
-    std::vector<DescriptorLayout*> descriptorLayouts;
-    std::vector<Shader>            shaders;
+    VkPipelineLayout                                     layout;
+    Device&                                              device;
+    std::map<uint32_t, DescriptorLayout*>                descriptorLayouts;
+    std::vector<Shader>                                  shaders;
+    std::map<std::uint32_t, std::vector<ShaderResource>> shaderSets;
 };

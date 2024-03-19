@@ -1,5 +1,6 @@
 #include "LightInjectionPass.h"
 
+#include "ClipmapCleaner.h"
 #include "ClipmapRegion.h"
 #include "Core/RenderContext.h"
 #include "Core/View.h"
@@ -10,14 +11,24 @@ constexpr uint32_t kUpdateRegionLevelOffsets[CLIP_MAP_LEVEL_COUNT]{
     1 << 2,
     1 << 3,
     1 << 4,
-    1 << 5
-};
+    1 << 5};
 
 void LightInjectionPass::render(RenderGraph& rg) {
+
+    auto radiance = rg.importTexture("radiance", mLightInjectionImage.get());
+
     auto& commandBuffer = g_context->getGraphicCommandBuffer();
+    {
+        auto clipRegions = g_manager->fetchPtr<std::vector<ClipmapRegion>>("clipmap_regions");
+        for (uint32_t i = 0; i < CLIP_MAP_LEVEL_COUNT; i++) {
+            // auto buffer = g_manager->fetchPtr<Buffer>("voxel_param_buffer");
+            if (frameIndex % kUpdateRegionLevelOffsets[i] == 0) {
+                ClipMapCleaner::clearClipMapRegions(rg, clipRegions->operator[](i), radiance, i);
+            }
+        }
+    }
     rg.addPass(
         "LightInjectionPass", [&](auto& builder, auto& settings) {
-        auto radiance  = rg.importTexture("radiance", mLightInjectionImage.get());
 
         builder.writeTexture(radiance);   
         // builder.readTexture(normal);     
@@ -29,18 +40,22 @@ void LightInjectionPass::render(RenderGraph& rg) {
                 auto clipRegions = g_manager->fetchPtr<std::vector<ClipmapRegion>>("clipmap_regions");
                 auto& view       = *g_manager->fetchPtr<View>("view");
                 view.bindViewBuffer().bindViewShading();
-                    g_context->getPipelineState().setPipelineLayout(*mLightInjectionPipelineLayout);
+                    g_context->getPipelineState().setPipelineLayout(*mLightInjectionPipelineLayout).enableConservativeRasterization(g_context->getDevice().getPhysicalDevice());
                                 g_context->bindImage(2, rg.getBlackBoard().getHwImage("radiance").getVkImageView(VK_IMAGE_VIEW_TYPE_3D,VK_FORMAT_R32_UINT));
                 for(uint32_t i = 0 ;i<CLIP_MAP_LEVEL_COUNT;i++) {
                     // auto buffer = g_manager->fetchPtr<Buffer>("voxel_param_buffer");
-                    if(frameIndex % kUpdateRegionLevelOffsets[i] == 0 || true) {
-                        auto buffer = g_context->allocateBuffer(sizeof(VoxelizationParamater), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-
+                    if(frameIndex % kUpdateRegionLevelOffsets[i] == 0) {
+                        // ClipMapCleaner::clearClipMapRegions(rg,clipRegions->operator[](i),rg.getBlackBoard().getHandle("radiance"),i);
+                        
                         auto & clipRegion =  clipRegions->operator[](i);
                         auto voxelParam =  clipRegion.getVoxelizationParam();
                         voxelParam.clipmapLevel = i;
-                        buffer.buffer->uploadData(&voxelParam, buffer.size,buffer.offset);
-                        g_context->bindBuffer(5, *buffer.buffer,buffer.offset,buffer.size);
+
+                        
+                        mVoxelParamBuffers[i]->uploadData(&voxelParam, sizeof(VoxelizationParamater));
+                        g_context->bindBuffer(5, *mVoxelParamBuffers[i], 0, sizeof(VoxelizationParamater),3);
+
+                        
                         for(auto& primitive : view.getMVisiblePrimitives()) {
                             if(primitive->getDimensions().overlaps(clipRegion.getBoundingBox()))
                                 g_context->bindPrimitiveGeom(commandBuffer,*primitive).bindPrimitiveShading(commandBuffer,*primitive).flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, 0, 0, 0);
@@ -56,6 +71,12 @@ void LightInjectionPass::init() {
     mLightInjectionPipelineLayout = std::make_unique<PipelineLayout>(
         g_context->getDevice(), std::vector<std::string>{"vxgi/lightInjection.vert", "vxgi/lightInjection.frag"});
     mLightInjectionImage = std::make_unique<SgImage>(
-        g_context->getDevice(), std::string("voxelRadianceImage"), imageResolution, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_VIEW_TYPE_3D);
+        g_context->getDevice(), std::string("voxelRadianceImage"), imageResolution, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_VIEW_TYPE_3D, VK_SAMPLE_COUNT_1_BIT, 1, 1, VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT);
     mLightInjectionImage->createImageView(VK_IMAGE_VIEW_TYPE_3D, VK_FORMAT_R32_UINT);
+    mClipmapUpdatePolicy = g_manager->fetchPtr<ClipmapUpdatePolicy>("clipmap_update_policy");
+
+    mVoxelParamBuffers.resize(CLIP_MAP_LEVEL_COUNT);
+    for (uint32_t i = 0; i < CLIP_MAP_LEVEL_COUNT; i++) {
+        mVoxelParamBuffers[i] = std::make_unique<Buffer>(g_context->getDevice(), sizeof(VoxelizationParamater), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+    }
 }

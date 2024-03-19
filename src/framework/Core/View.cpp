@@ -81,9 +81,11 @@ View& View::bindViewShading() {
 
     const auto& textures = GetMTextures();
     for (uint32_t i = 0; i < textures.size(); i++) {
-        g_context->bindImageSampler(0, textures[i]->getImage().getVkImageView(), textures[i]->getSampler(), 1, i);
+        g_context->bindImageSampler(6, textures[i]->getImage().getVkImageView(), textures[i]->getSampler(), 1, i);
     }
 
+    return *this;
+}View& View::bindViewGeom(CommandBuffer & commandBuffer){
     return *this;
 }
 const Camera* View::getMCamera() const {

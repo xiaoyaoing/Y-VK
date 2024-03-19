@@ -16,6 +16,7 @@ layout (location = 1) out vec4 o_normal_metalic;
 layout (location = 2) out vec4 o_emssion;
 
 layout(push_constant) uniform PushConstantBlock {
+
     uint u_materialIndex;
 };
 

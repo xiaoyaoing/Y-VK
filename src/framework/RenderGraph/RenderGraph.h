@@ -94,8 +94,7 @@ public:
     using GraphicSetup    = std::function<void(Builder& builder, GraphicPassSettings&)>;
     using ComputeSetUp    = std::function<void(Builder& builder, ComputePassSettings&)>;
     using RayTracingSetup = std::function<void(Builder& builder, RaytracingPassSettings&)>;
-    
-    
+
     void addPass(const char* name, const GraphicSetup& setup, GraphicsExecute&& execute);
 
     // rg.addComputePass("",
@@ -118,7 +117,7 @@ public:
     void addRaytracingPass(const char* name, const RayTracingSetup& setup, RaytracingExecute&& execute);
     void addImageCopyPass(RenderGraphHandle src, RenderGraphHandle dst);
 
-    // void addPresentPass(RenderGraphHandle textureId);
+    // void /(RenderGraphHandle textureId);
 
     void compile();
     void clearPass();
@@ -148,7 +147,6 @@ private:
         mPassNodes.emplace_back(node);
         return node;
     }
-    
 
     // Using union instead of directly use two type of struct may be better;
     // Using texture type and buffer type to avoid call get type function at runtime
@@ -193,7 +191,7 @@ private:
 
     std::vector<PassNode*>::iterator mActivePassNodesEnd;
 
-    Device&                   device;
+    Device& device;
 
     std::vector<Edge> edges;
 

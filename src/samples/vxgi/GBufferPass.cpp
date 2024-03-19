@@ -42,7 +42,13 @@ void GBufferPass::render(RenderGraph& rg) {
 
                                                    });
 
-            RenderGraphPassDescriptor desc({diffuse,  normal, emission, depth}, {.outputAttachments = {diffuse,  normal, emission, depth}});
+            // auto position = rg.createTexture("position",
+            //                                 {.extent = renderContext->getSwapChainExtent(),
+            //                                  .useage = TextureUsage::SUBPASS_INPUT |
+            //                                            TextureUsage::COLOR_ATTACHMENT});
+
+         RenderGraphPassDescriptor desc({diffuse,  normal, emission, depth}, {.outputAttachments = {diffuse,  normal, emission, depth}});
+            // RenderGraphPassDescriptor desc({diffuse,  normal, emission,  position}, {.outputAttachments = {diffuse,  normal, emission,  position}});
             builder.declare(desc);
 
             builder.writeTextures({diffuse,  emission, depth}, TextureUsage::COLOR_ATTACHMENT).writeTexture(depth, TextureUsage::DEPTH_ATTACHMENT); }, [&](RenderPassContext& context) {
