@@ -73,10 +73,11 @@ void Example::drawFrame(RenderGraph& rg) {
 
             view->bindViewBuffer().bindViewShading();
 
-            renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.gBuffer).setDepthStencilState({.depthCompareOp =  VK_COMPARE_OP_GREATER});
+            renderContext->bindScene(commandBuffer,*scene).getPipelineState().setPipelineLayout(*pipelineLayouts.gBuffer).setDepthStencilState({.depthCompareOp =  VK_COMPARE_OP_GREATER});
 
+            uint32_t instance_count= 0;    
             for(const auto & primitive : view->getMVisiblePrimitives()) {
-                renderContext->bindPrimitiveGeom(context.commandBuffer, *primitive).bindPrimitiveShading(context.commandBuffer,*primitive).flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, 0, 0, 0);
+                renderContext->bindPrimitiveShading(context.commandBuffer,*primitive).flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, primitive->firstIndex, primitive->firstVertex,instance_count++);
             }              
             renderContext->nextSubpass(commandBuffer);
             renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.lighting);
@@ -130,13 +131,15 @@ void Example::drawFrame(RenderGraph& rg) {
                     blackBoard.put("normal", normal);
                     blackBoard.put("depth", depth); }, [&](RenderPassContext& context) {
                     //   renderContext->beginRenderPass(commandBuffer, context.renderTarget, {});
-                    renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.gBuffer).setDepthStencilState({.depthCompareOp =  VK_COMPARE_OP_GREATER});
-                    view->bindViewBuffer().bindViewShading();    
-                    scene->IteratePrimitives([&](const Primitive &primitive) {
-                            //todo: use camera data here
-                            renderContext->bindPrimitiveGeom(context.commandBuffer,primitive).bindPrimitiveShading(context.commandBuffer,primitive).flushAndDrawIndexed(commandBuffer, primitive.indexCount);
-                                             }
-                    ); });
+                        view->bindViewBuffer().bindViewShading();
+
+                renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.gBuffer).setDepthStencilState({.depthCompareOp =  VK_COMPARE_OP_GREATER});
+                 renderContext->bindScene(commandBuffer,*scene);
+
+                uint32_t instance_count= 0;    
+                for(const auto & primitive : view->getMVisiblePrimitives()) {
+                    renderContext->bindPrimitiveShading(context.commandBuffer,*primitive).flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, primitive->firstIndex, primitive->firstVertex,instance_count++);
+                } });
 
         rg.addPass(
             "LightingPass", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
@@ -179,7 +182,7 @@ void Example::prepare() {
     Application::prepare();
 
     std::vector<Shader> shaders{
-        Shader(*device, FileUtils::getShaderPath("defered.vert")),
+        Shader(*device, FileUtils::getShaderPath("defered_one_scene_buffer.vert")),
         Shader(*device, FileUtils::getShaderPath("defered.frag"))};
     pipelineLayouts.gBuffer = std::make_unique<PipelineLayout>(*device, shaders);
 
@@ -189,7 +192,7 @@ void Example::prepare() {
     pipelineLayouts.lighting = std::make_unique<PipelineLayout>(*device, shaders1);
 
     // scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("space_module/SpaceModule.gltf"));
-    scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"),{.bufferRate = BufferRate::PER_PRIMITIVE});
+    scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"), {.bufferRate = BufferRate::PER_SCENE});
 
     // scene = GltfLoading::LoadSceneFromGLTFFile(
     //     *device, "E:/code/vk_vxgi/VFS/Scene/Sponza/Sponza.gltf");

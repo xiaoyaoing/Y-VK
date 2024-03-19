@@ -17,12 +17,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//#include "perFrame.glsl"
+#include "perFrame.glsl"
 
 precision highp float;
 
 #include "perFrameShading.glsl"
-
 
 // #ifdef HAS_baseColorTexture
 //layout (set=1, binding=0) uniform sampler2D baseColorTexture;
@@ -30,13 +29,18 @@ precision highp float;
 
 layout (location = 0) in vec2 in_uv;
 layout (location = 1) in vec3 in_normal;
+layout (location = 2) flat in uint in_primitive_index;
 
 layout (location = 0) out vec4 o_albedo;
 layout (location = 1) out vec4 o_normal;
 
-layout(push_constant) uniform PushConstants {
-    uint material_index;
+layout(set = 0, binding = 2) buffer _GlobalPrimitiveUniform {
+    PerPrimitive primitive_infos[];
 };
+
+//layout(push_constant) uniform PushConstants {
+//    uint material_index;
+//};
 
 void main(void)
 {
@@ -44,6 +48,7 @@ void main(void)
     // Transform normals from [-1, 1] to [0, 1]
     o_normal = vec4(0.5 * normal + 0.5, 1.0);
 
+    uint material_index = primitive_infos[in_primitive_index].material_index;
     GltfMaterial material = scene_materials[material_index];
     vec4 base_color = vec4(0);
 

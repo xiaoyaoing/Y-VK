@@ -289,6 +289,7 @@ bool PipelineState::isDirty() const {
 }
 
 PipelineState& PipelineState::clearDirty() {
+    dirty = false;
     //todo
     return *this;
 }

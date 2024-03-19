@@ -25,7 +25,10 @@ struct VertexAttribute {
 #define TEXCOORD_ATTRIBUTE_NAME "texcoord_0"
 
 struct PerPrimitiveUniform {
-    glm::mat4 model;
+    glm::mat4  model;
+    uint32_t   materialIndex;
+    glm::uvec3 padding1;
+    glm::uvec4 padding2;
 };
 
 class Primitive {
@@ -68,7 +71,7 @@ public:
     const BBox& getDimensions() const;
 
     Primitive(uint32_t firstVertex, uint32_t firstIndex, uint32_t indexCount, uint32_t materialIndex) : firstIndex(firstIndex),
-                                                                                                        indexCount(indexCount),
+                                                                                                        indexCount(indexCount), firstVertex(firstVertex),
                                                                                                         materialIndex(materialIndex), dimensions({}) {
     }
 };

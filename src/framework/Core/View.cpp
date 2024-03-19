@@ -77,15 +77,16 @@ View& View::bindViewShading() {
     auto             materials  = GetMMaterials();
     BufferAllocation allocation = g_context->allocateBuffer(sizeof(GltfMaterial) * materials.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     allocation.buffer->uploadData(materials.data(), allocation.size, allocation.offset);
-    g_context->bindBuffer(2, *allocation.buffer, allocation.offset);
+    g_context->bindBuffer(3, *allocation.buffer, allocation.offset, 0);
 
     const auto& textures = GetMTextures();
     for (uint32_t i = 0; i < textures.size(); i++) {
-        g_context->bindImageSampler(6, textures[i]->getImage().getVkImageView(), textures[i]->getSampler(), 1, i);
+        g_context->bindImageSampler(6, textures[i]->getImage().getVkImageView(), textures[i]->getSampler(), 0, i);
     }
 
     return *this;
-}View& View::bindViewGeom(CommandBuffer & commandBuffer){
+}
+View& View::bindViewGeom(CommandBuffer& commandBuffer) {
     return *this;
 }
 const Camera* View::getMCamera() const {

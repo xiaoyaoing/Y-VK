@@ -82,7 +82,6 @@ protected:
     VkIndexType indexType{VK_INDEX_TYPE_UINT16};
     
     std::unique_ptr<Buffer> primitiveIdBuffer{};
-
     bool usePrimitiveId{true};
 };
 

@@ -13,6 +13,7 @@ layout(input_attachment_index = 0, binding = 0, set=2) uniform subpassInput i_al
 layout(input_attachment_index = 1, binding = 1, set=2) uniform subpassInput i_depth;
 layout(input_attachment_index = 2, binding = 2, set=2) uniform subpassInput i_normal;
 
+
 layout(location = 0) in vec2 in_uv;
 layout(location = 0) out vec4 o_color;
 
@@ -28,6 +29,8 @@ layout(binding = 4) uniform LightsInfo
 void main()
 {
     //Retrieve position from depth
+    
+
     vec4  clip         = vec4(in_uv * 2.0 - 1.0, subpassLoad(i_depth).x, 1.0);
     vec4 world_w = per_frame.inv_view_proj * clip;
     vec3 pos     = world_w.xyz / world_w.w;

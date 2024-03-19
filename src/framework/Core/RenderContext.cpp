@@ -306,8 +306,6 @@ RenderContext& RenderContext::bindView(const View& view) {
     return *this;
 }
 
-
-
 RenderContext& RenderContext::bindPrimitiveGeom(CommandBuffer& commandBuffer, const Primitive& primitive) {
     VertexInputState vertexInputState;
 
@@ -355,10 +353,9 @@ RenderContext& RenderContext::bindPrimitiveGeom(CommandBuffer& commandBuffer, co
     // return bindMaterial(primitive.material);
 }
 
-
-RenderContext& RenderContext::bindScene(CommandBuffer& commandBuffer, const Scene& scene){
-     VertexInputState vertexInputState;
-     uint32_t maxLoaction = 0;
+RenderContext& RenderContext::bindScene(CommandBuffer& commandBuffer, const Scene& scene) {
+    VertexInputState vertexInputState;
+    uint32_t         maxLoaction = 0;
     for (const auto& inputResource : pipelineState.getPipelineLayout().getShaderResources(ShaderResourceType::Input,
                                                                                           VK_SHADER_STAGE_VERTEX_BIT)) {
 
@@ -370,8 +367,9 @@ RenderContext& RenderContext::bindScene(CommandBuffer& commandBuffer, const Scen
         }
 
         VertexAttribute attribute{};
-        if (!scene.getVertexAttribute(inputResourceName, &attribute)){
-            LOGW("Primitive does not have vertex buffer for input resource {}", inputResourceName);
+        if (!scene.getVertexAttribute(inputResourceName, &attribute)) {
+            if (inputResourceName != "primitive_id")
+                LOGW("Primitive does not have vertex buffer for input resource {}", inputResourceName);
             continue;
         }
         VkVertexInputAttributeDescription vertex_attribute{};
@@ -395,13 +393,13 @@ RenderContext& RenderContext::bindScene(CommandBuffer& commandBuffer, const Scen
         }
     }
 
-    if(scene.usePrimitiveIdBuffer()) {
-        vertexInputState.attributes.push_back({ .location = maxLoaction + 1,.binding = maxLoaction + 1, .format = VK_FORMAT_R32_UINT,.offset = 0});
-        vertexInputState.bindings.push_back({.binding = maxLoaction + 1, .stride = sizeof(uint32_t),.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE});
+    if (scene.usePrimitiveIdBuffer()) {
+        vertexInputState.attributes.push_back({.location = maxLoaction + 1, .binding = maxLoaction + 1, .format = VK_FORMAT_R32_UINT, .offset = 0});
+        vertexInputState.bindings.push_back({.binding = maxLoaction + 1, .stride = sizeof(uint32_t), .inputRate = VK_VERTEX_INPUT_RATE_INSTANCE});
         std::vector<const Buffer*> buffers = {&scene.getPrimitiveIdBuffer()};
         commandBuffer.bindVertexBuffer(maxLoaction + 1, buffers, {0});
-    }    
-    
+    }
+
     commandBuffer.bindIndicesBuffer(scene.getIndexBuffer(), 0, scene.getIndexType());
 
     pipelineState.setVertexInputState(vertexInputState);
@@ -411,7 +409,7 @@ RenderContext& RenderContext::bindScene(CommandBuffer& commandBuffer, const Scen
     return *this;
 }
 RenderContext& RenderContext::bindPrimitiveShading(CommandBuffer& commandBuffer, const Primitive& primitive) {
-    bindPushConstants(primitive.materialIndex);
+    //   bindPushConstants(primitive.materialIndex);
     return *this;
 }
 
@@ -565,8 +563,11 @@ void RenderContext::flushDescriptorState(CommandBuffer& commandBuffer, VkPipelin
 }
 
 void RenderContext::flushPipelineState(CommandBuffer& commandBuffer) {
-    commandBuffer.bindPipeline(device.getResourceCache().requestPipeline(this->getPipelineState()),
-                               getPipelineBindPoint());
+    if (pipelineState.isDirty()) {
+        commandBuffer.bindPipeline(device.getResourceCache().requestPipeline(this->getPipelineState()),
+                                   getPipelineBindPoint());
+        pipelineState.clearDirty();
+    }
 }
 
 void RenderContext::flushAndDrawIndexed(CommandBuffer& commandBuffer, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance) {
@@ -704,6 +705,7 @@ void RenderContext::handleSurfaceChanges() {
 
 void RenderContext::recrateSwapChain(VkExtent2D extent) {
     device.getResourceCache().clearFrameBuffers();
+    device.getResourceCache().clearSgImages();
 
     hwTextures.clear();
 
