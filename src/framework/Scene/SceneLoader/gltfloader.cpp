@@ -314,11 +314,14 @@ struct GLTFLoadingImpl {
         uint32_t vertexOffset;
         uint32_t accessor;
     };
+
+    //Offset ——> accessor
+    //accessor may repeat
     std::map<std::string, std::map<uint32_t, uint32_t>> gltfVertexAccessors;
     std::map<uint32_t, uint32_t>                        gltfIndexAccessors;
     std::vector<PerPrimitiveUniform>                    primitiveUniforms;
 
-    std::map<std::uint32_t,std::vector<const tinygltf::Primitive*>> gltfPrimitives;
+    std::map<std::uint32_t, std::vector<const tinygltf::Primitive*>> gltfPrimitives;
 };
 
 bool loadImageDataFunc(tinygltf::Image* image, const int imageIndex, std::string* error, std::string* warning, int req_width, int req_height, const unsigned char* bytes, int size, void* userData) {
@@ -348,14 +351,16 @@ void GLTFLoadingImpl::process(const tinygltf::Model& model) {
     for (auto attribute : vertexAttributes) {
         auto stagingBuffer = std::make_unique<Buffer>(device, attribute.second.stride * mVertexCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
         for (auto accessor : gltfVertexAccessors.at(attribute.first)) {
-            const tinygltf::Accessor&   gltfAccessor = model.accessors[accessor.first];
+            auto accessorId = accessor.second;
+            auto vertexOffset = accessor.first;
+            const tinygltf::Accessor&   gltfAccessor = model.accessors[accessorId];
             const tinygltf::BufferView& view         = model.bufferViews[gltfAccessor.bufferView];
             auto                        startByte    = gltfAccessor.byteOffset + view.byteOffset;
             auto                        endByte      = startByte + gltfAccessor.ByteStride(view) * gltfAccessor.count;
 
             std::vector<uint8_t> data(model.buffers[view.buffer].data.begin() + startByte,
                                       model.buffers[view.buffer].data.begin() + endByte);
-            stagingBuffer->uploadData(data.data(), data.size(), accessor.second * attribute.second.stride);
+            stagingBuffer->uploadData(data.data(), data.size(), vertexOffset * attribute.second.stride);
         }
         sceneVertexBuffer[attribute.first] = std::move(stagingBuffer);
     }
@@ -363,14 +368,16 @@ void GLTFLoadingImpl::process(const tinygltf::Model& model) {
     auto                 sceneIndexStagingBuffer = std::make_unique<Buffer>(device, mIndexCount * indexStrideMap.at(indexType), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
     std::vector<uint8_t> indexData;
     for (auto accessor : gltfIndexAccessors) {
-        const tinygltf::Accessor&   gltfAccessor = model.accessors[accessor.first];
+        auto accessorId = accessor.second;
+        auto indexOffset = accessor.first;
+        const tinygltf::Accessor&   gltfAccessor = model.accessors[accessorId];
         const tinygltf::BufferView& view         = model.bufferViews[gltfAccessor.bufferView];
         auto                        startByte    = gltfAccessor.byteOffset + view.byteOffset;
         auto                        endByte      = startByte + gltfAccessor.ByteStride(view) * gltfAccessor.count;
         std::vector<uint8_t>        data(model.buffers[view.buffer].data.begin() + startByte,
                                   model.buffers[view.buffer].data.begin() + endByte);
-        indexData = convertIndexData(data, indexType, getAttributeFormat(&model, accessor.first), indexType);
-        sceneIndexStagingBuffer->uploadData(indexData.data(), indexData.size(), accessor.second * indexStrideMap.at(indexType));
+        indexData = convertIndexData(data, indexType, getAttributeFormat(&model, accessorId), indexType);
+        sceneIndexStagingBuffer->uploadData(indexData.data(), indexData.size(), indexOffset * indexStrideMap.at(indexType));
     }
 
     std::vector<uint32_t> primitiveIdxs;
@@ -459,31 +466,21 @@ void GLTFLoadingImpl::processNode(const tinygltf::Node& node, const tinygltf::Mo
             for (const auto& attr : primitive.attributes) {
                 std::string attributeName = attr.first;
                 std::ranges::transform(attributeName.begin(), attributeName.end(), attributeName.begin(), ::tolower);
-                auto& vertexAccessors     = gltfVertexAccessors[attributeName];
-                bool  attr_need_to_load   = config.requiredVertexAttribute.empty() || config.requiredVertexAttribute.contains(attributeName);
-                bool  attr_already_loaded = vertexAccessors.contains(attr.second);
-                if (attr_already_loaded) {
-                    vertexOffset = vertexAccessors[attr.second];
-                } else {
-                    vertexOffset = mVertexCount;
-                }
+                auto& vertexAccessors                = gltfVertexAccessors[attributeName];
+                bool  attr_need_to_load              = config.requiredVertexAttribute.empty() || config.requiredVertexAttribute.contains(attributeName);
+                vertexOffset                         = mVertexCount;
                 const tinygltf::Accessor&   accessor = model.accessors[attr.second];
                 const tinygltf::BufferView& view     = model.bufferViews[accessor.bufferView];
-                if (attr_need_to_load && !attr_already_loaded) {
-                    vertexAccessors[attr.second] = mVertexCount;
+                if (attr_need_to_load) {
+                    vertexAccessors[mVertexCount] = attr.second;
                 }
             }
 
             const tinygltf::Accessor& accessor               = model.accessors[primitive.indices];
             uint32_t                  curPrimitiveIndexCount = accessor.count;
 
-            if (gltfIndexAccessors.contains(primitive.indices)) {
-                loadNewIndex = false;
-                indexOffset  = gltfIndexAccessors[primitive.indices];
-            } else {
-                gltfIndexAccessors[primitive.indices] = mIndexCount;
-                indexOffset                           = mIndexCount;
-            }
+            gltfIndexAccessors[mIndexCount] = primitive.indices;
+            indexOffset                           = mIndexCount;
 
             uint32_t curIndexCount = loadNewIndex ? curPrimitiveIndexCount : gltfIndexAccessors[primitive.indices];
             auto     newPrimitive  = std::make_unique<Primitive>(vertexOffset, indexOffset, curPrimitiveIndexCount, primitive.material);
