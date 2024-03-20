@@ -7,6 +7,7 @@
 #include "../../framework/Common/VkCommon.h"
 #include "Common/FIleUtils.h"
 #include "Core/View.h"
+#include "Core/Shader/GlslCompiler.h"
 #include "Scene/SceneLoader/gltfloader.h"
 
 void Example::drawFrame(RenderGraph& rg) {
@@ -192,10 +193,12 @@ void Example::prepare() {
     pipelineLayouts.lighting = std::make_unique<PipelineLayout>(*device, shaders1);
 
     // scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("space_module/SpaceModule.gltf"));
-    scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"), {.bufferRate = BufferRate::PER_SCENE});
+    //   scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"), {.bufferRate = BufferRate::PER_SCENE});
 
-    // scene = GltfLoading::LoadSceneFromGLTFFile(
-    //     *device, "E:/code/vk_vxgi/VFS/Scene/Sponza/Sponza.gltf");
+    scene = GltfLoading::LoadSceneFromGLTFFile(
+        *device, "E:/code/vk_vxgi/VFS/Scene/Sponza/Sponza.gltf");
+
+    GlslCompiler::forceRecompile = true;
     // scene = GltfLoading::LoadSceneFromGLTFFile(*device, "E:/code/DirectX-Graphics-Samples/MiniEngine/ModelViewer/Sponza/pbr/sponza2.gltf");
     // scene = GltfLoading::LoadSceneFromGLTFFile(*device, "E:/code/DirectX-Graphics-Samples/MiniEngine/ModelViewer/Sponza/pbr/sponza2.gltf");
     //  scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));
@@ -231,7 +234,6 @@ void Example::prepare() {
     camera->flipY = true;
     // camera->setTranslation(glm::vec3(-494.f, -116.f, 99.f));
     camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
-    camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
     camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 1.f, 4000.f);
     camera->setMoveSpeed(0.0005f);
 
@@ -242,6 +244,7 @@ void Example::prepare() {
 
 Example::Example() : Application("Drawing Triangle", 1024, 1024) {
     addDeviceExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    GlslCompiler::forceRecompile = true;
 }
 
 void Example::onUpdateGUI() {

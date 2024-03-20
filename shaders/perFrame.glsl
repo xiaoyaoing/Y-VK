@@ -13,16 +13,19 @@ layout(set = 0, binding = 0) uniform _GlobalFrameUniform {
 } per_frame;
 
 
-layout(set = 0, binding = 1) uniform _GlobalPrimitiveUniform {
-    mat4 model;
-} per_primitive;
+//layout(set = 0, binding = 1) uniform _GlobalPrimitiveUniform {
+//    mat4 model;
+//} per_primitive;
 
 
 struct PerPrimitive {
     mat4 model;
     uint material_index;
-    uvec3 padding1;
-    uvec4 padding2;
+//    uvec3 padding1;
+//    uvec4 padding2;
+    uint padding1;
+    uint padding2;
+    uint padding3;
 };
 
 

@@ -43,7 +43,7 @@ void Example::prepare() {
     //     *device, FileUtils::getResourcePath("sponza/Sponza01.gltf"));
 
     scene = GltfLoading::LoadSceneFromGLTFFile(
-        *device, "E:/code/vk_vxgi/VFS/Scene/Sponza/Sponza.gltf", {.bufferRate = BufferRate::PER_PRIMITIVE});
+        *device, "E:/code/vk_vxgi/VFS/Scene/Sponza/Sponza.gltf", {.bufferRate = BufferRate::PER_SCENE});
 
     // scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));
 
@@ -81,12 +81,12 @@ void Example::prepare() {
     scene->addDirectionalLight({1.0f, 0, 0}, glm::vec3(1.0f), 0.5f);
     scene->addDirectionalLight({-1.0f, 0, 0}, glm::vec3(1.0f), 0.5f);
 
-    // camera        = scene->getCameras()[0];
-    // camera->flipY = true;
-    // camera->setTranslation(glm::vec3(-494.f, -116.f, 99.f));
-    // camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
-    // camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
-    // camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 1.f, 4000.f);
+    camera        = scene->getCameras()[0];
+    camera->flipY = true;
+    camera->setTranslation(glm::vec3(-494.f, -116.f, 99.f));
+    camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
+    camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
+    camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 1.f, 4000.f);
 
     camera        = scene->getCameras()[0];
     camera->flipY = true;

@@ -27,8 +27,9 @@ struct VertexAttribute {
 struct PerPrimitiveUniform {
     glm::mat4  model;
     uint32_t   materialIndex;
-    glm::uvec3 padding1;
-    glm::uvec4 padding2;
+    uint32_t padding1;
+    uint32_t padding2;
+    uint32_t padding3;
 };
 
 class Primitive {

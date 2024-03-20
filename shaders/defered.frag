@@ -17,11 +17,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "perFrame.glsl"
 
 precision highp float;
 
 #include "perFrameShading.glsl"
+#include "perFrame.glsl"
+
 
 // #ifdef HAS_baseColorTexture
 //layout (set=1, binding=0) uniform sampler2D baseColorTexture;
@@ -34,7 +35,7 @@ layout (location = 2) flat in uint in_primitive_index;
 layout (location = 0) out vec4 o_albedo;
 layout (location = 1) out vec4 o_normal;
 
-layout(set = 0, binding = 2) buffer _GlobalPrimitiveUniform {
+layout(std430, set = 0, binding = 2) readonly buffer _GlobalPrimitiveUniform {
     PerPrimitive primitive_infos[];
 };
 

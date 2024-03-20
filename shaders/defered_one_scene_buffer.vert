@@ -13,13 +13,13 @@ layout (location = 1) out vec3 o_normal;
 layout (location = 2) out  flat uint o_primitive_id;
 
 
-layout(set = 0, binding = 2) buffer _GlobalPrimitiveUniform {
-    PerPrimitive primitive_uniforms[];
+layout(std430, set = 0, binding = 2) readonly buffer _GlobalPrimitiveUniform {
+    PerPrimitive primitive_infos[];
 };
 
 void main(void)
 {
-    mat4  matrix = primitive_uniforms[primitive_id].model;
+    mat4  matrix = primitive_infos[primitive_id].model;
     vec4 pos = matrix  * vec4(position, 1.0f);
 
     o_uv = texcoord_0;

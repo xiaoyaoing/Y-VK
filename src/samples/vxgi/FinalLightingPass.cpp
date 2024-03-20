@@ -26,9 +26,6 @@ void FinalLightingPass::init() {
     };
     mFinalLightingPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), shaders);
     mRadianceMapSampler          = std::make_unique<Sampler>(g_context->getDevice(), VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, 0.0f);
-
-    // mVoxelParam = {.volume_center =  vec3(0.0f),.uRenderingMode = 0,.voxel_size = 0.0f,.clip_map_resoultion = 0.0f,.uTraceStartOffset = 0.0f,.uIndirectDiffuseIntensity = 0.0f,.uAmbientOcclusionFactor = 0.0f,.uMinTraceStepFactor = 0.0f,.uIndirectSpecularIntensity = 0.0f,.uOcclusionDecay = 0.0f,.uEnable32Cones = 0};
-    // mVoxelParamBuffer = std::make_unique<Buffer>(g_context->getDevice(), sizeof(FinalLightingParam), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 }
 void FinalLightingPass::render(RenderGraph& rg) {
     rg.addPass(

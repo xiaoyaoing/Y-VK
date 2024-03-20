@@ -39,9 +39,9 @@ void LightInjectionPass::render(RenderGraph& rg) {
             builder.declare(desc); }, [&](RenderPassContext& context) {
                 auto clipRegions = g_manager->fetchPtr<std::vector<ClipmapRegion>>("clipmap_regions");
                 auto& view       = *g_manager->fetchPtr<View>("view");
-                view.bindViewBuffer().bindViewShading();
-                    g_context->getPipelineState().setPipelineLayout(*mLightInjectionPipelineLayout).enableConservativeRasterization(g_context->getDevice().getPhysicalDevice());
-                                g_context->bindImage(2, rg.getBlackBoard().getHwImage("radiance").getVkImageView(VK_IMAGE_VIEW_TYPE_3D,VK_FORMAT_R32_UINT));
+                g_context->getPipelineState().setPipelineLayout(*mLightInjectionPipelineLayout);//.enableConservativeRasterization(g_context->getDevice().getPhysicalDevice());
+                view.bindViewBuffer().bindViewShading().bindViewGeom(context.commandBuffer);
+                g_context->bindImage(2, rg.getBlackBoard().getHwImage("radiance").getVkImageView(VK_IMAGE_VIEW_TYPE_3D,VK_FORMAT_R32_UINT));
                 for(uint32_t i = 0 ;i<CLIP_MAP_LEVEL_COUNT;i++) {
                     // auto buffer = g_manager->fetchPtr<Buffer>("voxel_param_buffer");
                     if(frameIndex % kUpdateRegionLevelOffsets[i] == 0) {
@@ -54,12 +54,10 @@ void LightInjectionPass::render(RenderGraph& rg) {
                         
                         mVoxelParamBuffers[i]->uploadData(&voxelParam, sizeof(VoxelizationParamater));
                         g_context->bindBuffer(5, *mVoxelParamBuffers[i], 0, sizeof(VoxelizationParamater),3);
+                        g_manager->fetchPtr<View>("view")->drawPrimitives(commandBuffer, [&](const Primitive& primitive) {
+                            return clipRegion.getBoundingBox().overlaps(primitive.getDimensions());
+                        });
 
-                        
-                        for(auto& primitive : view.getMVisiblePrimitives()) {
-                            if(primitive->getDimensions().overlaps(clipRegion.getBoundingBox()))
-                                g_context->bindPrimitiveGeom(commandBuffer,*primitive).bindPrimitiveShading(commandBuffer,*primitive).flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, 0, 0, 0);
-                        }
                     }
                 }
      frameIndex++; });

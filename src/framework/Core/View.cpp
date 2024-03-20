@@ -87,8 +87,24 @@ View& View::bindViewShading() {
     return *this;
 }
 View& View::bindViewGeom(CommandBuffer& commandBuffer) {
+    g_context->bindScene(commandBuffer, *mScene);
     return *this;
 }
+void View::drawPrimitives(CommandBuffer& commandBuffer) {
+    uint32_t instance_count = 0;
+    for (const auto& primitive : mVisiblePrimitives) {
+        g_context->flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, primitive->firstIndex, primitive->firstVertex, instance_count++);
+    }
+}
+void View::drawPrimitives(CommandBuffer& commandBuffer, const PrimitiveSelectFunc& selectFunc) {
+    uint32_t instance_count = 0;
+    for (const auto& primitive : mVisiblePrimitives) {
+        if (selectFunc(*primitive)) {
+            g_context->flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, primitive->firstIndex, primitive->firstVertex, instance_count++);
+        }
+    }
+}
+
 const Camera* View::getMCamera() const {
     return mCamera;
 }

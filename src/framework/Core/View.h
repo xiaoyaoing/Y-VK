@@ -4,8 +4,8 @@
 #include "Scene/Compoments/Camera.h"
 #include "Scene/Compoments/RenderPrimitive.h"
 
-
-class CommandBuffer;struct GltfMaterial;
+class CommandBuffer;
+struct GltfMaterial;
 class Scene;
 class Texture;
 
@@ -16,7 +16,12 @@ public:
     void  setCamera(const Camera* camera);
     View& bindViewBuffer();
     View& bindViewShading();
-    View& bindViewGeom(CommandBuffer & commandBuffer);
+    View& bindViewGeom(CommandBuffer& commandBuffer);
+
+    void drawPrimitives(CommandBuffer& commandBuffer);
+
+    using PrimitiveSelectFunc = std::function<bool(const Primitive& primitive)>;
+    void drawPrimitives(CommandBuffer& commandBuffer, const PrimitiveSelectFunc& selectFunc);
 
     const Camera*                 getMCamera() const;
     void                          setMCamera(const Camera* const mCamera);
@@ -50,7 +55,7 @@ protected:
     std::vector<const Texture*>   mTextures;
     std::vector<GltfMaterial>     mMaterials;
     std::unique_ptr<Buffer>       mPerViewBuffer;
-    const Scene * scene;
-    PerViewUnifom           mPerViewUniform;
-    std::unique_ptr<Buffer> mLightBuffer;
+    const Scene*                  scene;
+    PerViewUnifom                 mPerViewUniform;
+    std::unique_ptr<Buffer>       mLightBuffer;
 };

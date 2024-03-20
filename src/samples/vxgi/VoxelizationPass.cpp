@@ -45,22 +45,16 @@ void VoxelizationPass::init() {
     mVoxelizationImage = std::make_unique<SgImage>(
         device, std::string("opacityImage"), imageResolution, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_VIEW_TYPE_3D);
 
-    // mVoxelParamBuffer = std::make_unique<Buffer>(device, sizeof(VoxelizationParamater), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
     mVoxelParam = VoxelizationParamater{
         .voxelResolution = VOXEL_RESOLUTION,
     };
 
-  //  mRevoxelizationRegions.resize(CLIP_MAP_LEVEL_COUNT);
-
-    //  g_manager->putPtr("voxel_param_buffer", mVoxelParamBuffer.get());
     g_manager->putPtr("clipmap_regions", &mClipRegions);
 
     mVoxelParamBuffers.resize(CLIP_MAP_LEVEL_COUNT);
     for (uint32_t i = 0; i < CLIP_MAP_LEVEL_COUNT; i++) {
         mVoxelParamBuffers[i] = std::make_unique<Buffer>(device, sizeof(VoxelizationParamater), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
     }
-
-    //   mFullRevoxelization = true;
 }
 
 void VoxelizationPass::render(RenderGraph& rg) {
@@ -87,9 +81,9 @@ void VoxelizationPass::render(RenderGraph& rg) {
             RenderGraphPassDescriptor desc({opacity}, {.outputAttachments = {}});
             builder.declare(desc);
         },
-        [&](auto& passContext) {
-            g_context->bindImage(1, rg.getBlackBoard().getImageView("opacity"));//.bindImage(2, rg.getBlackBoard().getImageView("radiance"));
-
+        [&](auto& context) {
+            g_context->bindImage(1, rg.getBlackBoard().getImageView("opacity")).getPipelineState().setPipelineLayout(*mVoxelizationPipelineLayout);//enableConservativeRasterization(g_context->getDevice().getPhysicalDevice());//.bindImage(2, rg.getBlackBoard().getImageView("radiance"));
+            g_manager->fetchPtr<View>("view")->bindViewBuffer().bindViewGeom(context.commandBuffer);
             for (int i = 0; i < CLIP_MAP_LEVEL_COUNT; i++) {
 
                 for (auto& clipRegion : mRevoxelizationRegions[i]) {
@@ -105,16 +99,9 @@ void VoxelizationPass::render(RenderGraph& rg) {
 
                     mVoxelParamBuffers[i]->uploadData(&mVoxelParam, sizeof(VoxelizationParamater));
                     g_context->bindBuffer(5, *mVoxelParamBuffers[i], 0, sizeof(VoxelizationParamater), 3);
-
-                    g_context->getPipelineState().setPipelineLayout(
-                                                     *mVoxelizationPipelineLayout)
-                        .enableConservativeRasterization(g_context->getDevice().getPhysicalDevice());
-                    auto* view = g_manager->fetchPtr<View>("view");
-                    view->bindViewBuffer();
-                    for (const auto& primitive : view->getMVisiblePrimitives()) {
-                        if (primitive->getDimensions().overlaps(clipRegion.getBoundingBox()))
-                            g_context->bindPrimitiveGeom(commandBuffer, *primitive).flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, 0, 0, 0);
-                    }
+                    g_manager->fetchPtr<View>("view")->drawPrimitives(commandBuffer, [&](const Primitive& primitive) {
+                        return clipRegion.getBoundingBox().overlaps(primitive.getDimensions());
+                    });
                 }
             }
         });
@@ -176,6 +163,8 @@ void VoxelizationPass::updateVoxelization() {
     // }
     mRevoxelizationRegions.clear();
     mRevoxelizationRegions.resize(CLIP_MAP_LEVEL_COUNT, {});
+
+    //   mFullRevoxelization = true;
 
     if (mFullRevoxelization || !mInitVoxelization) {
         initClipRegions();

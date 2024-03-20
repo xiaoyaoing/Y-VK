@@ -15,11 +15,21 @@ precision mediump float;
 #include "../brdf.glsl"
 #include "../lighting.glsl"
 
+
+
+layout(std430, set = 0, binding = 2) readonly buffer _GlobalPrimitiveUniform {
+    PerPrimitive primitive_infos[];
+};
+
+
+
 #define MIN_ROUGHNESS 0.04
 
 layout(location = 0) in vec3 in_position;
 layout(location = 1) in vec3 in_normal;
 layout(location = 2) in vec2 in_uv;
+layout (location = 3) flat in uint in_primitive_index;
+
 
 layout(binding = 2, set = 2, r32ui) volatile uniform uimage3D radiance_image;
 
@@ -28,11 +38,6 @@ layout(binding = 4, set = 0) uniform LightsInfo
     Light lights[MAX_LIGHTS];
 }lights_info;
 
-layout (push_constant) uniform PushConstants
-{
-    uint uMaterialIndex;
-
-};
 
 uint convVec4ToRGBA8(vec4 val) {
     return (uint(val.w) & 0x000000FF) << 24U |
@@ -114,7 +119,8 @@ void main(){
     }
     ivec3 image_coords = computeImageCoords(world_pos);
 
-    GltfMaterial material = scene_materials[uMaterialIndex];
+    uint material_index = primitive_infos[in_primitive_index].material_index;
+    GltfMaterial material = scene_materials[material_index];
 
     if (any(greaterThan(material.emissiveFactor, vec3(0.0)))){
         vec4 emission = vec4(material.emissiveFactor, 1.0);
