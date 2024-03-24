@@ -3,10 +3,11 @@
 #include "ClipmapRegion.h"
 #include "VxgiCommon.h"
 #include "Core/BoundingBox.h"
+#include "RenderPasses/RenderPassBase.h"
 #include "Scene/Scene.h"
-#include "shaders/vxgi/vxgi_common.h"
+#include <vxgi/vxgi_common.h>
 
-class VoxelizationPass : public VxgiPassBase {
+class VoxelizationPass : public PassBase {
 
 public:
     void       initClipRegions();

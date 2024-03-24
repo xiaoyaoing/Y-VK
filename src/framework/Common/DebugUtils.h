@@ -1,5 +1,5 @@
 #include <iostream>
-#include <vec4.hpp>
+#include <glm/vec4.hpp>
 #include <volk.h>
 #pragma once
 
@@ -33,7 +33,7 @@ public:
     static void CmdInsertLabel(VkCommandBuffer cmd_buffer, const std::string& caption, const glm::vec4& color);
     static void CmdEndLabel(VkCommandBuffer cmd_buffer);
     static void SetObjectName(VkDevice device, uint64_t object, VkObjectType object_type, const std::string& name);
-    
+
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
         VkDebugUtilsMessageTypeFlagsEXT             messageType,

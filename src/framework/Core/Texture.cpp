@@ -19,10 +19,8 @@ const Sampler& Texture::getSampler() const {
     return *sampler;
 }
 
-std::unique_ptr<Texture> Texture::loadTexture(Device& device, const std::string& path) {
-    std::unique_ptr<Texture> texture = std::make_unique<Texture>();
-    texture->image                   = std::make_unique<SgImage>(device, path, VK_IMAGE_VIEW_TYPE_2D);
-    texture->image->generateMipMap();
+static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture) {
+    texture->image->generateMipMapOnCpu();
     texture->image->createVkImage(device);
 
     auto imageBuffer = Buffer(device, texture->image->getBufferSize(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
@@ -60,24 +58,32 @@ std::unique_ptr<Texture> Texture::loadTexture(Device& device, const std::string&
 
     g_context->submit(commandBuffer);
     texture->sampler = std::make_unique<Sampler>(device, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, mipmaps.size());
+}
 
+std::unique_ptr<Texture> Texture::loadTextureFromFile(Device& device, const std::string& path) {
+    std::unique_ptr<Texture> texture = std::make_unique<Texture>();
+    texture->image                   = std::make_unique<SgImage>(device, path, VK_IMAGE_VIEW_TYPE_2D);
+    initVKTexture(device, texture);
+    return texture;
+}
+std::unique_ptr<Texture> Texture::loadTextureFromMemory(Device& device, const std::vector<uint8_t>& data, VkExtent3D extent, VkImageViewType viewType, VkFormat format) {
+    std::unique_ptr<Texture> texture = std::make_unique<Texture>();
+    texture->image                   = std::make_unique<SgImage>(device, data, extent, viewType, format);
+    initVKTexture(device, texture);
     return texture;
 }
 
-Texture::Texture(Texture& texture) {
-}
+std::unique_ptr<Texture> Texture::loadTextureArrayFromFile(Device& device, const std::string& path) {
+    std::unique_ptr<Texture> texture{};
 
-Texture Texture::loadTextureArray(Device& device, const std::string& path) {
-    Texture texture{};
-
-    auto imageBuffer = Buffer(device, texture.image->getBufferSize(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-    imageBuffer.uploadData(static_cast<void*>(texture.image->getData().data()), texture.image->getBufferSize());
+    auto imageBuffer = Buffer(device, texture->image->getBufferSize(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+    imageBuffer.uploadData(static_cast<void*>(texture->image->getData().data()), texture->image->getBufferSize());
 
     std::vector<VkBufferImageCopy> imageCopyRegions;
 
-    auto mipmaps = texture.image->getMipMaps();
-    auto layers  = texture.image->getLayers();
-    auto offsets = texture.image->getOffsets();
+    auto mipmaps = texture->image->getMipMaps();
+    auto layers  = texture->image->getLayers();
+    auto offsets = texture->image->getOffsets();
     for (int32_t layer = 0; layer < layers; layer++)
         for (int i = 0; i < mipmaps.size(); i++) {
             VkBufferImageCopy imageCopy{};
@@ -93,8 +99,8 @@ Texture Texture::loadTextureArray(Device& device, const std::string& path) {
             imageCopy.imageOffset  = {0, 0, 0};
             imageCopy.bufferOffset = offsets[layer][i];
 
-            imageCopy.imageExtent.width  = texture.image->getExtent().width >> i;
-            imageCopy.imageExtent.height = texture.image->getExtent().height >> i;
+            imageCopy.imageExtent.width  = texture->image->getExtent().width >> i;
+            imageCopy.imageExtent.height = texture->image->getExtent().height >> i;
             imageCopy.imageExtent.depth  = 1;
 
             imageCopyRegions.push_back(imageCopy);
@@ -107,11 +113,11 @@ Texture Texture::loadTextureArray(Device& device, const std::string& path) {
     subresourceRange.levelCount   = mipmaps.size();
     subresourceRange.layerCount   = layers;
 
-    texture.getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::TRANSFER_DST, subresourceRange);
+    texture->getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::TRANSFER_DST, subresourceRange);
 
-    commandBuffer.copyBufferToImage(imageBuffer, texture.image->getVkImage(), imageCopyRegions);
+    commandBuffer.copyBufferToImage(imageBuffer, texture->image->getVkImage(), imageCopyRegions);
 
-    texture.getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY, subresourceRange);
+    texture->getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY, subresourceRange);
 
     commandBuffer.endRecord();
 
@@ -124,7 +130,7 @@ Texture Texture::loadTextureArray(Device& device, const std::string& path) {
     submitInfo.pCommandBuffers = &vkCmdBuffer;
 
     queue.submit({submitInfo}, VK_NULL_HANDLE);
-    texture.sampler = std::make_unique<Sampler>(device, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, mipmaps.size());
+    texture->sampler = std::make_unique<Sampler>(device, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, mipmaps.size());
     queue.wait();
     return texture;
 }

@@ -1,43 +1,41 @@
+
+#pragma once
 #include <unordered_map>
 
 #include "Core/Vulkan.h"
-#include "ImageView.h"
-
-#pragma once
 
 class CommandBuffer;
-
+class ImageView;
+class Device;
 
 class Image {
 public:
-    Image(Device &device,
-          const VkExtent3D &extent,
-          VkFormat format,
-          VkImageUsageFlags image_usage,
-          VmaMemoryUsage memory_usage,
+    Image(Device&               device,
+          const VkExtent3D&     extent,
+          VkFormat              format,
+          VkImageUsageFlags     image_usage,
+          VmaMemoryUsage        memory_usage,
           VkSampleCountFlagBits sample_count = VK_SAMPLE_COUNT_1_BIT,
-          uint32_t mip_levels = 1,
-          uint32_t array_layers = 1,
-          VkImageCreateFlags flags = 0);
+          uint32_t              mip_levels   = 1,
+          uint32_t              array_layers = 1,
+          VkImageCreateFlags    flags        = 0);
 
-    Image(Device &device,
-          VkImage handle,
-          const VkExtent3D &extent,
-          VkFormat format,
-          VkImageUsageFlags image_usage,
+    Image(Device&               device,
+          VkImage               handle,
+          const VkExtent3D&     extent,
+          VkFormat              format,
+          VkImageUsageFlags     image_usage,
           VkSampleCountFlagBits sample_count = VK_SAMPLE_COUNT_1_BIT);
 
+    Image& operator=(const Image&) = delete;
 
-    Image &operator=(const Image &) = delete;
+    Image& operator=(Image&&) = delete;
 
-    Image &operator=(Image &&) = delete;
-
-    Image(const Image &) = delete;
+    Image(const Image&) = delete;
 
     ~Image();
 
-
-    Image(Image &&other);
+    Image(Image&& other);
 
     VkImageSubresource getSubresource() const;
 
@@ -67,42 +65,53 @@ public:
 
     uint32_t getArrayLayerCount() const;
 
-    void transitionLayout(CommandBuffer &commandBuffer, VulkanLayout newLayout,
-                          const VkImageSubresourceRange & subresourceRange = {
-        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,.baseMipLevel = 0,.levelCount =  1, .baseArrayLayer = 0,.layerCount = 1,
-                          });
-    void setLayout(VulkanLayout newLayout,
-                          const VkImageSubresourceRange & subresourceRange = {
-        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,.baseMipLevel = 0,.levelCount =  1, .baseArrayLayer = 0,.layerCount = 1,
-                          });
-    VulkanLayout getLayout(const VkImageSubresourceRange &subresourceRange =  {
-        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,.baseMipLevel = 0,.levelCount =  1, .baseArrayLayer = 0,.layerCount = 1,
-                          });
+    void         transitionLayout(CommandBuffer& commandBuffer, VulkanLayout newLayout, const VkImageSubresourceRange& subresourceRange = {
+                                                                                            .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
+                                                                                            .baseMipLevel   = 0,
+                                                                                            .levelCount     = 1,
+                                                                                            .baseArrayLayer = 0,
+                                                                                            .layerCount     = 1,
+                                                                                });
+    void         setLayout(VulkanLayout                   newLayout,
+                           const VkImageSubresourceRange& subresourceRange = {
+                               .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
+                               .baseMipLevel   = 0,
+                               .levelCount     = 1,
+                               .baseArrayLayer = 0,
+                               .layerCount     = 1,
+                   });
+    VulkanLayout getLayout(const VkImageSubresourceRange& subresourceRange = {
+                               .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
+                               .baseMipLevel   = 0,
+                               .levelCount     = 1,
+                               .baseArrayLayer = 0,
+                               .layerCount     = 1,
+                           });
 
-    Image(VmaAllocator allocator, VmaMemoryUsage memoryUsage, const VkImageCreateInfo &createInfo);
+    Image(VmaAllocator allocator, VmaMemoryUsage memoryUsage, const VkImageCreateInfo& createInfo);
 
     static inline VkImageCreateInfo getDefaultImageInfo() {
         VkImageCreateInfo imageInfo = {};
-        imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        imageInfo.pNext = nullptr;
-        imageInfo.mipLevels = 1;
-        imageInfo.arrayLayers = 1;
-        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-        imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        imageInfo.sType             = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        imageInfo.pNext             = nullptr;
+        imageInfo.mipLevels         = 1;
+        imageInfo.arrayLayers       = 1;
+        imageInfo.samples           = VK_SAMPLE_COUNT_1_BIT;
+        imageInfo.sharingMode       = VK_SHARING_MODE_EXCLUSIVE;
+        imageInfo.tiling            = VK_IMAGE_TILING_OPTIMAL;
+        imageInfo.initialLayout     = VK_IMAGE_LAYOUT_UNDEFINED;
         return imageInfo;
     }
 
-    void addView(ImageView *pView);
+    void addView(ImageView* pView);
 
-    Device &getDevice();
+    Device& getDevice();
 
     VkImageSubresource subresource{};
 
 protected:
-    Device &device;
-    VkImage image;
+    Device&       device;
+    VkImage       image;
     VmaAllocation memory{};
 
     VkExtent3D extent{};
@@ -117,15 +126,11 @@ protected:
 
     VkImageTiling tiling{};
 
-
     uint32_t array_layer_count{1};
 
-    uint8_t *mapped_data{nullptr};
-
+    uint8_t* mapped_data{nullptr};
 
     bool mapped;
-
-    std::vector<ImageView> views;
 
     std::unordered_map<uint32_t, VulkanLayout> layouts;
 };

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VxgiCommon.h"
-class ShadowMapPass : VxgiPassBase {
+#include "RenderPasses/RenderPassBase.h"
+class ShadowMapPass : PassBase {
 public:
 };

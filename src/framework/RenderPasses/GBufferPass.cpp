@@ -10,6 +10,41 @@ void GBufferPass::init() {
         Shader(device, FileUtils::getShaderPath("defered_pbr.frag"))};
     mPipelineLayout = std::make_unique<PipelineLayout>(device, shaders);
 }
+void LightingPass::render(RenderGraph& rg) {
+    rg.addPass(
+        "LightingPass", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
+            auto& blackBoard = rg.getBlackBoard();
+            auto  depth      = blackBoard["depth"];
+            auto  normal     = blackBoard["normal"];
+            auto  diffuse    = blackBoard["diffuse"];
+            auto  output     = blackBoard.getHandle(SWAPCHAIN_IMAGE_NAME);
+
+            builder.readTextures({depth, normal, diffuse});
+            builder.writeTexture(output);
+
+            RenderGraphPassDescriptor desc{};
+            desc.setTextures({output, diffuse, depth, normal}).addSubpass({.inputAttachments = {diffuse, depth, normal}, .outputAttachments = {output}, .disableDepthTest = true});
+            builder.declare(desc);
+            // builder.addSubPass();
+        },
+        [&](RenderPassContext& context) {
+            auto& commandBuffer = context.commandBuffer;
+            auto  view          = g_manager->fetchPtr<View>("view");
+            auto& blackBoard    = rg.getBlackBoard();
+            g_context->getPipelineState().setPipelineLayout(*mPipelineLayout).setRasterizationState({.cullMode = VK_CULL_MODE_NONE}).setDepthStencilState({.depthTestEnable = false});
+            view->bindViewBuffer();
+            g_context->bindImage(0, blackBoard.getImageView("diffuse"))
+                .bindImage(1, blackBoard.getImageView("depth"))
+                .bindImage(2, blackBoard.getImageView("normal"))
+                .flushAndDraw(commandBuffer, 3, 1, 0, 0);
+        });
+}
+void LightingPass::init() {
+    std::vector<Shader> shaders{
+        Shader(g_context->getDevice(), FileUtils::getShaderPath("lighting.vert")),
+        Shader(g_context->getDevice(), FileUtils::getShaderPath("lighting_pbr.frag"))};
+    mPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), shaders);
+}
 
 void GBufferPass::render(RenderGraph& rg) {
     auto& blackBoard    = rg.getBlackBoard();
@@ -20,11 +55,7 @@ void GBufferPass::render(RenderGraph& rg) {
                                             {.extent = renderContext->getSwapChainExtent(),
                                              .useage = TextureUsage::SUBPASS_INPUT |
                                                        TextureUsage::COLOR_ATTACHMENT});
-
-            // auto specular = rg.createTexture("specular",
-            //                                  {.extent = renderContext->getSwapChainExtent(),
-            //                                   .useage = TextureUsage::SUBPASS_INPUT |
-            //                                             TextureUsage::COLOR_ATTACHMENT});
+            
             auto normal = rg.createTexture("normal",
                                            {.extent = renderContext->getSwapChainExtent(),
                                             .useage = TextureUsage::SUBPASS_INPUT |

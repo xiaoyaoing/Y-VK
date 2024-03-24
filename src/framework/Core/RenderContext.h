@@ -1,6 +1,3 @@
-//
-// Created by 打工人 on 2023/3/19.
-//
 #pragma once
 
 #include "Core/Vulkan.h"
@@ -61,7 +58,7 @@ struct alignas(16) GlobalUniform {
 enum class UniformBindingPoints : uint8_t {
     PER_VIEW                = 0,// uniforms updated per view
     PER_RENDERABLE          = 1,// uniforms updated per renderable
-    PRIM_INFO    = 2,// bones data, per renderable
+    PRIM_INFO               = 2,// bones data, per renderable
     PER_RENDERABLE_MORPHING = 3,// morphing uniform/sampler updated per render primitive
     LIGHTS                  = 4,// lights data array
     SHADOW                  = 5,// punctual shadow data
@@ -95,7 +92,7 @@ public:
     // RenderContext& bindMaterial(const Material& material);
     RenderContext& bindView(const View& view);
     RenderContext& bindPrimitiveGeom(CommandBuffer& commandBuffer, const Primitive& primitive);
-    RenderContext & bindScene(CommandBuffer & commandBuffer, const Scene & scene);
+    RenderContext& bindScene(CommandBuffer& commandBuffer, const Scene& scene);
     RenderContext& bindPrimitiveShading(CommandBuffer& commandBuffer, const Primitive& primitive);
     template<typename T>
     RenderContext& bindLight(const std::vector<SgLight>& lights, uint32_t setId, uint32_t binding);

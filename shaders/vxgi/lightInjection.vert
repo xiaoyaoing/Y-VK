@@ -8,9 +8,10 @@ layout(location = 1) in vec3 normal;
 layout(location = 2) in vec2 texcoord_0;
 layout(location = 3) in uint primitive_id;
 
-layout (location = 0) out vec2 o_uv;
-layout (location = 1) out vec3 o_normal;
-layout (location = 2) out  flat uint o_primitive_id;
+layout(location = 0) out vec3 o_position;
+layout (location = 1) out vec2 o_uv;
+layout (location = 2) out vec3 o_normal;
+layout (location = 3) out  flat uint o_primitive_id;
 
 
 layout(std430, set = 0, binding = 2) readonly buffer _GlobalPrimitiveUniform {
@@ -20,12 +21,13 @@ layout(std430, set = 0, binding = 2) readonly buffer _GlobalPrimitiveUniform {
 void main(void)
 {
     mat4  matrix = primitive_infos[primitive_id].model;
-    vec4 pos = matrix  * vec4(position, 1.0f);
-    //    pos = vec4(position * 0.05, 1.0f);
+    vec4 pos =  vec4(position, 1.0f);
+
+    o_position = pos.xyz;
 
     o_uv = texcoord_0;
 
-    o_normal = mat3(matrix) * normal;
+    o_normal = mat3(primitive_infos[primitive_id].modelIT) * normal;
 
     o_primitive_id = primitive_id;
 

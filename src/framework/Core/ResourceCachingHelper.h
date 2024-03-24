@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gtx/hash.hpp>
+#include <glm/gtx/hash.hpp>
 
 #include "PipelineState.h"
 #include "RenderTarget.h"
@@ -281,7 +281,6 @@ namespace std {
             return result;
         }
     };
-    
 
     template<>
     struct hash<SpecializationConstantState> {

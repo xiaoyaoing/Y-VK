@@ -20,11 +20,12 @@ layout(std430, set = 0, binding = 2) readonly buffer _GlobalPrimitiveUniform {
 void main(void)
 {
     mat4  matrix = primitive_infos[primitive_id].model;
+    mat4  matrixIT = primitive_infos[primitive_id].modelIT;
     vec4 pos = matrix  * vec4(position, 1.0f);
 
     o_uv = texcoord_0;
 
-    o_normal = mat3(matrix) * normal;
+    o_normal = (matrixIT * vec4(normal, 0.0f)).xyz;
 
     o_primitive_id = primitive_id;
 

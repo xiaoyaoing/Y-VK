@@ -23,9 +23,9 @@
 #include "Gui/Gui.h"
 
 #include <stb_image.h>
-#include <ext/matrix_clip_space.hpp>
-#include <ext/matrix_transform.hpp>
-#include <ext/matrix_clip_space.hpp>
+#include <glm/ext/matrix_clip_space.hpp>
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/ext/matrix_clip_space.hpp>
 #include <spdlog/spdlog.h>
 #include <vk_mem_alloc.h>
 

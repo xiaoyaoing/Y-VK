@@ -1,7 +1,7 @@
 #pragma once
 
-#include <mat4x4.hpp>
-#include <ext/matrix_transform.hpp>
+#include <glm/mat4x4.hpp>
+#include <glm/ext/matrix_transform.hpp>
 
 class Camera {
     enum Mode {
@@ -35,6 +35,7 @@ public:
     } matrices;
 
     glm::vec3 position{0}, rotation{0};
+    float     mMoveSpeed{1};
 
     void  updateViewMatrix();
     void  update(float deltaTime);
@@ -55,8 +56,6 @@ private:
     bool dirty{false};
 
     glm::vec3 cameraFront;
-
-    float mMoveSpeed{1};
 
     float zNear{0.01}, zFar{10}, fov{45}, aspect{1};
 

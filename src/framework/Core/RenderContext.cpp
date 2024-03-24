@@ -15,6 +15,7 @@
 #include "PlatForm/Window.h"
 #include "Common/ResourceCache.h"
 #include "Common/VkCommon.h"
+#include "Images/ImageUtil.h"
 #include "Images/Sampler.h"
 #include "RayTracing/Accel.h"
 #include "RayTracing/SbtWarpper.h"

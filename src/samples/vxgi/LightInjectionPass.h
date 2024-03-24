@@ -1,8 +1,9 @@
 #pragma once
 #include "ClipmapUpdatePolicy.h"
 #include "VxgiCommon.h"
+#include "RenderPasses/RenderPassBase.h"
 
-class LightInjectionPass : public VxgiPassBase {
+class LightInjectionPass : public PassBase {
 public:
     void render(RenderGraph& rg) override;
     void init() override;

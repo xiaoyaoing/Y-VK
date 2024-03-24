@@ -4,14 +4,13 @@
 
 #pragma once
 
-#include <ext/matrix_float4x4.hpp>
-#include <glm.hpp>
-#include <gtc/type_ptr.hpp>
-
-#include "ext/tinygltf/tiny_gltf.h"
+#include <glm/ext/matrix_float4x4.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <filesystem>
 #include <unordered_set>
+#include <tiny_gltf.h>
 
 #include "Core/Buffer.h"
 #include "Core/Texture.h"
@@ -27,6 +26,7 @@ struct SceneLoadingConfig {
     bool                            bufferForTransferSrc{false};
     bool                            bufferForTransferDst{false};
     BufferRate                      bufferRate{BufferRate::PER_SCENE};
+    glm::mat4                       sceneTransform{1.0f};
 };
 
 class GltfLoading {

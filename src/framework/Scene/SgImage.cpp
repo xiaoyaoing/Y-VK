@@ -107,6 +107,9 @@ SgImage::SgImage(Device& device, const std::string& path, VkImageViewType viewTy
     loadResources(path);
     //createVkImage(device, viewType);
 }
+SgImage::SgImage(Device& device, const std::vector<uint8_t>& data, VkExtent3D extent, VkImageViewType viewType, VkFormat format) : device(device), mData(data), format(format) {
+    setExtent(extent);
+}
 
 SgImage::~SgImage() {
     // if(vkImage)delete vkImage.get();
@@ -114,7 +117,7 @@ SgImage::~SgImage() {
 }
 
 SgImage::SgImage(SgImage&& other) : vkImage(std::move(other.vkImage)), vkImageViews(std::move(other.vkImageViews)),
-                                    data(std::move(other.data)),
+                                    mData(std::move(other.mData)),
                                     format(other.format), mExtent3D(other.mExtent3D),
                                     mipMaps(std::move(other.mipMaps)), offsets(std::move(other.offsets)),
                                     name(std::move(other.name)),
@@ -129,28 +132,6 @@ SgImage::SgImage(Device& device, const std::string& name, const VkExtent3D& exte
     this->format    = format;
     this->mExtent3D = extent;
 
-    // size_t hash{0U};
-    // hash_combine(hash, name);
-    // LOGI("name {} hash = {}", name, hash);
-    // hash_combine(hash, extent);
-    // // LOGI(hash);
-    //
-    // hash_combine(hash, format);// LOGI(hash);
-    //
-    // hash_combine(hash, image_usage);// LOGI(hash);
-    //
-    // hash_combine(hash, memory_usage);//LOGI(hash);
-    //
-    // hash_combine(hash, viewType);// LOGI(hash);
-    //
-    // hash_combine(hash, sample_count);
-    //
-    // hash_combine(hash, mipLevels);
-    //
-    // hash_combine(hash, array_layers);
-    //
-    // hash_combine(hash, flags);
-
     auto extent_string       = std::to_string(extent.width) + "x" + std::to_string(extent.height) + "x" + std::to_string(extent.depth);
     auto format_string       = std::to_string(format);
     auto image_usage_string  = std::to_string(image_usage);
@@ -163,11 +144,11 @@ SgImage::SgImage(Device& device, const std::string& name, const VkExtent3D& exte
 }
 
 uint64_t SgImage::getBufferSize() const {
-    return data.size();
+    return mData.size();
 }
 
 std::vector<uint8_t>& SgImage::getData() {
-    return data;
+    return mData;
 }
 
 VkExtent3D SgImage::getExtent() const {
@@ -246,7 +227,7 @@ void SgImage::setLayers(uint32_t layers) {
     SgImage::layers = layers;
 }
 
-void SgImage::generateMipMap() {
+void SgImage::generateMipMapOnCpu() {
     if (mipMaps.size() > 1)
         return;
     assert(mipMaps.size() == 1 && "Mipmaps already generated");
@@ -259,8 +240,8 @@ void SgImage::generateMipMap() {
 
     while (true) {
         // Make space for next mipmap
-        auto old_size = toUint32(data.size());
-        data.resize(old_size + next_size);
+        auto old_size = toUint32(mData.size());
+        mData.resize(old_size + next_size);
 
         auto& prev_mipmap = mipMaps.back();
         // Update mipmaps
@@ -271,7 +252,7 @@ void SgImage::generateMipMap() {
 
         //todo
 
-        stbir_resize_uint8(data.data() + prev_mipmap.offset, prev_mipmap.extent.width, prev_mipmap.extent.height, 0, data.data() + next_mipmap.offset, next_mipmap.extent.width, next_mipmap.extent.height, 0, channels);
+        stbir_resize_uint8(mData.data() + prev_mipmap.offset, prev_mipmap.extent.width, prev_mipmap.extent.height, 0, mData.data() + next_mipmap.offset, next_mipmap.extent.width, next_mipmap.extent.height, 0, channels);
         // Fill next mipmap memory
         //            stbir_resize_uint8(data.data() + prev_mipmap.offset, prev_mipmap.extent.width, prev_mipmap.extent.height, 0,
         //                               data.data() + next_mipmap.offset, next_mipmap.extent.width, next_mipmap.extent.height, 0,
@@ -289,6 +270,8 @@ void SgImage::generateMipMap() {
         }
     }
 }
+void SgImage::generateMipMapOnGpu() {
+}
 
 void SgImage::setExtent(const VkExtent3D& extent3D) {
     this->mExtent3D   = extent3D;
@@ -301,7 +284,7 @@ void SgImage::loadResources(const std::string& path) {
         int  w, h, comp;
         auto rawData = stbi_load(path.c_str(), &w, &h, &comp, 4);
         comp         = 4;
-        data         = {rawData, rawData + w * h * comp};
+        mData        = {rawData, rawData + w * h * comp};
         stbi_image_free(rawData);
 
         setExtent({toUint32(w), toUint32(h), 1});
@@ -315,7 +298,7 @@ void SgImage::loadResources(const std::string& path) {
         int            texWidth, texHeight;
         io.Fonts->GetTexDataAsRGBA32(&fontData, &texWidth, &texHeight);
 
-        data   = std::vector<uint8_t>(fontData, fontData + texHeight * texWidth * 4);
+        mData  = std::vector<uint8_t>(fontData, fontData + texHeight * texWidth * 4);
         format = VK_FORMAT_R8G8B8A8_UNORM;
         setExtent({toUint32(texWidth), toUint32(texHeight), 1});
     } else if (ext == "ktx") {
@@ -348,7 +331,7 @@ void SgImage::loadResources(const std::string& path) {
         result = ktxTexture_GetImageOffset(ktxTexture, 0, 0, 0, &pixelsMulChannels);
         assert(result == KTX_SUCCESS);
 
-        data = {ktxTextureData, ktxTextureData + ktxTextureSize};
+        mData = {ktxTextureData, ktxTextureData + ktxTextureSize};
 
         format = GetFormatFromOpenGLInternalFormat(ktxTexture->glInternalformat);
 
@@ -371,7 +354,6 @@ void SgImage::loadResources(const std::string& path) {
         if (!device.isImageFormatSupported(format)) {
             LOGW("ASTC not supported: decoding {}", name);
             AstcImageHelper::decodeAstcImage(*this);
-            generateMipMap();
         }
     }
 }

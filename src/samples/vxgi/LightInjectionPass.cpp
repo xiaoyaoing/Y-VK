@@ -45,7 +45,6 @@ void LightInjectionPass::render(RenderGraph& rg) {
                 for(uint32_t i = 0 ;i<CLIP_MAP_LEVEL_COUNT;i++) {
                     // auto buffer = g_manager->fetchPtr<Buffer>("voxel_param_buffer");
                     if(frameIndex % kUpdateRegionLevelOffsets[i] == 0) {
-                        // ClipMapCleaner::clearClipMapRegions(rg,clipRegions->operator[](i),rg.getBlackBoard().getHandle("radiance"),i);
                         
                         auto & clipRegion =  clipRegions->operator[](i);
                         auto voxelParam =  clipRegion.getVoxelizationParam();

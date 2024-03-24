@@ -182,7 +182,7 @@ bool Gui::inputEvent(const InputEvent& input_event) {
 }
 
 void Gui::prepareResoucrces(Application* app) {
-    fontTexture = Texture::loadTexture(device, FileUtils::getResourcePath() + "Roboto-Medium.ttf");
+    fontTexture = Texture::loadTextureFromFile(device, FileUtils::getResourcePath() + "Roboto-Medium.ttf");
 
     vertexInputState.attributes = {
         vkCommon::initializers::vertexInputAttributeDescription(0, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(ImDrawVert,

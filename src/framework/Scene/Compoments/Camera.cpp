@@ -1,7 +1,7 @@
-#include <ext/matrix_clip_space.hpp>
+#include <glm/ext/matrix_clip_space.hpp>
 #include "Camera.h"
 
-#include <vec3.hpp>
+#include <glm/vec3.hpp>
 
 Camera::Camera() {
 }
@@ -18,7 +18,8 @@ void Camera::update(float deltaTime) {
             camFront.z = cos(glm::radians(rotation.x)) * cos(glm::radians(rotation.y));
             camFront   = glm::normalize(camFront);
 
-            float moveDistance = deltaTime * mMoveSpeed++;
+            mMoveSpeed += deltaTime;
+            float moveDistance = deltaTime * mMoveSpeed;
 
             if (keys.up) {
                 position += camFront * moveDistance;
@@ -59,11 +60,11 @@ void Camera::updateViewMatrix() {
 }
 
 void Camera::setPerspective(float fov, float aspect, float znear, float zfar) {
-    this->fov            = fov;
-    this->zNear          = znear;
-    this->zFar           = zfar;
-    
-    //inverse znear and zfar 
+    this->fov   = fov;
+    this->zNear = znear;
+    this->zFar  = zfar;
+
+    //inverse znear and zfar
     matrices.perspective = glm::perspective(glm::radians(fov), aspect, zfar, znear);
     if (flipY) {
         matrices.perspective[1][1] *= -1.0f;

@@ -25,11 +25,12 @@ struct VertexAttribute {
 #define TEXCOORD_ATTRIBUTE_NAME "texcoord_0"
 
 struct PerPrimitiveUniform {
-    glm::mat4  model;
-    uint32_t   materialIndex;
-    uint32_t padding1;
-    uint32_t padding2;
-    uint32_t padding3;
+    glm::mat4 model;
+    glm::mat4 modelIT;
+    uint32_t  materialIndex;
+    uint32_t  padding1;
+    uint32_t  padding2;
+    uint32_t  padding3;
 };
 
 class Primitive {

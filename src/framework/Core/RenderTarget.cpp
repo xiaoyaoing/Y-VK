@@ -5,6 +5,7 @@
 #include "RenderTarget.h"
 #include "Core/Images/Image.h"
 #include "Core/Images/ImageView.h"
+#include "Images/ImageUtil.h"
 
 const std::vector<uint32_t>& RenderTarget::getInAttachment() const {
     return inAttachment;

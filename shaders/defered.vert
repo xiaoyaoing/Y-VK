@@ -11,6 +11,7 @@ layout(location = 2) in vec2 texcoord_0;
 
 layout (location = 0) out vec2 o_uv;
 layout (location = 1) out vec3 o_normal;
+layout (location = 2) out vec3 o_pos;
 
 void main(void)
 {
@@ -21,5 +22,7 @@ void main(void)
     o_normal = mat3(per_primitive.model) * normal;
 
     gl_Position = per_frame.view_proj * pos;
+
+    o_pos = pos.xyz;
 }
 

@@ -17,8 +17,8 @@ void Example::prepare() {
     camera->setRotation(glm::vec3(-26.0f, 75.0f, 0.0f));
     camera->setTranslation(glm::vec3(0.0f, 0.0f, -14.0f));
 
-    graphics.particle = Texture::loadTexture(*device, FileUtils::getResourcePath("textures/particle_rgba.ktx"));
-    graphics.gradient = Texture::loadTexture(*device, FileUtils::getResourcePath("textures/particle_gradient_rgba.ktx"));
+    graphics.particle = Texture::loadTextureFromFile(*device, FileUtils::getResourcePath("textures/particle_rgba.ktx"));
+    graphics.gradient = Texture::loadTextureFromFile(*device, FileUtils::getResourcePath("textures/particle_gradient_rgba.ktx"));
 
     std::vector<glm::vec3> attractors = {
         glm::vec3(5.0f, 0.0f, 0.0f),

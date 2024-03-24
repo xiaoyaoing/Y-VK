@@ -1,14 +1,14 @@
 #pragma once
 
-#include <vec3.hpp>
-#include <vec4.hpp>
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 
 #include "Compoments/RenderPrimitive.h"
 #include "Core/Texture.h"
 #include "Core/Buffer.h"
 
 #include "Scene/Compoments/SgLight.h"
-#include "shaders/gltfMaterial.glsl"
+#include "../shaders/gltfMaterial.glsl"
 
 class Camera;
 
@@ -56,15 +56,15 @@ public:
     const std::vector<std::unique_ptr<Texture>>&   getTextures() const;
     const std::vector<GltfMaterial>&               getGltfMaterials() const;
     std::vector<std::shared_ptr<Camera>>&          getCameras();
-    bool          getVertexAttribute(const std::string& name, VertexAttribute* attribute = nullptr) const;
-    Buffer&       getVertexBuffer(const std::string& name) const;
-    VkIndexType   getIndexType() const;
-    bool          hasVertexBuffer(const std::string& name) const;
-    const Buffer& getIndexBuffer() const;
-    const Buffer& getUniformBuffer() const;
-    const Buffer& getPrimitiveIdBuffer() const;
-    bool          usePrimitiveIdBuffer() const;
-    
+    bool                                           getVertexAttribute(const std::string& name, VertexAttribute* attribute = nullptr) const;
+    Buffer&                                        getVertexBuffer(const std::string& name) const;
+    VkIndexType                                    getIndexType() const;
+    bool                                           hasVertexBuffer(const std::string& name) const;
+    const Buffer&                                  getIndexBuffer() const;
+    const Buffer&                                  getUniformBuffer() const;
+    const Buffer&                                  getPrimitiveIdBuffer() const;
+    bool                                           usePrimitiveIdBuffer() const;
+
 protected:
     friend GltfLoading;
     std::vector<GltfMaterial> materials;
@@ -73,16 +73,16 @@ protected:
 
     std::vector<std::unique_ptr<Primitive>> primitives;
     std::vector<std::unique_ptr<Texture>>   textures;
-    std::vector<std::shared_ptr<Camera>> cameras;
+    std::vector<std::shared_ptr<Camera>>    cameras;
 
-    std::unordered_map<std::string,VertexAttribute> vertexAttributes;
-    std::unordered_map<std::string,std::unique_ptr<Buffer>> sceneVertexBuffer;
-    std::unique_ptr<Buffer> sceneIndexBuffer{nullptr};
-    std::unique_ptr<Buffer> sceneUniformBuffer{nullptr};
-    VkIndexType indexType{VK_INDEX_TYPE_UINT16};
-    
+    std::unordered_map<std::string, VertexAttribute>         vertexAttributes;
+    std::unordered_map<std::string, std::unique_ptr<Buffer>> sceneVertexBuffer;
+    std::unique_ptr<Buffer>                                  sceneIndexBuffer{nullptr};
+    std::unique_ptr<Buffer>                                  sceneUniformBuffer{nullptr};
+    VkIndexType                                              indexType{VK_INDEX_TYPE_UINT16};
+
     std::unique_ptr<Buffer> primitiveIdBuffer{};
-    bool usePrimitiveId{true};
+    bool                    usePrimitiveId{true};
 };
 
 std::unique_ptr<Scene> loadDefaultTriangleScene(Device& device);

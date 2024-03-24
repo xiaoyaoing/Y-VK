@@ -8,6 +8,7 @@
 #include "VxgiCommon.h"
 #include "App/Application.h"
 
+class PassBase;
 class Example : public Application {
 public:
     void prepare() override;
@@ -29,9 +30,9 @@ protected:
     // std::unique_ptr<SgImage> depthImage{nullptr};
     // std::unique_ptr<>
 
-    std::vector<std::unique_ptr<VxgiPassBase>> passes{};
-    std::vector<BBox>                          mBBoxes{};
-    std::vector<ClipmapRegion>                 mClipRegions{};
-    std::unique_ptr<ClipmapUpdatePolicy>       mClipmapUpdatePolicy{nullptr};
-    inline static uint32_t                     m_clipRegionBBoxExtentL0 = 16;
+    std::vector<std::unique_ptr<PassBase>> passes{};
+    std::vector<BBox>                      mBBoxes{};
+    std::vector<ClipmapRegion>             mClipRegions{};
+    std::unique_ptr<ClipmapUpdatePolicy>   mClipmapUpdatePolicy{nullptr};
+    inline static uint32_t                 m_clipRegionBBoxExtentL0 = 16;
 };

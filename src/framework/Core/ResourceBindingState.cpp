@@ -6,6 +6,7 @@
 
 #include "Buffer.h"
 #include "Images/Image.h"
+#include "Images/ImageUtil.h"
 #include "Images/ImageView.h"
 
 void ResourceSet::bindBuffer(const Buffer& buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t binding, uint32_t array_element) {

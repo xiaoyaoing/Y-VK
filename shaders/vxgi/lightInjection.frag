@@ -1,6 +1,7 @@
 #version 450
 #extension GL_GOOGLE_include_directive : require
 //#extension GLSL_EXT_shader_image_int64 : require
+#extension GL_EXT_debug_printf : enable
 
 #extension GL_ARB_shader_image_load_store : require
 
@@ -60,16 +61,17 @@ vec4 convRGBA8ToVec4(uint val)
 
 void imageAtomicRGBA8Avg(ivec3 coords, vec4 value)
 {
-    //  imageStore(radiance_image, coords, convVec4ToRGBA8(value));
-
 
     value.rgb *= 255.0;
     uint newVal = convVec4ToRGBA8(value);
     uint prevStoredVal = 0;
     uint curStoredVal;
 
-    //    imageAtomicCompSwap(radiance_image, coords, prevStoredVal, newVal);
-    //    // Loop as long as destination value gets changed by other threads
+    // debugPrintfEXT("coords and value %d %d %d %f %f %f %f \n", coords.x, coords.y, coords.z, value.x, value.y, value.z, value.w);
+
+
+    const int maxIterations = 10;
+    int i = 0;
     while ((curStoredVal = imageAtomicCompSwap(radiance_image, coords, prevStoredVal, newVal)) != prevStoredVal)
     {
         prevStoredVal = curStoredVal;
@@ -83,7 +85,8 @@ void imageAtomicRGBA8Avg(ivec3 coords, vec4 value)
 
 void voxelAtomicRGBA8Avg(ivec3 imageCoord, ivec3 faceIndex, vec4 color, vec3 weight)
 {
-
+    vec4 c = vec4(color.xyz * weight.x, 1.0);
+    //  debugPrintfEXT("color %f %f %f %f \n", c.x, c.y, c.z, c.w);
     imageAtomicRGBA8Avg(imageCoord + ivec3((clip_map_resoultion) * faceIndex.x, 0, 0), vec4(color.xyz * weight.x, 1.0));
     imageAtomicRGBA8Avg(imageCoord + ivec3((clip_map_resoultion) * faceIndex.y, 0, 0), vec4(color.xyz * weight.y, 1.0));
     imageAtomicRGBA8Avg(imageCoord + ivec3((clip_map_resoultion) * faceIndex.z, 0, 0), vec4(color.xyz * weight.z, 1.0));
@@ -94,7 +97,7 @@ void voxelAtomicRGBA8Avg6Faces(ivec3 imageCoord, vec4 color)
     for (uint i = 0; i < 6; ++i)
     {
         imageAtomicRGBA8Avg(imageCoord, color);
-        imageCoord.x += int(clip_map_resoultion) + 2;
+        imageCoord.x += int(clip_map_resoultion);
     }
 }
 
@@ -117,6 +120,7 @@ void main(){
     if (!pos_in_clipmap(world_pos)){
         discard;
     }
+
     ivec3 image_coords = computeImageCoords(world_pos);
 
     uint material_index = primitive_infos[in_primitive_index].material_index;
@@ -129,7 +133,8 @@ void main(){
             emission.rgb = texture(scene_textures[material.emissiveTexture], in_uv).rgb;
         }
         emission.rgb = clamp(emission.rgb, 0.0, 1.0);
-        voxelAtomicRGBA8Avg6Faces(image_coords, emission); }
+        voxelAtomicRGBA8Avg6Faces(image_coords, emission);
+    }
     else {
 
 
@@ -161,7 +166,8 @@ void main(){
         {
             base_color *= texture(scene_textures[material.pbrBaseColorTexture], in_uv);
         }
-        diffuse_color = base_color.rgb * (vec3(1.0) - f0) * (1.0 - metallic);
+        // diffuse_color = base_color.rgb * (vec3(1.0) - f0) * (1.0 - metallic);
+        diffuse_color = base_color.rgb;
 
         vec3 normal = normalize(in_normal);
 
@@ -190,12 +196,19 @@ void main(){
             pbr_info.LdotH = clamp(dot(light_dir, half_vector), 0.0, 1.0);
             pbr_info.VdotH = clamp(dot(view_dir, half_vector), 0.0, 1.0);
 
-            light_contribution += microfacetBRDF(pbr_info) * calcuate_light_intensity(lights_info.lights[i], world_pos) * calcute_shadow(lights_info.lights[i], world_pos);
+            //  light_contribution += microfacetBRDF(pbr_info) * calcuate_light_intensity(lights_info.lights[i], world_pos) * calcute_shadow(lights_info.lights[i], world_pos);
+            light_contribution +=  pbr_info.diffuseColor;
         }
 
 
-        if (all(equal(light_contribution, vec3(0.0))))
-        discard;
+
+        if (all(equal(light_contribution.xyz, vec3(0.0))))
+        {
+            discard;
+        }
+        //    debugPrintfEXT("light  contribution %f %f %f \n", light_contribution.x, light_contribution.y, light_contribution.z);
+        //   debugPrintfEXT("normal %f %f %f \n", normal.x, normal.y, normal.z);
+
 
         vec3 radiance = light_contribution;
         radiance = clamp(radiance, 0.0, 1.0);

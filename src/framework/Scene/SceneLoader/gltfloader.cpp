@@ -7,6 +7,7 @@
 
 #include "gltfloader.h"
 
+#include "Common/Timer.h"
 #include "Core/Descriptor/DescriptorSet.h"
 #include "Core/Buffer.h"
 #include "Core/RenderContext.h"
@@ -295,8 +296,9 @@ struct GLTFLoadingImpl {
     void           loadMaterials(tinygltf::Model& gltfModel);
     void           loadCameras(const tinygltf::Model& model);
 
-    void process(const tinygltf::Model& model);
-    void processNode(const tinygltf::Node& node, const tinygltf::Model& model);
+    void      process(const tinygltf::Model& model);
+    void      processNode(const tinygltf::Node& node, const tinygltf::Model& model);
+    glm::mat4 getTransformMatrix(const tinygltf::Node& node);
 
     // std::unique_ptr<Buffer> sceneVertexBuffer{nullptr};
 
@@ -351,8 +353,8 @@ void GLTFLoadingImpl::process(const tinygltf::Model& model) {
     for (auto attribute : vertexAttributes) {
         auto stagingBuffer = std::make_unique<Buffer>(device, attribute.second.stride * mVertexCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
         for (auto accessor : gltfVertexAccessors.at(attribute.first)) {
-            auto accessorId = accessor.second;
-            auto vertexOffset = accessor.first;
+            auto                        accessorId   = accessor.second;
+            auto                        vertexOffset = accessor.first;
             const tinygltf::Accessor&   gltfAccessor = model.accessors[accessorId];
             const tinygltf::BufferView& view         = model.bufferViews[gltfAccessor.bufferView];
             auto                        startByte    = gltfAccessor.byteOffset + view.byteOffset;
@@ -368,8 +370,8 @@ void GLTFLoadingImpl::process(const tinygltf::Model& model) {
     auto                 sceneIndexStagingBuffer = std::make_unique<Buffer>(device, mIndexCount * indexStrideMap.at(indexType), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
     std::vector<uint8_t> indexData;
     for (auto accessor : gltfIndexAccessors) {
-        auto accessorId = accessor.second;
-        auto indexOffset = accessor.first;
+        auto                        accessorId   = accessor.second;
+        auto                        indexOffset  = accessor.first;
         const tinygltf::Accessor&   gltfAccessor = model.accessors[accessorId];
         const tinygltf::BufferView& view         = model.bufferViews[gltfAccessor.bufferView];
         auto                        startByte    = gltfAccessor.byteOffset + view.byteOffset;
@@ -408,7 +410,7 @@ void GLTFLoadingImpl::process(const tinygltf::Model& model) {
     g_context->submit(commandBuffer);
 }
 
-glm::mat4 getTransformMatrix(const tinygltf::Node& node) {
+glm::mat4 GLTFLoadingImpl::getTransformMatrix(const tinygltf::Node& node) {
     if (!node.matrix.empty())
         return glm::make_mat4x4(node.matrix.data());
     auto translation = glm::vec3(0.0f);
@@ -423,7 +425,7 @@ glm::mat4 getTransformMatrix(const tinygltf::Node& node) {
     if (node.scale.size() == 3) {
         scale = glm::make_vec3(node.scale.data());
     }
-    return glm::translate(glm::mat4(1.0f), translation) * rotation * glm::scale(glm::mat4(1.0f), scale);
+    return config.sceneTransform * glm::translate(glm::mat4(1.0f), translation) * rotation * glm::scale(glm::mat4(1.0f), scale);
 }
 
 void GLTFLoadingImpl::processNode(const tinygltf::Node& node, const tinygltf::Model& model) {
@@ -480,7 +482,7 @@ void GLTFLoadingImpl::processNode(const tinygltf::Node& node, const tinygltf::Mo
             uint32_t                  curPrimitiveIndexCount = accessor.count;
 
             gltfIndexAccessors[mIndexCount] = primitive.indices;
-            indexOffset                           = mIndexCount;
+            indexOffset                     = mIndexCount;
 
             uint32_t curIndexCount = loadNewIndex ? curPrimitiveIndexCount : gltfIndexAccessors[primitive.indices];
             auto     newPrimitive  = std::make_unique<Primitive>(vertexOffset, indexOffset, curPrimitiveIndexCount, primitive.material);
@@ -488,7 +490,8 @@ void GLTFLoadingImpl::processNode(const tinygltf::Node& node, const tinygltf::Mo
             if (loadNewIndex) mIndexCount += curPrimitiveIndexCount;
 
             newPrimitive->setDimensions(posMin, posMax);
-            PerPrimitiveUniform primitiveUniform{getTransformMatrix(node), static_cast<uint32_t>(primitive.material)};
+            auto                model = getTransformMatrix(node);
+            PerPrimitiveUniform primitiveUniform{model, glm::transpose(glm::inverse(model)), static_cast<uint32_t>(primitive.material)};
             primitiveUniforms.push_back(primitiveUniform);
             primitives.push_back(std::move(newPrimitive));
             gltfPrimitives[primitive.indices].emplace_back(&primitive);
@@ -497,10 +500,13 @@ void GLTFLoadingImpl::processNode(const tinygltf::Node& node, const tinygltf::Mo
 }
 
 void GLTFLoadingImpl::loadFromFile(const std::string& path) {
+
+    Timer timer;
+    timer.start();
+
     tinygltf::Model    gltfModel;
     tinygltf::TinyGLTF gltfContext;
     std::string        error, warning;
-
     gltfContext.SetImageLoader(loadImageDataFunc, nullptr);
     bool fileLoaded = gltfContext.LoadASCIIFromFile(&gltfModel, &error, &warning, path);
 
@@ -535,6 +541,8 @@ void GLTFLoadingImpl::loadFromFile(const std::string& path) {
             metallicRoughnessWorkflow = false;
         }
     }
+
+    LOGI("{} loaded in {} s", path, timer.elapsed<Timer::Seconds>());
 }
 
 void GLTFLoadingImpl::loadMaterials(tinygltf::Model& gltfModel) {
@@ -580,8 +588,12 @@ void GLTFLoadingImpl::loadImages(const std::filesystem::path& modelPath, const t
     for (const auto& image : gltfModel.images) {
         auto fut = thread_pool.push(
             [this, parentDir, image](size_t) {
-                return Texture::loadTexture(device, parentDir.string() + "/" + image.uri);
-                ;
+                if (image.uri.empty() && image.image.size() > 0)
+                    return Texture::loadTextureFromMemory(device, image.image, VkExtent3D{static_cast<uint32_t>(image.width), static_cast<uint32_t>(image.height), 1});
+                else if (!image.uri.empty())
+                    return Texture::loadTextureFromFile(device, parentDir.string() + "/" + image.uri);
+                else
+                    LOGE("Image uri is empty and image data is empty!");
             });
         textures.emplace_back(fut.get());
     }

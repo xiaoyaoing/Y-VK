@@ -7,7 +7,7 @@
 
 #define GLM_ENABLE_EXPERIMENTAL
 
-#include <gtx/hash.hpp>
+#include <glm/gtx/hash.hpp>
 
 #include <mutex>
 

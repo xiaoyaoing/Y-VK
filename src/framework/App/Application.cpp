@@ -85,6 +85,8 @@ void Application::updateGUI() {
     ImGui::InputFloat3("Camera Position", &camera->position[0], "%.2f %.2f %.2f", 2);
     ImGui::InputFloat3("Camera Rotation", &camera->rotation[0], "%.2f %.2f %.2f", 2);
     ImGui::PopItemWidth();
+    ImGui::NextColumn();
+    ImGui::InputFloat("Camera Move Speed", &camera->mMoveSpeed);
     onUpdateGUI();
     ImGui::End();
     ImGui::PopStyleVar();

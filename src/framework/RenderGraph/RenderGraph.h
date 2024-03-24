@@ -127,6 +127,8 @@ public:
     std::vector<const char*> getResourceNames(RENDER_GRAPH_RESOURCE_TYPE type) const;
     std::vector<const char*> getPasseNames(RENDER_GRAPH_PASS_TYPE type) const;
 
+    bool needToCutResource(ResourceNode* resourceNode) const;
+
     ~RenderGraph() {
         for (const auto& passNode : mPassNodes)
             delete passNode;

@@ -179,7 +179,7 @@ void main(){
     vec3  emission = subpassLoad(gbuffer_emission).rgb;
     float depth    = subpassLoad(gbuffer_depth).x;
 
-    vec3 world_pos = worldPosFromDepth(depth);
+    vec3 world_pos = worldPosFromDepth(in_uv, depth);
     vec3 start_pos = world_pos + voxel_size * normal;
 
     //diffuse cone 
@@ -204,7 +204,7 @@ void main(){
 
         out_color = vec4(indirect_contribution, 1);
         // out_color = vec4(world_pos,1);
-        return;
+        //        return;
         //validConeCount += cos_theta;
     }
     indirect_contribution /= DIFFUSE_CONE_COUNT_16;
@@ -252,6 +252,7 @@ void main(){
         pbr_info.F0 = mix(vec3(0.04), diffuse_color, metallic);
         pbr_info.F90 = vec3(1.0);
         pbr_info.alphaRoughness = perceptual_roughness * perceptual_roughness;
+        //  pbr_info.alphaRoughness = 0.01f;
         pbr_info.diffuseColor = diffuse_color;
 
 
@@ -268,24 +269,20 @@ void main(){
             pbr_info.LdotH = clamp(dot(light_dir, half_vector), 0.0, 1.0);
             pbr_info.VdotH = clamp(dot(view_dir, half_vector), 0.0, 1.0);
 
-            vec3 light_contribution = microfacetBRDF(pbr_info) * calcuate_light_intensity(lights_info.lights[i], world_pos) * calcute_shadow(lights_info.lights[i], world_pos);
+            // vec3 light_contribution = microfacetBRDF(pbr_info) * calcuate_light_intensity(lights_info.lights[i], world_pos) * calcute_shadow(lights_info.lights[i], world_pos);
+            vec3 light_contribution = apply_light(lights_info.lights[i], world_pos, normal) * pbr_info.diffuseColor;
 
             direct_contribution += light_contribution;
         }
         //  direct_contribution = vec3(1);
     }
     out_color = vec4(direct_contribution * uDirectLighting + indirect_contribution * uIndirectLighting, 1);
+    //    out_color = vec4(direct_contribution, 1);
     //    out_color = vec4(indirect_contribution, 1);
     // out_color += vec4(diffuse_color,1);
 }
 
-vec3  worldPosFromDepth    (float depth){
-    vec4  clip         = vec4(in_uv * 2.0 - 1.0, depth, 1.0);
-    vec4 world_w = per_frame.inv_view_proj * clip;
-    vec3 pos     = world_w.xyz / world_w.w;
 
-    return pos;
-}
 
 vec4 sampleClipmap(sampler3D clipmap, vec3 worldPos, int clipmapLevel, vec3 faceOffset, vec3 weight)
 {

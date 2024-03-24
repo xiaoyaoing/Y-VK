@@ -12,6 +12,7 @@ precision highp float;
 layout (location = 0) in vec2 in_uv;
 layout (location = 1) in vec3 in_normal;
 layout (location = 2) flat in uint in_primitive_index;
+layout (location = 3) in vec3 in_world_pos;
 
 
 layout (location = 0) out vec4 o_diffuse_roughness;
@@ -30,10 +31,28 @@ vec4 SRGBtoLinear(vec4 srgbIn, float gamma)
     return vec4(pow(srgbIn.xyz, vec3(gamma)), srgbIn.w);
 }
 
+
+vec3 getNormal(int texture_idx)
+{
+    // Perturb normal, see http://www.thetenthplanet.de/archives/1180
+    vec3 tangentNormal = texture(scene_textures[texture_idx], in_uv).xyz * 2.0 - 1.0;
+
+    vec3 q1 = dFdx(in_world_pos);
+    vec3 q2 = dFdy(in_world_pos);
+    vec2 st1 = dFdx(in_uv);
+    vec2 st2 = dFdy(in_uv);
+
+    vec3 N = normalize(in_normal);
+    vec3 T = normalize(q1 * st2.t - q2 * st1.t);
+    vec3 B = -normalize(cross(N, T));
+    mat3 TBN = mat3(T, B, N);
+
+    return normalize(TBN * tangentNormal);
+}
+
+
 void main(void)
 {
-    vec3 normal = normalize(in_normal);
-
 
     uint material_index = primitive_infos[in_primitive_index].material_index;
     GltfMaterial material = scene_materials[material_index];
@@ -68,8 +87,10 @@ void main(void)
     }
     diffuseColor = baseColor.rgb * (vec3(1.0) - f0) * (1.0 - metallic);
 
-
     o_diffuse_roughness  = vec4(diffuseColor, perceptualRoughness);
+
+    vec3 normal = material.normalTexture > -1 ? getNormal(material.normalTexture) : normalize(in_normal);
+
     o_normal_metalic = vec4(normal * 0.5f  + 0.5f, metallic);
     vec3 emissionColor            = material.emissiveFactor;
     if (material.emissiveTexture > -1)

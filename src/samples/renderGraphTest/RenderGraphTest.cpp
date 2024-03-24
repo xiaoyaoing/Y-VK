@@ -193,10 +193,10 @@ void Example::prepare() {
     pipelineLayouts.lighting = std::make_unique<PipelineLayout>(*device, shaders1);
 
     // scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("space_module/SpaceModule.gltf"));
-    //   scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"), {.bufferRate = BufferRate::PER_SCENE});
+    scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"), {.bufferRate = BufferRate::PER_SCENE});
 
-    scene = GltfLoading::LoadSceneFromGLTFFile(
-        *device, "E:/code/vk_vxgi/VFS/Scene/Sponza/Sponza.gltf");
+    // scene = GltfLoading::LoadSceneFromGLTFFile(
+    //     *device, "E:/code/vk_vxgi/VFS/Scene/Sponza/Sponza.gltf");
 
     GlslCompiler::forceRecompile = true;
     // scene = GltfLoading::LoadSceneFromGLTFFile(*device, "E:/code/DirectX-Graphics-Samples/MiniEngine/ModelViewer/Sponza/pbr/sponza2.gltf");

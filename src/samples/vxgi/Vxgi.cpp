@@ -7,7 +7,7 @@
 #include "ClipmapCleaner.h"
 #include "CopyAlphaPass.h"
 #include "FinalLightingPass.h"
-#include "GBufferPass.h"
+#include "RenderPasses/GBufferPass.h"
 #include "LightInjectionPass.h"
 #include "VoxelizationPass.h"
 #include "../../framework/Common/VkCommon.h"
@@ -39,11 +39,11 @@ BBox Example::getBBox(uint32_t clipmapLevel) {
 void Example::prepare() {
     Application::prepare();
 
-    // scene = GltfLoading::LoadSceneFromGLTFFile(
-    //     *device, FileUtils::getResourcePath("sponza/Sponza01.gltf"));
-
     scene = GltfLoading::LoadSceneFromGLTFFile(
-        *device, "E:/code/vk_vxgi/VFS/Scene/Sponza/Sponza.gltf", {.bufferRate = BufferRate::PER_SCENE});
+        *device, FileUtils::getResourcePath("sponza/Sponza01.gltf"), {.sceneTransform = glm::scale(glm::mat4(1.f), glm::vec3(0.008f))});
+
+    // scene = GltfLoading::LoadSceneFromGLTFFile(
+    //     *device, "E:/code/vk_vxgi/VFS/Scene/Sponza/Sponza.gltf", {.bufferRate = BufferRate::PER_SCENE});
 
     // scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));
 
@@ -71,27 +71,26 @@ void Example::prepare() {
                 props.intensity = 0.2f;
                 props.position  = pos;
 
-                scene->addLight(SgLight{.type = LIGHT_TYPE::Point, .lightProperties = props});
+                //  scene->addLight(SgLight{.type = LIGHT_TYPE::Point, .lightProperties = props});
             }
         }
     }
+    scene->addDirectionalLight({0, -0.95f, 0.3f}, glm::vec3(1.0f), 1.5f);
+    // scene->addDirectionalLight({0.0f, 1.0f, 0.0f}, glm::vec3(1.0f), 0.5f);
+    // scene->addDirectionalLight({1.0f, 0, 0}, glm::vec3(1.0f), 0.5f);
+    // scene->addDirectionalLight({-1.0f, 0, 0}, glm::vec3(1.0f), 0.5f);
 
-    scene->addDirectionalLight({0.0f, -1.0f, 0.0f}, glm::vec3(1.0f), 0.5f);
-    scene->addDirectionalLight({0.0f, 1.0f, 0.0f}, glm::vec3(1.0f), 0.5f);
-    scene->addDirectionalLight({1.0f, 0, 0}, glm::vec3(1.0f), 0.5f);
-    scene->addDirectionalLight({-1.0f, 0, 0}, glm::vec3(1.0f), 0.5f);
+    // camera        = scene->getCameras()[0];
+    // camera->flipY = true;
+    // camera->setTranslation(glm::vec3(-494.f, -116.f, 99.f));
+    // camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
+    // camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
+    // camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 1.f, 4000.f);
 
     camera        = scene->getCameras()[0];
     camera->flipY = true;
-    camera->setTranslation(glm::vec3(-494.f, -116.f, 99.f));
-    camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
-    camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
-    camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 1.f, 4000.f);
-
-    camera        = scene->getCameras()[0];
-    camera->flipY = true;
-    camera->setTranslation(glm::vec3(-2.5f, -3.34f, -20.f));
-    camera->setRotation(glm::vec3(0.f, -15.f, 0.0f));
+    camera->setTranslation(glm::vec3(-2.5f, 0, -0.86f));
+    camera->setRotation(glm::vec3(0.f, -90, 0.0f));
     camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 0.1f, 4000.f);
     camera->setMoveSpeed(0.05f);
 
@@ -109,7 +108,7 @@ void Example::prepare() {
     passes.emplace_back(std::make_unique<CopyAlphaPass>());
     passes.emplace_back(std::make_unique<FinalLightingPass>());
 
-    g_manager = new VxgiPtrManangr();
+    g_manager = new RenderPtrManangr();
 
     g_manager->putPtr("scene", scene.get());
     g_manager->putPtr("view", view.get());

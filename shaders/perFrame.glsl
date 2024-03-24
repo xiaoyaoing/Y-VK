@@ -20,6 +20,7 @@ layout(set = 0, binding = 0) uniform _GlobalFrameUniform {
 
 struct PerPrimitive {
     mat4 model;
+    mat4 modelIT;
     uint material_index;
 //    uvec3 padding1;
 //    uvec4 padding2;
@@ -29,7 +30,13 @@ struct PerPrimitive {
 };
 
 
+vec3  worldPosFromDepth    (vec2 uv, float depth){
+    vec4  clip         = vec4(uv * 2.0 - 1.0, depth, 1.0);
+    vec4 world_w = per_frame.inv_view_proj * clip;
+    vec3 pos     = world_w.xyz / world_w.w;
 
+    return pos;
+}
 
 
 

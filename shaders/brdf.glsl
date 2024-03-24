@@ -72,10 +72,10 @@ vec3 microfacetBRDF(PBRInfo pbrInputs)
 
     //! Calculate the analytical lighting distribution
     vec3 diffuseContrib = (1.0 - F) * diffuse(pbrInputs);
-    vec3 specContrib = F * G * D / (4.0 * pbrInputs.NdotL * pbrInputs.NdotV);
+    vec3 specContrib = F * G * D / (4.0 *  pbrInputs.NdotV);
     //! Obtain final intensity as reflectance (BRDF) scaled by the energy of the light (cos law)
-    return diffuseContrib;
-    //return pbrInputs.NdotL  * (diffuseContrib + specContrib);
+    return diffuseContrib * pbrInputs.NdotL + specContrib;
+    return pbrInputs.NdotL  * (specContrib);
 }
 
 #endif
