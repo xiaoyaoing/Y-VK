@@ -74,6 +74,7 @@ void imageAtomicRGBA8Avg(ivec3 coords, vec4 value)
     int i = 0;
     while ((curStoredVal = imageAtomicCompSwap(radiance_image, coords, prevStoredVal, newVal)) != prevStoredVal)
     {
+        i++;
         prevStoredVal = curStoredVal;
         vec4 rval = convRGBA8ToVec4(curStoredVal);
         rval.xyz = (rval.xyz * rval.w);// Denormalize
@@ -81,6 +82,7 @@ void imageAtomicRGBA8Avg(ivec3 coords, vec4 value)
         curValF.xyz /= (curValF.w);// Renormalize
         newVal = convVec4ToRGBA8(curValF);
     }
+    debugPrintfEXT("iterations %d \n", i);
 }
 
 void voxelAtomicRGBA8Avg(ivec3 imageCoord, ivec3 faceIndex, vec4 color, vec3 weight)
@@ -144,6 +146,7 @@ void main(){
         vec3 f0                        = vec3(0.04);
         float perceptual_roughness;
         float metallic;
+
 
         perceptual_roughness = material.pbrRoughnessFactor;
         metallic = material.pbrMetallicFactor;
@@ -213,6 +216,8 @@ void main(){
         vec3 radiance = light_contribution;
         radiance = clamp(radiance, 0.0, 1.0);
         ivec3 faceIndex = calculateVoxelFaceIndex(-normal);
+        //        discard;
+
         voxelAtomicRGBA8Avg(image_coords, faceIndex, vec4(radiance, 1.0), abs(normal));
     }
 }
