@@ -51,7 +51,10 @@ void Camera::updateViewMatrix() {
     rotM = glm::rotate(rotM, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
     rotM = glm::rotate(rotM, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
 
-    transM = glm::translate(transM, position);
+    glm::vec3 translation = position;
+    if (flipY)
+        translation.y *= -1.0f;
+    transM = glm::translate(transM, translation);
 
     if (mode == FIRST_PERSON)
         matrices.view = rotM * transM;

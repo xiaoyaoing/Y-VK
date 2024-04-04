@@ -37,6 +37,7 @@ void LightInjectionPass::render(RenderGraph& rg) {
         desc.textures = {radiance};
         desc.addSubpass({.inputAttachments =  {},.outputAttachments = {}});
             builder.declare(desc); }, [&](RenderPassContext& context) {
+                // return ;
                 auto clipRegions = g_manager->fetchPtr<std::vector<ClipmapRegion>>("clipmap_regions");
                 auto& view       = *g_manager->fetchPtr<View>("view");
                 g_context->getPipelineState().setPipelineLayout(*mLightInjectionPipelineLayout);//.enableConservativeRasterization(g_context->getDevice().getPhysicalDevice());
@@ -44,17 +45,20 @@ void LightInjectionPass::render(RenderGraph& rg) {
                 g_context->bindImage(2, rg.getBlackBoard().getHwImage("radiance").getVkImageView(VK_IMAGE_VIEW_TYPE_3D,VK_FORMAT_R32_UINT));
                 for(uint32_t i = 0 ;i<CLIP_MAP_LEVEL_COUNT;i++) {
                     // auto buffer = g_manager->fetchPtr<Buffer>("voxel_param_buffer");
-                    if(frameIndex % kUpdateRegionLevelOffsets[i] == 0) {
+                    if(frameIndex % kUpdateRegionLevelOffsets[i] == 0 && false) {
                         
                         auto & clipRegion =  clipRegions->operator[](i);
                         auto voxelParam =  clipRegion.getVoxelizationParam();
                         voxelParam.clipmapLevel = i;
-
                         
                         mVoxelParamBuffers[i]->uploadData(&voxelParam, sizeof(VoxelizationParamater));
                         g_context->bindBuffer(5, *mVoxelParamBuffers[i], 0, sizeof(VoxelizationParamater),3);
                         g_manager->fetchPtr<View>("view")->drawPrimitives(commandBuffer, [&](const Primitive& primitive) {
-                            return clipRegion.getBoundingBox().overlaps(primitive.getDimensions());
+                            if(i==0)
+                                return clipRegion.getBoundingBox().overlaps(primitive.getDimensions());
+                            else {
+                                return primitive.getDimensions().overlaps(clipRegion.getBoundingBox(),clipRegions->operator[](i-1).getBoundingBox());
+                            }
                         });
 
                     }

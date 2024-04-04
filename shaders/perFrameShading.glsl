@@ -1,6 +1,6 @@
 #include "gltfMaterial.glsl"
 
-#define MAX_SCENE_TEXTURES 25
+#define MAX_SCENE_TEXTURES  69
 #define MAX_SCENE_MATERIALS 25
 
 layout (std430, set=0, binding = 3) readonly buffer  MaterialBuffer

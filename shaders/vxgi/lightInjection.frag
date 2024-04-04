@@ -62,6 +62,7 @@ vec4 convRGBA8ToVec4(uint val)
 void imageAtomicRGBA8Avg(ivec3 coords, vec4 value)
 {
 
+    //atomicAdd(radiance_image, coords, value));
     value.rgb *= 255.0;
     uint newVal = convVec4ToRGBA8(value);
     uint prevStoredVal = 0;
@@ -82,7 +83,7 @@ void imageAtomicRGBA8Avg(ivec3 coords, vec4 value)
         curValF.xyz /= (curValF.w);// Renormalize
         newVal = convVec4ToRGBA8(curValF);
     }
-    debugPrintfEXT("iterations %d \n", i);
+    //debugPrintfEXT("iterations %d \n", i);
 }
 
 void voxelAtomicRGBA8Avg(ivec3 imageCoord, ivec3 faceIndex, vec4 color, vec3 weight)

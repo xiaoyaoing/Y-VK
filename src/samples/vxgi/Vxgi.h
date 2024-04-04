@@ -5,6 +5,7 @@
 
 #include "ClipmapRegion.h"
 #include "ClipmapUpdatePolicy.h"
+#include "VisualizeVoxelPass.h"
 #include "VxgiCommon.h"
 #include "App/Application.h"
 
@@ -18,6 +19,7 @@ public:
 protected:
     void onUpdateGUI() override;
     void drawFrame(RenderGraph& renderGraph) override;
+    void drawVoxelVisualization(RenderGraph& renderGraph);
     void updateClipRegions();
     // void addVoxelizationPass(RenderGraph& rg);
     // void addVoxelConeTracingPass(RenderGraph& rg);
@@ -32,7 +34,9 @@ protected:
 
     std::vector<std::unique_ptr<PassBase>> passes{};
     std::vector<BBox>                      mBBoxes{};
-    std::vector<ClipmapRegion>             mClipRegions{};
     std::unique_ptr<ClipmapUpdatePolicy>   mClipmapUpdatePolicy{nullptr};
+    bool                                   m_visualizeClipRegion[6]{true, false, false, false, false, false};
+    bool                                   injectLight = false;
+    VisualizeVoxelPass                     mVisualizeVoxelPass;
     inline static uint32_t                 m_clipRegionBBoxExtentL0 = 16;
 };

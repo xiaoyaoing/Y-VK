@@ -51,37 +51,52 @@ const std::vector<std::unique_ptr<Texture>>& Scene::getTextures() const {
     return textures;
 }
 
-
 const std::vector<GltfMaterial>& Scene::getGltfMaterials() const {
     return materials;
 }
 
 std::vector<std::shared_ptr<Camera>>& Scene::getCameras() {
     return cameras;
-}bool Scene::hasVertexBuffer(const std::string& name) const{
+}
+bool Scene::hasVertexBuffer(const std::string& name) const {
     return sceneVertexBuffer.contains(name);
 }
-bool Scene::getVertexAttribute(const std::string& name, VertexAttribute* attribute) const{
+bool Scene::getVertexAttribute(const std::string& name, VertexAttribute* attribute) const {
     if (vertexAttributes.contains(name)) {
         if (attribute)
             *attribute = vertexAttributes.at(name);
         return true;
     }
     return false;
-    
-}Buffer& Scene::getVertexBuffer(const std::string& name) const{
+}
+Buffer& Scene::getVertexBuffer(const std::string& name) const {
     return *sceneVertexBuffer.at(name);
-}VkIndexType Scene::getIndexType() const{
+}
+VkIndexType Scene::getIndexType() const {
     return indexType;
-}const Buffer& Scene::getIndexBuffer() const{
+}
+const Buffer& Scene::getIndexBuffer() const {
     return *sceneIndexBuffer;
-}const Buffer& Scene::getUniformBuffer() const{
+}
+const Buffer& Scene::getUniformBuffer() const {
     return *sceneUniformBuffer;
-}const Buffer& Scene::getPrimitiveIdBuffer() const{
+}
+const Buffer& Scene::getPrimitiveIdBuffer() const {
     return *primitiveIdBuffer;
 }
-bool Scene::usePrimitiveIdBuffer() const{
+bool Scene::usePrimitiveIdBuffer() const {
     return usePrimitiveId;
+}
+VkPrimitiveTopology GetVkPrimitiveTopology(PRIMITIVE_TYPE type) {
+    switch (type) {
+        case PRIMITIVE_TYPE::E_TRIANGLE_LIST:
+            return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        case PRIMITIVE_TYPE::E_POINT_LIST:
+            return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+        default:
+            return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    }
+    return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 }
 bool Primitive::getVertexAttribute(const std::string& name, VertexAttribute* attribute) const {
     if (vertexAttributes.contains(name)) {
@@ -128,13 +143,16 @@ bool Primitive::hasVertexBuffer(const std::string& name) const {
 const Buffer& Primitive::getIndexBuffer() const {
     return *indexBuffer;
 }
+bool Primitive::hasIndexBuffer() const {
+    return indexBuffer != nullptr;
+}
 
 const Buffer& Primitive::getUniformBuffer() const {
     return *uniformBuffer;
 }
 
 std::unique_ptr<Scene> loadDefaultTriangleScene(Device& device) {
-    GltfMaterial mat{};
+    GltfMaterial                            mat{};
     std::vector<std::unique_ptr<Primitive>> primitives = {};
     primitives.push_back(std::make_unique<Primitive>(0, 0, 3, 0));
 

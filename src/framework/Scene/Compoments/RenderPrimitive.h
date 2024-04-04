@@ -10,7 +10,10 @@ class Material;
 
 enum class PRIMITIVE_TYPE : uint8_t {
     E_TRIANGLE_LIST,
+    E_POINT_LIST,
 };
+
+VkPrimitiveTopology GetVkPrimitiveTopology(PRIMITIVE_TYPE type);
 
 struct VertexAttribute {
     VkFormat      format = VK_FORMAT_UNDEFINED;
@@ -37,8 +40,6 @@ class Primitive {
 protected:
     //ShaderVarint varint{};
 
-    PRIMITIVE_TYPE primitiveType{PRIMITIVE_TYPE::E_TRIANGLE_LIST};
-
     VkIndexType indexType{VK_INDEX_TYPE_UINT16};
 
     BBox dimensions;
@@ -49,12 +50,13 @@ protected:
     std::unique_ptr<Buffer>                                  uniformBuffer;
 
 public:
-    uint32_t  firstIndex{0};
-    uint32_t  indexCount{};
-    uint32_t  firstVertex{0};
-    uint32_t  vertexCount{};
-    glm::mat4 matrix{};
-    uint32_t  materialIndex{0};
+    PRIMITIVE_TYPE primitiveType{PRIMITIVE_TYPE::E_TRIANGLE_LIST};
+    uint32_t       firstIndex{0};
+    uint32_t       indexCount{};
+    uint32_t       firstVertex{0};
+    uint32_t       vertexCount{};
+    glm::mat4      matrix{};
+    uint32_t       materialIndex{0};
 
     bool          getVertexAttribute(const std::string& name, VertexAttribute* attribute = nullptr) const;
     void          setVertxAttribute(const std::string& name, const VertexAttribute& attribute);
@@ -67,6 +69,7 @@ public:
     void          setIndexType(VkIndexType indexType);
     bool          hasVertexBuffer(const std::string& name) const;
     const Buffer& getIndexBuffer() const;
+    bool          hasIndexBuffer() const;
     const Buffer& getUniformBuffer() const;
 
     void        setDimensions(glm::vec3 min, glm::vec3 max);
@@ -75,6 +78,9 @@ public:
     Primitive(uint32_t firstVertex, uint32_t firstIndex, uint32_t indexCount, uint32_t materialIndex) : firstIndex(firstIndex),
                                                                                                         indexCount(indexCount), firstVertex(firstVertex),
                                                                                                         materialIndex(materialIndex), dimensions({}) {
+    }
+
+    Primitive(uint32_t firstVertex, uint32_t vertexCount, uint32_t materialIndex) : firstVertex(firstVertex), vertexCount(vertexCount), materialIndex(materialIndex), dimensions({}) {
     }
 };
 

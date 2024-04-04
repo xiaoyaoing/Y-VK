@@ -16,6 +16,7 @@ public:
     glm::ivec3 computeChangeDeltaV(uint32_t clipmapLevel);
     void       fillRevoxelizationRegions(uint32_t clipLevel, const BBox& boundingBox);
     void       updateVoxelization();
+    void       updateGui() override;
 
 private:
     std::vector<BBox>*                      mBBoxes{};

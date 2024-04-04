@@ -26,6 +26,7 @@ void FinalLightingPass::init() {
     };
     mFinalLightingPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), shaders);
     mRadianceMapSampler          = std::make_unique<Sampler>(g_context->getDevice(), VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, 0.0f);
+    g_manager->putPtr("radiance_map_sampler", mRadianceMapSampler.get());
 }
 void FinalLightingPass::render(RenderGraph& rg) {
     rg.addPass(

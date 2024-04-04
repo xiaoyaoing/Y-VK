@@ -166,7 +166,7 @@ void RenderContext::submitAndPresent(CommandBuffer& commandBuffer, VkFence fence
         frameActive = false;
     }
 
-    // queue.wait();
+    queue.wait();
 
     // auto& computeQueue = device.getQueueByFlag(VK_QUEUE_COMPUTE_BIT, 0);
     //
@@ -344,9 +344,11 @@ RenderContext& RenderContext::bindPrimitiveGeom(CommandBuffer& commandBuffer, co
             commandBuffer.bindVertexBuffer(inputResource.location, buffers, {0});
         }
     }
-    commandBuffer.bindIndicesBuffer(primitive.getIndexBuffer(), 0, primitive.getIndexType());
-
-    pipelineState.setVertexInputState(vertexInputState);
+    if (primitive.hasIndexBuffer())
+        commandBuffer.bindIndicesBuffer(primitive.getIndexBuffer(), 0, primitive.getIndexType());
+    InputAssemblyState inputAssemblyState = pipelineState.getInputAssemblyState();
+    inputAssemblyState.topology           = GetVkPrimitiveTopology(primitive.primitiveType);
+    pipelineState.setVertexInputState(vertexInputState).setInputAssemblyState(inputAssemblyState);
 
     //  bindPushConstants(primitive);
     bindBuffer(static_cast<uint32_t>(UniformBindingPoints::PER_RENDERABLE), primitive.getUniformBuffer(), 0, sizeof(PerPrimitiveUniform));

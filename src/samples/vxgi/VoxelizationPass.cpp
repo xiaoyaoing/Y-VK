@@ -2,6 +2,7 @@
 
 #include "ClipmapCleaner.h"
 #include "VxgiCommon.h"
+#include "imgui.h"
 #include "Core/RenderContext.h"
 #include "Core/View.h"
 
@@ -100,8 +101,11 @@ void VoxelizationPass::render(RenderGraph& rg) {
                     mVoxelParamBuffers[i]->uploadData(&mVoxelParam, sizeof(VoxelizationParamater));
                     g_context->bindBuffer(5, *mVoxelParamBuffers[i], 0, sizeof(VoxelizationParamater), 3);
                     g_manager->fetchPtr<View>("view")->drawPrimitives(commandBuffer, [&](const Primitive& primitive) {
-                        return clipRegion.getBoundingBox().overlaps(primitive.getDimensions());
-                    });
+                        if(i==0)
+                            return clipRegion.getBoundingBox().overlaps(primitive.getDimensions());
+                        else {
+                            return primitive.getDimensions().overlaps(clipRegion.getBoundingBox(),mClipRegions[i-1].getBoundingBox());
+                        } });
                 }
             }
         });
@@ -178,4 +182,7 @@ void VoxelizationPass::updateVoxelization() {
             fillRevoxelizationRegions(clipmapLevel, mBBoxes->at(clipmapLevel));
         }
     }
+}
+void VoxelizationPass::updateGui() {
+    ImGui::Text("clip region 0 min coord: %d %d %d", mClipRegions[0].minCoord.x, mClipRegions[0].minCoord.y, mClipRegions[0].minCoord.z);
 }

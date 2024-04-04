@@ -84,8 +84,8 @@ Gui::Gui(Device& device) : device(device) {
     ImVec4 clear_color         = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     std::vector<Shader> shaders{};
-    shaders.emplace_back(Shader(device, FileUtils::getShaderPath("gui.vert")));
-    shaders.emplace_back(Shader(device, FileUtils::getShaderPath("gui.frag")));
+    shaders.emplace_back(device, FileUtils::getShaderPath("gui.vert"));
+    shaders.emplace_back(device, FileUtils::getShaderPath("gui.frag"));
     pipelineLayout = &device.getResourceCache().requestPipelineLayout(shaders);
 }
 

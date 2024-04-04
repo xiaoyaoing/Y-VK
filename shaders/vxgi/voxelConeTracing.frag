@@ -277,7 +277,7 @@ void main(){
         //  direct_contribution = vec3(1);
     }
     out_color = vec4(direct_contribution * uDirectLighting + indirect_contribution * uIndirectLighting, 1);
-    //    out_color = vec4(direct_contribution, 1);
+    out_color = vec4(direct_contribution, 1);
     //    out_color = vec4(indirect_contribution, 1);
     // out_color += vec4(diffuse_color,1);
 }

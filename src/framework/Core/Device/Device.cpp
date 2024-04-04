@@ -124,6 +124,9 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkInstance
 
     VkPhysicalDeviceFeatures2 device_features2{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2};
 
+    //todo check if this is needed
+    device_features2.features.geometryShader = VK_TRUE;
+
     if (enableRayTracing) {
         VkPhysicalDeviceVulkan12Features              features12 = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};
         VkPhysicalDeviceRayTracingPipelineFeaturesKHR rt_fts{

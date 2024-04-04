@@ -25,10 +25,19 @@ void Example::drawFrame(RenderGraph& rg) {
 
     for (auto& pass : passes)
         pass->render(rg);
+    drawVoxelVisualization(rg);
     gui->addGuiPass(rg);
 
     rg.setCutUnUsedResources(false);
     rg.execute(commandBuffer);
+}
+void Example::drawVoxelVisualization(RenderGraph& renderGraph) {
+    auto& regions = *g_manager->fetchPtr<std::vector<ClipmapRegion>>("clipmap_regions");
+    for (uint32_t i = 0; i < CLIP_MAP_LEVEL_COUNT; i++) {
+        if (m_visualizeClipRegion[i]) {
+            mVisualizeVoxelPass.visualize3DClipmapGS(renderGraph, renderGraph.getBlackBoard().getHandle("radiance"), regions[i], i, i > 0 ? &regions[i - 1] : nullptr, false, 3);
+        }
+    }
 }
 
 BBox Example::getBBox(uint32_t clipmapLevel) {
@@ -38,6 +47,9 @@ BBox Example::getBBox(uint32_t clipmapLevel) {
 
 void Example::prepare() {
     Application::prepare();
+
+    //Shader shader(*device,"E:/code/moerengine2/shaders/3dgs_splatting/preprocess.spv", VK_SHADER_STAGE_COMPUTE_BIT);
+    Shader shader(*device, "E:/code/moerengine2/shaders/3dgs_splatting/tile_boundary.spv", VK_SHADER_STAGE_COMPUTE_BIT);
 
     scene = GltfLoading::LoadSceneFromGLTFFile(
         *device, FileUtils::getResourcePath("sponza/Sponza01.gltf"), {.sceneTransform = glm::scale(glm::mat4(1.f), glm::vec3(0.008f))});
@@ -89,8 +101,8 @@ void Example::prepare() {
 
     camera        = scene->getCameras()[0];
     camera->flipY = true;
-    camera->setTranslation(glm::vec3(-2.5f, 0, -0.86f));
-    camera->setRotation(glm::vec3(0.f, -90, 0.0f));
+    camera->setTranslation(glm::vec3(-2.69, 6.69, 1.5f));
+    camera->setRotation(glm::vec3(-4.f, -269, 0.0f));
     camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 0.1f, 4000.f);
     camera->setMoveSpeed(0.05f);
 
@@ -121,6 +133,8 @@ void Example::prepare() {
     for (auto& pass : passes) {
         pass->init();
     }
+
+    mVisualizeVoxelPass.init();
 }
 
 Example::Example() : Application("Drawing Triangle", 1024, 1024) {
@@ -134,6 +148,19 @@ void Example::onUpdateGUI() {
     for (auto& pass : passes) {
         pass->updateGui();
     }
+    ImGui::Checkbox("C1", &m_visualizeClipRegion[0]);
+    ImGui::SameLine();
+    ImGui::Checkbox("C2", &m_visualizeClipRegion[1]);
+    ImGui::SameLine();
+    ImGui::Checkbox("C3", &m_visualizeClipRegion[2]);
+    ImGui::SameLine();
+    ImGui::Checkbox("C4", &m_visualizeClipRegion[3]);
+    ImGui::SameLine();
+    ImGui::Checkbox("C5", &m_visualizeClipRegion[4]);
+    ImGui::SameLine();
+    ImGui::Checkbox("C6", &m_visualizeClipRegion[5]);
+    ImGui::SameLine();
+    ImGui::Checkbox("inject", &injectLight);
 }
 
 void Example::updateClipRegions() {
