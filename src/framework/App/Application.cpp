@@ -9,6 +9,7 @@
 #include "Core/RenderTarget.h"
 #include "Core/Shader/Shader.h"
 #include "Core/Texture.h"
+#include "Core/math.h"
 #include "Core/Shader/GlslCompiler.h"
 #include "Scene/Compoments/Camera.h"
 #include "Scene/SceneLoader/gltfloader.h"
@@ -82,8 +83,11 @@ void Application::updateGUI() {
     ImGui::Text("%.2f ms/frame ", 1000.f * deltaTime);
     ImGui::NextColumn();
     ImGui::Text(" %d fps", toUint32(1.f / deltaTime));
-    ImGui::InputFloat3("Camera Position", &camera->position[0], "%.2f %.2f %.2f", 2);
-    ImGui::InputFloat3("Camera Rotation", &camera->rotation[0], "%.2f %.2f %.2f", 2);
+
+    vec3 pos = camera->getPosition();
+    // ImGui::InputFloat3("Camera Position", , "%.2f %.2f %.2f", 2);z
+    ImGui::Text("Camera Position: %.2f %.2f %.2f", pos.x, pos.y, pos.z);
+   // ImGui::InputFloat3("Camera Rotation", &camera->rotation[0], "%.2f %.2f %.2f", 2);
     ImGui::PopItemWidth();
     ImGui::NextColumn();
     ImGui::InputFloat("Camera Move Speed", &camera->mMoveSpeed);
@@ -299,8 +303,10 @@ void Application::inputEvent(const InputEvent& inputEvent) {
                 float deltaX = static_cast<float>(touchPos.y - eventY) * rotationSpeed * 0.5f;
                 float deltaY = static_cast<float>(touchPos.x - eventX) * rotationSpeed * 0.5f;
 
-                camera->rotate(glm::vec3(deltaX, 0.0f, 0.0f));
-                camera->rotate(glm::vec3(0.0f, -deltaY, 0.0f));
+                camera->pitch(math::toRadians(deltaX));
+                camera->rotateY(math::toRadians(deltaY));
+                // camera->rotate(glm::vec3(deltaX, 0.0f, 0.0f));
+                // camera->rotate(glm::vec3(0.0f, -deltaY, 0.0f));
 
                 rotation.x += deltaX;
                 rotation.y -= deltaY;
@@ -354,6 +360,8 @@ void Application::handleMouseMove(float x, float y) {
         rotation.x += dy * 1.25f * rotationSpeed;
         rotation.y -= dx * 1.25f * rotationSpeed;
         camera->rotate(glm::vec3(dy * camera->rotationSpeed, -dx * camera->rotationSpeed, 0.0f));
+       // camera->pitch(math::toRadians(dy));
+     //   camera->roll(math::toRadians(dx));
         viewUpdated = true;
     }
     if (camera->mouseButtons.right) {
