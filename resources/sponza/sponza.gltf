@@ -1251,9 +1251,9 @@
             }, 
             "name": "Material_8", 
             "emissiveFactor": [
-                0, 
-                0, 
-                0
+                1, 
+                1, 
+                1
             ], 
             "pbrMetallicRoughness": {
                 "roughnessFactor": 0.5, 

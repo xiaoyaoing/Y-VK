@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "SceneLoadingConfig.h"
+
 #include <ext/matrix_float4x4.hpp>
 #include <glm.hpp>
 #include <gtc/type_ptr.hpp>
@@ -19,14 +21,6 @@
 #include "Scene/Scene.h"
 //#include "Mesh.h"
 
-struct SceneLoadingConfig {
-    std::unordered_set<std::string> requiredVertexAttribute{};
-    VkIndexType                     indexType{VK_INDEX_TYPE_NONE_KHR};
-    bool                            bufferAddressAble{false};
-    bool                            bufferForAccel{false};
-    bool                            bufferForTransferSrc{false};
-    bool                            bufferForTransferDst{false};
-};
 
 class GltfLoading {
 public:

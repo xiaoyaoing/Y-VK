@@ -13,3 +13,6 @@
 	path = ext/imgui
 	url = https://github.com/ocornut/imgui
 	branch = docking
+[submodule "ext/json"]
+	path = ext/json
+	url = git@github.com:nlohmann/json.git

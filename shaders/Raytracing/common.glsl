@@ -5,7 +5,6 @@
 #include "commons.h"
 #include "PT/pt_commons.glsl"
 #include "util.glsl"
-#include "bsdf.glsl"
 
 
 layout(binding = 0, set = 3) uniform accelerationStructureEXT tlas;

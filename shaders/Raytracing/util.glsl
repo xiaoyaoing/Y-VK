@@ -27,9 +27,9 @@ struct AnyHitPayload {
 };
 
 struct BsdfSampleRecord{
-    vec3 wi;
-    vec3 f;
+    vec3 f; 
     float pdf;
+    uint sample_flags;
 };
 
 struct Frame{
@@ -68,6 +68,8 @@ struct SurfaceScatterEvent{
     uint material_idx;
     uint triangle_idx;
 };
+
+
 
 SurfaceScatterEvent make_suface_scatter_event(const HitPayload hit_pay_load, const vec3 wo){
     SurfaceScatterEvent event;

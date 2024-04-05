@@ -22,6 +22,8 @@ target_link_libraries(${target_name} PUBLIC
         astc
         volk
         ctpl
+        nlohmann_json
+        tiny_obj_loader
 
         glslang
         glslang-default-resource-limits

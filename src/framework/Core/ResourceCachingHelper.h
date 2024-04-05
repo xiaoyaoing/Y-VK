@@ -65,7 +65,7 @@ namespace std {
             std::size_t result;
             hash_combine(result, extent3d.width);
             hash_combine(result, extent3d.height);
-            hash_combine(result, extent3d.width);
+            hash_combine(result, extent3d.depth);
             return result;
         }
     };
@@ -494,6 +494,6 @@ inline void hash_param(size_t& seed, const T& value) {
 template<typename T, typename... Args>
 inline void hash_param(size_t& seed, const T& first_arg, const Args&... args) {
     hash_param(seed, first_arg);
-
+    // LOGI("Hashing {0}", seed);
     hash_param(seed, args...);
 }
