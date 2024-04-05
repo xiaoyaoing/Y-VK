@@ -37,6 +37,7 @@ void Application::initVk() {
         vkEnumeratePhysicalDevices(_instance->getHandle(), &physical_device_count, physical_devices.data()));
 
     addDeviceExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    addDeviceExtension(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
 
     VkPhysicalDeviceProperties deviceProperties;
     vkGetPhysicalDeviceProperties(physical_devices[0], &deviceProperties);
@@ -87,7 +88,9 @@ void Application::updateGUI() {
     vec3 pos = camera->getPosition();
     // ImGui::InputFloat3("Camera Position", , "%.2f %.2f %.2f", 2);z
     ImGui::Text("Camera Position: %.2f %.2f %.2f", pos.x, pos.y, pos.z);
-   // ImGui::InputFloat3("Camera Rotation", &camera->rotation[0], "%.2f %.2f %.2f", 2);
+    glm::quat rotat = camera->getTransform()->getRotation();
+    ImGui::Text("Camera Rotation: %.2f %.2f %.2f %.2f", rotat.x, rotat.y, rotat.z, rotat.w);
+    // ImGui::InputFloat3("Camera Rotation", &camera->rotation[0], "%.2f %.2f %.2f", 2);
     ImGui::PopItemWidth();
     ImGui::NextColumn();
     ImGui::InputFloat("Camera Move Speed", &camera->mMoveSpeed);
@@ -356,15 +359,15 @@ void Application::handleMouseMove(float x, float y) {
     float dy      = static_cast<int32_t>(mousePos.y) - y;
     onMouseMove();
 
-    if (camera->mouseButtons.left) {
+    if (camera->mouseButtons.right) {
         rotation.x += dy * 1.25f * rotationSpeed;
         rotation.y -= dx * 1.25f * rotationSpeed;
-        camera->rotate(glm::vec3(dy * camera->rotationSpeed, -dx * camera->rotationSpeed, 0.0f));
-       // camera->pitch(math::toRadians(dy));
-     //   camera->roll(math::toRadians(dx));
+        //camera->rotate(glm::vec3(dy * camera->rotationSpeed, -dx * camera->rotationSpeed, 0.0f));
+        camera->pitch(math::toRadians(dy * 0.1f));
+        camera->rotateY(math::toRadians(0.1f * dx));
         viewUpdated = true;
     }
-    if (camera->mouseButtons.right) {
+    if (camera->mouseButtons.left) {
         camera->translate(glm::vec3(-0.0f, 0.0f, dy * .005f));
         viewUpdated = true;
     }

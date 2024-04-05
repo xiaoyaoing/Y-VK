@@ -23,8 +23,7 @@ public:
     using PrimitiveSelectFunc = std::function<bool(const Primitive& primitive)>;
     void drawPrimitives(CommandBuffer& commandBuffer, const PrimitiveSelectFunc& selectFunc);
 
-    const Camera*                 getMCamera() const;
-    void                          setMCamera(const Camera* const mCamera);
+    const Camera*                 getCamera() const;
     std::vector<const Primitive*> getMVisiblePrimitives() const;
     void                          setMVisiblePrimitives(const std::vector<const Primitive*>& mVisiblePrimitives);
 

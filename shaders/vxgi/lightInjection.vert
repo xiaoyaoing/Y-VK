@@ -21,7 +21,7 @@ layout(std430, set = 0, binding = 2) readonly buffer _GlobalPrimitiveUniform {
 void main(void)
 {
     mat4  matrix = primitive_infos[primitive_id].model;
-    vec4 pos =  vec4(position, 1.0f);
+    vec4 pos =  matrix * vec4(position, 1.0f);
 
     o_position = pos.xyz;
 

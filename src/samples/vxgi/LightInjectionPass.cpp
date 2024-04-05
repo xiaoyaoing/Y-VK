@@ -2,6 +2,7 @@
 
 #include "ClipmapCleaner.h"
 #include "ClipmapRegion.h"
+#include "imgui.h"
 #include "Core/RenderContext.h"
 #include "Core/View.h"
 #include "Scene/Scene.h"
@@ -45,7 +46,7 @@ void LightInjectionPass::render(RenderGraph& rg) {
                 g_context->bindImage(2, rg.getBlackBoard().getHwImage("radiance").getVkImageView(VK_IMAGE_VIEW_TYPE_3D,VK_FORMAT_R32_UINT));
                 for(uint32_t i = 0 ;i<CLIP_MAP_LEVEL_COUNT;i++) {
                     // auto buffer = g_manager->fetchPtr<Buffer>("voxel_param_buffer");
-                    if(frameIndex % kUpdateRegionLevelOffsets[i] == 0 && false) {
+                    if(frameIndex % kUpdateRegionLevelOffsets[i] == 0 &&  injectLight[i]) {
                         
                         auto & clipRegion =  clipRegions->operator[](i);
                         auto voxelParam =  clipRegion.getVoxelizationParam();
@@ -80,4 +81,18 @@ void LightInjectionPass::init() {
     for (uint32_t i = 0; i < CLIP_MAP_LEVEL_COUNT; i++) {
         mVoxelParamBuffers[i] = std::make_unique<Buffer>(g_context->getDevice(), sizeof(VoxelizationParamater), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
     }
+}
+void LightInjectionPass::updateGui() {
+    ImGui::Checkbox("L1", &injectLight[0]);
+    ImGui::SameLine();
+    ImGui::Checkbox("L2", &injectLight[1]);
+    ImGui::SameLine();
+    ImGui::Checkbox("L3", &injectLight[2]);
+    ImGui::SameLine();
+    ImGui::Checkbox("L4", &injectLight[3]);
+    ImGui::SameLine();
+    ImGui::Checkbox("L5", &injectLight[4]);
+    ImGui::SameLine();
+    ImGui::Checkbox("L6", &injectLight[5]);
+    ImGui::SameLine();
 }

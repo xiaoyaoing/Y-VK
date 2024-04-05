@@ -23,9 +23,13 @@ void Example::drawFrame(RenderGraph& rg) {
     auto& commandBuffer = renderContext->getGraphicCommandBuffer();
     auto& blackBoard    = rg.getBlackBoard();
 
-    for (auto& pass : passes)
+    //    if (frameCounter++ < 2) {
+    for (auto& pass : passes) {
         pass->render(rg);
+    }
     drawVoxelVisualization(rg);
+    //  }
+
     gui->addGuiPass(rg);
 
     rg.setCutUnUsedResources(false);
@@ -42,7 +46,7 @@ void Example::drawVoxelVisualization(RenderGraph& renderGraph) {
 
 BBox Example::getBBox(uint32_t clipmapLevel) {
     float halfSize = 0.5f * m_clipRegionBBoxExtentL0 * std::exp2f(float(clipmapLevel));
-    return {camera->position - halfSize, camera->position + halfSize};
+    return {camera->getPosition() - halfSize, camera->getPosition() + halfSize};
 }
 
 void Example::prepare() {
@@ -88,23 +92,18 @@ void Example::prepare() {
         }
     }
     scene->addDirectionalLight({0, -0.95f, 0.3f}, glm::vec3(1.0f), 1.5f);
-    // scene->addDirectionalLight({0.0f, 1.0f, 0.0f}, glm::vec3(1.0f), 0.5f);
-    // scene->addDirectionalLight({1.0f, 0, 0}, glm::vec3(1.0f), 0.5f);
-    // scene->addDirectionalLight({-1.0f, 0, 0}, glm::vec3(1.0f), 0.5f);
-
-    // camera        = scene->getCameras()[0];
-    // camera->flipY = true;
-    // camera->setTranslation(glm::vec3(-494.f, -116.f, 99.f));
-    // camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
-    // camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
-    // camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 1.f, 4000.f);
 
     camera        = scene->getCameras()[0];
-    camera->flipY = true;
+    camera->flipY = false;
     camera->setTranslation(glm::vec3(-2.69, 6.69, 1.5f));
     camera->setRotation(glm::vec3(-4.f, -269, 0.0f));
     camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 0.1f, 4000.f);
     camera->setMoveSpeed(0.05f);
+
+    camera->setPerspective(45.0f, float(mWidth), float(mHeight), 0.3f, 30.0f);
+    glm::vec3 cameraPositionOffset(0.46, 8.27, -1.54);
+    camera->getTransform()->setPosition(cameraPositionOffset);
+    camera->getTransform()->setRotation(glm::quat(0.67, -0.24, 0.69, 0.12));
 
     view = std::make_unique<View>(*device);
     view->setScene(scene.get());

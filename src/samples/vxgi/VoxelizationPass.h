@@ -35,6 +35,7 @@ private:
 
     bool  mFullRevoxelization{false};
     bool  mInitVoxelization{false};
+    uint  mFrameIndex{0};
     ivec3 mMinVoxelChange{2, 2, 2};
 
     // std::unique_ptr<ClipMapCleaner> mClipMapCleaner{nullptr};

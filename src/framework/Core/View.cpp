@@ -46,12 +46,13 @@ void View::setScene(const Scene* scene) {
 void View::setCamera(const Camera* camera) {
     mCamera = camera;
 }
+
 View& View::bindViewBuffer() {
     PerViewUnifom perViewUnifom{};
-    perViewUnifom.view_proj     = mCamera->matrices.perspective * mCamera->matrices.view;
+    perViewUnifom.view_proj     = mCamera->viewProj();
     perViewUnifom.inv_view_proj = glm::inverse(perViewUnifom.view_proj);
 
-    vec3 position = vec3(mCamera->position + 1.f);
+    vec3 position = vec3(mCamera->getPosition() + 1.f);
     //auto p = glm::vec4(position,1) * perViewUnifom.view_proj * perViewUnifom.inv_view_proj;
 
     //  assert(glm::vec4(position,1) * perViewUnifom.view_proj * perViewUnifom.inv_view_proj == glm::vec4(position,1));
@@ -59,7 +60,7 @@ View& View::bindViewBuffer() {
     perViewUnifom.resolution     = glm::ivec2(g_context->getSwapChainExtent().width, g_context->getSwapChainExtent().height);
     perViewUnifom.inv_resolution = glm::vec2(1.0f / perViewUnifom.resolution.x, 1.0f / perViewUnifom.resolution.y);
     perViewUnifom.light_count    = mScene->getLights().size();
-    perViewUnifom.camera_pos     = mCamera->position;
+    perViewUnifom.camera_pos     = mCamera->getPosition();
 
     if (perViewUnifom != mPerViewUniform) {
         mPerViewBuffer->uploadData(&perViewUnifom, sizeof(PerViewUnifom), 0);
@@ -105,12 +106,10 @@ void View::drawPrimitives(CommandBuffer& commandBuffer, const PrimitiveSelectFun
     }
 }
 
-const Camera* View::getMCamera() const {
+const Camera* View::getCamera() const {
     return mCamera;
 }
-void View::setMCamera(const Camera* const mCamera) {
-    this->mCamera = mCamera;
-}
+
 std::vector<const Primitive*> View::getMVisiblePrimitives() const {
     return mVisiblePrimitives;
 }

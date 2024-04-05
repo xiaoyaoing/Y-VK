@@ -21,7 +21,7 @@ void main()
 
     ivec3 pos = (ivec3(gl_GlobalInvocationID) + uRegionMinCorner) % uClipmapResolution;
     int resolutionWithBorder = uClipmapResolution;// + BORDER_WIDTH * 2;
-//    pos     += ivec3(BORDER_WIDTH);
+    //    pos     += ivec3(BORDER_WIDTH);
     pos.y   += uClipLevel * resolutionWithBorder;
 
     for (int i = 0; i < uFaceCount; ++i)

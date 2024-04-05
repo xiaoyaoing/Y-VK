@@ -126,7 +126,8 @@ protected:
 
     float rotationSpeed{1};
 
-    bool enableGui{true};
+    bool     enableGui{true};
+    uint32_t frameCounter{0};
     //Camera related  variable end
 
     VkFence fence{VK_NULL_HANDLE};

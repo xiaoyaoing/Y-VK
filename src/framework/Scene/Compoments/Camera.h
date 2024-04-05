@@ -66,12 +66,10 @@ private:
     // bool rotating{false};
 };
 
-struct Frustum
-{
-    Frustum() { }
+struct Frustum {
+    Frustum() {}
 
-    union
-    {
+    union {
         glm::vec3 points[8];
 
         struct
@@ -92,25 +90,22 @@ struct Frustum
     BBox getBBox() const;
 };
 
-
 struct Ray {
-    
 };
 
 /**
 * Default assumption for screen coordinates is (0, 0) in lower left corner, (screenWidth, screenHeight) in upper right corner.
 * The viewport is described in screen coordinates.
 */
-class CameraComponent
-{
-    friend class CameraSystem;
+class Camera {
 public:
-    CameraComponent();
+    Camera();
+    ~Camera();
 
-    void update(float deltaTime) ;
-    void onShowInEditor() ;
+    void update(float deltaTime);
+    void onShowInEditor();
 
-    std::string getName() const  { return "Camera"; }
+    std::string getName() const { return "Camera"; }
 
     void setOrthographic(float screenWidth, float screenHeight, float zn, float zf) noexcept;
     void setPerspective(float fovY, float screenWidth, float screenHeight, float zn, float zf) noexcept;
@@ -123,11 +118,13 @@ public:
 
     void updateViewMatrix() noexcept;
 
+    Transform* getTransform() const noexcept { return m_transform.get(); }
+
     void strafe(float d) const noexcept { m_transform->strafe(d); }
 
     void walk(float d) const noexcept { m_transform->walk(d); }
 
-    void pitch(float angle) const noexcept { m_transform->pitch(angle); }
+    void pitch(float angle) const noexcept { m_transform->pitch(flipY ? -angle : angle); }
 
     void rotateY(float angle) const noexcept { m_transform->rotateY(angle); }
 
@@ -135,7 +132,8 @@ public:
 
     glm::vec3 getPosition() const noexcept { return m_transform->getPosition(); }
 
-    void setTranslation(const glm::vec3& p) const noexcept { m_transform->setPosition(p); }
+    // void setTranslation(const glm::vec3& p) const noexcept { m_transform->setPosition(p); }
+    void setTranslation(glm::vec3 p) const noexcept { m_transform->setPosition(p); }
 
     void setTranslation(float x, float y, float z) const noexcept { m_transform->setPosition(glm::vec3(x, y, z)); }
 
@@ -176,7 +174,7 @@ public:
     /**
     * Flips y coordinate in screen space.
     */
-    glm::vec3 flipY(const glm::vec3& p) const { return glm::vec3(p.x, m_screenHeight - p.y, p.z); }
+    glm::vec3 flip_y(const glm::vec3& p) const { return glm::vec3(p.x, m_screenHeight - p.y, p.z); }
 
     /**
     * Screen point has 3 components where x, y are in screen space and z describes the position in world units relative to the camera.
@@ -193,8 +191,8 @@ public:
     glm::vec3 viewportToNDC(const glm::vec3& p) const noexcept;
     glm::vec3 viewportToWorldPoint(const glm::vec3& p) const noexcept;
     glm::vec3 worldToViewportPoint(const glm::vec3& p) const noexcept;
-    Ray screenPointToRay(const glm::vec3& p) const noexcept;
-    Ray viewportPointToRay(const glm::vec3& p) const noexcept;
+    Ray       screenPointToRay(const glm::vec3& p) const noexcept;
+    Ray       viewportPointToRay(const glm::vec3& p) const noexcept;
 
     float getHorizontalFOV() const { return m_fovY * m_aspect; }
 
@@ -208,7 +206,7 @@ public:
     void  setRotation(glm::vec3 rotation);
     void  setMoveSpeed(float moveSpeed);
     float getMoveSpeed() const;
-    
+
     struct {
         bool up{false};
         bool down{false};
@@ -221,11 +219,13 @@ public:
         bool middle{false};
         bool right{false};
     } mouseButtons;
-    float     mMoveSpeed{1};
+    float mMoveSpeed{1};
+    bool  flipY{false};
+    bool  useInverseDepth{true};
 
-    
 protected:
     bool m_perspective{true};
+    bool firstUpdate{true};
 
     float m_nearZ{0.f};
     float m_farZ{1.f};
@@ -242,11 +242,9 @@ protected:
     glm::mat4 m_projInv;
     glm::mat4 m_viewProjInv;
 
-    Rect m_viewport;
-    Rect m_normalizedViewport;
+    Rect                       m_viewport;
+    Rect                       m_normalizedViewport;
     std::unique_ptr<Transform> m_transform;
-
 };
 
-using Camera = CameraComponent;
-
+// using Camera = Camera;

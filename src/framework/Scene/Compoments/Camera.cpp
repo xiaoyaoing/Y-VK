@@ -1,3 +1,5 @@
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include <glm/ext/matrix_clip_space.hpp>
 #include "Camera.h"
 
@@ -6,8 +8,6 @@
 
 #include <glm/vec3.hpp>
 #include <glm/gtx/quaternion.hpp>
-
-class Transform;
 Camera0::Camera0() {
 }
 
@@ -120,19 +120,12 @@ float Camera0::getMoveSpeed() const {
     return mMoveSpeed;
 }
 
-
-
-
-
-
-void Frustum::transform(const glm::mat4& matrix)
-{
+void Frustum::transform(const glm::mat4& matrix) {
     for (auto& p : points)
         p = glm::vec3(matrix * glm::vec4(p, 1.0f));
 }
 
-BBox Frustum::getBBox() const
-{
+BBox Frustum::getBBox() const {
     BBox bbox;
 
     for (auto& p : points)
@@ -140,16 +133,19 @@ BBox Frustum::getBBox() const
 
     return bbox;
 }
+Camera::Camera() {
+    m_transform = std::make_unique<Transform>();
+}
 
-CameraComponent::CameraComponent() {}
+// Camera::Camera() {}
+Camera::~Camera() {
+}
 
-void CameraComponent::update(float deltaTime)  {
-    if (moving()) {
-       {
-
+void Camera::update(float deltaTime) {
+    if (moving() || firstUpdate) {
+        {
             mMoveSpeed += deltaTime;
             float moveDistance = deltaTime * mMoveSpeed;
-           
 
             if (keys.up) {
                 walk(moveDistance);
@@ -162,18 +158,17 @@ void CameraComponent::update(float deltaTime)  {
             if (keys.right)
                 strafe(moveDistance);
             updateViewMatrix();
+            firstUpdate = false;
         }
     } else {
         mMoveSpeed = 1.f;
     }
 }
 
-void CameraComponent::onShowInEditor()
-{
+void Camera::onShowInEditor() {
     const char* mode[]{
-            "Perspective",
-            "Orthographic"
-        };
+        "Perspective",
+        "Orthographic"};
 
     int curItem = m_perspective ? 0 : 1;
     ImGui::Combo("Mode", &curItem, mode, 2);
@@ -183,64 +178,63 @@ void CameraComponent::onShowInEditor()
     ImGui::DragFloat("Far Plane", &m_farZ, 0.01f, 0.0f, 1000.0f);
 }
 
-void CameraComponent::setOrthographic(float screenWidth, float screenHeight, float zn, float zf) noexcept
-{
-    m_screenWidth = screenWidth;
+void Camera::setOrthographic(float screenWidth, float screenHeight, float zn, float zf) noexcept {
+    m_screenWidth  = screenWidth;
     m_screenHeight = screenHeight;
-    m_nearZ = zn;
-    m_farZ = zf;
-    m_perspective = false;
+    m_nearZ        = zn;
+    m_farZ         = zf;
+    m_perspective  = false;
 
     setViewport(0.0f, 0.0f, screenWidth, screenHeight);
 }
 
-
-void CameraComponent::setPerspective(float fovY, float screenWidth, float screenHeight, float zn, float zf) noexcept
-{
-    m_screenWidth = screenWidth;
+void Camera::setPerspective(float fovY, float screenWidth, float screenHeight, float zn, float zf) noexcept {
+    m_screenWidth  = screenWidth;
     m_screenHeight = screenHeight;
-    m_fovY = fovY;
-    m_aspect = screenWidth / screenHeight;
-    m_nearZ = zn;
-    m_farZ = zf;
-    m_perspective = true;
+    m_fovY         = fovY;
+    m_aspect       = screenWidth / screenHeight;
+    m_nearZ        = zn;
+    m_farZ         = zf;
+    m_perspective  = true;
 
     setViewport(0.0f, 0.0f, screenWidth, screenHeight);
 }
 
-void CameraComponent::setViewport(float x, float y, float width, float height) noexcept
-{
-    m_viewport = Rect(x, y, x + width, y + height);
-    m_normalizedViewport = Rect(x / m_screenWidth, y / m_screenHeight,
-                                (x + width) / m_screenWidth, (y + height) / m_screenHeight);
-    m_aspect = m_viewport.width() / m_viewport.height();
+void Camera::setViewport(float x, float y, float width, float height) noexcept {
+    m_viewport           = Rect(x, y, x + width, y + height);
+    m_normalizedViewport = Rect(x / m_screenWidth, y / m_screenHeight, (x + width) / m_screenWidth, (y + height) / m_screenHeight);
+    m_aspect             = m_viewport.width() / m_viewport.height();
+
+    float nz = useInverseDepth ? m_farZ : m_nearZ;
+    float fz = useInverseDepth ? m_nearZ : m_farZ;
 
     if (m_perspective)
-        m_proj = glm::perspective(glm::radians(m_fovY), m_aspect, m_nearZ, m_farZ);
+        m_proj = glm::perspective(glm::radians(m_fovY), m_aspect, nz, fz);
     else
-        m_proj = glm::ortho(0.0f, 1.0f, 0.0f, 1.0f, m_nearZ, m_farZ);
+        m_proj = glm::ortho(0.0f, 1.0f, 0.0f, 1.0f, nz, fz);
+
+    if (flipY)
+        m_proj[1][1] *= -1.0f;
 
     m_projInv = glm::inverse(m_proj);
 }
 
-void CameraComponent::resize(float screenWidth, float screenHeight)
-{
-    m_screenWidth = screenWidth;
+void Camera::resize(float screenWidth, float screenHeight) {
+    m_screenWidth  = screenWidth;
     m_screenHeight = screenHeight;
-    setViewport(m_normalizedViewport.minX() * m_screenWidth, m_normalizedViewport.minY() * m_screenHeight,
-                m_normalizedViewport.width() * m_screenWidth, m_normalizedViewport.height() * m_screenHeight);
+    setViewport(m_normalizedViewport.minX() * m_screenWidth, m_normalizedViewport.minY() * m_screenHeight, m_normalizedViewport.width() * m_screenWidth, m_normalizedViewport.height() * m_screenHeight);
 }
 
-void CameraComponent::updateViewMatrix() noexcept
-{
+void Camera::updateViewMatrix() noexcept {
     auto transform = m_transform.get();
 
     glm::mat3 rotation = glm::toMat3(transform->getRotation());
-    glm::vec3 pos = transform->getPosition();
+    glm::vec3 pos      = transform->getPosition();
+    if (flipY) pos.y *= -1.0f;
 
     glm::vec3& right = rotation[0];
-    glm::vec3& up = rotation[1];
-    glm::vec3& look = rotation[2];
+    glm::vec3& up    = rotation[1];
+    glm::vec3& look  = rotation[2];
 
     float x = -glm::dot(pos, right);
     float y = -glm::dot(pos, up);
@@ -266,13 +260,12 @@ void CameraComponent::updateViewMatrix() noexcept
     m_view[2][3] = 0.0f;
     m_view[3][3] = 1.0f;
 
-    m_viewProj = m_proj * m_view;
-    m_viewInv = glm::inverse(m_view);
+    m_viewProj    = m_proj * m_view;
+    m_viewInv     = glm::inverse(m_view);
     m_viewProjInv = m_viewInv * m_projInv;
 }
 
-glm::vec3 CameraComponent::screenToWorldPoint(const glm::vec3& p) const noexcept
-{
+glm::vec3 Camera::screenToWorldPoint(const glm::vec3& p) const noexcept {
     // Convert to NDC space
     glm::vec4 point(screenToNDC(p), 1.f);
 
@@ -283,16 +276,14 @@ glm::vec3 CameraComponent::screenToWorldPoint(const glm::vec3& p) const noexcept
     return glm::vec3(point);
 }
 
-glm::vec3 CameraComponent::screenToNDC(const glm::vec3& p) const noexcept
-{
+glm::vec3 Camera::screenToNDC(const glm::vec3& p) const noexcept {
     return glm::vec3(
         p.x / m_screenWidth * 2.0f - 1.0f,
         p.y / m_screenHeight * 2.0f - 1.0f,
         (p.z - m_nearZ) / (m_farZ - m_nearZ) * 2.0f - 1.0f);
 }
 
-glm::vec3 CameraComponent::worldToScreenPoint(const glm::vec3& worldPoint) const noexcept
-{
+glm::vec3 Camera::worldToScreenPoint(const glm::vec3& worldPoint) const noexcept {
     glm::vec4 ndc = m_viewProj * glm::vec4(worldPoint, 1.0f);
     ndc /= ndc.w;
     return glm::vec3((ndc.x * 0.5f + 0.5f) * m_screenWidth,
@@ -300,20 +291,18 @@ glm::vec3 CameraComponent::worldToScreenPoint(const glm::vec3& worldPoint) const
                      (ndc.z + 1.f) * (m_farZ - m_nearZ) * 0.5f + m_nearZ);
 }
 
-glm::vec3 CameraComponent::screenToViewportPoint(const glm::vec3& p) const noexcept { return glm::vec3(p.x - m_viewport.minX(), p.y - m_viewport.minY(), p.z); }
+glm::vec3 Camera::screenToViewportPoint(const glm::vec3& p) const noexcept { return glm::vec3(p.x - m_viewport.minX(), p.y - m_viewport.minY(), p.z); }
 
-glm::vec3 CameraComponent::viewportToScreenPoint(const glm::vec3& p) const noexcept { return glm::vec3(p.x + m_viewport.minX(), p.y + m_viewport.minY(), p.z); }
+glm::vec3 Camera::viewportToScreenPoint(const glm::vec3& p) const noexcept { return glm::vec3(p.x + m_viewport.minX(), p.y + m_viewport.minY(), p.z); }
 
-glm::vec3 CameraComponent::viewportToNDC(const glm::vec3& p) const noexcept
-{
+glm::vec3 Camera::viewportToNDC(const glm::vec3& p) const noexcept {
     return glm::vec3(
         p.x / m_viewport.width() * 2.0f - 1.0f,
         p.y / m_viewport.height() * 2.0f - 1.0f,
         (p.z - m_nearZ) / (m_farZ - m_nearZ) * 2.0f - 1.0f);
 }
 
-glm::vec3 CameraComponent::viewportToWorldPoint(const glm::vec3& p) const noexcept
-{
+glm::vec3 Camera::viewportToWorldPoint(const glm::vec3& p) const noexcept {
     // Convert to NDC space
     glm::vec4 point(viewportToNDC(p), 1.f);
 
@@ -324,8 +313,7 @@ glm::vec3 CameraComponent::viewportToWorldPoint(const glm::vec3& p) const noexce
     return glm::vec3(point);
 }
 
-glm::vec3 CameraComponent::worldToViewportPoint(const glm::vec3& p) const noexcept
-{
+glm::vec3 Camera::worldToViewportPoint(const glm::vec3& p) const noexcept {
     glm::vec4 ndc = m_viewProj * glm::vec4(p, 1.0f);
     ndc /= ndc.w;
     return glm::vec3((ndc.x * 0.5f + 0.5f) * m_viewport.width(),
@@ -333,8 +321,7 @@ glm::vec3 CameraComponent::worldToViewportPoint(const glm::vec3& p) const noexce
                      (ndc.z + 1.f) * (m_farZ - m_nearZ) * 0.5f + m_nearZ);
 }
 
-Ray CameraComponent::screenPointToRay(const glm::vec3& p) const noexcept
-{
+Ray Camera::screenPointToRay(const glm::vec3& p) const noexcept {
     // Convert to NDC space
     glm::vec3 ndcP = screenToNDC(p);
     glm::vec4 start(ndcP, 1.f);
@@ -348,11 +335,10 @@ Ray CameraComponent::screenPointToRay(const glm::vec3& p) const noexcept
     end /= end.w;
 
     return {};
-   // return Ray(glm::vec3(start), glm::normalize(glm::vec3(end - start)));
+    // return Ray(glm::vec3(start), glm::normalize(glm::vec3(end - start)));
 }
 
-Ray CameraComponent::viewportPointToRay(const glm::vec3& p) const noexcept
-{
+Ray Camera::viewportPointToRay(const glm::vec3& p) const noexcept {
     // Convert to NDC space
     glm::vec3 ndcP = viewportToNDC(p);
     glm::vec4 start(ndcP, 1.f);
@@ -369,9 +355,14 @@ Ray CameraComponent::viewportPointToRay(const glm::vec3& p) const noexcept
     //return Ray(glm::vec3(start), glm::normalize(glm::vec3(end - start)));
 }
 
-Frustum CameraComponent::getFrustum() const { return getFrustum(m_nearZ, m_farZ); }
+Frustum Camera::getFrustum() const {
+    float nz = useInverseDepth ? m_farZ : m_nearZ;
+    float fz = useInverseDepth ? m_nearZ : m_farZ;
 
-Frustum CameraComponent::getFrustum(float nearZ, float farZ) const {
+    return getFrustum(nz, fz);
+}
+
+Frustum Camera::getFrustum(float nearZ, float farZ) const {
     Frustum frustum;
 
     float thHFOV = tanf(math::toRadians(getHorizontalFOV() * 0.5f));
@@ -419,13 +410,33 @@ Frustum CameraComponent::getFrustum(float nearZ, float farZ) const {
     return frustum;
 }
 
-bool CameraComponent::moving() const {
+bool Camera::moving() const {
+    return keys.up || keys.down || keys.left || keys.right || mouseButtons.left || mouseButtons.right || mouseButtons.middle;
 }
-void CameraComponent::setPerspective(float fov, float aspect, float zNear, float zFar) {
+void Camera::setPerspective(float fov, float aspect, float zNear, float zFar) {
+    m_fovY        = fov;
+    m_aspect      = aspect;
+    m_nearZ       = zNear;
+    m_farZ        = zFar;
+    m_perspective = true;
+
+    float nz = useInverseDepth ? m_farZ : m_nearZ;
+    float fz = useInverseDepth ? m_nearZ : m_farZ;
+
+    if (m_perspective)
+        // use inverse zNear and zFar
+        m_proj = glm::perspective(glm::radians(m_fovY), m_aspect, nz, fz);
+    else
+        m_proj = glm::ortho(0.0f, 1.0f, 0.0f, 1.0f, nz, fz);
+    m_projInv = glm::inverse(m_proj);
+    updateViewMatrix();
 }
-void CameraComponent::setRotation(glm::vec3 rotation) {
+void Camera::setRotation(glm::vec3 rotation) {
+    //do nothing
 }
-void CameraComponent::setMoveSpeed(float moveSpeed) {
+void Camera::setMoveSpeed(float moveSpeed) {
+    mMoveSpeed = moveSpeed;
 }
-float CameraComponent::getMoveSpeed() const {
+float Camera::getMoveSpeed() const {
+    return mMoveSpeed;
 }

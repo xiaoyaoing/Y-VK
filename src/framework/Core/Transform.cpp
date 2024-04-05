@@ -3,6 +3,8 @@
 #include "imgui.h"
 #include "math.h"
 
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/rotate_vector.inl>
 #include <glm/gtx/transform.inl>
@@ -11,11 +13,6 @@ Transform::Transform(const BBox& bbox) {
     setBBox(bbox);
     m_lastFrameWorldBBox = m_worldBBox;
 }
-
-
-
-
-
 
 void Transform::onShowInEditor() {
     m_eulerAnglesWorld = math::toDegrees(m_eulerAnglesWorld);
@@ -53,12 +50,12 @@ void Transform::setLocalRotation(const glm::quat& rotation) {
 }
 
 void Transform::setPosition(const glm::vec3& position) {
-    m_position =  position;
+    m_position = position;
     updateCache();
 }
 
 void Transform::setRotation(const glm::quat& rotation) {
-    m_rotation =  rotation;
+    m_rotation = rotation;
     updateCache();
     m_eulerAnglesWorld = getEulerAngles();
 }
@@ -103,8 +100,6 @@ glm::vec3 Transform::getEulerAngles() const {
     return eulerAngles(getLocalToWorldRotation());
 }
 
-
-
 glm::vec3 Transform::transformPointToWorld(const glm::vec3& point) const {
     return glm::vec3(getLocalToWorldMatrix() * glm::vec4(point, 1.0f));
 }
@@ -136,15 +131,14 @@ void Transform::updateCache() {
 }
 
 void Transform::updateCacheHierarchy() {
-    
-        m_localToWorldMatrix   = m_localMatrix;
-        m_worldToLocalMatrix   = m_localMatrixInv;
-        m_localToWorldRotation = m_rotation;
-        m_worldToLocalRotation = glm::inverse(m_localToWorldRotation);
+
+    m_localToWorldMatrix   = m_localMatrix;
+    m_worldToLocalMatrix   = m_localMatrixInv;
+    m_localToWorldRotation = m_rotation;
+    m_worldToLocalRotation = glm::inverse(m_localToWorldRotation);
 
     m_changedSinceLastFrame = true;
     m_worldBBox             = m_originalBBox.toWorld(m_localToWorldMatrix);
-
 }
 
 glm::mat4 Transform::getLocalMatrix() const {

@@ -112,8 +112,6 @@ public:
     */
     glm::vec3 transformVectorToLocal(const glm::vec3& vector) const;
 
-    bool hasChildren() const { return m_children.size() > 0; }
-
     void pitch(float angle) noexcept;
     void rotateY(float angle) noexcept;
     void roll(float angle) noexcept;

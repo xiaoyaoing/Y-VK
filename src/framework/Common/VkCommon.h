@@ -21,7 +21,9 @@ namespace vkCommon {
             float maxDepth) {
             VkViewport viewport{};
             viewport.width    = width;
-            viewport.height   = height;
+            viewport.height   = -height;
+            viewport.x        = 0;
+            viewport.y        = height;
             viewport.minDepth = minDepth;
             viewport.maxDepth = maxDepth;
             return viewport;

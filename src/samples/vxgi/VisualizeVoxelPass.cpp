@@ -58,8 +58,8 @@ void VisualizeVoxelPass::render(RenderGraph& rg) {
 }
 void VisualizeVoxelPass::visualize3DClipmapGS(RenderGraph& rg, RenderGraphHandle texture, const ClipmapRegion& region, uint32_t clipmapLevel, ClipmapRegion* prevRegion, bool hasMultipleFaces, int numColorComponents) {
     VisualizeParams params;
-    params.u_viewProj            = g_manager->fetchPtr<View>("view")->getMCamera()->matrices.perspective * g_manager->fetchPtr<View>("view")->getMCamera()->matrices.view;
-    auto t                       = params.u_viewProj * glm::vec4(g_manager->fetchPtr<View>("view")->getMCamera()->position, 1);
+    params.u_viewProj            = g_manager->fetchPtr<View>("view")->getCamera()->viewProj();
+    auto t                       = params.u_viewProj * glm::vec4(g_manager->fetchPtr<View>("view")->getCamera()->getPosition(), 1);
     params.u_imageMin            = region.getMinPosImage(region.extent);
     params.u_regionMin           = region.minCoord;
     params.u_hasPrevClipmapLevel = prevRegion ? 1 : 0;

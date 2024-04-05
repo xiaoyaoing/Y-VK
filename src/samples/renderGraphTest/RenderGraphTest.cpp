@@ -7,6 +7,7 @@
 #include "../../framework/Common/VkCommon.h"
 #include "Common/FIleUtils.h"
 #include "Core/View.h"
+#include "Core/math.h"
 #include "Core/Shader/GlslCompiler.h"
 #include "Scene/SceneLoader/gltfloader.h"
 
@@ -231,11 +232,16 @@ void Example::prepare() {
         }
     }
     camera        = scene->getCameras()[0];
-    camera->flipY = true;
+    camera->flipY = false;
     // camera->setTranslation(glm::vec3(-494.f, -116.f, 99.f));
     camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
     camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 1.f, 4000.f);
     camera->setMoveSpeed(0.0005f);
+
+    camera->setPerspective(45.0f, float(mWidth), float(mHeight), 0.3f, 30.0f);
+    glm::vec3 cameraPositionOffset(0.46, 8.27, -1.54);
+    camera->getTransform()->setPosition(cameraPositionOffset);
+    camera->getTransform()->setRotation(glm::quat(0.67, -0.24, 0.69, 0.12));
 
     view = std::make_unique<View>(*device);
     view->setScene(scene.get());

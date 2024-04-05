@@ -89,9 +89,7 @@ void VoxelizationPass::render(RenderGraph& rg) {
 
                 for (auto& clipRegion : mRevoxelizationRegions[i]) {
 
-                    mVoxelParam.clipmapLevel = i;
-                    //  mVoxelParam.clipmapMinCoord    = clipRegion.getMaxCoord();
-                    //  mVoxelParam.clipmapMaxCoord    = clipRegion.getMinCoord();
+                    mVoxelParam.clipmapLevel       = i;
                     mVoxelParam.clipmapMinWorldPos = clipRegion.getMinPosWorld();
                     mVoxelParam.clipmapMaxWorldPos = clipRegion.getMaxPosWorld();
                     mVoxelParam.voxelSize          = clipRegion.voxelSize;
@@ -170,13 +168,14 @@ void VoxelizationPass::updateVoxelization() {
 
     //   mFullRevoxelization = true;
 
-    if (mFullRevoxelization || !mInitVoxelization) {
+    if (mFullRevoxelization || mFrameIndex++ < 2) {
         initClipRegions();
         for (uint32_t clipmapLevel = 0; clipmapLevel < CLIP_MAP_LEVEL_COUNT; ++clipmapLevel) {
             mRevoxelizationRegions[clipmapLevel].emplace_back(mClipRegions[clipmapLevel]);
         }
         mInitVoxelization = true;
     } else {
+        // return;
         for (uint32_t clipmapLevel = 0; clipmapLevel < CLIP_MAP_LEVEL_COUNT; ++clipmapLevel) {
             mRevoxelizationRegions[clipmapLevel].clear();
             fillRevoxelizationRegions(clipmapLevel, mBBoxes->at(clipmapLevel));
@@ -185,4 +184,5 @@ void VoxelizationPass::updateVoxelization() {
 }
 void VoxelizationPass::updateGui() {
     ImGui::Text("clip region 0 min coord: %d %d %d", mClipRegions[0].minCoord.x, mClipRegions[0].minCoord.y, mClipRegions[0].minCoord.z);
+    ImGui::Checkbox("Full Revoxelization", &mFullRevoxelization);
 }

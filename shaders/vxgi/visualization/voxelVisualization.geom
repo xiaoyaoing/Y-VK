@@ -97,7 +97,7 @@ void main()
     else
     {
         vec4 color = texelFetch(u_3dTexture, samplePos, 0);
-        color = vec4(float(pos.x) / float(resolution), float(pos.y) / float(resolution), float(pos.z) / float(resolution), 1.0);
+                //color = vec4(float(pos.x) / float(resolution), float(pos.y) / float(resolution), float(pos.z) / float(resolution), color.a);
         // color = vec4(1.0, 0, 0, 1);
         colors = vec4[6] (color, color, color, color, color, color);
     }

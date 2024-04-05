@@ -79,8 +79,8 @@ void Example::prepare() {
 }
 
 void Example::drawFrame(RenderGraph& rg) {
-    graphics.ubo.projection = camera->matrices.perspective;
-    graphics.ubo.view       = camera->matrices.view;
+    graphics.ubo.projection = camera->proj();
+    graphics.ubo.view       = camera->view();
     graphics.ubo.screenDim  = glm::vec2(static_cast<float>(mWidth), static_cast<float>(mHeight));
     graphics.uniformBuffer->uploadData(&graphics.ubo, sizeof(graphics.ubo));
 
