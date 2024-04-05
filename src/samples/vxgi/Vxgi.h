@@ -35,8 +35,9 @@ protected:
     std::vector<std::unique_ptr<PassBase>> passes{};
     std::vector<BBox>                      mBBoxes{};
     std::unique_ptr<ClipmapUpdatePolicy>   mClipmapUpdatePolicy{nullptr};
-    bool                                   m_visualizeClipRegion[6]{true, false, false, false, false, false};
-    bool                                   injectLight = false;
+    bool                                   m_visualizeClipRegion[6]{false, false, true, false, false, false};
+    bool                                   mVisualizeRadiance = false;
+    bool                                   injectLight        = false;
     VisualizeVoxelPass                     mVisualizeVoxelPass;
     inline static uint32_t                 m_clipRegionBBoxExtentL0 = 16;
 };

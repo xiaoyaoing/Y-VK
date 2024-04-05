@@ -1,4 +1,5 @@
 #version 430
+#extension GL_EXT_debug_printf : enable
 
 layout(points) in;
 layout(triangle_strip, max_vertices = 24) out;
@@ -21,7 +22,11 @@ layout(std140, binding = 0) uniform GlobalParams {
 
     int u_hasMultipleFaces;
     int u_numColorComponents;
-    ivec2 padding;
+
+    vec3  u_prevRegionMinWorld;
+    int       u_padding;
+    vec3  u_prevRegionMaxWorld;
+    int       u_padding2;
 };
 
 
@@ -74,6 +79,10 @@ void main()
     if (u_hasPrevClipmapLevel > 0 && (all(greaterThanEqual(posV, u_prevRegionMin)) && all(lessThan(posV, u_prevRegionMax))))
     return;
 
+    if (u_clipmapLevel == 2){
+        //  debugPrintfEXT("pos %d %d %d\n", pos.x, pos.y, pos.z);
+    }
+
     // Same as: (u_imageMin + pos) % u_clipmapResolution - the bitwise version is faster than %
     ivec3 samplePos = (u_imageMin + pos) & (u_clipmapResolution - 1);
 
@@ -97,13 +106,23 @@ void main()
     else
     {
         vec4 color = texelFetch(u_3dTexture, samplePos, 0);
-                //color = vec4(float(pos.x) / float(resolution), float(pos.y) / float(resolution), float(pos.z) / float(resolution), color.a);
+        color = vec4(float(pos.x) / float(resolution), float(pos.y) / float(resolution), float(pos.z) / float(resolution), color.a);
+        if (u_clipmapLevel == 0)
+        color.xyz= vec3(1, 0, 0);
+        if (u_clipmapLevel == 1)
+        color.xyz= vec3(0, 1, 0);
+        if (u_clipmapLevel == 2)
+        color.xyz= vec3(0, 0, 1);
         // color = vec4(1.0, 0, 0, 1);
         colors = vec4[6] (color, color, color, color, color, color);
     }
 
     //  posV = pos;
 
+    if (u_hasPrevClipmapLevel > 0 && (all(greaterThanEqual(toWorld(posV), u_prevRegionMinWorld)) && all(lessThan(toWorld(posV), u_prevRegionMaxWorld))))
+    {
+        debugPrintfEXT("pos %d %d %d\n", pos.x, pos.y, pos.z);
+    }
     vec4 v0 = u_viewProj * vec4(toWorld(posV), 1.0);
     vec4 v1 = u_viewProj * vec4(toWorld(posV + ivec3(1, 0, 0)), 1.0);
     vec4 v2 = u_viewProj * vec4(toWorld(posV + ivec3(0, 1, 0)), 1.0);

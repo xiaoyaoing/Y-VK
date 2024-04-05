@@ -114,17 +114,28 @@ glm::ivec3 VoxelizationPass::computeChangeDeltaV(uint32_t clipmapLevel) {
     const auto& clipRegion = mClipRegions[clipmapLevel];
     const auto& bb         = mBBoxes->at(clipmapLevel);
 
-    glm::ivec3 delta = (bb.min() - clipRegion.getMinPosWorld()) / clipRegion.voxelSize;
+    //  glm::ivec3 delta = (bb.min() - clipRegion.getMinPosWorld()) / clipRegion.voxelSize;
+    glm::vec3 deltaW = bb.min() - clipRegion.getMinPosWorld();
+
+    // The camera needs to move at least the specified minChange amount for the portion to be revoxelized
+    float      minChange = clipRegion.voxelSize * 2;
+    glm::ivec3 delta     = glm::ivec3(glm::trunc(deltaW / minChange)) * 2;
+
+    // if (clipmapLevel == 0)
+    //     LOGI("deltaw delta {} {} {} {} {} {} {} bbmin {} {} {} clipRegionmin {} {} {}", deltaW.x, deltaW.y, deltaW.z, delta.x, delta.y, delta.z, minChange, bb.min().x, bb.min().y, bb.min().z, clipRegion.getMinPosWorld().x, clipRegion.getMinPosWorld().y, clipRegion.getMinPosWorld().z);
 
     return delta;
 }
 
 //see https://zhuanlan.zhihu.com/p/549938187
 void VoxelizationPass::fillRevoxelizationRegions(uint32_t clipLevel, const BBox& boundingBox) {
-    auto  delta      = computeChangeDeltaV(clipLevel);
+    auto        delta = computeChangeDeltaV(clipLevel);
+    const auto& bb    = mBBoxes->at(clipLevel);
+    //    LOGI("delta {} {} {} {} {} {}", delta.x, delta.y, delta.z, bb.center().x, bb.center().y, bb.center().z);
     auto& clipRegion = mClipRegions[clipLevel];
 
     clipRegion.minCoord += delta;
+    //  LOGI("delta {} {} {} {} {} {} {}", delta.x, delta.y, delta.z, clipRegion.minCoord.x, clipRegion.minCoord.y, clipRegion.minCoord.z, clipRegion.voxelSize);
 
     auto absDelta = glm::abs(delta);
     if (glm::any(glm::greaterThan(absDelta, clipRegion.extent))) {
@@ -133,28 +144,31 @@ void VoxelizationPass::fillRevoxelizationRegions(uint32_t clipLevel, const BBox&
     }
 
     // If the change is larger than the minimum change, we need to revoxelize the changed region
-    if (absDelta.x > mMinVoxelChange.x) {
+    if (absDelta.x >= mMinVoxelChange.x) {
         glm::ivec3 newExtent = glm::ivec3(absDelta.x, clipRegion.extent.y, clipRegion.extent.z);
         mRevoxelizationRegions[clipLevel].emplace_back(
             delta.x > 0 ? ((clipRegion.minCoord + glm::ivec3(clipRegion.extent)) - newExtent) : (clipRegion.minCoord),
             newExtent,
             clipRegion.voxelSize);
+        // clipRegion.minCoord += glm::ivec3(delta.x, 0, 0);
     }
 
-    if (absDelta.y > mMinVoxelChange.y) {
+    if (absDelta.y >= mMinVoxelChange.y) {
         glm::ivec3 newExtent = glm::ivec3(clipRegion.extent.x, absDelta.y, clipRegion.extent.z);
         mRevoxelizationRegions[clipLevel].emplace_back(
             delta.y > 0 ? ((clipRegion.minCoord + glm::ivec3(clipRegion.extent)) - newExtent) : (clipRegion.minCoord),
             newExtent,
             clipRegion.voxelSize);
+        // clipRegion.minCoord += glm::ivec3(0, delta.y, 0);
     }
 
-    if (absDelta.z > mMinVoxelChange.z) {
+    if (absDelta.z >= mMinVoxelChange.z) {
         glm::ivec3 newExtent = glm::ivec3(clipRegion.extent.x, clipRegion.extent.y, absDelta.z);
         mRevoxelizationRegions[clipLevel].emplace_back(
             delta.z > 0 ? ((clipRegion.minCoord + glm::ivec3(clipRegion.extent)) - newExtent) : (clipRegion.minCoord),
             newExtent,
             clipRegion.voxelSize);
+        //    clipRegion.minCoord += glm::ivec3(0, 0, delta.z);
     }
 }
 

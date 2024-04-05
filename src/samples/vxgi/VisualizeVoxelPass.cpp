@@ -16,7 +16,10 @@ struct VisualizeParams {
     float      u_voxelSize;
     int        u_hasMultipleFaces;
     int        u_numColorComponents;
-    glm::vec2  padding;
+    glm::vec3  u_prevRegionMinWorld;
+    int        u_padding;
+    glm::vec3  u_prevRegionMaxWorld;
+    int        u_padding2;
 };
 
 struct alignas(16) VisualizeFragConstant {
@@ -50,13 +53,16 @@ std::unique_ptr<Primitive> GetVoxelPrimitive(int resolution) {
 void VisualizeVoxelPass::init() {
     mPipelineLayout = std::make_unique<PipelineLayout>(
         g_context->getDevice(), std::vector<std::string>{"vxgi/visualization/voxelVisualization.vert", "vxgi/visualization/voxelVisualization.geom", "vxgi/visualization/voxelVisualization.frag"});
-    mUniformBuffer  = std::make_unique<Buffer>(g_context->getDevice(), sizeof(VisualizeParams), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+    mUniformBuffers.reserve(CLIP_MAP_LEVEL_COUNT);
+    for (uint32_t i = 0; i < CLIP_MAP_LEVEL_COUNT; i++) {
+        mUniformBuffers.emplace_back(g_context->getDevice(), sizeof(VisualizeParams), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+    }
     mVoxelPrimitive = GetVoxelPrimitive(VOXEL_RESOLUTION);
 }
 
 void VisualizeVoxelPass::render(RenderGraph& rg) {
 }
-void VisualizeVoxelPass::visualize3DClipmapGS(RenderGraph& rg, RenderGraphHandle texture, const ClipmapRegion& region, uint32_t clipmapLevel, ClipmapRegion* prevRegion, bool hasMultipleFaces, int numColorComponents) {
+void VisualizeVoxelPass::visualize3DClipmapGS(RenderGraph& rg, RenderGraphHandle texture, const ClipmapRegion& region, uint32_t clipmapLevel, ClipmapRegion* prevRegion, bool hasMultipleFaces, int numColorComponents, bool clearDepth) {
     VisualizeParams params;
     params.u_viewProj            = g_manager->fetchPtr<View>("view")->getCamera()->viewProj();
     auto t                       = params.u_viewProj * glm::vec4(g_manager->fetchPtr<View>("view")->getCamera()->getPosition(), 1);
@@ -64,8 +70,12 @@ void VisualizeVoxelPass::visualize3DClipmapGS(RenderGraph& rg, RenderGraphHandle
     params.u_regionMin           = region.minCoord;
     params.u_hasPrevClipmapLevel = prevRegion ? 1 : 0;
     if (params.u_hasPrevClipmapLevel) {
-        params.u_prevRegionMin = prevRegion->minCoord;
-        params.u_prevRegionMax = prevRegion->getMaxCoord();
+        params.u_prevRegionMin      = region.minCoord + region.extent / 4;
+        params.u_prevRegionMax      = region.getMaxCoord() - region.extent / 4;
+        params.u_prevRegionMin      = region.minCoord / 2;
+        params.u_prevRegionMax      = region.getMaxCoord() / 2;
+        params.u_prevRegionMinWorld = prevRegion->getMinPosWorld();
+        params.u_prevRegionMaxWorld = prevRegion->getMaxPosWorld();
     }
     params.u_clipmapResolution  = region.extent.x;
     params.u_clipmapLevel       = clipmapLevel;
@@ -73,7 +83,7 @@ void VisualizeVoxelPass::visualize3DClipmapGS(RenderGraph& rg, RenderGraphHandle
     params.u_hasMultipleFaces   = hasMultipleFaces ? 1 : 0;
     params.u_numColorComponents = numColorComponents;
 
-    mUniformBuffer->uploadData(&params, sizeof(VisualizeParams));
+    mUniformBuffers[clipmapLevel].uploadData(&params, sizeof(VisualizeParams));
 
     rg.addPass(
         "VisualizeVoxelPass", [&](auto& builder, auto& settings) {
@@ -82,14 +92,15 @@ void VisualizeVoxelPass::visualize3DClipmapGS(RenderGraph& rg, RenderGraphHandle
             auto depth  = rg.getBlackBoard().getHandle("depth");
         desc.textures = {texture, output,depth};
         desc.addSubpass({.inputAttachments =  {},.outputAttachments = {output,depth}});
-        builder.readTextures({texture,output}).writeTextures({output,depth});    
-        builder.declare(desc); }, [texture, this, &rg](RenderPassContext& context) {
+        builder.readTextures({texture,output}).writeTextures({output,depth});
+            if(!clearDepth) builder.readTexture(depth);
+        builder.declare(desc); }, [texture, this, &rg, clipmapLevel](RenderPassContext& context) {
             auto& view       = *g_manager->fetchPtr<View>("view");
             g_context->getPipelineState().setPipelineLayout(*mPipelineLayout);
 
             VisualizeFragConstant fragConstant;
             g_context->bindImageSampler(0, rg.getTexture(texture)->getHwTexture()->getVkImageView(),*g_manager->fetchPtr<Sampler>("radiance_map_sampler")).bindPushConstants(fragConstant)
             .bindPrimitiveGeom(context.commandBuffer,*mVoxelPrimitive)
-            .bindBuffer(0, *mUniformBuffer)
+            .bindBuffer(0, mUniformBuffers[clipmapLevel])
             .flushAndDraw(context.commandBuffer, mVoxelPrimitive->vertexCount ); });
 }

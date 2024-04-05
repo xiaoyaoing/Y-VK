@@ -61,7 +61,7 @@ vec4 convRGBA8ToVec4(uint val)
 
 void imageAtomicRGBA8Avg(ivec3 coords, vec4 value)
 {
-    value = vec4(1, 0,0,1);
+    //    value = vec4(1, 0,0,1);
     if (all(equal(value.xyz, vec3(0.0))))
     {
         return;
@@ -69,8 +69,8 @@ void imageAtomicRGBA8Avg(ivec3 coords, vec4 value)
     //atomicAdd(radiance_image, coords, value));
     value.rgb *= 255.0;
     uint newVal = convVec4ToRGBA8(value);
-//        imageStore(radiance_image, coords, ivec4(255,255,255,255));
-//        return;
+    //        imageStore(radiance_image, coords, ivec4(255,255,255,255));
+    //        return;
     //    imageStore(radiance_image, coords, vec4(1.0));
     //    return;
     uint prevStoredVal = 0;
@@ -82,17 +82,18 @@ void imageAtomicRGBA8Avg(ivec3 coords, vec4 value)
     const int maxIterations = 10;
     int i = 0;
 
-        while ((curStoredVal = imageAtomicCompSwap(radiance_image, coords, prevStoredVal, newVal)) != prevStoredVal)
-        {
-            i++;
-            prevStoredVal = curStoredVal;
-            vec4 rval = convRGBA8ToVec4(curStoredVal);
-            rval.xyz = (rval.xyz * rval.w);// Denormalize
-            vec4 curValF = rval + value;// Add new value
-            curValF.xyz /= (curValF.w);// Renormalize
-            newVal = convVec4ToRGBA8(curValF);
-        }
-//     debugPrintfEXT("save new value at %d %d %d %f %f %f %f with iterations %d ,new val now %d\n", coords.x, coords.y, coords.z, value.x, value.y, value.z, value.w, i, newVal);
+    while ((curStoredVal = imageAtomicCompSwap(radiance_image, coords, prevStoredVal, newVal)) != prevStoredVal)
+    {
+        i++;
+        prevStoredVal = curStoredVal;
+        vec4 rval = convRGBA8ToVec4(curStoredVal);
+        rval.xyz = (rval.xyz * rval.w);// Denormalize
+        vec4 curValF = rval + value;// Add new value
+        curValF.xyz /= (curValF.w);// Renormalize
+        newVal = convVec4ToRGBA8(curValF);
+    }
+    if (clipmap_level>0)
+    debugPrintfEXT("save new value at %d %d %d %f %f %f %f with iterations %d ,new val now %d\n", coords.x, coords.y, coords.z, value.x, value.y, value.z, value.w, i, newVal);
 }
 
 void voxelAtomicRGBA8Avg(ivec3 imageCoord, ivec3 faceIndex, vec4 color, vec3 weight)
@@ -214,8 +215,8 @@ void main(){
         }
         // debugPrintfEXT("light  contribution %f %f %f \n", light_contribution.x, light_contribution.y, light_contribution.z);
 
-//        imageStore(radiance_image, image_coords, vec4(light_contribution, 1));
-//        return;
+        //        imageStore(radiance_image, image_coords, vec4(light_contribution, 1));
+        //        return;
 
 
         if (all(equal(light_contribution.xyz, vec3(0.0))))

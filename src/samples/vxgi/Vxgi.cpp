@@ -37,9 +37,12 @@ void Example::drawFrame(RenderGraph& rg) {
 }
 void Example::drawVoxelVisualization(RenderGraph& renderGraph) {
     auto& regions = *g_manager->fetchPtr<std::vector<ClipmapRegion>>("clipmap_regions");
+    bool  clear   = true;
     for (uint32_t i = 0; i < CLIP_MAP_LEVEL_COUNT; i++) {
         if (m_visualizeClipRegion[i]) {
-            mVisualizeVoxelPass.visualize3DClipmapGS(renderGraph, renderGraph.getBlackBoard().getHandle("radiance"), regions[i], i, i > 0 ? &regions[i - 1] : nullptr, false, 3);
+            std::string name = mVisualizeRadiance ? "radiance" : "opacity";
+            mVisualizeVoxelPass.visualize3DClipmapGS(renderGraph, renderGraph.getBlackBoard().getHandle(name), regions[i], i, i > 0 ? &regions[i - 1] : nullptr, false, 3, clear);
+            clear = false;
         }
     }
 }
@@ -159,7 +162,7 @@ void Example::onUpdateGUI() {
     ImGui::SameLine();
     ImGui::Checkbox("C6", &m_visualizeClipRegion[5]);
     ImGui::SameLine();
-    ImGui::Checkbox("inject", &injectLight);
+    ImGui::Checkbox("Radiance", &mVisualizeRadiance);
 }
 
 void Example::updateClipRegions() {

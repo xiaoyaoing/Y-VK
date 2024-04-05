@@ -9,11 +9,11 @@
 class VisualizeVoxelPass : public PassBase {
 public:
     void render(RenderGraph& rg) override;
-    void visualize3DClipmapGS(RenderGraph& rg, RenderGraphHandle texture, const ClipmapRegion& region, uint32_t clipmapLevel, ClipmapRegion* prevRegion, bool hasMultipleFaces, int numColorComponents);
+    void visualize3DClipmapGS(RenderGraph& rg, RenderGraphHandle texture, const ClipmapRegion& region, uint32_t clipmapLevel, ClipmapRegion* prevRegion, bool hasMultipleFaces, int numColorComponents, bool clearDepth = true);
     void init() override;
 
 protected:
     std::unique_ptr<PipelineLayout> mPipelineLayout;
-    std::unique_ptr<Buffer>         mUniformBuffer;
+    std::vector<Buffer>             mUniformBuffers;
     std::unique_ptr<Primitive>      mVoxelPrimitive;
 };
