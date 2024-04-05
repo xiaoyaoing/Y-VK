@@ -229,8 +229,9 @@ PipelineState& PipelineState::setPipelineType(PIPELINE_TYPE pipelineType_) {
     return *this;
 }
 PipelineState& PipelineState::enableConservativeRasterization(VkPhysicalDevice device) {
-    static auto conservativeRasterizationProperties      = vkCommon::conservativeRasterizationProperties(device);
-    static auto conservativeRasterizationStateCreateInfo = vkCommon::rasterizationConservativeStateCreateInfo(conservativeRasterizationProperties.maxExtraPrimitiveOverestimationSize);
+    static auto conservativeRasterizationProperties = vkCommon::conservativeRasterizationProperties(device);
+    // static auto conservativeRasterizationStateCreateInfo = vkCommon::rasterizationConservativeStateCreateInfo(conservativeRasterizationProperties.maxExtraPrimitiveOverestimationSize);
+    static auto conservativeRasterizationStateCreateInfo = vkCommon::rasterizationConservativeStateCreateInfo(0.125f);
     rasterizationState.pNext                             = &conservativeRasterizationStateCreateInfo;
     return *this;
 }

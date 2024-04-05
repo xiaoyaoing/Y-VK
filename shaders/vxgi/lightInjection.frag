@@ -15,6 +15,9 @@ precision mediump float;
 #include "../shadow.glsl"
 #include "../brdf.glsl"
 #include "../lighting.glsl"
+layout(input_attachment_index = 0, binding = 0, set=2) uniform subpassInput gbuffer_diffuse_roughness;
+
+
 
 
 
@@ -27,8 +30,8 @@ layout(std430, set = 0, binding = 2) readonly buffer _GlobalPrimitiveUniform {
 #define MIN_ROUGHNESS 0.04
 
 layout(location = 0) in vec3 in_position;
-layout(location = 1) in vec3 in_normal;
-layout(location = 2) in vec2 in_uv;
+layout(location = 1) in vec2 in_uv;
+layout(location = 2) in vec3 in_normal;
 layout (location = 3) flat in uint in_primitive_index;
 
 
@@ -61,45 +64,41 @@ vec4 convRGBA8ToVec4(uint val)
 
 void imageAtomicRGBA8Avg(ivec3 coords, vec4 value)
 {
-    //    value = vec4(1, 0,0,1);
-    if (all(equal(value.xyz, vec3(0.0))))
+    //value = vec4(1, 0, 0, 1);
+    if (all(equal(value.xyz, vec3(0.001))))
     {
         return;
     }
     //atomicAdd(radiance_image, coords, value));
     value.rgb *= 255.0;
     uint newVal = convVec4ToRGBA8(value);
-    //        imageStore(radiance_image, coords, ivec4(255,255,255,255));
-    //        return;
-    //    imageStore(radiance_image, coords, vec4(1.0));
-    //    return;
+
     uint prevStoredVal = 0;
     uint curStoredVal;
 
     // debugPrintfEXT("coords and value %d %d %d %f %f %f %f \n", coords.x, coords.y, coords.z, value.x, value.y, value.z, value.w);
 
 
-    const int maxIterations = 10;
+    const int maxIterations = 100;
     int i = 0;
-
-    while ((curStoredVal = imageAtomicCompSwap(radiance_image, coords, prevStoredVal, newVal)) != prevStoredVal)
+    vec4 curValF = vec4(0.0);
+    while ((curStoredVal = imageAtomicCompSwap(radiance_image, coords, prevStoredVal, newVal)) != prevStoredVal && i < maxIterations)
     {
         i++;
         prevStoredVal = curStoredVal;
         vec4 rval = convRGBA8ToVec4(curStoredVal);
         rval.xyz = (rval.xyz * rval.w);// Denormalize
-        vec4 curValF = rval + value;// Add new value
+        curValF = rval + value;// Add new value
         curValF.xyz /= (curValF.w);// Renormalize
         newVal = convVec4ToRGBA8(curValF);
     }
-    if (clipmap_level>0)
-    debugPrintfEXT("save new value at %d %d %d %f %f %f %f with iterations %d ,new val now %d\n", coords.x, coords.y, coords.z, value.x, value.y, value.z, value.w, i, newVal);
+    //debugPrintfEXT("curValF %f %f %f %f val %f %f %f %f iterations %d\n", curValF.x, curValF.y, curValF.z, curValF.w, value.x, value.y, value.z, value.w,i);
 }
 
 void voxelAtomicRGBA8Avg(ivec3 imageCoord, ivec3 faceIndex, vec4 color, vec3 weight)
 {
     vec4 c = vec4(color.xyz * weight.x, 1.0);
-    //  debugPrintfEXT("color %f %f %f %f \n", c.x, c.y, c.z, c.w);
+    // debugPrintfEXT("color %f %f %f %f  weight %f %f %f \n", color.x, color.y, color.z, color.w, weight.x, weight.y, weight.z);
     imageAtomicRGBA8Avg(imageCoord + ivec3((clip_map_resoultion) * faceIndex.x, 0, 0), vec4(color.xyz * weight.x, 1.0));
     imageAtomicRGBA8Avg(imageCoord + ivec3((clip_map_resoultion) * faceIndex.y, 0, 0), vec4(color.xyz * weight.y, 1.0));
     imageAtomicRGBA8Avg(imageCoord + ivec3((clip_map_resoultion) * faceIndex.z, 0, 0), vec4(color.xyz * weight.z, 1.0));
@@ -139,16 +138,17 @@ void main(){
     uint material_index = primitive_infos[in_primitive_index].material_index;
     GltfMaterial material = scene_materials[material_index];
 
-    if (any(greaterThan(material.emissiveFactor, vec3(0.0)))){
-        vec4 emission = vec4(material.emissiveFactor, 1.0);
-        if (material.emissiveTexture > -1)
-        {
-            emission.rgb = texture(scene_textures[material.emissiveTexture], in_uv).rgb;
-        }
-        emission.rgb = clamp(emission.rgb, 0.0, 1.0);
-        voxelAtomicRGBA8Avg6Faces(image_coords, emission);
-    }
-    else {
+    //    if (any(greaterThan(material.emissiveFactor, vec3(0.0)))){
+    //        vec4 emission = vec4(material.emissiveFactor, 1.0);
+    //        if (material.emissiveTexture > -1)
+    //        {
+    //            emission.rgb = texture(scene_textures[material.emissiveTexture], in_uv).rgb;
+    //        }
+    //        emission.rgb = clamp(emission.rgb, 0.0, 1.0);
+    //        // voxelAtomicRGBA8Avg6Faces(image_coords, emission);
+    //    }
+    //    else
+    {
 
 
         vec3 diffuse_color            = vec3(0.0);
@@ -180,8 +180,14 @@ void main(){
         {
             base_color *= texture(scene_textures[material.pbrBaseColorTexture], in_uv);
         }
+
         // diffuse_color = base_color.rgb * (vec3(1.0) - f0) * (1.0 - metallic);
         diffuse_color = base_color.rgb;
+        diffuse_color = texture(scene_textures[material.pbrBaseColorTexture], in_uv).xyz;
+        //  diffuse_color = vec3(in_uv, 0);
+        //        diffuse_color = vec3(float(in_primitive_index) / 25, 0, 0);
+        //   diffuse_color = subpassLoad(gbuffer_diffuse_roughness).rgb;
+        //        diffuse_color = vec3(1,0,0,0);
 
         vec3 normal = normalize(in_normal);
 
@@ -210,29 +216,26 @@ void main(){
             pbr_info.LdotH = clamp(dot(light_dir, half_vector), 0.0, 1.0);
             pbr_info.VdotH = clamp(dot(view_dir, half_vector), 0.0, 1.0);
 
-            //  light_contribution += microfacetBRDF(pbr_info) * calcuate_light_intensity(lights_info.lights[i], world_pos) * calcute_shadow(lights_info.lights[i], world_pos);
-            light_contribution +=  pbr_info.diffuseColor;
+            light_contribution +=
+            //  apply_light(lights_info.lights[i], world_pos, normal) * 
+            pbr_info.diffuseColor;
         }
-        // debugPrintfEXT("light  contribution %f %f %f \n", light_contribution.x, light_contribution.y, light_contribution.z);
-
-        //        imageStore(radiance_image, image_coords, vec4(light_contribution, 1));
-        //        return;
-
-
+        //   light_contribution = vec3(1, 0, 0);
+        //   light_contribution  = world_pos/20.f;
+        //    light_contribution = vec3(in_uv, 0);
         if (all(equal(light_contribution.xyz, vec3(0.0))))
         {
             discard;
         }
-        //            debugPrintfEXT("light  contribution %f %f %f \n", light_contribution.x, light_contribution.y, light_contribution.z);
-        //   debugPrintfEXT("normal %f %f %f \n", normal.x, normal.y, normal.z);
-
-
-        vec3 radiance = light_contribution;
-        radiance = clamp(radiance, 0.0, 1.0);
+        //        light_contribution = abs(normal);
+        //  discard;
+        //   debugPrintfEXT("light_contribution %f %f %f \n", light_contribution.x, light_contribution.y, light_contribution.z);
         ivec3 faceIndex = calculateVoxelFaceIndex(-normal);
+        //        faceIndex  = ivec3(0, 3, 5);
         //        discard;
-
-        voxelAtomicRGBA8Avg(image_coords, faceIndex, vec4(radiance, 1.0), abs(normal));
+        // voxelAtomicRGBA8Avg6Faces(image_coords, vec4(light_contribution, 1.0));
+        //        voxelAtomicRGBA8Avg(image_coords, faceIndex, vec4(light_contribution, 1.0), abs(normal));
+        voxelAtomicRGBA8Avg(image_coords, faceIndex, vec4(light_contribution, 1.0), vec3(1));
     }
 }
 

@@ -30,10 +30,7 @@ void Example::drawFrame(RenderGraph& rg) {
     drawVoxelVisualization(rg);
     //  }
 
-    gui->addGuiPass(rg);
-
     rg.setCutUnUsedResources(false);
-    rg.execute(commandBuffer);
 }
 void Example::drawVoxelVisualization(RenderGraph& renderGraph) {
     auto& regions = *g_manager->fetchPtr<std::vector<ClipmapRegion>>("clipmap_regions");
@@ -41,7 +38,7 @@ void Example::drawVoxelVisualization(RenderGraph& renderGraph) {
     for (uint32_t i = 0; i < CLIP_MAP_LEVEL_COUNT; i++) {
         if (m_visualizeClipRegion[i]) {
             std::string name = mVisualizeRadiance ? "radiance" : "opacity";
-            mVisualizeVoxelPass.visualize3DClipmapGS(renderGraph, renderGraph.getBlackBoard().getHandle(name), regions[i], i, i > 0 ? &regions[i - 1] : nullptr, false, 3, clear);
+            mVisualizeVoxelPass.visualize3DClipmapGS(renderGraph, renderGraph.getBlackBoard().getHandle(name), regions[i], i, i > 0 ? &regions[i - 1] : nullptr, true, 3, clear);
             clear = false;
         }
     }

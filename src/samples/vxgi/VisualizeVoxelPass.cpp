@@ -96,7 +96,7 @@ void VisualizeVoxelPass::visualize3DClipmapGS(RenderGraph& rg, RenderGraphHandle
             if(!clearDepth) builder.readTexture(depth);
         builder.declare(desc); }, [texture, this, &rg, clipmapLevel](RenderPassContext& context) {
             auto& view       = *g_manager->fetchPtr<View>("view");
-            g_context->getPipelineState().setPipelineLayout(*mPipelineLayout);
+            g_context->getPipelineState().setPipelineLayout(*mPipelineLayout).setRasterizationState({.cullMode =  VK_CULL_MODE_NONE});
 
             VisualizeFragConstant fragConstant;
             g_context->bindImageSampler(0, rg.getTexture(texture)->getHwTexture()->getVkImageView(),*g_manager->fetchPtr<Sampler>("radiance_map_sampler")).bindPushConstants(fragConstant)

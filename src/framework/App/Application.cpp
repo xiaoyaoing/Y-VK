@@ -95,6 +95,13 @@ void Application::updateGUI() {
     ImGui::NextColumn();
     ImGui::InputFloat("Camera Move Speed", &camera->mMoveSpeed);
     onUpdateGUI();
+
+    auto itemIter    = std::ranges::find(mCurrentTextures.begin(), mCurrentTextures.end(), mPresentTexture);
+    int  itemCurrent = itemIter - mCurrentTextures.begin();
+
+    ImGui::Combo("RenderGraphTextures", &itemCurrent, mCurrentTextures.data(), mCurrentTextures.size());
+    mPresentTexture = mCurrentTextures[itemCurrent];
+
     ImGui::End();
     ImGui::PopStyleVar();
 
@@ -134,6 +141,13 @@ void Application::update() {
     graph.getBlackBoard().put(SWAPCHAIN_IMAGE_NAME, handle);
 
     drawFrame(graph);
+
+    mCurrentTextures = graph.getResourceNames(RENDER_GRAPH_RESOURCE_TYPE::ETexture);
+
+    graph.addImageCopyPass(graph.getBlackBoard().getHandle(mPresentTexture), graph.getBlackBoard().getHandle(SWAPCHAIN_IMAGE_NAME));
+    gui->addGuiPass(graph);
+
+    graph.execute(renderContext->getGraphicCommandBuffer());
 
     renderContext->submitAndPresent(renderContext->getGraphicCommandBuffer(), fence);
 

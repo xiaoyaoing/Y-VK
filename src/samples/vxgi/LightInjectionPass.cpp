@@ -23,7 +23,7 @@ void LightInjectionPass::render(RenderGraph& rg) {
         auto clipRegions = g_manager->fetchPtr<std::vector<ClipmapRegion>>("clipmap_regions");
         for (uint32_t i = 0; i < CLIP_MAP_LEVEL_COUNT; i++) {
             // auto buffer = g_manager->fetchPtr<Buffer>("voxel_param_buffer");
-            if (frameIndex % kUpdateRegionLevelOffsets[i] == 0) {
+            if (frameIndex % kUpdateRegionLevelOffsets[i] == 0 && injectLight[i]) {
                 ClipMapCleaner::clearClipMapRegions(rg, clipRegions->operator[](i), radiance, i);
             }
         }
@@ -43,7 +43,7 @@ void LightInjectionPass::render(RenderGraph& rg) {
                 auto& view       = *g_manager->fetchPtr<View>("view");
                 g_context->getPipelineState().setPipelineLayout(*mLightInjectionPipelineLayout);//.enableConservativeRasterization(g_context->getDevice().getPhysicalDevice());
                 view.bindViewBuffer().bindViewShading().bindViewGeom(context.commandBuffer);
-                g_context->bindImage(2, rg.getBlackBoard().getHwImage("radiance").getVkImageView(VK_IMAGE_VIEW_TYPE_3D,VK_FORMAT_R32_UINT));
+                g_context->bindImage(2, rg.getBlackBoard().getHwImage("radiance").getVkImageView(VK_IMAGE_VIEW_TYPE_3D,VK_FORMAT_R32_UINT)).bindImage(0,rg.getBlackBoard().getHwImage("diffuse").getVkImageView());
                 for(uint32_t i = 0 ;i<CLIP_MAP_LEVEL_COUNT;i++) {
                     // auto buffer = g_manager->fetchPtr<Buffer>("voxel_param_buffer");
                     if(frameIndex % kUpdateRegionLevelOffsets[i] == 0 &&  injectLight[i]) {

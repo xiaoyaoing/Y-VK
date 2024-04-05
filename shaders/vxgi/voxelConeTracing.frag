@@ -202,7 +202,6 @@ void main(){
         indirect_contribution += traceCone(start_pos, DIFFUSE_CONE_DIRECTIONS_16[i], DIFFUSE_CONE_APERTURE_16,
         MAX_TRACE_DISTANCE, min_level, 1).rgb * cos_theta;// / 3.141592;
 
-        out_color = vec4(indirect_contribution, 1);
         // out_color = vec4(world_pos,1);
         //        return;
         //validConeCount += cos_theta;
@@ -277,9 +276,7 @@ void main(){
         //  direct_contribution = vec3(1);
     }
     out_color = vec4(direct_contribution * uDirectLighting + indirect_contribution * uIndirectLighting, 1);
-    out_color = vec4(direct_contribution, 1);
-    //    out_color = vec4(indirect_contribution, 1);
-    // out_color += vec4(diffuse_color,1);
+    //    out_color = vec4(direct_contribution, 1);
 }
 
 

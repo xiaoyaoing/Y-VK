@@ -16,5 +16,5 @@ protected:
     ClipmapUpdatePolicy*                 mClipmapUpdatePolicy{nullptr};
     uint32_t                             frameIndex{0};
     std::vector<std::unique_ptr<Buffer>> mVoxelParamBuffers{};
-    bool                                 injectLight[6] = {true, false, false, false, false, false};
+    bool                                 injectLight[6] = {true, false, false, false, true, false};
 };

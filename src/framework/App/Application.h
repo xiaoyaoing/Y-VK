@@ -128,6 +128,9 @@ protected:
 
     bool     enableGui{true};
     uint32_t frameCounter{0};
+
+    std::string              mPresentTexture = SWAPCHAIN_IMAGE_NAME;
+    std::vector<const char*> mCurrentTextures{SWAPCHAIN_IMAGE_NAME};
     //Camera related  variable end
 
     VkFence fence{VK_NULL_HANDLE};
