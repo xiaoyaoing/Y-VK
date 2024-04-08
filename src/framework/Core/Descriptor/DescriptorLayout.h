@@ -43,5 +43,6 @@ private:
 
     uint32_t setIdx{0};
 
-    Device& _deivce;
+    Device&                     _deivce;
+    std::vector<ShaderResource> resources;
 };

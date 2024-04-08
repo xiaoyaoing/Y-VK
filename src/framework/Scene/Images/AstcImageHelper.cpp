@@ -4,7 +4,7 @@
 
 #if defined(_WIN32) || defined(_WIN64)
 // Windows.h defines IGNORE, so we must #undef it to avoid clashes with astc header
-#	undef IGNORE
+#undef IGNORE
 #endif
 
 #include <astc_codec_internals.h>
@@ -12,7 +12,6 @@
 //copy from vulkan-samples
 //when gpu not support astc,decode astc image on cpu
 //abount astc,  see https://chromium.googlesource.com/external/github.com/ARM-software/astc-encoder/+/HEAD/Docs/FormatOverview.md
-
 
 BlockDim toBlockDim(const VkFormat format) {
     switch (format) {
@@ -68,15 +67,14 @@ struct AstcHeader {
     uint8_t blockdim_x;
     uint8_t blockdim_y;
     uint8_t blockdim_z;
-    uint8_t xsize[3]; // x-size = xsize[0] + xsize[1] + xsize[2]
-    uint8_t ysize[3]; // x-size, y-size and z-size are given in texels;
-    uint8_t zsize[3]; // block count is inferred
+    uint8_t xsize[3];// x-size = xsize[0] + xsize[1] + xsize[2]
+    uint8_t ysize[3];// x-size, y-size and z-size are given in texels;
+    uint8_t zsize[3];// block count is inferred
 };
 
-
-void AstcImageHelper::decodeAstcImage(SgImage &image) {
-    static bool initialized{false};
-    static std::mutex initialization;
+void AstcImageHelper::decodeAstcImage(SgImage& image) {
+    static bool                  initialized{false};
+    static std::mutex            initialization;
     std::unique_lock<std::mutex> lock{initialization};
     if (!initialized) {
         // Init stuff
@@ -84,25 +82,22 @@ void AstcImageHelper::decodeAstcImage(SgImage &image) {
         build_quantization_mode_table();
         initialized = true;
     }
-    auto mip_it = std::find_if(image.getMipMaps().begin(), image.getMipMaps().end(),
-                               [](auto &mip) { return mip.level == 0; });
+    auto mip_it = std::find_if(image.getMipMaps().begin(), image.getMipMaps().end(), [](auto& mip) { return mip.level == 0; });
     assert(mip_it != image.getMipMaps().end() && "Mip #0 not found");
     image.mipMaps.resize(1);
     // When decoding ASTC on CPU (as it is the case in here), we don't decode all mips in the mip chain.
     // Instead, we just decode mip #0 and re-generate the other LODs later (via image->generate_mipmaps()).
-    const auto blockdim = toBlockDim(image.getFormat());
-    const uint8_t *data_ptr = image.getData().data() + mip_it->offset;
-
+    const auto     blockdim = toBlockDim(image.getFormat());
+    const uint8_t* data_ptr = image.getData().data() + mip_it->offset;
 
     decode(image, blockdim, image.mExtent3D, data_ptr);
 }
 
-
-void AstcImageHelper::decode(SgImage &image, BlockDim blockdim, VkExtent3D extent, const uint8_t *data) {
+void AstcImageHelper::decode(SgImage& image, BlockDim blockdim, VkExtent3D extent, const uint8_t* data) {
     // Actual decoding
     astc_decode_mode decode_mode = DECODE_LDR_SRGB;
-    uint32_t bitness = 8;
-    swizzlepattern swz_decode = {0, 1, 2, 3};
+    uint32_t         bitness     = 8;
+    swizzlepattern   swz_decode  = {0, 1, 2, 3};
 
     int xdim = blockdim.x;
     int ydim = blockdim.y;
@@ -133,10 +128,10 @@ void AstcImageHelper::decode(SgImage &image, BlockDim blockdim, VkExtent3D exten
     for (int z = 0; z < zblocks; z++) {
         for (int y = 0; y < yblocks; y++) {
             for (int x = 0; x < xblocks; x++) {
-                int offset = (((z * yblocks + y) * xblocks) + x) * 16;
-                const uint8_t *bp = data + offset;
+                int            offset = (((z * yblocks + y) * xblocks) + x) * 16;
+                const uint8_t* bp     = data + offset;
 
-                physical_compressed_block pcb = *reinterpret_cast<const physical_compressed_block *>(bp);
+                physical_compressed_block pcb = *reinterpret_cast<const physical_compressed_block*>(bp);
                 symbolic_compressed_block scb;
 
                 physical_to_symbolic(xdim, ydim, zdim, pcb, &scb);
@@ -146,16 +141,12 @@ void AstcImageHelper::decode(SgImage &image, BlockDim blockdim, VkExtent3D exten
         }
     }
 
-
-    image.data = {
-            astc_image->imagedata8[0][0],
-            astc_image->imagedata8[0][0] + astc_image->xsize * astc_image->ysize * astc_image->zsize * 4
-    };
-    image.format = (VK_FORMAT_R8G8B8A8_SRGB);
+    image.mData = {
+        astc_image->imagedata8[0][0],
+        astc_image->imagedata8[0][0] + astc_image->xsize * astc_image->ysize * astc_image->zsize * 4};
+    image.format    = (VK_FORMAT_R8G8B8A8_SRGB);
     image.mExtent3D = {
-            static_cast<uint32_t>(astc_image->xsize), static_cast<uint32_t>(astc_image->ysize),
-            static_cast<uint32_t>(astc_image->zsize)
-    };
+        static_cast<uint32_t>(astc_image->xsize), static_cast<uint32_t>(astc_image->ysize), static_cast<uint32_t>(astc_image->zsize)};
 
     destroy_image(astc_image);
 }

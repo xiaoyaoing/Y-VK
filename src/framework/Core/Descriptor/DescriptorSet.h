@@ -13,34 +13,34 @@ class Buffer;
 class DescriptorSet {
 
 public:
-    VkDescriptorSet &getHandle() {
+    VkDescriptorSet getHandle() const {
         return _descriptorSet;
     }
 
-    DescriptorSet(Device &device,
-                  const DescriptorLayout &descriptorSetLayout,
-                  DescriptorPool &descriptorPool,
-                  const BindingMap<VkDescriptorBufferInfo> &bufferInfos = {},
-                  const BindingMap<VkDescriptorImageInfo> &imageInfos = {},
-                  const BindingMap<VkWriteDescriptorSetAccelerationStructureKHR> & accelerations = {}
-                   );
+    DescriptorSet(Device&                                                         device,
+                  const DescriptorLayout&                                         descriptorSetLayout,
+                  DescriptorPool&                                                 descriptorPool,
+                  const BindingMap<VkDescriptorBufferInfo>&                       bufferInfos_   = {},
+                  const BindingMap<VkDescriptorImageInfo>&                        imageInfos_    = {},
+                  const BindingMap<VkWriteDescriptorSetAccelerationStructureKHR>& accelerations_ = {});
 
-    void updateBuffer(const std::vector<Buffer *> &buffers,
-                      const uint32_t dstBinding,
-                      const uint32_t descCount,
-                      VkDescriptorType descType);
+    DescriptorSet(const DescriptorSet&) = delete;
+    DescriptorSet(DescriptorSet&&);
 
-    void
-    updateImage(const std::vector<VkDescriptorImageInfo> &imageInfos, const uint32_t dstBinding,
-                VkDescriptorType descType);
-
+    bool operator==(const DescriptorSet&) const;
+    void update(const std::vector<uint32_t>& bindings_to_update);
 
     ~DescriptorSet();
 
 private:
-    VkDescriptorSet _descriptorSet;
-    Device &_device;
+    VkDescriptorSet                    _descriptorSet;
+    Device&                            _device;
+    std::vector<VkWriteDescriptorSet>  writeSets;
+    std::unordered_map<size_t, size_t> mUpdatedBindings;
 
-    BindingMap<VkDescriptorBufferInfo> bufferInfos;
-    BindingMap<VkDescriptorImageInfo> imageInfos;
+    BindingMap<VkDescriptorBufferInfo>                       bufferInfos;
+    BindingMap<VkDescriptorImageInfo>                        imageInfos;
+    BindingMap<VkWriteDescriptorSetAccelerationStructureKHR> accelerations;
+    const DescriptorLayout*                                  descriptorSetLayout;
+    const DescriptorPool*                                    descriptorPool;
 };

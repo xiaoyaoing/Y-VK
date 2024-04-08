@@ -15,9 +15,10 @@ struct PBRInfo
     float VdotH;// cos angle between view direction and half vector
 
     vec3 F0;// Original reflectance
+    vec3 F90;// Reflectance at a grazing angle
     float alphaRoughness;// roughness mapped to a more linear change in the roughness (proposed by [2])
-    vec3 diffuseColor;// color contribution from diffuse lighting
-    vec3 specularColor;// color contribution from specular lighting
+    vec3 diffuseColor;// already considered by metalness 
+//  vec3 specularColor;// color contribution from specular lighting
 };
 
 // Basic Lambertian diffuse
@@ -30,7 +31,7 @@ vec3 diffuse(PBRInfo pbrInputs)
 
 vec3 FresnelSchlick(PBRInfo pbrInputs)
 {
-    return pbrInputs.F0 + (vec3(1.0) - pbrInputs.F0) * pow(clamp(1.0 - pbrInputs.NdotV, 0.0, 1.0), 5.0);
+    return pbrInputs.F0 + (pbrInputs.F90 - pbrInputs.F0) * pow(clamp(1.0 - pbrInputs.NdotV, 0.0, 1.0), 5.0);
 }
 
 // The following equation models the Fresnel reflectance term of the spec equation (aka F())
@@ -71,9 +72,10 @@ vec3 microfacetBRDF(PBRInfo pbrInputs)
 
     //! Calculate the analytical lighting distribution
     vec3 diffuseContrib = (1.0 - F) * diffuse(pbrInputs);
-    vec3 specContrib = F * G * D / (4.0 * pbrInputs.NdotL * pbrInputs.NdotV);
+    vec3 specContrib = F * G * D / (4.0 *  pbrInputs.NdotV);
     //! Obtain final intensity as reflectance (BRDF) scaled by the energy of the light (cos law)
-    return pbrInputs.NdotL  * (diffuseContrib + specContrib);
+    return diffuseContrib * pbrInputs.NdotL + specContrib;
+    return pbrInputs.NdotL  * (specContrib);
 }
 
 #endif

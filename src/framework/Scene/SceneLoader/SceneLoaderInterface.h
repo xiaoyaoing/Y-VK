@@ -6,5 +6,5 @@
 
 class SceneLoaderInterface {
 public:
-    static std::unique_ptr<Scene> LoadSceneFromGLTFFile(Device& device, const std::string& path, const SceneLoadingConfig& config = {});
+    static std::unique_ptr<Scene> LoadSceneFromFile(Device& device, const std::string& path, const SceneLoadingConfig & config = {});
 };

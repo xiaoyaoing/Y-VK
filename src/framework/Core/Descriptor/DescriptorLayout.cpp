@@ -92,7 +92,7 @@ DescriptorLayout::DescriptorLayout(Device& device, std::vector<Shader>& shaders)
     descSetLayoutInfo.flags                           = 0;
     VK_CHECK_RESULT(vkCreateDescriptorSetLayout(_deivce.getHandle(), &descSetLayoutInfo, nullptr, &_layout))
 }
-DescriptorLayout::DescriptorLayout(Device& device, uint32_t setIdx, const std::vector<ShaderResource>& resources) : _deivce(device), setIdx(setIdx) {
+DescriptorLayout::DescriptorLayout(Device& device, uint32_t setIdx, const std::vector<ShaderResource>& resources) : _deivce(device), setIdx(setIdx), resources(resources) {
     VkDescriptorSetLayoutCreateInfo       createInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
     std::vector<VkDescriptorBindingFlags> bindingFlags;
 

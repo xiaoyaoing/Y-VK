@@ -2,9 +2,10 @@
 
 #include "Core/Vulkan.h"
 #include "Core/Buffer.h"
-#include <vec2.hpp>
+#include <glm/vec2.hpp>
 
 #include "InputEvent.h"
+#include "Core/BufferPool.h"
 #include "Core/PipelineState.h"
 #include "Core/Texture.h"
 #include "Core/Descriptor/DescriptorSet.h"
@@ -43,7 +44,8 @@ public:
 protected:
     VkPipeline pipeline{};
 
-    std::unique_ptr<Buffer> vertexBuffer{nullptr}, indexBuffer{nullptr};
+    //Gui buffer may be updated every frame so we use a frame buffer pool to handle this
+    BufferAllocation mvertexBuffer{}, mIndexBuffer{};
 
     uint32 vertexCount, indexCount;
 

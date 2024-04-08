@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Integrator.h"
-#include "shaders/Raytracing/PT/path_commons.h"
+#include "Raytracing/PT/path_commons.h"
 
 class PathIntegrator : public  Integrator
 {

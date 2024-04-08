@@ -49,13 +49,15 @@ struct ShaderResourceQualifiers {
 
 class ShaderSource {
 public:
-    ShaderSource(const std::string & path);
+    ShaderSource(const std::string& path);
+
 protected:
     std::vector<std::uint32_t>& spirvCode;
 };
 
 class ShaderVarint {
     void addDefine();
+
 protected:
     std::string define;
 };
@@ -67,11 +69,9 @@ public:
         ORIGIN_SHADER
     };
 
-    Shader(Device& device, std::string path);
+    Shader(Device& device, std::string path, VkShaderStageFlagBits stage = VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM);
 
     Shader(const ShaderSource& source, const ShaderVarint& varint);
-
-    //  Shader(Shader & other) = delete;
 
     ~Shader();
 
@@ -85,9 +85,9 @@ public:
 
     VkShaderStageFlagBits getStage() const;
 
-    Shader operator=(const Shader& other) {
-        return *this;
-    }
+    Shader operator=(const Shader& other);
+
+    // Shader(const Shader& other);
 
 private:
     VkShaderModule shader{VK_NULL_HANDLE};

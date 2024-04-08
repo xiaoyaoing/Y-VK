@@ -1,4 +1,5 @@
 #include "SpirvShaderReflection.h"
+#include "spirv_reflect.hpp"
 
 //first just handle pipeline layout 相关
 template<spv::Decoration T>
@@ -134,6 +135,7 @@ inline void readShaderResourceUniformBuffer(const spirv_cross::CompilerReflectio
         readResourceSize(compiler, spirvResource, resource);
         readResourceDecoration<spv::DecorationLocation>(compiler, spirvResource, resource);
         readResourceDecoration<spv::DecorationBinding>(compiler, spirvResource, resource);
+        readResourceDecoration<spv::DecorationDescriptorSet>(compiler, spirvResource, resource);
         resources.emplace_back(std::move(resource));
     }
 }

@@ -7,7 +7,7 @@
 
 #define GLM_ENABLE_EXPERIMENTAL
 
-#include <gtx/hash.hpp>
+#include <glm/gtx/hash.hpp>
 
 #include <mutex>
 
@@ -44,99 +44,6 @@ struct ResourceCacheState {
     std::unordered_map<std::size_t, Buffer> buffers;
 };
 
-
-template<typename T>
-inline void hash_param_log(size_t& seed, const T& value) {
-    // hash_combine(seed, value);
-}
-
-template<>
-inline void hash_param_log<std::string>(size_t& seed, const std::string& value) {
-     std::size_t hash = std::hash<std::string>{}(value);
-   // LOGI("Hashing string {0} with value {1}", value, hash);
-}
-
-template<>
-inline void hash_param_log<VkExtent3D>(size_t& seed, const VkExtent3D & value) {
-  std::size_t hash = std::hash<VkExtent3D>{}(value);
-    // std::size_t hash;
-    hash_combine(hash, value);
-    LOGI("Hashing VkExtent3D with value {0}",hash);
-}
-
-template<>
-inline void hash_param_log<VkFormat>(size_t& seed, const VkFormat& value) {
-    std::size_t hash = std::hash<VkFormat>{}(value);
-    //LOGI("Hashing VkFormat with value {0}", hash);
-}
-
-
-template<typename T, typename... Args>
-inline void hash_param_log(size_t& seed, const T& first_arg, const Args&... args) {
-    hash_param_log(seed, first_arg);
-    //
-   hash_param_log(seed, args...);
-}
-
-// template<typename T>
-// inline std::string get_str(const T& value) {
-//     return "";
-// }
-//
-// template<>
-// inline std::string get_str<std::string>(const std::string& value) {
-//     return value;
-// }
-//
-// template<>
-// inline std::string get_str<VkExtent3D>(const VkExtent3D& value) {
-//     return std::to_string(value.width) + std::to_string(value.height) + std::to_string(value.depth);
-// }
-//
-// template<>
-// inline std::string get_str<VkFormat>(const VkFormat& value) {
-//     return std::to_string(value);
-// }
-//
-// template<>
-// inline std::string get_str<VkImageViewType>(const VkImageViewType& value) {
-//     return std::to_string(value);
-// }
-//
-// template<>
-// inline std::string get_str<VkImageUsageFlags>(const VkImageUsageFlags& value) {
-//     return std::to_string(value);
-// }
-//
-// template<>
-// inline std::string get_str<VmaMemoryUsage>(const VmaMemoryUsage& value) {
-//     return std::to_string(value);
-// }
-//
-// template<>
-// inline std::string get_str<VkSampleCountFlagBits>(const VkSampleCountFlagBits& value) {
-//     return std::to_string(value);
-// }
-//
-template<typename  T>
-inline std::string get_str(size_t & seed,const T& value) {
-    hash_combine(seed, value);
-    return std::to_string(seed);
-}
-
-template<typename T, typename... Args>
-inline std::string get_str(size_t & seed,const T& first_arg, const Args&... args) {
-    return get_str(seed, first_arg) + " "+get_str(seed,args...);
-}
-
-// template<typename T, typename... Args>
-// inline void hash_param_log(size_t& seed, const T& first_arg, const Args&... args) {
-//     hash_param_log(seed, first_arg);
-//     //
-//     hash_param_log(seed, args...);
-// }
-
-
 template<class T, class... A>
 T& requestResource(Device& device, std::unordered_map<std::size_t, T>& resources, A&... args) {
     std::size_t hash{0U};
@@ -146,38 +53,19 @@ T& requestResource(Device& device, std::unordered_map<std::size_t, T>& resources
         return res->second;
     }
 
-    if(typeid(T) == typeid(SgImage)){
-        hash_param_log(hash,args...);
-    }
+    LOGI("Creating resource of type {0}", typeid(T).name());
 
-    hash_param_log(hash,args...);
-
-    size_t hash_new = 0;
-  std::string str = get_str(hash_new,args...);
-
-    // size_t hash_new = 0;
-    // hash_param(hash_new, args...);
-  LOGI("Creating resource of type {0} with hash {1} {2} {3}", typeid(T).name(), hash, str, hash_new);
-
-    if(resources.contains(hash)) {
-        exit(-1);
-    }
     T    resource(device, args...);
     auto res_it = resources.emplace(hash, std::move(resource));
 
+    // hash = 0;
+    // hash_param(hash, args...);
 
     res = res_it.first;
     return res->second;
 
     // return resources[hash]->second;
 }
-
-
-
-
-
-
-
 
 template<class T, class... A>
 T& requestResource(Device& device, const std::string& name, std::unordered_map<std::size_t, T>& resources, A&... args) {
@@ -279,6 +167,10 @@ public:
 
     void clearSgImages() {
         state.sgImages.clear();
+    }
+
+    ResourceCacheState& getState() {
+        return state;
     }
 
 private:

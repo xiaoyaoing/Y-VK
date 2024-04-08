@@ -5,11 +5,11 @@
 #include "Core/Buffer.h"
 
 struct BufferAllocation {
-    Buffer *buffer;
+    Buffer *buffer{nullptr};
 
-    VkDeviceSize offset;
+    VkDeviceSize offset{0};
 
-    VkDeviceSize size;
+    VkDeviceSize size{0};
 };
 
 struct BufferBlock {

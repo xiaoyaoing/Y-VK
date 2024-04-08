@@ -3,20 +3,11 @@
 #include "ClipmapRegion.h"
 #include "VxgiCommon.h"
 #include "Core/BoundingBox.h"
+#include "RenderPasses/RenderPassBase.h"
 #include "Scene/Scene.h"
-#include "shaders/vxgi/vxgi_common.h"
+#include <vxgi/vxgi_common.h>
 
-class ClipMapCleaner {
-public:
-    void clearClipMapRegions(RenderGraph& rg, const ClipmapRegion& clipRegion, RenderGraphHandle imageToClear, uint32_t clipLevel);
-    ClipMapCleaner();
-
-protected:
-    std::unique_ptr<PipelineLayout> mPipelineLayout{nullptr};
-    struct ImageCleaningDesc;
-};
-
-class VoxelizationPass : public VxgiPassBase {
+class VoxelizationPass : public PassBase {
 
 public:
     void       initClipRegions();
@@ -25,11 +16,15 @@ public:
     glm::ivec3 computeChangeDeltaV(uint32_t clipmapLevel);
     void       fillRevoxelizationRegions(uint32_t clipLevel, const BBox& boundingBox);
     void       updateVoxelization();
+    void       updateGui() override;
 
 private:
     std::vector<BBox>*                      mBBoxes{};
     std::vector<ClipmapRegion>              mClipRegions{};
     std::vector<std::vector<ClipmapRegion>> mRevoxelizationRegions{};
+
+    uint32_t                             mCurBufferIndex{0};
+    std::vector<std::unique_ptr<Buffer>> mVoxelParamBuffers{};
 
     // std::vector<std::unique_ptr<Buffer>> mVoxelParamBuffer{nullptr};
     VoxelizationParamater mVoxelParam{};
@@ -39,7 +34,9 @@ private:
     std::unique_ptr<PipelineLayout> mVoxelizationPipelineLayout{nullptr};
 
     bool  mFullRevoxelization{false};
+    bool  mInitVoxelization{false};
+    uint  mFrameIndex{0};
     ivec3 mMinVoxelChange{2, 2, 2};
 
-    std::unique_ptr<ClipMapCleaner> mClipMapCleaner{nullptr};
+    // std::unique_ptr<ClipMapCleaner> mClipMapCleaner{nullptr};
 };

@@ -95,60 +95,6 @@ public:
     using ComputeSetUp    = std::function<void(Builder& builder, ComputePassSettings&)>;
     using RayTracingSetup = std::function<void(Builder& builder, RaytracingPassSettings&)>;
 
-    // template<typename PassSettings>
-    // using Setup = std::function<void(Builder & builder,PassSettings &)>;
-
-    // void addGraphicPass(const char * name,const GraphicSetup &  setup,GraphicsExecute && execute)
-    // {
-    //     addPass<GraphicPassSettings>(name,setup,std::forward<GraphicsExecute>(execute));
-    // }
-    //
-    // void addComputePass(const char * name,ComputeSetUp & setup,ComputeExecute && execute)
-    // {
-    //     addPass<ComputePassSettings>(name,setup,std::forward<ComputeExecute>(execute));
-    //
-    // }
-    //
-    // void addRayTracingPass(const char * name,RayTracingSetup & setup,RaytracingExecute && execute)
-    // {
-    //     addPass<RaytracingPassSettings>(name,setup,std::forward<RaytracingExecute>(execute));
-    // }
-
-    // template<typename Data, typename Setup, typename Execute>
-    // void addPass(const char *name, const Setup & setup, Execute &&execute) {
-    //     auto pass = new RenderGraphPass<Data, Execute>(std::forward<Execute>(execute));
-    //     PassNode * node;
-    //     switch (pass->getData().type)
-    //     {
-    //         case(RENDER_GRAPH_PASS_TYPE::GRAPHICS):
-    //         {
-    //              node = new RenderPassNode(*this, name, pass);
-    //                 break;
-    //         }
-    //         case(RENDER_GRAPH_PASS_TYPE::COMPUTE):
-    //         {
-    //             node = new ComputePassNode(*this, name, pass);
-    //             break;
-    //         }
-    //         case(RENDER_GRAPH_PASS_TYPE::RAYTRACING):
-    //         {
-    //             node = new RayTracingPassNode(*this, name, pass);
-    //             break;
-    //         }
-    //     }
-    //
-    //     mPassNodes.emplace_back(node);
-    //     Builder builder(node, *this);
-    //     setup(builder,pass->getData());
-    // }
-
-    // rg.addPass("",
-    // [&](RenderGraph::Builder& builder, GraphicPassSettings& settings){
-    //
-    // },
-    // [&](RenderPassContext& context) {
-    //
-    // });
     void addPass(const char* name, const GraphicSetup& setup, GraphicsExecute&& execute);
 
     // rg.addComputePass("",
@@ -171,7 +117,7 @@ public:
     void addRaytracingPass(const char* name, const RayTracingSetup& setup, RaytracingExecute&& execute);
     void addImageCopyPass(RenderGraphHandle src, RenderGraphHandle dst);
 
-    // void addPresentPass(RenderGraphHandle textureId);
+    // void /(RenderGraphHandle textureId);
 
     void compile();
     void clearPass();
@@ -180,6 +126,8 @@ public:
 
     std::vector<const char*> getResourceNames(RENDER_GRAPH_RESOURCE_TYPE type) const;
     std::vector<const char*> getPasseNames(RENDER_GRAPH_PASS_TYPE type) const;
+
+    bool needToCutResource(ResourceNode* resourceNode) const;
 
     ~RenderGraph() {
         for (const auto& passNode : mPassNodes)
@@ -201,15 +149,6 @@ private:
         mPassNodes.emplace_back(node);
         return node;
     }
-
-    struct ResourceSlot {
-        using Version   = RenderGraphHandle::Version;
-        using Index     = int16_t;
-        Index   rid     = 0; // VirtualResource* index in mResources
-        Index   nid     = 0; // ResourceNode* index in mResourceNodes
-        Index   sid     = -1;// ResourceNode* index in mResourceNodes for reading subresource's parent
-        Version version = 0;
-    };
 
     // Using union instead of directly use two type of struct may be better;
     // Using texture type and buffer type to avoid call get type function at runtime
@@ -254,8 +193,7 @@ private:
 
     std::vector<PassNode*>::iterator mActivePassNodesEnd;
 
-    std::vector<ResourceSlot> mResourceSlots{};
-    Device&                   device;
+    Device& device;
 
     std::vector<Edge> edges;
 

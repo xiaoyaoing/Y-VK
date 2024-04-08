@@ -12,5 +12,4 @@ file(GLOB_RECURSE VXGI_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp" "${CMAKE_CURREN
 add_executable(${FOLDER_NAME} ${VXGI_FILES} ${shaders_src} ) 
 
 target_link_libraries(${FOLDER_NAME} framework)
-#target_include_directories(${FOLDER_NAME} PUBLIC "E:\\code\\VulkanFrameWorkLearn\\ext\\vma\\src")
 

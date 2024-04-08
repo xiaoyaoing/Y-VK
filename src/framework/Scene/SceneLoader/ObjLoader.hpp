@@ -1,13 +1,12 @@
 #pragma once
 #include "Scene/Compoments/RenderPrimitive.h"
 
+#include <filesystem>
 #include <fstream>
 #include <vector>
 #include <unordered_map>
 
-
-#include <fwd.hpp>
-#include <vec3.hpp>
+#include <glm/glm.hpp>
 class ObjLoader {
 public:
     ObjLoader(std::ifstream& stream);
@@ -26,11 +25,23 @@ public:
     bool hasPrefix(const char* s, const char* pre);
 };
 
+using BufferData = std::vector<uint8_t>;
+
 struct PrimitiveData { 
-    std::unordered_map<std::string,std::vector<uint8_t>> buffers;
+    std::unordered_map<std::string,BufferData> buffers;
+    std::unordered_map<std::string, VertexAttribute>         vertexAttributes;
+    BufferData indexs;
 };
 
 
 namespace PrimitiveLoader {
-    PrimitiveData loadPrimitive(const std::string& path);
+    enum  PrimitiveType {
+        QUAD,
+        DISK,
+        SPHERE,
+        CUBE,
+    };
+    std::unique_ptr<PrimitiveData> loadPrimitive(const std::filesystem::path& path);
+    std::unique_ptr<PrimitiveData> loadPrimitiveFromType(const std::string & type);
+    std::unique_ptr<PrimitiveData> loadPrimitive(PrimitiveType type);
 }

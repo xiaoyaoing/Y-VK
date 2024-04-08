@@ -2,8 +2,6 @@
 #include "VxgiCommon.h"
 #include "Core/BoundingBox.h"
 
-#include <glm.hpp>
-
 struct ClipmapRegion {
     ClipmapRegion() {}
     ClipmapRegion(const glm::ivec3& minPos, const glm::ivec3& extent, float voxelSize)
@@ -62,14 +60,14 @@ struct ClipmapRegion {
         VoxelizationParamater param;
         // param.clipmapMinCoord    = minCoord;
         // param.clipmapMaxCoord    = getMaxCoord();
-        param.voxelResolution = VOXEL_RESOLUTION;
+        param.voxelResolution    = VOXEL_RESOLUTION;
         param.clipmapMinWorldPos = getMinPosWorld();
         param.clipmapMaxWorldPos = getMaxPosWorld();
         param.voxelSize          = voxelSize;
         param.maxExtentWorld     = getExtentWorld().x;
         return param;
     }
-    
+
     glm::ivec3 minCoord;       // The minimum position in local voxel coordinates
     glm::ivec3 extent{0};      // The extent of the region in local voxel coordinates
     float      voxelSize{0.0f};// Voxel size in world coordinates

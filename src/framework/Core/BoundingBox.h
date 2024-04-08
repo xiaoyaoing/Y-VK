@@ -1,5 +1,5 @@
 #pragma once
-#include <glm.hpp>
+#include <glm/glm.hpp>
 #include <stdint.h>
 #include <initializer_list>
 
@@ -14,7 +14,10 @@ public:
     void unite(const BBox& b) noexcept;
 
     bool overlaps(const BBox& b) const noexcept;
+    //return if overlaps with (bigbox-innerbox)
+    bool overlaps(const BBox& bigBox, const BBox& innerBox) const noexcept;
     bool inside(const glm::vec3& p) const noexcept;
+    bool contains(const BBox& b) const noexcept;
 
     void  expand(float delta) noexcept;
     float surfaceArea() const noexcept;

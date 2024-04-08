@@ -1,6 +1,5 @@
 #include "BoundingBox.h"
 #include <algorithm>
-#include <ext.hpp>
 
 BBox::BBox() noexcept
     : m_min(FLT_MAX, FLT_MAX, FLT_MAX),
@@ -29,11 +28,34 @@ bool BBox::overlaps(const BBox& b) const noexcept {
             (m_max.y >= b.m_min.y) && (m_min.y <= b.m_max.y) &&
             (m_max.z >= b.m_min.z) && (m_min.z <= b.m_max.z));
 }
+bool BBox::overlaps(const BBox& bigBox, const BBox& innerBox) const noexcept {
+    //assert(innerBox.inside(bigBox));
+    assert(bigBox.contains(innerBox));
+    BBox b[6];
+    b[0] = BBox(glm::vec3(bigBox.m_min.x, bigBox.m_min.y, bigBox.m_min.z), glm::vec3(innerBox.m_min.x, bigBox.m_max.y, bigBox.m_max.z));
+    b[1] = BBox(glm::vec3(innerBox.m_max.x, bigBox.m_min.y, bigBox.m_min.z), glm::vec3(bigBox.m_max.x, bigBox.m_max.y, bigBox.m_max.z));
+    b[2] = BBox(glm::vec3(innerBox.m_min.x, bigBox.m_min.y, bigBox.m_min.z), glm::vec3(innerBox.m_max.x, innerBox.m_min.y, bigBox.m_max.z));
+    b[3] = BBox(glm::vec3(innerBox.m_min.x, innerBox.m_max.y, bigBox.m_min.z), glm::vec3(innerBox.m_max.x, bigBox.m_max.y, bigBox.m_max.z));
+    b[4] = BBox(glm::vec3(innerBox.m_min.x, innerBox.m_min.y, bigBox.m_min.z), glm::vec3(innerBox.m_max.x, innerBox.m_max.y, innerBox.m_min.z));
+    b[5] = BBox(glm::vec3(innerBox.m_min.x, innerBox.m_min.y, innerBox.m_max.z), glm::vec3(innerBox.m_max.x, innerBox.m_max.y, bigBox.m_max.z));
+    for (int i = 0; i < 6; i++) {
+        if (overlaps(b[i])) {
+            return true;
+        }
+    }
+    return false;
+}
 
 bool BBox::inside(const glm::vec3& p) const noexcept {
     return (p.x >= m_min.x && p.x <= m_max.x &&
             p.y >= m_min.y && p.y <= m_max.y &&
             p.z >= m_min.z && p.z <= m_max.z);
+}
+
+bool BBox::contains(const BBox& b) const noexcept {
+    return (b.m_min.x >= m_min.x && b.m_max.x <= m_max.x &&
+            b.m_min.y >= m_min.y && b.m_max.y <= m_max.y &&
+            b.m_min.z >= m_min.z && b.m_max.z <= m_max.z);
 }
 
 void BBox::expand(float delta) noexcept {

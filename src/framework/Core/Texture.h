@@ -11,20 +11,17 @@
 struct Texture {
     std::unique_ptr<SgImage> image{nullptr};
     std::unique_ptr<Sampler> sampler{nullptr};
-    std::string name;
+    std::string              name;
 
-    const Sampler &getSampler() const;
+    const Sampler& getSampler() const;
 
-    const SgImage &getImage() const;
+    const SgImage& getImage() const;
 
-    static std::unique_ptr<Texture> loadTexture(Device &device, const std::string &path);
-    static Texture loadTextureArray(Device &device, const std::string &path);
+    static std::unique_ptr<Texture> loadTextureFromFile(Device& device, const std::string& path);
+    static std::unique_ptr<Texture> loadTextureFromMemory(Device& device, const std::vector<uint8_t>& data, VkExtent3D extent, VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D, VkFormat format = VK_FORMAT_R8G8B8A8_UNORM);
+    static std::unique_ptr<Texture> loadTextureArrayFromFile(Device& device, const std::string& path);
 
-    Texture & operator = (Texture&&);
-    Texture(Texture & texture);
-    Texture() =default;
-
-    
+    Texture& operator=(Texture&&);
+    Texture(Texture& texture) = delete;
+    Texture()                 = default;
 };
-
-

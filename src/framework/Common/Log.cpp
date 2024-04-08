@@ -4,6 +4,6 @@
 
 #include "Log.h"
 
-void DebugBreak() {
-    __debugbreak();
-}
+// void DebugBreak() {
+//     __debugbreak();
+// }

@@ -43,6 +43,7 @@ public:
     void beginRenderPass(RenderPass& render_pass, FrameBuffer& frameBuffer, const std::vector<VkClearValue>& clear_values, VkSubpassContents contents);
 
     void bindDescriptorSets(VkPipelineBindPoint bindPoint, VkPipelineLayout layout, uint32_t firstSet, const std::vector<DescriptorSet>& descriptorSets, const std::vector<uint32_t>& dynamicOffsets);
+    void bindDescriptorSets(VkPipelineBindPoint bindPoint, VkPipelineLayout layout, uint32_t firstSet, const std::vector<DescriptorSet*>& descriptorSets, const std::vector<uint32_t>& dynamicOffsets);
 
     void bindVertexBuffer(std::vector<const Buffer*>& buffers, const std::vector<VkDeviceSize>& offsets) const;
 

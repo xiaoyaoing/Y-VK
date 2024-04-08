@@ -28,6 +28,11 @@ public:
     SgImage(Device& device, const std::string& path, VkImageViewType viewType);
 
     /**
+     * \brief load from memory
+     */
+    SgImage(Device& device, const std::vector<uint8_t>& data, VkExtent3D extent, VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D, VkFormat format = VK_FORMAT_R8G8B8A8_UNORM);
+
+    /**
      * \brief create from image attribute 
      */
     SgImage(Device&               device,
@@ -88,7 +93,8 @@ public:
 
     void setLayers(uint32_t layers);
 
-    void generateMipMap();
+    void generateMipMapOnCpu();
+    void generateMipMapOnGpu();
 
     void setExtent(const VkExtent3D& extent3D);
 
@@ -101,16 +107,13 @@ protected:
     std::unique_ptr<Image> vkImage{nullptr};
 
     std::unordered_map<size_t, std::unique_ptr<ImageView>> vkImageViews{};
-    size_t                                                 firstImageViewHash;
+    size_t                                                 firstImageViewHash{0};
 
-    std::vector<uint8_t> data;
-
-    VkFormat format;
-
-    VkExtent3D mExtent3D;
-
-    std::vector<Mipmap> mipMaps{{}};
-
+    //Attributes to init when load resources
+    std::vector<uint8_t>                   mData;
+    VkFormat                               format;
+    VkExtent3D                             mExtent3D;
+    std::vector<Mipmap>                    mipMaps{{}};
     std::vector<std::vector<VkDeviceSize>> offsets;
 
     std::string name;

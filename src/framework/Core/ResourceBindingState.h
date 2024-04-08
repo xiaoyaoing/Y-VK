@@ -44,6 +44,8 @@ public:
 
     void bindInput(const ImageView& view, uint32_t binding, uint32_t array_element);
 
+    void clearDirty();
+
     // void bindAccel(const Accel &accel, uint32_t binding, uint32_t array_element);
     //   void bindAccel(const Accel &accel, uint32_t binding, uint32_t array_element);
     void bindAccel(const Accel& accel, uint32_t binding, uint32_t array_element) {
@@ -64,11 +66,14 @@ private:
 
 class ResourceBindingState {
 public:
-    void bindBuffer(uint32_t setId, const Buffer& buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t binding, uint32_t array_element);
+    // void bindBuffer(uint32_t setId, const Buffer& buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t binding, uint32_t array_element);
+    //
+    // void
+    // bindImage(uint32_t setId, const ImageView& view, const Sampler& sampler, uint32_t binding, uint32_t array_element);
+    void setDirty();
+    void clear_dirty();
 
-    void
-    bindImage(uint32_t setId, const ImageView& view, const Sampler& sampler, uint32_t binding, uint32_t array_element);
-
+    void                                             clear_dirty(uint32_t set);
     const std::unordered_map<uint32_t, ResourceSet>& getResourceSets() const;
 
 private:

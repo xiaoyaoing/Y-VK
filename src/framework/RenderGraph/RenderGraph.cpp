@@ -263,7 +263,7 @@ void RenderGraph::compile() {
     if (cutUnUsedResources) {
         std::stack<RenderGraphNode*> stack;
         for (const auto& node : mResources)
-            if (node->getRefCount() == 0)
+            if (needToCutResource(node))
                 stack.push(node);
         for (const auto& node : mPassNodes)
             if (node->getRefCount() == 0 || !node->active())
@@ -281,6 +281,10 @@ void RenderGraph::compile() {
     mActivePassNodesEnd = std::stable_partition(this->mPassNodes.begin(), mPassNodes.end(), [](const auto& passNode) {
         return passNode->active();
     });
+
+    for (auto pass = mActivePassNodesEnd; pass != mPassNodes.end(); pass++) {
+        LOGI("Pass {0} is not active", (*pass)->getName())
+    }
 
     auto       first = mPassNodes.begin();
     const auto last  = mActivePassNodesEnd;
@@ -311,7 +315,7 @@ void RenderGraph::compile() {
     }
 
     for (const auto& resource : mResources) {
-        if (resource->getRefCount() != 0) {
+        if (!needToCutResource(resource)) {
             if (resource->first)
                 resource->first->devirtualize.push_back(resource);
             if (resource->last)
@@ -328,7 +332,7 @@ void RenderGraph::compile() {
     }
 
     for (const auto& node : mResources) {
-        if (node->getRefCount() == 0)
+        if (needToCutResource(node))
             node->destroy();
     }
 }
@@ -358,19 +362,25 @@ std::vector<const char*> RenderGraph::getPasseNames(RENDER_GRAPH_PASS_TYPE type)
     }
     return names;
 }
+bool RenderGraph::needToCutResource(ResourceNode* resourceNode) const {
+    return resourceNode->getRefCount() == 0 && cutUnUsedResources;
+}
 
 void RenderGraph::execute(CommandBuffer& commandBuffer) {
 
     // DebugUtils::CmdInsertLabel(commandBuffer, "RenderGraph")
-    
+
     //todo handle compile
     compile();
 
     auto first = mPassNodes.begin();
     while (first != mActivePassNodesEnd) {
+
         const auto pass = *first;
+
         first++;
 
+        //
         for (const auto& resource : pass->devirtualize) {
             resource->devirtualize();
             //getBlackBoard().put(resource->getName(), resource->handle);

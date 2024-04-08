@@ -1,9 +1,9 @@
 #pragma once
 #include "VxgiCommon.h"
 #include "Core/Images/Sampler.h"
-#include <glm.hpp>
+#include "RenderPasses/RenderPassBase.h"
 
-class FinalLightingPass : public VxgiPassBase {
+class FinalLightingPass : public PassBase {
 public:
     void init() override;
     void render(RenderGraph& rg) override;

@@ -41,12 +41,10 @@ SgImage& ResourceCache::requestSgImage(const std::string& name, const VkExtent3D
     // same parameters will get different hash value
     // so we don't use requestResource function there for sgImage
     // However, I don't know why this happens
-    // It happens on release mode
+    // It happens on release mode and only for sgImage class 
     // when i call log in hash_param function, it works well
     // Does it have to do with execution speed?
     // May be mutex is not working well
-
-    
     std::lock_guard<std::mutex> mutex(sgImageMutex);
     size_t hash{};
     hash_combine(hash, name);

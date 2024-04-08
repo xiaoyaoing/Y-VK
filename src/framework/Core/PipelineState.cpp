@@ -1,5 +1,6 @@
 #include "PipelineState.h"
 #include "RenderPass.h"
+#include "Common/VkCommon.h"
 
 /* Copyright (c) 2019-2021, Arm Limited and Contributors
  *
@@ -18,73 +19,62 @@
  * limitations under the License.
  */
 
-
-bool operator==(const VkVertexInputAttributeDescription &lhs, const VkVertexInputAttributeDescription &rhs) {
+bool operator==(const VkVertexInputAttributeDescription& lhs, const VkVertexInputAttributeDescription& rhs) {
     return std::tie(lhs.binding, lhs.format, lhs.location, lhs.offset) ==
            std::tie(rhs.binding, rhs.format, rhs.location, rhs.offset);
 }
 
-bool operator==(const VkVertexInputBindingDescription &lhs, const VkVertexInputBindingDescription &rhs) {
+bool operator==(const VkVertexInputBindingDescription& lhs, const VkVertexInputBindingDescription& rhs) {
     return std::tie(lhs.binding, lhs.inputRate, lhs.stride) == std::tie(rhs.binding, rhs.inputRate, rhs.stride);
 }
 
-bool operator==(const ColorBlendAttachmentState &lhs, const ColorBlendAttachmentState &rhs) {
-    return std::tie(lhs.alphaBlendOp, lhs.blendEnable, lhs.colorBlendOp, lhs.colorWriteMask, lhs.dstAlphaBlendFactor,
-                    lhs.dstColorBlendFactor, lhs.srcAlphaBlendFactor, lhs.srcColorBlendFactor) ==
-           std::tie(rhs.alphaBlendOp, rhs.blendEnable, rhs.colorBlendOp, rhs.colorWriteMask, rhs.dstAlphaBlendFactor,
-                    rhs.dstColorBlendFactor, rhs.srcAlphaBlendFactor, rhs.srcColorBlendFactor);
+bool operator==(const ColorBlendAttachmentState& lhs, const ColorBlendAttachmentState& rhs) {
+    return std::tie(lhs.alphaBlendOp, lhs.blendEnable, lhs.colorBlendOp, lhs.colorWriteMask, lhs.dstAlphaBlendFactor, lhs.dstColorBlendFactor, lhs.srcAlphaBlendFactor, lhs.srcColorBlendFactor) ==
+           std::tie(rhs.alphaBlendOp, rhs.blendEnable, rhs.colorBlendOp, rhs.colorWriteMask, rhs.dstAlphaBlendFactor, rhs.dstColorBlendFactor, rhs.srcAlphaBlendFactor, rhs.srcColorBlendFactor);
 }
 
-bool operator!=(const StencilOpState &lhs, const StencilOpState &rhs) {
+bool operator!=(const StencilOpState& lhs, const StencilOpState& rhs) {
     return std::tie(lhs.compareOp, lhs.depthFailOp, lhs.failOp, lhs.passOp) !=
            std::tie(rhs.compareOp, rhs.depthFailOp, rhs.failOp, rhs.passOp);
 }
 
-bool operator!=(const VertexInputState &lhs, const VertexInputState &rhs) {
+bool operator!=(const VertexInputState& lhs, const VertexInputState& rhs) {
     return lhs.attributes != rhs.attributes || lhs.bindings != rhs.bindings;
 }
 
-bool operator!=(const InputAssemblyState &lhs, const InputAssemblyState &rhs) {
+bool operator!=(const InputAssemblyState& lhs, const InputAssemblyState& rhs) {
     return std::tie(lhs.primitiveRestartEnable, lhs.topology) != std::tie(rhs.primitiveRestartEnable, rhs.topology);
 }
 
-bool operator!=(const RasterizationState &lhs, const RasterizationState &rhs) {
-    return std::tie(lhs.cullMode, lhs.depthBiasEnable, lhs.depthClampEnable, lhs.frontFace, lhs.frontFace,
-                    lhs.polygonMode, lhs.rasterizerDiscardEnable,lhs.pNext) !=
-           std::tie(rhs.cullMode, rhs.depthBiasEnable, rhs.depthClampEnable, rhs.frontFace, rhs.frontFace,
-                    rhs.polygonMode, rhs.rasterizerDiscardEnable,rhs.pNext);
+bool operator!=(const RasterizationState& lhs, const RasterizationState& rhs) {
+    return std::tie(lhs.cullMode, lhs.depthBiasEnable, lhs.depthClampEnable, lhs.frontFace, lhs.frontFace, lhs.polygonMode, lhs.rasterizerDiscardEnable, lhs.pNext) !=
+           std::tie(rhs.cullMode, rhs.depthBiasEnable, rhs.depthClampEnable, rhs.frontFace, rhs.frontFace, rhs.polygonMode, rhs.rasterizerDiscardEnable, rhs.pNext);
 }
 
-bool operator!=(const ViewportState &lhs, const ViewportState &rhs) {
+bool operator!=(const ViewportState& lhs, const ViewportState& rhs) {
     return lhs.viewportCount != rhs.viewportCount || lhs.scissorCount != rhs.scissorCount;
 }
 
-bool operator!=(const MultisampleState &lhs, const MultisampleState &rhs) {
-    return std::tie(lhs.alphaToCoverageEnable, lhs.alphaToOneEnable, lhs.minSampleShading, lhs.rasterizationSamples,
-                    lhs.sampleMask, lhs.sampleShadingEnable) !=
-           std::tie(rhs.alphaToCoverageEnable, rhs.alphaToOneEnable, rhs.minSampleShading, rhs.rasterizationSamples,
-                    rhs.sampleMask, rhs.sampleShadingEnable);
+bool operator!=(const MultisampleState& lhs, const MultisampleState& rhs) {
+    return std::tie(lhs.alphaToCoverageEnable, lhs.alphaToOneEnable, lhs.minSampleShading, lhs.rasterizationSamples, lhs.sampleMask, lhs.sampleShadingEnable) !=
+           std::tie(rhs.alphaToCoverageEnable, rhs.alphaToOneEnable, rhs.minSampleShading, rhs.rasterizationSamples, rhs.sampleMask, rhs.sampleShadingEnable);
 }
 
-bool operator!=(const DepthStencilState &lhs, const DepthStencilState &rhs) {
-    return std::tie(lhs.depthBoundsTestEnable, lhs.depthCompareOp, lhs.depthTestEnable, lhs.depthWriteEnable,
-                    lhs.stencilTestEnable) !=
-           std::tie(rhs.depthBoundsTestEnable, rhs.depthCompareOp, rhs.depthTestEnable, rhs.depthWriteEnable,
-                    rhs.stencilTestEnable) ||
+bool operator!=(const DepthStencilState& lhs, const DepthStencilState& rhs) {
+    return std::tie(lhs.depthBoundsTestEnable, lhs.depthCompareOp, lhs.depthTestEnable, lhs.depthWriteEnable, lhs.stencilTestEnable) !=
+               std::tie(rhs.depthBoundsTestEnable, rhs.depthCompareOp, rhs.depthTestEnable, rhs.depthWriteEnable, rhs.stencilTestEnable) ||
            lhs.back != rhs.back || lhs.front != rhs.front;
 }
 
-bool operator!=(const ColorBlendState &lhs, const ColorBlendState &rhs) {
+bool operator!=(const ColorBlendState& lhs, const ColorBlendState& rhs) {
     return std::tie(lhs.logicOp, lhs.logicOpEnable) != std::tie(rhs.logicOp, rhs.logicOpEnable) ||
            lhs.attachments.size() != rhs.attachments.size() ||
-           !std::equal(lhs.attachments.begin(), lhs.attachments.end(), rhs.attachments.begin(),
-                       [](const ColorBlendAttachmentState &lhs, const ColorBlendAttachmentState &rhs) {
-                           return lhs == rhs;
-                       });
+           !std::equal(lhs.attachments.begin(), lhs.attachments.end(), rhs.attachments.begin(), [](const ColorBlendAttachmentState& lhs, const ColorBlendAttachmentState& rhs) {
+               return lhs == rhs;
+           });
 }
 
-void SpecializationConstantState::reset()
-{
+void SpecializationConstantState::reset() {
     // auto data = specialization_constant_state.find(constant_id);
     //
     // if (data != specialization_constant_state.end() && data->second == value)
@@ -97,29 +87,21 @@ void SpecializationConstantState::reset()
     // specialization_constant_state[constant_id] = value;
 }
 
-bool SpecializationConstantState::isDirty() const
-{
+bool SpecializationConstantState::isDirty() const {
     return dirty;
 }
 
-void SpecializationConstantState::clearDirty()
-{
+void SpecializationConstantState::clearDirty() {
     dirty = false;
 }
 
-
-
-void SpecializationConstantState::setConstant(uint32_t constantId, const std::vector<uint8_t>& data)
-{
+void SpecializationConstantState::setConstant(uint32_t constantId, const std::vector<uint8_t>& data) {
 }
 
-void SpecializationConstantState::setSpecializationConstantState(const std::map<uint32_t, std::vector<uint8_t>>& state)
-{
-    
+void SpecializationConstantState::setSpecializationConstantState(const std::map<uint32_t, std::vector<uint8_t>>& state) {
 }
 
-const std::map<uint32_t, std::vector<uint8_t>>& SpecializationConstantState::getSpecializationConstantState() const
-{
+const std::map<uint32_t, std::vector<uint8_t>>& SpecializationConstantState::getSpecializationConstantState() const {
     return specializationConstantState;
 }
 
@@ -150,10 +132,10 @@ void PipelineState::reset() {
 PipelineState& PipelineState::setPipelineLayout(PipelineLayout& newPipelineLayout) {
     if (pipelineLayout && pipelineLayout->getHandle() != newPipelineLayout.getHandle()) {
         pipelineLayout = &newPipelineLayout;
-        dirty = true;
+        dirty          = true;
     } else if (!pipelineLayout) {
         pipelineLayout = &newPipelineLayout;
-        dirty = true;
+        dirty          = true;
     }
     return *this;
 }
@@ -161,10 +143,10 @@ PipelineState& PipelineState::setPipelineLayout(PipelineLayout& newPipelineLayou
 PipelineState& PipelineState::setRenderPass(const RenderPass& newRenderPass) {
     if (renderPass && renderPass->getHandle() != newRenderPass.getHandle()) {
         renderPass = &newRenderPass;
-        dirty = true;
+        dirty      = true;
     } else if (!renderPass) {
         renderPass = &newRenderPass;
-        dirty = true;
+        dirty      = true;
     }
     return *this;
 }
@@ -181,7 +163,7 @@ PipelineState& PipelineState::setSpecializationConstant(uint32_t constantId, con
 PipelineState& PipelineState::setVertexInputState(const VertexInputState& newVertexInputState) {
     if (vertexInputState != newVertexInputState) {
         vertexInputState = newVertexInputState;
-        dirty = true;
+        dirty            = true;
     }
     return *this;
 }
@@ -189,7 +171,7 @@ PipelineState& PipelineState::setVertexInputState(const VertexInputState& newVer
 PipelineState& PipelineState::setInputAssemblyState(const InputAssemblyState& newInputAssemblyState) {
     if (inputAssemblyState != newInputAssemblyState) {
         inputAssemblyState = newInputAssemblyState;
-        dirty = true;
+        dirty              = true;
     }
     return *this;
 }
@@ -197,7 +179,7 @@ PipelineState& PipelineState::setInputAssemblyState(const InputAssemblyState& ne
 PipelineState& PipelineState::setRasterizationState(const RasterizationState& newRasterizationState) {
     if (rasterizationState != newRasterizationState) {
         rasterizationState = newRasterizationState;
-        dirty = true;
+        dirty              = true;
     }
     return *this;
 }
@@ -205,7 +187,7 @@ PipelineState& PipelineState::setRasterizationState(const RasterizationState& ne
 PipelineState& PipelineState::setViewportState(const ViewportState& newViewportState) {
     if (viewportState != newViewportState) {
         viewportState = newViewportState;
-        dirty = true;
+        dirty         = true;
     }
     return *this;
 }
@@ -213,7 +195,7 @@ PipelineState& PipelineState::setViewportState(const ViewportState& newViewportS
 PipelineState& PipelineState::setMultisampleState(const MultisampleState& newMultisampleState) {
     if (multisampleState != newMultisampleState) {
         multisampleState = newMultisampleState;
-        dirty = true;
+        dirty            = true;
     }
     return *this;
 }
@@ -221,7 +203,7 @@ PipelineState& PipelineState::setMultisampleState(const MultisampleState& newMul
 PipelineState& PipelineState::setDepthStencilState(const DepthStencilState& newDepthStencilState) {
     if (depthStencilState != newDepthStencilState) {
         depthStencilState = newDepthStencilState;
-        dirty = true;
+        dirty             = true;
     }
     return *this;
 }
@@ -229,7 +211,7 @@ PipelineState& PipelineState::setDepthStencilState(const DepthStencilState& newD
 PipelineState& PipelineState::setColorBlendState(const ColorBlendState& newColorBlendState) {
     if (colorBlendState != newColorBlendState) {
         colorBlendState = newColorBlendState;
-        dirty = true;
+        dirty           = true;
     }
     return *this;
 }
@@ -237,7 +219,7 @@ PipelineState& PipelineState::setColorBlendState(const ColorBlendState& newColor
 PipelineState& PipelineState::setSubpassIndex(uint32_t newSubpassIndex) {
     if (subpassIndex != newSubpassIndex) {
         subpassIndex = newSubpassIndex;
-        dirty = true;
+        dirty        = true;
     }
     return *this;
 }
@@ -246,46 +228,51 @@ PipelineState& PipelineState::setPipelineType(PIPELINE_TYPE pipelineType_) {
     pipelineType = pipelineType_;
     return *this;
 }
+PipelineState& PipelineState::enableConservativeRasterization(VkPhysicalDevice device) {
+    static auto conservativeRasterizationProperties      = vkCommon::conservativeRasterizationProperties(device);
+    static auto conservativeRasterizationStateCreateInfo = vkCommon::rasterizationConservativeStateCreateInfo(conservativeRasterizationProperties.maxExtraPrimitiveOverestimationSize);
+    rasterizationState.pNext                             = &conservativeRasterizationStateCreateInfo;
+    return *this;
+}
 
-
-const PipelineLayout &PipelineState::getPipelineLayout() const {
+const PipelineLayout& PipelineState::getPipelineLayout() const {
     assert(pipelineLayout && "Graphics state Pipeline layout is not set");
     return *pipelineLayout;
 }
 
-const RenderPass *PipelineState::getRenderPass() const {
+const RenderPass* PipelineState::getRenderPass() const {
     return renderPass;
 }
 
-const SpecializationConstantState &PipelineState::getSpecializationConstantState() const {
+const SpecializationConstantState& PipelineState::getSpecializationConstantState() const {
     return specializationConstantState;
 }
 
-const VertexInputState &PipelineState::getVertexInputState() const {
+const VertexInputState& PipelineState::getVertexInputState() const {
     return vertexInputState;
 }
 
-const InputAssemblyState &PipelineState::getInputAssemblyState() const {
+const InputAssemblyState& PipelineState::getInputAssemblyState() const {
     return inputAssemblyState;
 }
 
-const RasterizationState &PipelineState::getRasterizationState() const {
+const RasterizationState& PipelineState::getRasterizationState() const {
     return rasterizationState;
 }
 
-const ViewportState &PipelineState::getViewportState() const {
+const ViewportState& PipelineState::getViewportState() const {
     return viewportState;
 }
 
-const MultisampleState &PipelineState::getMultisampleState() const {
+const MultisampleState& PipelineState::getMultisampleState() const {
     return multisampleState;
 }
 
-const DepthStencilState &PipelineState::getDepthStencilState() const {
+const DepthStencilState& PipelineState::getDepthStencilState() const {
     return depthStencilState;
 }
 
-const ColorBlendState &PipelineState::getColorBlendState() const {
+const ColorBlendState& PipelineState::getColorBlendState() const {
     return colorBlendState;
 }
 
@@ -293,8 +280,7 @@ uint32_t PipelineState::getSubpassIndex() const {
     return subpassIndex;
 }
 
-PIPELINE_TYPE PipelineState::getPipelineType() const
-{
+PIPELINE_TYPE PipelineState::getPipelineType() const {
     return pipelineType;
 }
 
@@ -302,24 +288,17 @@ bool PipelineState::isDirty() const {
     return dirty;
 }
 
-
-PipelineState & PipelineState::clearDirty() {
+PipelineState& PipelineState::clearDirty() {
+    dirty = false;
     //todo
     return *this;
 }
 
-const RTPipelineSettings &  PipelineState::getrTPipelineSettings() const
-{
+const RTPipelineSettings& PipelineState::getrTPipelineSettings() const {
     return rTPipelineSettings;
 }
 
-PipelineState & PipelineState::setrTPipelineSettings(const RTPipelineSettings& rTPipelineSettings_)
-{
+PipelineState& PipelineState::setrTPipelineSettings(const RTPipelineSettings& rTPipelineSettings_) {
     this->rTPipelineSettings = rTPipelineSettings_;
     return *this;
 }
-
-	
-
-
-

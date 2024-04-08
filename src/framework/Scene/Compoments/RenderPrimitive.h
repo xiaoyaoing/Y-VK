@@ -5,12 +5,16 @@
 #define VULKANDEMO_RENDERPRIMITIVE_H
 #include "Core/BoundingBox.h"
 #include "Core/Buffer.h"
+#include "Core/Transform.h"
 
 class Material;
 
 enum class PRIMITIVE_TYPE : uint8_t {
     E_TRIANGLE_LIST,
+    E_POINT_LIST,
 };
+
+VkPrimitiveTopology GetVkPrimitiveTopology(PRIMITIVE_TYPE type);
 
 struct VertexAttribute {
     VkFormat      format = VK_FORMAT_UNDEFINED;
@@ -26,13 +30,16 @@ struct VertexAttribute {
 
 struct PerPrimitiveUniform {
     glm::mat4 model;
+    glm::mat4 modelIT;
+    uint32_t  materialIndex;
+    uint32_t  padding1;
+    uint32_t  padding2;
+    uint32_t  padding3;
 };
 
 class Primitive {
 protected:
     //ShaderVarint varint{};
-
-    PRIMITIVE_TYPE primitiveType{PRIMITIVE_TYPE::E_TRIANGLE_LIST};
 
     VkIndexType indexType{VK_INDEX_TYPE_UINT16};
 
@@ -44,16 +51,18 @@ protected:
     std::unique_ptr<Buffer>                                  uniformBuffer;
 
 public:
-    uint32_t  firstIndex{0};
-    uint32_t  indexCount{};
-    uint32_t  firstVertex{0};
-    uint32_t  vertexCount{};
-    glm::mat4 matrix{};
-    uint32_t  materialIndex{0};
+    PRIMITIVE_TYPE primitiveType{PRIMITIVE_TYPE::E_TRIANGLE_LIST};
+    uint32_t       firstIndex{0};
+    uint32_t       indexCount{};
+    uint32_t       firstVertex{0};
+    uint32_t       vertexCount{};
+    uint32_t       materialIndex{0};
+    Transform      transform{};
 
-    bool Validate() const;
-
-    bool          getVertexAttribute(const std::string& name, VertexAttribute * attribute = nullptr) const;
+    glm::mat4 getTransformMatrix() const {
+        return transform.getLocalToWorldMatrix();
+    }
+    bool          getVertexAttribute(const std::string& name, VertexAttribute* attribute = nullptr) const;
     void          setVertxAttribute(const std::string& name, const VertexAttribute& attribute);
     void          setVertexBuffer(const std::string& name, std::unique_ptr<Buffer>& buffer);
     void          setUniformBuffer(std::unique_ptr<Buffer>& buffer);
@@ -63,22 +72,19 @@ public:
     VkIndexType   getIndexType() const;
     void          setIndexType(VkIndexType indexType);
     bool          hasVertexBuffer(const std::string& name) const;
-    const Buffer& getIndexBuffer() const;
-    const Buffer& getUniformBuffer() const;
+    Buffer & getIndexBuffer() const;
+    bool          hasIndexBuffer() const;
+    Buffer & getUniformBuffer() const;
 
     void        setDimensions(glm::vec3 min, glm::vec3 max);
     const BBox& getDimensions() const;
 
-    Primitive(uint32_t firstVertex, uint32_t vertexCount, uint32_t firstIndex, uint32_t indexCount, uint32_t materialIndex, uint32_t matrixIndex): firstIndex(firstIndex),
-                                                                                                                                                indexCount(indexCount),
-                                                                                                                                                materialIndex(materialIndex),
-                                                                                                                                                vertexCount(vertexCount),
-                                                                                                                                                firstVertex(firstVertex) {
-    }   ;
-
     Primitive(uint32_t firstVertex, uint32_t firstIndex, uint32_t indexCount, uint32_t materialIndex) : firstIndex(firstIndex),
-                                                                                                        indexCount(indexCount),
+                                                                                                        indexCount(indexCount), firstVertex(firstVertex),
                                                                                                         materialIndex(materialIndex), dimensions({}) {
+    }
+
+    Primitive(uint32_t firstVertex, uint32_t vertexCount, uint32_t materialIndex) : firstVertex(firstVertex), vertexCount(vertexCount), materialIndex(materialIndex), dimensions({}) {
     }
 };
 

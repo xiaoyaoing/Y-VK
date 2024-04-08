@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gtx/hash.hpp>
+#include <glm/gtx/hash.hpp>
 
 #include "PipelineState.h"
 #include "RenderTarget.h"
@@ -8,9 +8,10 @@
 #include "Core/Descriptor/DescriptorPool.h"
 #include "RenderPass.h"
 
-template<class> inline constexpr bool is_vector_v = false;
-template<class T, class A> inline constexpr bool is_vector_v<std::vector<T, A>> = true;
-
+template<class>
+inline constexpr bool is_vector_v = false;
+template<class T, class A>
+inline constexpr bool is_vector_v<std::vector<T, A>> = true;
 
 template<class T>
 inline void hash_combine(size_t& seed, const T& v) {
@@ -58,6 +59,52 @@ namespace std {
     // 		return hash;
     // 	}
     // };
+    template<>
+    struct hash<VkWriteDescriptorSet> {
+        std::size_t operator()(const VkWriteDescriptorSet& write_descriptor_set) const {
+            std::size_t result = 0;
+
+            hash_combine(result, write_descriptor_set.dstSet);
+            hash_combine(result, write_descriptor_set.dstBinding);
+            hash_combine(result, write_descriptor_set.dstArrayElement);
+            hash_combine(result, write_descriptor_set.descriptorCount);
+            hash_combine(result, write_descriptor_set.descriptorType);
+
+            switch (write_descriptor_set.descriptorType) {
+                case VK_DESCRIPTOR_TYPE_SAMPLER:
+                case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+                case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+                case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+                case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+                    for (uint32_t i = 0; i < write_descriptor_set.descriptorCount; i++) {
+                        hash_combine(result, write_descriptor_set.pImageInfo[i]);
+                    }
+                    break;
+
+                case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+                case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+                    for (uint32_t i = 0; i < write_descriptor_set.descriptorCount; i++) {
+                        hash_combine(result, write_descriptor_set.pTexelBufferView[i]);
+                    }
+                    break;
+
+                case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+                case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+                case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+                case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+                    for (uint32_t i = 0; i < write_descriptor_set.descriptorCount; i++) {
+                        hash_combine(result, write_descriptor_set.pBufferInfo[i]);
+                    }
+                    break;
+
+                default:
+                    // Not implemented
+                    break;
+            }
+
+            return result;
+        }
+    };
 
     template<>
     struct hash<VkExtent3D> {
@@ -65,7 +112,7 @@ namespace std {
             std::size_t result;
             hash_combine(result, extent3d.width);
             hash_combine(result, extent3d.height);
-            hash_combine(result, extent3d.depth);
+            hash_combine(result, extent3d.width);
             return result;
         }
     };
@@ -137,8 +184,8 @@ namespace std {
             hash_combine(hash, attachment.initial_layout);
             hash_combine(hash, attachment.samples);
             hash_combine(hash, attachment.usage);
-            hash_combine(hash,attachment.loadOp);
-            hash_combine(hash,attachment.storeOp);
+            hash_combine(hash, attachment.loadOp);
+            hash_combine(hash, attachment.storeOp);
 
             return hash;
         }
@@ -217,53 +264,6 @@ namespace std {
             hash_combine(
                 result, static_cast<std::underlying_type<VkImageLayout>::type>(descriptor_image_info.imageLayout));
             hash_combine(result, descriptor_image_info.sampler);
-
-            return result;
-        }
-    };
-
-    template<>
-    struct hash<VkWriteDescriptorSet> {
-        std::size_t operator()(const VkWriteDescriptorSet& write_descriptor_set) const {
-            std::size_t result = 0;
-
-            hash_combine(result, write_descriptor_set.dstSet);
-            hash_combine(result, write_descriptor_set.dstBinding);
-            hash_combine(result, write_descriptor_set.dstArrayElement);
-            hash_combine(result, write_descriptor_set.descriptorCount);
-            hash_combine(result, write_descriptor_set.descriptorType);
-
-            switch (write_descriptor_set.descriptorType) {
-                case VK_DESCRIPTOR_TYPE_SAMPLER:
-                case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-                case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-                case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-                case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
-                    for (uint32_t i = 0; i < write_descriptor_set.descriptorCount; i++) {
-                        hash_combine(result, write_descriptor_set.pImageInfo[i]);
-                    }
-                    break;
-
-                case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
-                case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
-                    for (uint32_t i = 0; i < write_descriptor_set.descriptorCount; i++) {
-                        hash_combine(result, write_descriptor_set.pTexelBufferView[i]);
-                    }
-                    break;
-
-                case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-                case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-                case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
-                case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
-                    for (uint32_t i = 0; i < write_descriptor_set.descriptorCount; i++) {
-                        hash_combine(result, write_descriptor_set.pBufferInfo[i]);
-                    }
-                    break;
-
-                default:
-                    // Not implemented
-                    break;
-            }
 
             return result;
         }
@@ -437,11 +437,9 @@ namespace std {
                 result,
                 static_cast<std::underlying_type<VkFrontFace>::type>(
                     pipelineState.getRasterizationState().frontFace));
-            hash_combine(result,static_cast<std::underlying_type<VkPolygonMode>::type>(
-                    pipelineState.getRasterizationState().polygonMode));
+            hash_combine(result, static_cast<std::underlying_type<VkPolygonMode>::type>(pipelineState.getRasterizationState().polygonMode));
             hash_combine(result, pipelineState.getRasterizationState().rasterizerDiscardEnable);
             hash_combine(result, pipelineState.getRasterizationState().pNext);
-            
 
             // VkPipelineMultisampleStateCreateInfo
             hash_combine(result, pipelineState.getMultisampleState().alphaToCoverageEnable);
@@ -489,11 +487,9 @@ inline void hash_param(size_t& seed, const T& value) {
     hash_combine(seed, value);
 }
 
-
-
 template<typename T, typename... Args>
 inline void hash_param(size_t& seed, const T& first_arg, const Args&... args) {
     hash_param(seed, first_arg);
-    // LOGI("Hashing {0}", seed);
+    // LOGI("{} {} hash", typeid(T).name(), seed);
     hash_param(seed, args...);
 }

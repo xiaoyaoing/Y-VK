@@ -15,9 +15,12 @@
 #include "PlatForm/Window.h"
 #include "Common/ResourceCache.h"
 #include "Common/VkCommon.h"
+#include "Images/ImageUtil.h"
 #include "Images/Sampler.h"
 #include "RayTracing/Accel.h"
 #include "RayTracing/SbtWarpper.h"
+
+#include <unordered_set>
 
 RenderContext* g_context = nullptr;
 
@@ -243,43 +246,53 @@ SgImage& RenderContext::getCurHwtexture() {
 
 RenderContext& RenderContext::bindBuffer(uint32_t binding, const Buffer& buffer, VkDeviceSize offset, VkDeviceSize range, uint32_t setId, uint32_t array_element) {
     if (range == 0) range = buffer.getSize();
-    setId = static_cast<uint32_t>(DescriptorSetPoints::UNIFORM);
+    if (setId == -1)
+        setId = static_cast<uint32_t>(DescriptorSetPoints::UNIFORM);
     resourceSets[setId].bindBuffer(buffer, offset, range, binding, array_element);
+    resourceSetsDirty = true;
     return *this;
 }
 
 RenderContext& RenderContext::bindAcceleration(uint32_t binding, const Accel& acceleration, uint32_t setId, uint32_t array_element) {
-    setId = static_cast<uint32_t>(DescriptorSetPoints::ACCELERATION);
+    if (setId == -1)
+
+        setId = static_cast<uint32_t>(DescriptorSetPoints::ACCELERATION);
     resourceSets[setId].bindAccel(acceleration, binding, array_element);
+    resourceSetsDirty = true;
     return *this;
 }
 
 RenderContext& RenderContext::bindImageSampler(uint32_t binding, const ImageView& view, const Sampler& sampler, uint32_t setId, uint32_t array_element) {
-    setId = static_cast<uint32_t>(DescriptorSetPoints::SAMPLER);
+    if (setId == -1)
+
+        setId = static_cast<uint32_t>(DescriptorSetPoints::SAMPLER);
     resourceSets[setId].bindImage(view, sampler, binding, array_element);
+    resourceSetsDirty = true;
     return *this;
 }
 
 RenderContext& RenderContext::bindImage(uint32_t binding, const ImageView& view, uint32_t setId, uint32_t array_element) {
-    setId = static_cast<uint32_t>(DescriptorSetPoints::INPUT);
+    if (setId == -1)
+        setId = static_cast<uint32_t>(DescriptorSetPoints::INPUT);
     resourceSets[setId].bindInput(view, binding, array_element);
+    resourceSetsDirty = true;
     return *this;
 }
 
-RenderContext& RenderContext::bindMaterial(const Material& material) {
-    const uint32_t setId = static_cast<uint32_t>(DescriptorSetPoints::SAMPLER);
-    if (!pipelineState.getPipelineLayout().hasLayout(setId))
-        return *this;
-    auto& descriptorLayout = pipelineState.getPipelineLayout().getDescriptorLayout(setId);
-
-    for (auto& texture : material.textures) {
-        if (descriptorLayout.hasLayoutBinding(texture.first)) {
-            auto& binding = descriptorLayout.getLayoutBindingInfo(texture.first);
-            bindImageSampler(binding.binding, texture.second.image->getVkImageView(), texture.second.getSampler(), setId, 0);
-        }
-    }
-    return *this;
-}
+// RenderContext& RenderContext::bindMaterial(const Material& material) {
+//     const uint32_t setId = static_cast<uint32_t>(DescriptorSetPoints::SAMPLER);
+//     if (!pipelineState.getPipelineLayout().hasLayout(setId))
+//         return *this;
+//     auto& descriptorLayout = pipelineState.getPipelineLayout().getDescriptorLayout(setId);
+//
+//     for (auto& texture : material.textures) {
+//         if (descriptorLayout.hasLayoutBinding(texture.first)) {
+//             auto& binding = descriptorLayout.getLayoutBindingInfo(texture.first);
+//             bindImageSampler(binding.binding, texture.second.image->getVkImageView(), texture.second.getSampler(), setId, 0);
+//         }
+//     }
+//     return *this;
+// }
 RenderContext& RenderContext::bindView(const View& view) {
     //materials and textures
     // auto             materials  = view.GetMMaterials();
@@ -331,14 +344,72 @@ RenderContext& RenderContext::bindPrimitiveGeom(CommandBuffer& commandBuffer, co
             commandBuffer.bindVertexBuffer(inputResource.location, buffers, {0});
         }
     }
-    commandBuffer.bindIndicesBuffer(primitive.getIndexBuffer(), 0, primitive.getIndexType());
-
-    pipelineState.setVertexInputState(vertexInputState);
+    if (primitive.hasIndexBuffer())
+        commandBuffer.bindIndicesBuffer(primitive.getIndexBuffer(), 0, primitive.getIndexType());
+    InputAssemblyState inputAssemblyState = pipelineState.getInputAssemblyState();
+    inputAssemblyState.topology           = GetVkPrimitiveTopology(primitive.primitiveType);
+    pipelineState.setVertexInputState(vertexInputState).setInputAssemblyState(inputAssemblyState);
 
     //  bindPushConstants(primitive);
     bindBuffer(static_cast<uint32_t>(UniformBindingPoints::PER_RENDERABLE), primitive.getUniformBuffer(), 0, sizeof(PerPrimitiveUniform));
     return *this;
     // return bindMaterial(primitive.material);
+}
+
+RenderContext& RenderContext::bindScene(CommandBuffer& commandBuffer, const Scene& scene) {
+    VertexInputState vertexInputState;
+    uint32_t         maxLoaction = 0;
+    for (const auto& inputResource : pipelineState.getPipelineLayout().getShaderResources(ShaderResourceType::Input,
+                                                                                          VK_SHADER_STAGE_VERTEX_BIT)) {
+
+        auto inputResourceName = inputResource.name;
+        //resource name in shader is in_XXX,so we need to remove the prefix
+        auto splitPos = inputResourceName.find("in_");
+        if (splitPos != std::string::npos) {
+            inputResourceName = inputResourceName.substr(splitPos + 3);
+        }
+
+        VertexAttribute attribute{};
+        if (!scene.getVertexAttribute(inputResourceName, &attribute)) {
+            if (inputResourceName != "primitive_id")
+                LOGW("Primitive does not have vertex buffer for input resource {}", inputResourceName);
+            continue;
+        }
+        VkVertexInputAttributeDescription vertex_attribute{};
+        vertex_attribute.binding  = inputResource.location;
+        vertex_attribute.format   = attribute.format;
+        vertex_attribute.location = inputResource.location;
+        vertex_attribute.offset   = attribute.offset;
+
+        vertexInputState.attributes.push_back(vertex_attribute);
+
+        VkVertexInputBindingDescription vertex_binding{};
+        vertex_binding.binding = inputResource.location;
+        vertex_binding.stride  = attribute.stride;
+
+        vertexInputState.bindings.push_back(vertex_binding);
+
+        if (scene.hasVertexBuffer(inputResourceName)) {
+            std::vector<const Buffer*> buffers = {&scene.getVertexBuffer(inputResourceName)};
+            commandBuffer.bindVertexBuffer(inputResource.location, buffers, {0});
+            maxLoaction = std::max(maxLoaction, inputResource.location);
+        }
+    }
+
+    if (scene.usePrimitiveIdBuffer()) {
+        vertexInputState.attributes.push_back({.location = maxLoaction + 1, .binding = maxLoaction + 1, .format = VK_FORMAT_R32_UINT, .offset = 0});
+        vertexInputState.bindings.push_back({.binding = maxLoaction + 1, .stride = sizeof(uint32_t), .inputRate = VK_VERTEX_INPUT_RATE_INSTANCE});
+        std::vector<const Buffer*> buffers = {&scene.getPrimitiveIdBuffer()};
+        commandBuffer.bindVertexBuffer(maxLoaction + 1, buffers, {0});
+    }
+
+    commandBuffer.bindIndicesBuffer(scene.getIndexBuffer(), 0, scene.getIndexType());
+
+    pipelineState.setVertexInputState(vertexInputState);
+
+    //  bindPushConstants(primitive);
+    bindBuffer(static_cast<uint32_t>(UniformBindingPoints::PRIM_INFO), scene.getUniformBuffer(), 0, scene.getUniformBuffer().getSize());
+    return *this;
 }
 RenderContext& RenderContext::bindPrimitiveShading(CommandBuffer& commandBuffer, const Primitive& primitive) {
     bindPushConstants(primitive.materialIndex);
@@ -365,103 +436,141 @@ VkPipelineBindPoint RenderContext::getPipelineBindPoint() const {
 
 void RenderContext::flushDescriptorState(CommandBuffer& commandBuffer, VkPipelineBindPoint pipeline_bind_point) {
     auto& pipelineLayout = pipelineState.getPipelineLayout();
-    for (auto& resourceSetIt : resourceSets) {
-        //setId -> pair(binding,arrayElement)
-        BindingMap<VkDescriptorBufferInfo>                       bufferInfos;
-        BindingMap<VkDescriptorImageInfo>                        imageInfos;
-        BindingMap<VkWriteDescriptorSetAccelerationStructureKHR> accelerationInfos;
 
-        std::vector<uint32_t> dynamic_offsets;
+    std::unordered_set<uint32_t> update_descriptor_sets;
 
-        auto  descriptorSetID = resourceSetIt.first;
-        auto& resourceSet     = resourceSetIt.second;
+    for (auto& set_it : pipelineLayout.getShaderSets()) {
+        uint32_t descriptor_set_id = set_it.first;
 
-        if (!resourceSet.isDirty())
-            continue;
+        auto descriptor_set_layout_it = descriptor_set_layout_binding_state.find(descriptor_set_id);
 
-        if (!pipelineState.getPipelineLayout().hasLayout(descriptorSetID))
-            continue;
-
-        auto& descriptorSetLayout = pipelineLayout.getDescriptorLayout(descriptorSetID);
-
-        for (auto& bindingIt : resourceSet.getResourceBindings()) {
-            auto  bindingIndex     = bindingIt.first;
-            auto& bindingResources = bindingIt.second;
-
-            for (auto& elementIt : bindingResources) {
-                auto  arrayElement = elementIt.first;
-                auto& resourceInfo = elementIt.second;
-
-                auto& buffer    = resourceInfo.buffer;
-                auto& sampler   = resourceInfo.sampler;
-                auto& imageView = resourceInfo.image_view;
-                auto& accel     = resourceInfo.accel;
-
-                if (!descriptorSetLayout.hasLayoutBinding(bindingIndex) || descriptorSetLayout.getLayoutBindingInfo(bindingIndex).descriptorCount <= arrayElement)
-                    continue;
-                auto& bindingInfo = descriptorSetLayout.getLayoutBindingInfo(bindingIndex);
-
-                if (buffer != nullptr) {
-                    VkDescriptorBufferInfo bufferInfo{
-                        .buffer = buffer->getHandle(), .offset = resourceInfo.offset, .range = resourceInfo.range};
-
-                    bufferInfos[bindingIndex][arrayElement] = bufferInfo;
-                }
-
-                if (imageView != nullptr || sampler != nullptr) {
-                    VkDescriptorImageInfo imageInfo{
-
-                        .imageView   = imageView->getHandle(),
-                        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                    };
-
-                    if (sampler)
-                        imageInfo.sampler = sampler->getHandle();
-
-                    if (imageView != nullptr) {
-                        // Add image layout info based on descriptor type
-                        switch (bindingInfo.descriptorType) {
-                            case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-                                imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                                break;
-                            case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
-                                if (isDepthOrStencilFormat(imageView->getFormat())) {
-                                    imageInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-                                } else {
-                                    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                                }
-                                break;
-                            case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-                                imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-                                break;
-
-                            default:
-                                continue;
-                        }
-                    }
-                    imageInfos[bindingIndex][arrayElement] = imageInfo;
-                }
-
-                if (accel != nullptr) {
-                    VkWriteDescriptorSetAccelerationStructureKHR accelInfo{
-                        .sType                      = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR,
-                        .accelerationStructureCount = 1,
-                        .pAccelerationStructures    = &accel->accel};
-                    accelerationInfos[bindingIndex][arrayElement] = accelInfo;
-                }
+        if (descriptor_set_layout_it != descriptor_set_layout_binding_state.end()) {
+            if (descriptor_set_layout_it->second->getHandle() != pipelineLayout.getDescriptorLayout(descriptor_set_id).getHandle()) {
+                update_descriptor_sets.emplace(descriptor_set_id);
             }
         }
-        auto descriptorPool = device.getResourceCache().requestDescriptorPool(descriptorSetLayout);
-        auto descriptorSet  = device.getResourceCache().requestDescriptorSet(
-            descriptorSetLayout, descriptorPool, bufferInfos, imageInfos, accelerationInfos);
+    }
 
-        commandBuffer.bindDescriptorSets(pipeline_bind_point, pipelineLayout.getHandle(), descriptorSetID, {descriptorSet}, dynamic_offsets);
+    for (auto set_it = descriptor_set_layout_binding_state.begin(); set_it != descriptor_set_layout_binding_state.end();) {
+        if (!pipelineLayout.hasLayout(set_it->first)) {
+            set_it = descriptor_set_layout_binding_state.erase(set_it);
+        } else {
+            ++set_it;
+        }
+    }
+
+    //Two case wee need to update descriptor sets
+    //1. descriptor set layout has been changed
+    //2. resourceSets is dirty
+    if (resourceSetsDirty || !update_descriptor_sets.empty()) {
+
+        resourceSetsDirty = false;
+
+        for (auto& resourceSetIt : resourceSets) {
+
+            //setId -> pair(binding,arrayElement)
+            BindingMap<VkDescriptorBufferInfo>                       bufferInfos;
+            BindingMap<VkDescriptorImageInfo>                        imageInfos;
+            BindingMap<VkWriteDescriptorSetAccelerationStructureKHR> accelerationInfos;
+
+            std::vector<uint32_t> dynamic_offsets;
+
+            auto  descriptorSetID = resourceSetIt.first;
+            auto& resourceSet     = resourceSetIt.second;
+
+            if (!resourceSet.isDirty() && !update_descriptor_sets.contains(descriptorSetID))
+                continue;
+
+            resourceSet.clearDirty();
+
+            if (!pipelineState.getPipelineLayout().hasLayout(descriptorSetID))
+                continue;
+
+            auto& descriptorSetLayout                            = pipelineLayout.getDescriptorLayout(descriptorSetID);
+            descriptor_set_layout_binding_state[descriptorSetID] = &descriptorSetLayout;
+
+            for (auto& bindingIt : resourceSet.getResourceBindings()) {
+                auto  bindingIndex     = bindingIt.first;
+                auto& bindingResources = bindingIt.second;
+
+                for (auto& elementIt : bindingResources) {
+                    auto  arrayElement = elementIt.first;
+                    auto& resourceInfo = elementIt.second;
+
+                    auto& buffer    = resourceInfo.buffer;
+                    auto& sampler   = resourceInfo.sampler;
+                    auto& imageView = resourceInfo.image_view;
+                    auto& accel     = resourceInfo.accel;
+
+                    if (!descriptorSetLayout.hasLayoutBinding(bindingIndex) || descriptorSetLayout.getLayoutBindingInfo(bindingIndex).descriptorCount <= arrayElement)
+                        continue;
+                    auto& bindingInfo = descriptorSetLayout.getLayoutBindingInfo(bindingIndex);
+
+                    if (buffer != nullptr) {
+                        VkDescriptorBufferInfo bufferInfo{
+                            .buffer = buffer->getHandle(), .offset = resourceInfo.offset, .range = resourceInfo.range};
+
+                        bufferInfos[bindingIndex][arrayElement] = bufferInfo;
+                    }
+
+                    if (imageView != nullptr || sampler != nullptr) {
+                        VkDescriptorImageInfo imageInfo{
+
+                            .imageView   = imageView->getHandle(),
+                            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                        };
+
+                        if (sampler)
+                            imageInfo.sampler = sampler->getHandle();
+
+                        if (imageView != nullptr) {
+                            // Add image layout info based on descriptor type
+                            switch (bindingInfo.descriptorType) {
+                                case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+                                    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                                    break;
+                                case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+                                    if (isDepthOrStencilFormat(imageView->getFormat())) {
+                                        imageInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+                                    } else {
+                                        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                                    }
+                                    break;
+                                case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+                                    imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+                                    break;
+
+                                default:
+                                    continue;
+                            }
+                        }
+                        imageInfos[bindingIndex][arrayElement] = imageInfo;
+                    }
+
+                    if (accel != nullptr) {
+                        VkWriteDescriptorSetAccelerationStructureKHR accelInfo{
+                            .sType                      = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR,
+                            .accelerationStructureCount = 1,
+                            .pAccelerationStructures    = &accel->accel};
+                        accelerationInfos[bindingIndex][arrayElement] = accelInfo;
+                    }
+                }
+            }
+            auto& descriptorPool = device.getResourceCache().requestDescriptorPool(descriptorSetLayout);
+            auto& descriptorSet  = device.getResourceCache().requestDescriptorSet(
+                descriptorSetLayout, descriptorPool, bufferInfos, imageInfos, accelerationInfos);
+            descriptorSet.update({});
+            commandBuffer.bindDescriptorSets(pipeline_bind_point, pipelineLayout.getHandle(), descriptorSetID, {&descriptorSet}, dynamic_offsets);
+        }
     }
 }
 
 void RenderContext::flushPipelineState(CommandBuffer& commandBuffer) {
-    commandBuffer.bindPipeline(device.getResourceCache().requestPipeline(this->getPipelineState()),
-                               getPipelineBindPoint());
+    if (pipelineState.isDirty()) {
+        commandBuffer.bindPipeline(device.getResourceCache().requestPipeline(this->getPipelineState()),
+                                   getPipelineBindPoint());
+        pipelineState.clearDirty();
+    }
 }
 
 void RenderContext::flushAndDrawIndexed(CommandBuffer& commandBuffer, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance) {
@@ -599,6 +708,7 @@ void RenderContext::handleSurfaceChanges() {
 
 void RenderContext::recrateSwapChain(VkExtent2D extent) {
     device.getResourceCache().clearFrameBuffers();
+    device.getResourceCache().clearSgImages();
 
     hwTextures.clear();
 

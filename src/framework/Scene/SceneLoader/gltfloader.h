@@ -6,14 +6,13 @@
 
 #include "SceneLoadingConfig.h"
 
-#include <ext/matrix_float4x4.hpp>
-#include <glm.hpp>
-#include <gtc/type_ptr.hpp>
-
-#include "ext/tinygltf/tiny_gltf.h"
+#include <glm/ext/matrix_float4x4.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <filesystem>
 #include <unordered_set>
+#include <tiny_gltf.h>
 
 #include "Core/Buffer.h"
 #include "Core/Texture.h"
@@ -24,7 +23,7 @@
 
 class GltfLoading {
 public:
-    static std::unique_ptr<Scene> LoadSceneFromGLTFFile(Device& device, const std::string& path, const SceneLoadingConfig& config = {});
+    static std::unique_ptr<Scene> LoadSceneFromGLTFFile(Device& device, const std::string& path, const SceneLoadingConfig & config = {});
     static void                   SetCamera(Camera* camera);
 
     enum FileLoadingFlags {

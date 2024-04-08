@@ -2,6 +2,7 @@
 #extension GL_GOOGLE_include_directive : enable
 #include "shadow.glsl"
 #include "perFrameShading.glsl"
+#include "perFrame.glsl"
 
 precision highp float;
 
@@ -10,28 +11,51 @@ precision highp float;
 
 layout (location = 0) in vec2 in_uv;
 layout (location = 1) in vec3 in_normal;
+layout (location = 2) flat in uint in_primitive_index;
+layout (location = 3) in vec3 in_world_pos;
 
-layout (location = 0) out vec4 o_diffuse;
-layout (location = 1) out vec4 o_specular;
-layout (location = 2) out vec4 o_normal;
-layout (location = 3) out vec4 o_emssion;
 
-layout(push_constant) uniform PushConstantBlock {
-    uint u_materialIndex;
+layout (location = 0) out vec4 o_diffuse_roughness;
+layout (location = 1) out vec4 o_normal_metalic;
+layout (location = 2) out vec4 o_emssion;
+
+
+layout(std430, set = 0, binding = 2) buffer _GlobalPrimitiveUniform {
+    PerPrimitive primitive_infos[];
 };
+
+
 
 vec4 SRGBtoLinear(vec4 srgbIn, float gamma)
 {
     return vec4(pow(srgbIn.xyz, vec3(gamma)), srgbIn.w);
 }
 
+
+vec3 getNormal(int texture_idx)
+{
+    // Perturb normal, see http://www.thetenthplanet.de/archives/1180
+    vec3 tangentNormal = texture(scene_textures[texture_idx], in_uv).xyz * 2.0 - 1.0;
+
+    vec3 q1 = dFdx(in_world_pos);
+    vec3 q2 = dFdy(in_world_pos);
+    vec2 st1 = dFdx(in_uv);
+    vec2 st2 = dFdy(in_uv);
+
+    vec3 N = normalize(in_normal);
+    vec3 T = normalize(q1 * st2.t - q2 * st1.t);
+    vec3 B = -normalize(cross(N, T));
+    mat3 TBN = mat3(T, B, N);
+
+    return normalize(TBN * tangentNormal);
+}
+
+
 void main(void)
 {
-    vec3 normal = normalize(in_normal);
-    // Transform normals from [-1, 1] to [0, 1]
-    o_normal = vec4(0.5 * normal + 0.5, 1.0);
 
-    GltfMaterial material = scene_materials[u_materialIndex];
+    uint material_index = primitive_infos[in_primitive_index].material_index;
+    GltfMaterial material = scene_materials[material_index];
 
     vec3 diffuseColor            = vec3(0.0);
     vec3 specularColor            = vec3(0.0);
@@ -62,27 +86,18 @@ void main(void)
         baseColor *= texture(scene_textures[material.pbrBaseColorTexture], in_uv);
     }
     diffuseColor = baseColor.rgb * (vec3(1.0) - f0) * (1.0 - metallic);
-    specularColor = mix(f0, baseColor.rgb, metallic);
 
-    if (material.alphaMode > 0 && baseColor.a < material.alphaCutoff)
-    {
-        //        discard;
-    }
+    o_diffuse_roughness  = vec4(diffuseColor, perceptualRoughness);
 
-    o_diffuse  = vec4(diffuseColor, perceptualRoughness);
-    o_specular = vec4(specularColor, metallic);
-    // gbufferNormal = vec4(normalize(fs_in.normal) * 0.5 + 0.5, 1.0);
+    vec3 normal = material.normalTexture > -1 ? getNormal(material.normalTexture) : normalize(in_normal);
 
-    //    vec4 tangent = vec4(normalize(fs_in.tangent.xyz), fs_in.tangent.w);
-    //    gbufferTangent = vec4(tangent * 0.5 + 0.5);
-
+    o_normal_metalic = vec4(normal * 0.5f  + 0.5f, metallic);
     vec3 emissionColor            = material.emissiveFactor;
     if (material.emissiveTexture > -1)
     {
         emissionColor *= SRGBtoLinear(texture(scene_textures[material.emissiveTexture], in_uv), 2.2).rgb;
     }
     o_emssion = vec4(emissionColor, 1.0);
-    //    o_normal =  o_albedo;
 
 
 }

@@ -21,5 +21,27 @@ namespace FileUtils {
     std::vector<uint8_t> readShaderBinary(const std::string filename);
 
     std::string getFileTimeStr(const std::string &path,const std::string & format = "%Y-%m-%d %H:%M:%S");
+
+    template<typename T>
+    static inline void streamRead(std::istream& in, T& dst) {
+        in.read(reinterpret_cast<char*>(&dst), sizeof(T));
+    }
+
+    template<typename T>
+    static inline T streamRead(std::istream& in) {
+        T t;
+        streamRead(in, t);
+        return t;
+    }
+
+    template<typename T>
+    static inline void streamRead(std::istream& in, std::vector<T>& dst) {
+        in.read(reinterpret_cast<char*>(&dst[0]), dst.size() * sizeof(T));
+    }
+
+    template<typename T>
+    static inline void streamRead(std::istream& in, T* dst, size_t n) {
+        in.read(reinterpret_cast<char*>(dst), n * sizeof(T));
+    }
 }
 

@@ -50,10 +50,16 @@ Buffer::Buffer(Buffer&& buffer) : _buffer(buffer._buffer), _allocatedSize(buffer
     buffer._buffer = VK_NULL_HANDLE;
 }
 
-void Buffer::copyFrom(Buffer& srcBuffer) {
-}
 
 Buffer::~Buffer() {
-    if (_buffer != VK_NULL_HANDLE)
+    if (_buffer != VK_NULL_HANDLE) {
+        LOGI("Buffer destroyed")
         vmaDestroyBuffer(_allocator, _buffer, _bufferAllocation);
+    }
+}
+std::unique_ptr<Buffer> Buffer::FromBuffer(Device & device,CommandBuffer& commandBuffer, const Buffer& srcBuffer, VkBufferUsageFlags usageFlags, VkDeviceSize offset) {
+        std::unique_ptr<Buffer> dstBuffer = std::make_unique<Buffer>(device, srcBuffer.getSize(), usageFlags | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+        VkBufferCopy            copy{.srcOffset = 0, .size = srcBuffer.getSize()};
+        vkCmdCopyBuffer(commandBuffer.getHandle(), srcBuffer.getHandle(), dstBuffer->getHandle(), 1, &copy);
+        return dstBuffer;
 }

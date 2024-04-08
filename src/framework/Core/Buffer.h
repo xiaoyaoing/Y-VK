@@ -2,6 +2,7 @@
 
 #include "Vulkan.h"
 
+class CommandBuffer;
 class Device;
 
 class Buffer {
@@ -14,11 +15,13 @@ class Buffer {
 public:
     ~Buffer();
 
+    static  std::unique_ptr<Buffer> FromBuffer(Device & device,CommandBuffer & command, const Buffer& srcBuffer,VkBufferUsageFlags usageFlags, VkDeviceSize offset = 0);
+
     explicit Buffer(Device& device, uint64_t bufferSize, VkBufferUsageFlags bufferUsage, VmaMemoryUsage memoryUsage, const void* data = nullptr);
     Buffer(Buffer&& buffer);
     Buffer(Buffer& rhs)           = delete;
     Buffer operator=(Buffer& rhs) = delete;
-    void   copyFrom(Buffer& srcBuffer);
+   // void   copyFrom(Buffer& srcBuffer);
     void   uploadData(const void* srcData, uint64_t size = -1, uint64_t offset = 0);
     void   cleanup();
 
@@ -36,5 +39,7 @@ public:
 
     VkDeviceSize        getDeviceAddress() const;
     inline VkBuffer     getHandle() const { return _buffer; }
+    inline Device &     getDevice() const { return device; }
     inline VkDeviceSize getSize() const { return _allocatedSize; }
 };
+

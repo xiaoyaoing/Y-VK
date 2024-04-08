@@ -22,28 +22,37 @@ void PipelineLayout::create() {
     VkPipelineLayoutCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 
-    std::map<std::uint32_t, std::vector<ShaderResource>> shaderSets;
     for (auto& shader : shaders) {
         for (const auto& shaderResource : shader.getShaderResources()) {
+
+            if (shaderResource.type == ShaderResourceType::Input ||
+                shaderResource.type == ShaderResourceType::Output ||
+                shaderResource.type == ShaderResourceType::PushConstant ||
+                shaderResource.type == ShaderResourceType::SpecializationConstant) {
+                continue;
+            }
+
             shaderSets[shaderResource.set].push_back(shaderResource);
         }
     }
-    //In some case,you may want to skip set1 to use set2,so some empty descriptorSetLayouts may be created.
-    auto maxSet = std::max_element(shaderSets.begin(), shaderSets.end(), [](const auto& a, const auto& b) {
+
+    //It is not necessary to fill empty descriptorSetLayouts. 2024-03-12
+
+    // In some case,you may want to skip set1 to use set2,so some empty descriptorSetLayouts may be created.
+    auto maxSet = std::ranges::max_element(shaderSets.begin(), shaderSets.end(), [](const auto& a, const auto& b) {
                       return a.first < b.first;
                   })->first;
+
     for (uint32_t i = 0; i < maxSet; i++)
         if (!shaderSets.contains(i))
             shaderSets[i] = {};
-    // std::sort(shaderSets.begin(), shaderSets.end(), [](const auto& a, const auto& b) {
-    //     return a.first < b.first;
-    // });
 
     std::vector<VkDescriptorSetLayout> vkDescriptorSetLayouts;
 
     for (const auto& shaderSet : shaderSets) {
         auto& descriptorSetLayout = device.getResourceCache().requestDescriptorLayout(shaderSet.first, shaderSet.second);
-        descriptorLayouts.push_back(&descriptorSetLayout);
+
+        descriptorLayouts[shaderSet.first] = &descriptorSetLayout;
         vkDescriptorSetLayouts.push_back(descriptorSetLayout.getHandle());
     }
 
@@ -78,11 +87,11 @@ const std::vector<Shader>& PipelineLayout::getShaders() const {
 }
 
 bool PipelineLayout::hasLayout(const uint32_t setIndex) const {
-    return setIndex < descriptorLayouts.size();
+    return descriptorLayouts.contains(setIndex);
 }
 
-const DescriptorLayout& PipelineLayout::getDescriptorLayout(const uint32_t setIndex) const {
-    return *descriptorLayouts[setIndex];
+DescriptorLayout& PipelineLayout::getDescriptorLayout(const uint32_t setIndex) const {
+    return *descriptorLayouts.at(setIndex);
 }
 
 const Shader& PipelineLayout::getShader(VkShaderStageFlagBits stage) const {
@@ -118,4 +127,7 @@ VkShaderStageFlags PipelineLayout::getPushConstantRangeStage(uint32_t size) cons
             stage |= resource.stages;
     }
     return stage;
+}
+const std::map<std::uint32_t, std::vector<ShaderResource>>& PipelineLayout::getShaderSets() const {
+    return shaderSets;
 }
