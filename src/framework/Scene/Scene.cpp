@@ -54,6 +54,9 @@ const std::vector<std::unique_ptr<Texture>>& Scene::getTextures() const {
 const std::vector<GltfMaterial>& Scene::getGltfMaterials() const {
     return materials;
 }
+const std::vector<RTMaterial>& Scene::getRTMaterials() const {
+    return rtMaterials;
+}
 
 std::vector<std::shared_ptr<Camera>>& Scene::getCameras() {
     return cameras;
@@ -75,13 +78,13 @@ Buffer& Scene::getVertexBuffer(const std::string& name) const {
 VkIndexType Scene::getIndexType() const {
     return indexType;
 }
-const Buffer& Scene::getIndexBuffer() const {
+Buffer & Scene::getIndexBuffer() const {
     return *sceneIndexBuffer;
 }
-const Buffer& Scene::getUniformBuffer() const {
+Buffer & Scene::getUniformBuffer() const {
     return *sceneUniformBuffer;
 }
-const Buffer& Scene::getPrimitiveIdBuffer() const {
+Buffer & Scene::getPrimitiveIdBuffer() const {
     return *primitiveIdBuffer;
 }
 bool Scene::usePrimitiveIdBuffer() const {
@@ -140,14 +143,14 @@ bool Primitive::hasVertexBuffer(const std::string& name) const {
     return vertexBuffers.contains(name);
 }
 
-const Buffer& Primitive::getIndexBuffer() const {
+Buffer & Primitive::getIndexBuffer() const {
     return *indexBuffer;
 }
 bool Primitive::hasIndexBuffer() const {
     return indexBuffer != nullptr;
 }
 
-const Buffer& Primitive::getUniformBuffer() const {
+Buffer & Primitive::getUniformBuffer() const {
     return *uniformBuffer;
 }
 
@@ -185,4 +188,23 @@ std::unique_ptr<Scene> loadDefaultTriangleScene(Device& device) {
     // auto scene = new Scene(std::move(primitives), {}, {mat}, {}, {});
     auto scene = new Scene();
     return std::unique_ptr<Scene>(scene);
+}
+GltfMaterial InitGltfMaterial() {
+    GltfMaterial material{};
+    material.pbrBaseColorFactor = glm::vec4(1.0f);
+    material.pbrBaseColorTexture = -1;
+    material.pbrMetallicFactor = 0.f;
+    material.pbrRoughnessFactor = 0.f;
+    material.pbrMetallicRoughnessTexture = -1;
+    material.emissiveTexture = -1;
+    material.emissiveFactor = glm::vec3(0.0f);
+    material.normalTexture = -1;
+    material.occlusionTexture = -1;
+    material.alphaMode = 0;
+    material.alphaCutoff = 0.5f;
+    material.doubleSided = false;
+    material.occlusionTextureStrength = 1.0f;
+    material.normalTextureScale = 1.0f;
+    return material;
+    
 }

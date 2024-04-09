@@ -87,7 +87,6 @@ void RayTracer::drawFrame(RenderGraph& renderGraph) {
 
     gui->addGuiPass(renderGraph);
 
-    renderGraph.compile();
     renderGraph.execute(commandBuffer);
 }
 
@@ -136,8 +135,8 @@ void RayTracer::prepare() {
                                       .bufferForAccel          = true,
                                       .bufferForTransferSrc    = true};
     camera                         = std::make_shared<Camera>();
-    scene                          = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"), sceneConfig);
-    // scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"),sceneConfig);
+  //  scene                          = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"), sceneConfig);
+    scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"),sceneConfig);
     camera        = scene->getCameras()[0];
     camera->flipY = true;
     camera->setTranslation(glm::vec3(-2.5f, -3.34f, -20.f));

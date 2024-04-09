@@ -145,9 +145,9 @@ private:
 
 private:
     // Local coordinate attributes
-    glm::vec3 m_position;
+    glm::vec3 m_position{0.f,0.f,0.f};
     glm::vec3 m_scale{1.0f, 1.0f, 1.0f};
-    glm::quat m_rotation;
+    glm::quat m_rotation{};
 
     // Cache for performance
     glm::mat4 m_localMatrix;

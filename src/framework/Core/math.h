@@ -11,5 +11,6 @@ namespace math {
     inline glm::vec3 toDegrees(const glm::vec3& angles) { return glm::vec3(toDegrees(angles.x), toDegrees(angles.y), toDegrees(angles.z)); }
     glm::quat eulerYXZQuat(float yaw, float pitch, float roll);
     glm::quat eulerYXZQuat(const glm::vec3& eulerAngles);
+    glm::quat eulerYZXQuat(const glm::vec3& eulerAngles);
 }
 

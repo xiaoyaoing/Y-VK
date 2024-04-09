@@ -36,7 +36,7 @@ ImageView::ImageView(Image& image, VkImageViewType view_type, VkFormat format, u
     imageViewInfo.subresourceRange = subResourceRange;
 
     if(view_type == VK_IMAGE_VIEW_TYPE_1D) {
-        DebugBreak();
+        // DebugBreak();
     }
     VK_CHECK_RESULT(vkCreateImageView(_device.getHandle(), &imageViewInfo, nullptr, &_view));
     image.addView(this);

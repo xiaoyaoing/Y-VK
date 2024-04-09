@@ -432,7 +432,7 @@ void Camera::setPerspective(float fov, float aspect, float zNear, float zFar) {
     updateViewMatrix();
 }
 void Camera::setRotation(glm::vec3 rotation) {
-    //do nothing
+    m_transform->setRotation(math::eulerYZXQuat(rotation));
 }
 void Camera::setMoveSpeed(float moveSpeed) {
     mMoveSpeed = moveSpeed;

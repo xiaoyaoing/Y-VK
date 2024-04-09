@@ -4,6 +4,7 @@ enum class LIGHT_TYPE : uint8_t {
     Directional = 0,
     Point       = 1,
     Spot        = 2,
+    Area        = 3,
     // Insert new light type here
     Max
 };
@@ -22,6 +23,8 @@ struct LightProperties {
     float inner_cone_angle{0.0f};
 
     float outer_cone_angle{0.0f};
+
+    uint32_t prim_index{0};
 };
 
 struct SgLight {

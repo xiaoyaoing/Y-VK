@@ -122,7 +122,7 @@ DescriptorLayout::DescriptorLayout(Device& device, uint32_t setIdx, const std::v
         bindingInfo.descriptorType = find_descriptor_type(resource.type, false);
 
         bindingFlags.emplace_back(0);
-        resourceLookUp.emplace(resource.name, resource.binding);
+        resourceLookUp.emplace(resource.name, binding);
         //layoutBindings.emplace_back(bindingInfo);
         bindingInfoMap.emplace(binding, bindingInfo);
         bindingLookUp.emplace(bindingInfo.binding, bindingInfoMap.size() - 1);

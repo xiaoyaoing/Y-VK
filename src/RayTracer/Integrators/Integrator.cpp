@@ -1,7 +1,7 @@
 #include "Integrator.h"
 
 #include "Scene/Compoments/Camera.h"
-#include "src/RayTracer/Utils/RTSceneUtil.h"
+#include "RayTracer/Utils/RTSceneUtil.h"
 
 Integrator::Integrator(Device& device) : renderContext(g_context), device(device) {
     // init();

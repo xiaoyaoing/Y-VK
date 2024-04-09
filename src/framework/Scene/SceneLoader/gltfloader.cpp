@@ -12,7 +12,7 @@
 #include "Core/Buffer.h"
 #include "Core/RenderContext.h"
 
-#include <ctpl_stl.h>
+#include <ctpl_stl.h> 
 #include <set>
 
 inline std::vector<uint8_t> convertUnderlyingDataStride(const std::vector<uint8_t>& src_data, uint32_t src_stride, uint32_t dst_stride) {
@@ -33,7 +33,7 @@ static std::unordered_map<VkFormat, uint32_t> formatStrideMap = {{VK_FORMAT_R8_U
 
 static std::unordered_map<VkIndexType, uint32_t> indexStrideMap = {{VK_INDEX_TYPE_UINT16, 2}, {VK_INDEX_TYPE_UINT32, 4}};
 
-inline std::vector<uint8_t> convertIndexData(const std::vector<uint8_t>& src_data, VkIndexType targetType, VkFormat format, VkIndexType type) {
+inline std::vector<uint8_t> convertIndexData(const std::vector<uint8_t>& src_data, VkIndexType targetType, VkFormat format, VkIndexType & type) {
     if (targetType == VK_INDEX_TYPE_NONE_KHR) {
         switch (format) {
             case VK_FORMAT_R8_UINT: {
@@ -299,6 +299,7 @@ struct GLTFLoadingImpl {
     void      process(const tinygltf::Model& model);
     void      processNode(const tinygltf::Node& node, const tinygltf::Model& model);
     glm::mat4 getTransformMatrix(const tinygltf::Node& node);
+    Transform getTransform(const tinygltf::Node& node);
 
     // std::unique_ptr<Buffer> sceneVertexBuffer{nullptr};
 
@@ -392,40 +393,63 @@ void GLTFLoadingImpl::process(const tinygltf::Model& model) {
 
     auto commandBuffer = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
-    auto copyBuffer = [this, &commandBuffer](const std::unique_ptr<Buffer>& srcBuffer, VkBufferUsageFlags usageFlags) {
-        std::unique_ptr<Buffer> dstBuffer = std::make_unique<Buffer>(device, srcBuffer->getSize(), usageFlags | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-        VkBufferCopy            copy{.srcOffset = 0, .size = srcBuffer->getSize()};
-        vkCmdCopyBuffer(commandBuffer.getHandle(), srcBuffer->getHandle(), dstBuffer->getHandle(), 1, &copy);
-        return dstBuffer;
-    };
 
-    sceneIndexBuffer   = copyBuffer(sceneIndexStagingBuffer, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-    sceneUniformBuffer = copyBuffer(uniformStagingBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+    sceneIndexBuffer   = Buffer::FromBuffer(device,commandBuffer,*sceneIndexStagingBuffer, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    sceneUniformBuffer = Buffer::FromBuffer(device,commandBuffer,*uniformStagingBuffer, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     for (auto& attribute : sceneVertexBuffer) {
-        sceneVertexBuffer[attribute.first] = copyBuffer(attribute.second, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+        sceneVertexBuffer[attribute.first] = Buffer::FromBuffer(device,commandBuffer,*attribute.second, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     }
 
-    scenePrimitiveIdBuffer = copyBuffer(primitiveIdxBuffer, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    scenePrimitiveIdBuffer = Buffer::FromBuffer(device,commandBuffer,*primitiveIdxBuffer, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
     g_context->submit(commandBuffer);
 }
+//
+// glm::mat4 GLTFLoadingImpl::getTransformMatrix(const tinygltf::Node& node) {
+//     if (!node.matrix.empty())
+//         return glm::make_mat4x4(node.matrix.data());
+//     auto translation = glm::vec3(0.0f);
+//     if (node.translation.size() == 3) {
+//         translation = glm::make_vec3(node.translation.data());
+//     }
+//     auto rotation = glm::mat4(1.0f);
+//     if (node.rotation.size() == 4) {
+//         rotation = glm::mat4_cast(glm::make_quat(node.rotation.data()));
+//     }
+//     auto scale = glm::vec3(1.0f);
+//     if (node.scale.size() == 3) {
+//         scale = glm::make_vec3(node.scale.data());
+//     }
+//     return glm::translate(glm::mat4(1.0f), translation) * rotation * glm::scale(glm::mat4(1.0f), scale);
+// }
 
-glm::mat4 GLTFLoadingImpl::getTransformMatrix(const tinygltf::Node& node) {
+Transform GLTFLoadingImpl::getTransform(const tinygltf::Node& node) {
+    Transform transform;
     if (!node.matrix.empty())
-        return glm::make_mat4x4(node.matrix.data());
-    auto translation = glm::vec3(0.0f);
-    if (node.translation.size() == 3) {
-        translation = glm::make_vec3(node.translation.data());
-    }
-    auto rotation = glm::mat4(1.0f);
-    if (node.rotation.size() == 4) {
-        rotation = glm::mat4_cast(glm::make_quat(node.rotation.data()));
-    }
-    auto scale = glm::vec3(1.0f);
-    if (node.scale.size() == 3) {
-        scale = glm::make_vec3(node.scale.data());
-    }
-    return config.sceneTransform * glm::translate(glm::mat4(1.0f), translation) * rotation * glm::scale(glm::mat4(1.0f), scale);
+        LOGE("Matrix transformation not supported")
+     else {
+         vec3 translation = config.sceneTranslation;
+         if (node.translation.size() == 3) {
+             translation += glm::make_vec3(node.translation.data());
+         }
+         transform.setPosition(translation);
+
+         glm::quat rotation = config.sceneRotation;
+         if (node.rotation.size() == 4) {
+             glm::quat rota = glm::make_quat(node.rotation.data());
+                rotation = rotation * rota; 
+         }
+         transform.setRotation(rotation);
+
+         glm::vec3 scale = config.sceneScale;
+         if (node.scale.size() == 3) {
+             scale *= glm::make_vec3(node.scale.data());
+         }
+         transform.setLocalScale(scale);
+
+     }
+    return transform;
 }
 
 void GLTFLoadingImpl::processNode(const tinygltf::Node& node, const tinygltf::Model& model) {
@@ -490,8 +514,10 @@ void GLTFLoadingImpl::processNode(const tinygltf::Node& node, const tinygltf::Mo
             if (loadNewIndex) mIndexCount += curPrimitiveIndexCount;
 
             newPrimitive->setDimensions(posMin, posMax);
-            auto                model = getTransformMatrix(node);
-            PerPrimitiveUniform primitiveUniform{model, glm::transpose(glm::inverse(model)), static_cast<uint32_t>(primitive.material)};
+            auto               transform = getTransform(node);
+            newPrimitive->transform = transform;
+            auto              matrix     = transform.getLocalToWorldMatrix();
+            PerPrimitiveUniform primitiveUniform{matrix, glm::transpose(glm::inverse(matrix)), static_cast<uint32_t>(primitive.material)};
             primitiveUniforms.push_back(primitiveUniform);
             primitives.push_back(std::move(newPrimitive));
             gltfPrimitives[primitive.indices].emplace_back(&primitive);
@@ -682,7 +708,9 @@ void GLTFLoadingImpl::loadNode(const tinygltf::Node& node, const tinygltf::Model
                     std::vector<uint8_t> data(model.buffers[view.buffer].data.begin() + startByte,
                                               model.buffers[view.buffer].data.begin() + endByte);
 
-                    data = convertIndexData(data, config.indexType, getAttributeFormat(&model, primitive.indices), newPrimitive->getIndexType());
+                    VkIndexType type;
+                    data = convertIndexData(data, config.indexType, getAttributeFormat(&model, primitive.indices), type);
+                    // newPrimitive->setIndexType();
 
                     VkBufferUsageFlags bufferUsageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | getBufferUsageFlags(config);
 
@@ -702,12 +730,13 @@ void GLTFLoadingImpl::loadNode(const tinygltf::Node& node, const tinygltf::Model
                 posMin = glm::vec3(posAccessor.minValues[0], posAccessor.minValues[1], posAccessor.minValues[2]);
                 posMax = glm::vec3(posAccessor.maxValues[0], posAccessor.maxValues[1], posAccessor.maxValues[2]);
 
-                vertexCount = static_cast<uint32_t>(posAccessor.count);
+                newPrimitive->vertexCount = static_cast<uint32_t>(posAccessor.count);
             }
 
             newPrimitive->setDimensions(posMin, posMax);
 
-            auto matrix = getTransformMatrix(node);
+            auto matrix = newPrimitive->getTransformMatrix();
+           // auto matrix = getTransformMatrix(node);
 
             if (config.bufferAddressAble) {
                 auto transformBuffer = std::make_unique<Buffer>(device, sizeof(glm::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR, VMA_MEMORY_USAGE_CPU_TO_GPU, &matrix);
@@ -716,7 +745,8 @@ void GLTFLoadingImpl::loadNode(const tinygltf::Node& node, const tinygltf::Model
 
             // newPrimitive->vertexBuffers.emplace("transform", std::move(transformBuffer));
 
-            PerPrimitiveUniform primitiveUniform{matrix};
+            newPrimitive->transform = getTransform(node);
+            PerPrimitiveUniform primitiveUniform{newPrimitive->getTransformMatrix()};
             auto                primitiveUniformBuffer = std::make_unique<Buffer>(device, sizeof(PerPrimitiveUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR, VMA_MEMORY_USAGE_CPU_TO_GPU, &primitiveUniform);
             newPrimitive->setUniformBuffer(primitiveUniformBuffer);
 

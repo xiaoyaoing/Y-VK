@@ -138,4 +138,14 @@ set(CTPL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/CTPL)
 target_sources(ctpl INTERFACE ${CTPL_DIR}/ctpl_stl.h)
 target_include_directories(ctpl INTERFACE ${CTPL_DIR})
 
+set(TINY_OBJ_LOADER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tinyobjloader)
+set(TINY_OBJ_LOADER_FILES
+        ${TINY_OBJ_LOADER_DIR}/tiny_obj_loader.h
+        ${TINY_OBJ_LOADER_DIR}/tiny_obj_loader.cc)
+add_library(tiny_obj_loader STATIC ${TINY_OBJ_LOADER_FILES})
+target_include_directories(tiny_obj_loader PUBLIC ${TINY_OBJ_LOADER_DIR})
+target_sources(tiny_obj_loader PRIVATE ${TINY_OBJ_LOADER_FILES})
+
 add_subdirectory(volk)
+add_subdirectory(json)
+

@@ -10,7 +10,7 @@
  */
 #pragma once
 
-#include <volk.h>
+
 
 #include <memory>
 #include <map>
@@ -73,18 +73,16 @@ public:
     static T& instance;
 
     static T& getInstance() {
-        // 使用局部静态变量确保在第一次调用时初始化，且线程安全
         return instance;
     }
 
-    // 禁止拷贝构造和赋值运算符
     Singleton(const Singleton&) = delete;
 
     Singleton& operator=(const Singleton&) = delete;
 
 private:
     Singleton() {
-    }// 私有构造函数，确保只能通过 getInstance() 获取实例
+    }
 };
 
 namespace Default {

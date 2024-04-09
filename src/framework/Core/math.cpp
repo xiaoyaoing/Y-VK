@@ -7,7 +7,8 @@
 
 namespace math {
 
-    glm::quat eulerYXZQuat(float yaw, float pitch, float roll) {
+    glm::quat
+    eulerYXZQuat(float yaw, float pitch, float roll) {
         float cy = cosf(yaw * 0.5f);
         float sy = sinf(yaw * 0.5f);
 
@@ -22,6 +23,23 @@ namespace math {
                          sy * cp * cr - cy * sp * sr,
                          cy * cp * sr - sy * sp * cr);
     }
+    
+    glm::quat fromXAxis(float angle) {
+        return glm::quat(sinf(angle / 2), 0, 0, cosf(angle / 2));
+    }
+
+    glm::quat fromYAxis(float angle) {
+        return glm::quat(0, sinf(angle / 2), 0, cosf(angle / 2));
+    }
+
+    glm::quat fromZAxis(float angle) {
+        return glm::quat(0, 0, sinf(angle / 2), cosf(angle / 2));
+    }
+    
 
     glm::quat eulerYXZQuat(const glm::vec3& eulerAngles) { return eulerYXZQuat(eulerAngles.y, eulerAngles.x, eulerAngles.z); }
+
+    glm::quat eulerYZXQuat(const glm::vec3& eulerAngles) {
+        return fromXAxis(eulerAngles.x) * fromZAxis(eulerAngles.z) * fromYAxis(eulerAngles.y);
+    }
 }// namespace math

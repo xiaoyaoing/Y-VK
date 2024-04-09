@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "SceneLoadingConfig.h"
+
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -18,20 +20,10 @@
 #include "Scene/Scene.h"
 //#include "Mesh.h"
 
-struct SceneLoadingConfig {
-    std::unordered_set<std::string> requiredVertexAttribute{"position", "normal", "texcoord_0", "indices"};
-    VkIndexType                     indexType{VK_INDEX_TYPE_NONE_KHR};
-    bool                            bufferAddressAble{false};
-    bool                            bufferForAccel{false};
-    bool                            bufferForTransferSrc{false};
-    bool                            bufferForTransferDst{false};
-    BufferRate                      bufferRate{BufferRate::PER_SCENE};
-    glm::mat4                       sceneTransform{1.0f};
-};
 
 class GltfLoading {
 public:
-    static std::unique_ptr<Scene> LoadSceneFromGLTFFile(Device& device, const std::string& path, const SceneLoadingConfig& config = {});
+    static std::unique_ptr<Scene> LoadSceneFromGLTFFile(Device& device, const std::string& path, const SceneLoadingConfig & config = {});
     static void                   SetCamera(Camera* camera);
 
     enum FileLoadingFlags {

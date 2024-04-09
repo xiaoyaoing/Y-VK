@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/RayTracing/Accel.h"
+#include "Raytracing/commons.h"
 #include "Scene/Scene.h"
-#include "shaders/Raytracing/commons.h"
 
 struct BlasInput
 {
@@ -18,10 +18,11 @@ using TlasInput  = VkAccelerationStructureInstanceKHR;
 
 struct RTSceneEntry
 {
-    std::unique_ptr<Buffer> vertexBuffer{nullptr};
-    std::unique_ptr<Buffer> normalBuffer{nullptr};
-    std::unique_ptr<Buffer> uvBuffer{nullptr};
-    std::unique_ptr<Buffer> indexBuffer{nullptr};
+    Buffer * vertexBuffer{nullptr};
+    Buffer * normalBuffer{nullptr};
+    Buffer * uvBuffer{nullptr};
+    Buffer * indexBuffer{nullptr};
+    
     std::unique_ptr<Buffer> materialsBuffer{nullptr};
     std::unique_ptr<Buffer> sceneDescBuffer{nullptr};
     std::unique_ptr<Buffer> primitiveMeshBuffer{nullptr};

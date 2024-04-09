@@ -9,6 +9,7 @@
 
 #include "Scene/Compoments/SgLight.h"
 #include "../shaders/gltfMaterial.glsl"
+#include "Raytracing/commons.h"
 
 class Camera;
 
@@ -32,6 +33,7 @@ class Camera;
 // };
 
 class GltfLoading;
+class Jsonloader;
 
 enum class BufferRate {
     PER_PRIMITIVE,
@@ -55,19 +57,22 @@ public:
     const std::vector<std::unique_ptr<Primitive>>& getPrimitives() const;
     const std::vector<std::unique_ptr<Texture>>&   getTextures() const;
     const std::vector<GltfMaterial>&               getGltfMaterials() const;
+    const std::vector<RTMaterial>&               getRTMaterials() const;
     std::vector<std::shared_ptr<Camera>>&          getCameras();
     bool                                           getVertexAttribute(const std::string& name, VertexAttribute* attribute = nullptr) const;
     Buffer&                                        getVertexBuffer(const std::string& name) const;
     VkIndexType                                    getIndexType() const;
     bool                                           hasVertexBuffer(const std::string& name) const;
-    const Buffer&                                  getIndexBuffer() const;
-    const Buffer&                                  getUniformBuffer() const;
-    const Buffer&                                  getPrimitiveIdBuffer() const;
+    Buffer &                                  getIndexBuffer() const;
+    Buffer &                                  getUniformBuffer() const;
+    Buffer &                                  getPrimitiveIdBuffer() const;
     bool                                           usePrimitiveIdBuffer() const;
 
 protected:
     friend GltfLoading;
+    friend Jsonloader;
     std::vector<GltfMaterial> materials;
+    std::vector<RTMaterial>  rtMaterials;
 
     std::vector<SgLight> lights;
 
@@ -86,3 +91,4 @@ protected:
 };
 
 std::unique_ptr<Scene> loadDefaultTriangleScene(Device& device);
+GltfMaterial InitGltfMaterial();

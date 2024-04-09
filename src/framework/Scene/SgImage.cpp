@@ -129,6 +129,20 @@ SgImage::SgImage(Device& device, const std::string& name, const VkExtent3D& exte
     vkImage = std::make_unique<Image>(device, extent, format, image_usage, memory_usage, sample_count, mipLevels, array_layers, flags);
     createImageView();
 
+
+    size_t hash;
+    hash_combine(hash, name);
+    hash_combine(hash, extent);
+    hash_combine(hash, format);
+    hash_combine(hash, image_usage);
+    hash_combine(hash, memory_usage);
+    hash_combine(hash, viewType);
+    hash_combine(hash, sample_count);
+    hash_combine(hash, mipLevels);
+    hash_combine(hash, array_layers);
+    hash_combine(hash, flags);
+ //   LOGI("Creating  {0} with hash {1} ", typeid(SgImage).name(), hash);
+    
     this->format    = format;
     this->mExtent3D = extent;
 

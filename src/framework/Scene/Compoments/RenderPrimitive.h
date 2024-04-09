@@ -5,6 +5,7 @@
 #define VULKANDEMO_RENDERPRIMITIVE_H
 #include "Core/BoundingBox.h"
 #include "Core/Buffer.h"
+#include "Core/Transform.h"
 
 class Material;
 
@@ -55,9 +56,12 @@ public:
     uint32_t       indexCount{};
     uint32_t       firstVertex{0};
     uint32_t       vertexCount{};
-    glm::mat4      matrix{};
     uint32_t       materialIndex{0};
+    Transform      transform{};
 
+    glm::mat4 getTransformMatrix() const {
+        return transform.getLocalToWorldMatrix();
+    }
     bool          getVertexAttribute(const std::string& name, VertexAttribute* attribute = nullptr) const;
     void          setVertxAttribute(const std::string& name, const VertexAttribute& attribute);
     void          setVertexBuffer(const std::string& name, std::unique_ptr<Buffer>& buffer);
@@ -68,9 +72,9 @@ public:
     VkIndexType   getIndexType() const;
     void          setIndexType(VkIndexType indexType);
     bool          hasVertexBuffer(const std::string& name) const;
-    const Buffer& getIndexBuffer() const;
+    Buffer & getIndexBuffer() const;
     bool          hasIndexBuffer() const;
-    const Buffer& getUniformBuffer() const;
+    Buffer & getUniformBuffer() const;
 
     void        setDimensions(glm::vec3 min, glm::vec3 max);
     const BBox& getDimensions() const;
