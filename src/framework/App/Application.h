@@ -129,6 +129,10 @@ protected:
     bool     enableGui{true};
     uint32_t frameCounter{0};
 
+    void handleMouseMove(float x, float y);
+
+private:
+
     std::string              mPresentTexture = SWAPCHAIN_IMAGE_NAME;
     std::vector<const char*> mCurrentTextures{SWAPCHAIN_IMAGE_NAME};
     //Camera related  variable end
@@ -140,5 +144,4 @@ protected:
     const bool enableValidationLayers = true;
 #endif
 
-    void handleMouseMove(float x, float y);
 };

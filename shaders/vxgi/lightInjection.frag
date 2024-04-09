@@ -220,21 +220,11 @@ void main(){
             //  apply_light(lights_info.lights[i], world_pos, normal) * 
             pbr_info.diffuseColor;
         }
-        //   light_contribution = vec3(1, 0, 0);
-        //   light_contribution  = world_pos/20.f;
-        //    light_contribution = vec3(in_uv, 0);
         if (all(equal(light_contribution.xyz, vec3(0.0))))
         {
             discard;
         }
-        //        light_contribution = abs(normal);
-        //  discard;
-        //   debugPrintfEXT("light_contribution %f %f %f \n", light_contribution.x, light_contribution.y, light_contribution.z);
         ivec3 faceIndex = calculateVoxelFaceIndex(-normal);
-        //        faceIndex  = ivec3(0, 3, 5);
-        //        discard;
-        // voxelAtomicRGBA8Avg6Faces(image_coords, vec4(light_contribution, 1.0));
-        //        voxelAtomicRGBA8Avg(image_coords, faceIndex, vec4(light_contribution, 1.0), abs(normal));
         voxelAtomicRGBA8Avg(image_coords, faceIndex, vec4(light_contribution, 1.0), vec3(1));
     }
 }

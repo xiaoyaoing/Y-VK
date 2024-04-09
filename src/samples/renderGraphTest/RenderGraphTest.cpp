@@ -170,14 +170,14 @@ void Example::drawFrame(RenderGraph& rg) {
 
     //rg.clearPass();
 
-    mCurrentTextures = rg.getResourceNames(RENDER_GRAPH_RESOURCE_TYPE::ETexture);
+ //   mCurrentTextures = rg.getResourceNames(RENDER_GRAPH_RESOURCE_TYPE::ETexture);
 
-    rg.addImageCopyPass(blackBoard.getHandle(mPresentTexture), blackBoard.getHandle(SWAPCHAIN_IMAGE_NAME));
+  //  rg.addImageCopyPass(blackBoard.getHandle(mPresentTexture), blackBoard.getHandle(SWAPCHAIN_IMAGE_NAME));
     // rg.addImageCopyPass(blackBoard.getHandle("normal"), blackBoard.getHandle(SWAPCHAIN_IMAGE_NAME));
 
-    gui->addGuiPass(rg);
+  //  gui->addGuiPass(rg);
 
-    rg.execute(commandBuffer);
+   // rg.execute(commandBuffer);
 }
 
 void Example::prepare() {
@@ -255,13 +255,6 @@ Example::Example() : Application("Drawing Triangle", 1024, 1024) {
 
 void Example::onUpdateGUI() {
     gui->checkBox("Use subpasses", &useSubpass);
-
-    auto itemIter    = std::ranges::find(mCurrentTextures.begin(), mCurrentTextures.end(), mPresentTexture);
-    int  itemCurrent = itemIter - mCurrentTextures.begin();
-
-    ImGui::Combo("RenderGraphTextures", &itemCurrent, mCurrentTextures.data(), mCurrentTextures.size());
-    mPresentTexture = mCurrentTextures[itemCurrent];
-    // ImGui::RadioButton("use subpass", &useSubpass, 1);
 }
 
 int main() {

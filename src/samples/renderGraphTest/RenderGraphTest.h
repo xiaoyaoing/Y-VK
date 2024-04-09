@@ -21,6 +21,5 @@ protected:
 
     void                     onUpdateGUI() override;
     void                     drawFrame(RenderGraph& renderGraph) override;
-    std::string              mPresentTexture = SWAPCHAIN_IMAGE_NAME;
-    std::vector<const char*> mCurrentTextures{SWAPCHAIN_IMAGE_NAME};
+    
 };
