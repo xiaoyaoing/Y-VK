@@ -23,6 +23,9 @@ file(GLOB_RECURSE shaders_src CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.rint
 )
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ext/tinygltf)
+
+
 add_subdirectory(ext)
 add_subdirectory(src/framework)
 

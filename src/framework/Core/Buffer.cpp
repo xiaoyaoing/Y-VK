@@ -1,6 +1,16 @@
 #include "Buffer.h"
 #include "Core/Device/Device.h"
 
+void Buffer::unmap() {
+    vmaUnmapMemory(_allocator, _bufferAllocation);
+}
+
+void* Buffer::map() {
+    void* dstData{nullptr};
+    vmaMapMemory(_allocator, _bufferAllocation, &dstData);
+    return dstData;
+}
+
 void Buffer::cleanup() {
     vmaDestroyBuffer(_allocator, _buffer, _bufferAllocation);
 }
@@ -15,8 +25,7 @@ void Buffer::uploadData(const void* srcData, uint64_t size, uint64_t offset) {
     if (size == -1)
         size = _allocatedSize;
     assert(srcData != nullptr);// snowapril : source data must not be invalid
-    void* dstData{nullptr};
-    vmaMapMemory(_allocator, _bufferAllocation, &dstData);
+    auto dstData = map();
     memcpy(static_cast<char*>(dstData) + offset, srcData, static_cast<size_t>(size));
     vmaUnmapMemory(_allocator, _bufferAllocation);
 }

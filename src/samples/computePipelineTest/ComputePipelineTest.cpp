@@ -108,9 +108,9 @@ void Example::drawFrame(RenderGraph& rg) {
         auto &  commandBuffer = context.commandBuffer;
         renderContext->getPipelineState().setPipelineLayout(*computeCalculateLayout);
         renderContext->bindBuffer(0,rg.getBlackBoard().getBuffer("storageBuffer")).bindBuffer(1,*uniformBuffer);
-        renderContext->dispath(commandBuffer,num_particles/128,1,1);
+        renderContext->flushAndDispatch(commandBuffer,num_particles/128,1,1);
         renderContext->getPipelineState().setPipelineLayout(*computeIntegrateLayout);
-        renderContext->dispath(commandBuffer,num_particles/128,1,1);
+        renderContext->flushAndDispatch(commandBuffer,num_particles/128,1,1);
         renderContext->clearPassResources(); });
 
     rg.addPass(

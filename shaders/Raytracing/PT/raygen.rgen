@@ -52,8 +52,8 @@ vec3   uniform_sample_one_light(inout uvec4 seed,inout SurfaceScatterEvent event
      
     const RTLight light = lights[light_idx];
     
-    bool enable_sample_light = pc_ray.enable_sample_light;
-    bool enable_sample_bsdf = pc_ray.enable_sample_bsdf;
+    bool enable_sample_light = pc_ray.enable_sample_light > 0;
+    bool enable_sample_bsdf = pc_ray.enable_sample_bsdf > 0;
     
     if(enable_sample_light)
     { 
@@ -70,7 +70,7 @@ vec3   uniform_sample_one_light(inout uvec4 seed,inout SurfaceScatterEvent event
                 uint material_idx = event.material_idx;
                 event.wi = to_local(event.frame, light_sample.wi);
                 float bsdf_pdf = pdf_bsdf(materials.m[material_idx], event);
-                float light_mis_weight =enable_sample_bsdf? ower_heuristic(light_sample.pdf, bsdf_pdf):1;
+                float light_mis_weight =enable_sample_bsdf? power_heuristic(light_sample.pdf, bsdf_pdf):1;
                 result += light_sample.indensity * eval_bsdf(materials.m[material_idx], event) * light_mis_weight / light_sample.pdf;
             }
         }

@@ -117,6 +117,9 @@ public:
     void addRaytracingPass(const char* name, const RayTracingSetup& setup, RaytracingExecute&& execute);
     void addImageCopyPass(RenderGraphHandle src, RenderGraphHandle dst);
 
+    void setOutput(RenderGraphHandle resource);
+    
+
     // void /(RenderGraphHandle textureId);
 
     void compile();

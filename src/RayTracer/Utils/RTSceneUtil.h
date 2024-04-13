@@ -27,8 +27,9 @@ struct RTSceneEntry
     std::unique_ptr<Buffer> sceneDescBuffer{nullptr};
     std::unique_ptr<Buffer> primitiveMeshBuffer{nullptr};
     std::unique_ptr<Buffer> rtLightBuffer{nullptr};
-
+    
     std::vector<Buffer> transformBuffers{};
+    std::vector< std::unique_ptr<Buffer> > primAreaDistributionBuffers{};
 
     std::vector<Accel> blases;
     Accel tlas;

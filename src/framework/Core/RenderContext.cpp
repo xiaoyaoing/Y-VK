@@ -595,7 +595,7 @@ void RenderContext::traceRay(CommandBuffer& commandBuffer, VkExtent3D dims) {
     vkCmdTraceRaysKHR(commandBuffer.getHandle(), &shaderBindingTable[0], &shaderBindingTable[1], &shaderBindingTable[2], &shaderBindingTable[3], dims.width, dims.height, dims.depth);
 }
 
-void RenderContext::dispath(CommandBuffer& commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
+void RenderContext::flushAndDispatch(CommandBuffer& commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
     flush(commandBuffer);
     vkCmdDispatch(commandBuffer.getHandle(), groupCountX, groupCountY, groupCountZ);
 }

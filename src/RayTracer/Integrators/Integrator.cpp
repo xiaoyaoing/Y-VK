@@ -1,7 +1,7 @@
 #include "Integrator.h"
 
 #include "Scene/Compoments/Camera.h"
-#include "RayTracer/Utils/RTSceneUtil.h"
+#include "../Utils/RTSceneUtil.h"
 
 Integrator::Integrator(Device& device) : renderContext(g_context), device(device) {
     // init();
@@ -14,6 +14,7 @@ void Integrator::initScene(Scene& scene) {
     normalBuffer        = std::move(sceneEntry->normalBuffer);
     uvBuffer            = std::move(sceneEntry->uvBuffer);
     indexBuffer         = std::move(sceneEntry->indexBuffer);
+    
     materialsBuffer     = std::move(sceneEntry->materialsBuffer);
     primitiveMeshBuffer = std::move(sceneEntry->primitiveMeshBuffer);
     transformBuffers    = std::move(sceneEntry->transformBuffers);

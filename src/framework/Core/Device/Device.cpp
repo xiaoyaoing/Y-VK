@@ -126,6 +126,8 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkInstance
 
     //todo check if this is needed
     device_features2.features.geometryShader = VK_TRUE;
+    device_features2.features.shaderInt64       = true;
+
 
     if (enableRayTracing) {
         VkPhysicalDeviceVulkan12Features              features12 = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};
@@ -171,7 +173,6 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkInstance
         dynamic_rendering_feature.pNext            = &rt_fts;
 
         device_features2.features.samplerAnisotropy = true;
-        device_features2.features.shaderInt64       = true;
         //
         device_features2.features.vertexPipelineStoresAndAtomics = true;
         //

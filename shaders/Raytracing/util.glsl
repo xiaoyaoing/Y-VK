@@ -27,7 +27,7 @@ struct AnyHitPayload {
 };
 
 struct BsdfSampleRecord{
-    vec3 f; 
+    vec3 f;
     float pdf;
     uint sample_flags;
 };
@@ -86,6 +86,10 @@ float get_cos_theta(const vec3 v){
     return v.z;
 }
 
+float sqr(float x){
+    return x*x;
+}
+
 
 vec3 square_to_uniform_hemisphere(const vec2 rand) {
     float z = 1 - 2 * rand[0];
@@ -111,6 +115,92 @@ float square_to_cosine_hemisphere_pdf(const vec3 v) {
 float power_heuristic(float a, float b) {
     return (a * a) / (a * a + b * b);
 }
+
+float ggx_g(float cos_theta, float alpha) {
+    float alphaSq = alpha*alpha;
+    float cosThetaSq = cos_theta*cos_theta;
+    float tanThetaSq = max(1.0f - cosThetaSq, 0.0f)/cosThetaSq;
+    return 2.0f/(1.0f + sqrt(1.0f + alphaSq*tanThetaSq));
+}
+
+
+float ggx_d(float cos_theta, float alpha) {
+    float alphaSq = alpha*alpha;
+    float cosThetaSq = cos_theta*cos_theta;
+    float tanThetaSq = max(1.0f - cosThetaSq, 0.0f)/cosThetaSq;
+    float cosThetaQu = cosThetaSq*cosThetaSq;
+    return alphaSq*INV_PI/(cosThetaQu*sqr(alphaSq + tanThetaSq));
+}
+
+
+float dielectricReflectance(float eta, float cosThetaI, float cosThetaT) {
+    if (cosThetaI < 0.0) {
+        eta       = 1.0 / eta;
+        cosThetaI = -cosThetaI;
+    }
+    float sinThetaTSq = eta * eta * (1.0f - cosThetaI * cosThetaI);
+    if (sinThetaTSq > 1.0) {
+        cosThetaT = 0.0;
+        return 1.0;
+    }
+    cosThetaT = sqrt(max(1.0 - sinThetaTSq, 0.0));
+
+    float Rs = (eta * cosThetaI - cosThetaT) / (eta * cosThetaI + cosThetaT);
+    float Rp = (eta * cosThetaT - cosThetaI) / (eta * cosThetaT + cosThetaI);
+
+    return (Rs * Rs + Rp * Rp) * 0.5;
+}
+
+float dielectricReflectance(float eta, float cosThetaI) {
+    float cosThetaT;
+    return dielectricReflectance(eta, cosThetaI, cosThetaT);
+}
+
+float SchlickApproxFresnel(float eta, float cosTheta) {
+    float r0 = (eta * eta - 2 * eta + 1) / (eta * eta + 2 * eta + 1);
+    return r0 + (1 - r0) * pow(1 - cosTheta, 5);
+}
+
+float conductorReflectance(float eta, float k, float cosThetaI) {
+    float cosThetaISq = cosThetaI * cosThetaI;
+    float sinThetaISq = max(1.0f - cosThetaISq, 0.0f);
+    float sinThetaIQu = sinThetaISq * sinThetaISq;
+
+    float innerTerm  = eta * eta - k * k - sinThetaISq;
+    float aSqPlusBSq = sqrt(max(innerTerm * innerTerm + 4.0f * eta * eta * k * k, 0.0f));
+    float a          = sqrt(max((aSqPlusBSq + innerTerm) * 0.5f, 0.0f));
+
+    float Rs = ((aSqPlusBSq + cosThetaISq) - (2.0f * a * cosThetaI)) /
+    ((aSqPlusBSq + cosThetaISq) + (2.0f * a * cosThetaI));
+    float Rp = ((cosThetaISq * aSqPlusBSq + sinThetaIQu) - (2.0f * a * cosThetaI * sinThetaISq)) /
+    ((cosThetaISq * aSqPlusBSq + sinThetaIQu) + (2.0f * a * cosThetaI * sinThetaISq));
+
+    return 0.5f * (Rs + Rs * Rp);
+}
+
+vec3 conductorReflectance(const vec3 eta, const vec3 k, float cosThetaI) {
+    return vec3(
+    conductorReflectance(eta.x, k.x, cosThetaI),
+    conductorReflectance(eta.y, k.y, cosThetaI),
+    conductorReflectance(eta.z, k.z, cosThetaI));
+}
+
+float diffuseReflectance(float eta, float sampleCount) {
+    double diffuseFresnel = 0.0;
+    float  fb             = dielectricReflectance(eta, 0.0f);
+    for (int i = 1; i <= sampleCount; ++i) {
+        float cosThetaSq = float(i) / sampleCount;
+        float fa         = dielectricReflectance(eta, min(sqrt(cosThetaSq), 1.0f));
+        diffuseFresnel += double(fa + fb) * (0.5 / sampleCount);
+        fb = fa;
+    }
+    return float(diffuseFresnel);
+}
+
+bool sample_mirror_reflection(const vec3 wo,float roughness, const vec2 rand,out vec3 wi){
+    
+}
+
 
 
 

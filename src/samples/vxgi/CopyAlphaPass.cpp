@@ -23,7 +23,7 @@ void CopyAlphaPass::render(RenderGraph& rg) {
             for (int i = 0; i < VxgiConfig::clipMapLevelCount; i++) {
                 data.uClipLevel     = i;
                 uint32_t groupCount = VxgiConfig::voxelResolution / 8;
-                g_context->bindPushConstants(data).dispath(context.commandBuffer, groupCount, groupCount, groupCount);
+                g_context->bindPushConstants(data).flushAndDispatch(context.commandBuffer, groupCount, groupCount, groupCount);
             }
         });
 }

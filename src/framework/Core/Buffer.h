@@ -23,6 +23,8 @@ public:
     Buffer operator=(Buffer& rhs) = delete;
    // void   copyFrom(Buffer& srcBuffer);
     void   uploadData(const void* srcData, uint64_t size = -1, uint64_t offset = 0);
+    void * map();
+    void  unmap();
     void   cleanup();
 
     template<typename T>

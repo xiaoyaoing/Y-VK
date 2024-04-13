@@ -23,6 +23,8 @@ public:
     */
     const glm::mat4& getLocalToWorldMatrix() const { return m_localToWorldMatrix; }
 
+    void setLocalToWorldMatrix(const glm::mat4& matrix);
+
     /**
     * Returns the transformation matrix from the world coordinate system to the local coordinate system of this transform.
     */

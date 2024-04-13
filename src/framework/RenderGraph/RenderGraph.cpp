@@ -249,6 +249,9 @@ void RenderGraph::addImageCopyPass(RenderGraphHandle src, RenderGraphHandle dst)
     builder.readTexture(src, RenderGraphTexture::Usage::TRANSFER_SRC);
     builder.writeTexture(dst, RenderGraphTexture::Usage::TRANSFER_DST);
 }
+void RenderGraph::setOutput(RenderGraphHandle resource) {
+    getResource(resource)->addRef();
+}
 
 void RenderGraph::compile() {
     //first cull Graph

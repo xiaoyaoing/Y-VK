@@ -1,10 +1,33 @@
 #pragma once
-#include "../Common/math.hpp"
-#include "vector"
+#include "Core/Buffer.h"
+
+#include <glm/glm.hpp>
 #include <memory>
+#include <vector>
+
+template<typename T>
+T clamp(T value, T min, T max) {
+    return std::max(min, std::min(value, max));
+}
+
+template<typename Predicate>
+int FindInterval(int size, const Predicate& pred) {
+    int first = 0, len = size;
+    while (len > 0) {
+        int half = len >> 1, middle = first + half;
+        // Bisect range based on value of _pred_ at _middle_
+        if (pred(middle)) {
+            first = middle + 1;
+            len -= half + 1;
+        } else
+            len = half;
+    }
+    return clamp(first - 1, 0, size - 2);
+}
+
 struct Distribution1D {
 
-    Distribution1D(const Float* f, int n) : func(f, f + n), cdf(n + 1) {
+    Distribution1D(const float* f, int n) : func(f, f + n), cdf(n + 1) {
         // Compute integral of step function at $x_i$
         cdf[0] = 0;
         for (int i = 1; i < n + 1; ++i) cdf[i] = cdf[i - 1] + func[i - 1] / n;
@@ -12,26 +35,26 @@ struct Distribution1D {
         // Transform step function integral into CDF
         funcInt = cdf[n];
         if (funcInt == 0) {
-            for (int i = 1; i < n + 1; ++i) cdf[i] = Float(i) / Float(n);
+            for (int i = 1; i < n + 1; ++i) cdf[i] = float(i) / float(n);
         } else {
             for (int i = 1; i < n + 1; ++i) cdf[i] /= funcInt;
         }
     }
 
-    int SampleDiscrete(Float sample, Float* pdf) const {
+    int SampleDiscrete(float sample, float* pdf) const {
         int offset = FindInterval((int)cdf.size(),
                                   [&](int index) { return cdf[index] <= sample; });
         if (pdf) *pdf = DiscretePDF(offset);
         return offset;
     }
 
-    Float SampleContinuous(Float u, Float* pdf, int* off = nullptr) const {
+    float SampleContinuous(float u, float* pdf, int* off = nullptr) const {
         // Find surrounding CDF segments and _offset_
         int offset = FindInterval((int)cdf.size(),
                                   [&](int index) { return cdf[index] <= u; });
         if (off) *off = offset;
         // Compute offset along CDF segment
-        Float du = u - cdf[offset];
+        float du = u - cdf[offset];
         if ((cdf[offset + 1] - cdf[offset]) > 0) {
             du /= (cdf[offset + 1] - cdf[offset]);
         }
@@ -44,14 +67,14 @@ struct Distribution1D {
         return (offset + du) / Count();
     }
 
-    Float DiscretePDF(int index) const {
+    float DiscretePDF(int index) const {
         if (index >= func.size() || funcInt == 0) {
             return 0;
         }
         return func[index] / (funcInt * Count());
     }
 
-    void warp(Float& sample, int& index) {
+    void warp(float& sample, int& index) {
         index  = FindInterval((int)cdf.size(),
                              [&](int index) { return cdf[index] <= sample; });
         sample = (sample - cdf[index]) / func[index];
@@ -60,30 +83,33 @@ struct Distribution1D {
     int Count() const {
         return int(func.size());
     }
-    std::vector<Float> func, cdf;
-    Float              funcInt;
+
+    std::unique_ptr<Buffer> toGpuBuffer(Device& device) const;
+    
+    std::vector<float> func, cdf;
+    float              funcInt;
 };
 
 struct Distribution2D {
 public:
     // Distribution2D Public Methods
-    Distribution2D(const Float* data, int nu, int nv);
-    vec2 SampleContinuous(const vec2& u, Float* pdf) const {
-        Float pdfs[2];
+    Distribution2D(const float* data, int nu, int nv);
+    glm::vec2 SampleContinuous(const glm::vec2& u, float* pdf) const {
+        float pdfs[2];
         int   v;
-        Float d1 = pMarginal->SampleContinuous(u[1], &pdfs[1], &v);
-        Float d0 = pConditionalV[v]->SampleContinuous(u[0], &pdfs[0]);
+        float d1 = pMarginal->SampleContinuous(u[1], &pdfs[1], &v);
+        float d0 = pConditionalV[v]->SampleContinuous(u[0], &pdfs[0]);
         if (pdf)
             *pdf = pdfs[0] * pdfs[1];
-        return vec2(d0, d1);
+        return glm::vec2(d0, d1);
     }
-    Float Pdf(const vec2& p) const {
+    float Pdf(const glm::vec2& p) const {
         int iu = clamp(int(p[0] * pConditionalV[0]->Count()), 0, pConditionalV[0]->Count() - 1);
         int iv = clamp(int(p[1] * pMarginal->Count()), 0, pMarginal->Count() - 1);
         return pConditionalV[iv]->func[iu] / pMarginal->funcInt;
     }
 
-    void warp(vec2& uv, int& row, int& column) const;
+    void warp(glm::vec2& uv, int& row, int& column) const;
 
 private:
     // Distribution2D Private Data
@@ -94,11 +120,11 @@ private:
 //class Distribution2D
 //{
 //    int _w, _h;
-//    std::vector<float> _marginalPdf, _marginalCdf;
-//    std::vector<float> _pdf;
-//    std::vector<float> _cdf;
+//    std::glm::vector<float> _marginalPdf, _marginalCdf;
+//    std::glm::vector<float> _pdf;
+//    std::glm::vector<float> _cdf;
 //public:
-//    Distribution2D(std::vector<float> weights, int w, int h)
+//    Distribution2D(std::glm::vector<float> weights, int w, int h)
 //            : _w(w), _h(h), _pdf(std::move(weights))
 //    {
 //        _cdf.resize(_pdf.size() + h);
@@ -146,7 +172,7 @@ private:
 //        _marginalCdf.back() = 1.0f;
 //    }
 //
-//    void warp(vec2 &uv, int &row, int &column) const
+//    void warp(glm::vec2 &uv, int &row, int &column) const
 //    {
 //        row = int(std::distance(_marginalCdf.begin(), std::upper_bound(_marginalCdf.begin(), _marginalCdf.end(), uv.y)) - 1);
 //        uv.y = clamp((uv.y - _marginalCdf[row])/_marginalPdf[row], 0.0f, 1.0f);
@@ -161,13 +187,13 @@ private:
 //
 ////
 ////
-////        Float pdfs[2];
+////        float pdfs[2];
 ////        int v;
-////        Float d1 = pMarginal->SampleContinuous(u[1], &pdfs[1], &v);
-////        Float d0 = pConditionalV[v]->SampleContinuous(u[0], &pdfs[0]);
+////        float d1 = pMarginal->SampleContinuous(u[1], &pdfs[1], &v);
+////        float d0 = pConditionalV[v]->SampleContinuous(u[0], &pdfs[0]);
 ////        if(pdf)
 ////        *pdf = pdfs[0] * pdfs[1];
-////        return vec2(d0, d1);
+////        return glm::vec2(d0, d1);
 ////    }
 //
 //    float pdf(int row, int column) const
@@ -177,27 +203,27 @@ private:
 //        return _pdf[row*_w + column]*_marginalPdf[row];
 //    }
 //
-//    float Pdf(vec2 uv) const {
+//    float Pdf(glm::vec2 uv) const {
 //        return pdf(int((1.0f - uv.y)*_h), int(uv.x*_w))*_w*_h;
 //    }
 //
-//    vec2 SampleContinuous(const vec2 &u, Float *pdf) const {
-//        vec2 newUv(u);
+//    glm::vec2 SampleContinuous(const glm::vec2 &u, float *pdf) const {
+//        glm::vec2 newUv(u);
 //        int row,column;
 //        warp(newUv,row,column);
-//        vec2 res((newUv.x + column)/_w, 1.0f - (newUv.y + row)/_h);
+//        glm::vec2 res((newUv.x + column)/_w, 1.0f - (newUv.y + row)/_h);
 //        if(pdf) *pdf = Pdf(res);
 //        return res;
 //    }
 //
-//    vec2 unwarp(vec2 uv, int row, int column) const
+//    glm::vec2 unwarp(glm::vec2 uv, int row, int column) const
 //    {
 //        row    = clamp(row,    0, _h - 1);
 //        column = clamp(column, 0, _w - 1);
 //        int idxC = row*(_w + 1) + column;
 //        int idxP = row*_w + column;
 //
-//        return vec2(
+//        return glm::vec2(
 //                uv.x*_pdf[idxP] + _cdf[idxC],
 //                uv.y*_marginalPdf[row] + _marginalCdf[row]
 //        );

@@ -23,13 +23,16 @@ inline std::vector<uint8_t> convertUnderlyingDataStride(const std::vector<uint8_
     for (uint32_t idxSrc = 0, idxDst = 0;
          idxSrc < src_data.size() && idxDst < result.size();
          idxSrc += src_stride, idxDst += dst_stride) {
-        std::copy(src_data.begin() + idxSrc, src_data.begin() + idxSrc + src_stride, result.begin() + idxDst);
+        std::copy_n(src_data.begin() + idxSrc, src_stride, result.begin() + idxDst);
+     //   std::copy(src_data.begin() + idxSrc, src_data.begin() + idxSrc + src_stride, result.begin() + idxDst);
     }
 
     return result;
 }
 
 static std::unordered_map<VkFormat, uint32_t> formatStrideMap = {{VK_FORMAT_R8_UINT, 1}, {VK_FORMAT_R16_UINT, 2}, {VK_FORMAT_R32_UINT, 4}};
+static std::unordered_map<VkFormat, VkIndexType> formatIndexTypeMap = { {VK_FORMAT_R16_UINT, VK_INDEX_TYPE_UINT16}, {VK_FORMAT_R32_UINT, VK_INDEX_TYPE_UINT32}};
+
 
 static std::unordered_map<VkIndexType, uint32_t> indexStrideMap = {{VK_INDEX_TYPE_UINT16, 2}, {VK_INDEX_TYPE_UINT32, 4}};
 
@@ -426,8 +429,10 @@ void GLTFLoadingImpl::process(const tinygltf::Model& model) {
 
 Transform GLTFLoadingImpl::getTransform(const tinygltf::Node& node) {
     Transform transform;
-    if (!node.matrix.empty())
-        LOGE("Matrix transformation not supported")
+    if (!node.matrix.empty()) {
+        glm::mat4 matrix = glm::make_mat4x4(node.matrix.data());
+        transform.setLocalToWorldMatrix(matrix);
+    }
      else {
          vec3 translation = config.sceneTranslation;
          if (node.translation.size() == 3) {
@@ -476,6 +481,8 @@ void GLTFLoadingImpl::processNode(const tinygltf::Node& node, const tinygltf::Mo
                     attribute.stride                = stride;
                     vertexAttributes[attributeName] = attribute;
                 }
+                auto indexFormat = getAttributeFormat(&model, primitive.indices);
+                indexType = formatIndexTypeMap.at(indexFormat);
             }
             assert(primitive.attributes.find("POSITION") != primitive.attributes.end());
             const tinygltf::Accessor& posAccessor = model.accessors[primitive.attributes.find(

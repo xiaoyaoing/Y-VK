@@ -44,6 +44,9 @@ struct RTMaterial {
     vec3 albedo;
     int  texture_id;
     uint bsdf_type;
+    float roughness;
+    vec3 eta;
+    vec3 k;
 };
 
 struct RTLight {
@@ -63,6 +66,7 @@ struct RTPrimitive {
     uint vertex_count;
     uint index_offset;
     uint index_count;
+    uint64_t area_distribution_buffer_addr;
     mat4 world_matrix;
 };
 

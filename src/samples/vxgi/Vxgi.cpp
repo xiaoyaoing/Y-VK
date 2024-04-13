@@ -56,7 +56,7 @@ void Example::prepare() {
     Shader shader(*device, "E:/code/moerengine2/shaders/3dgs_splatting/tile_boundary.spv", VK_SHADER_STAGE_COMPUTE_BIT);
 
     scene = GltfLoading::LoadSceneFromGLTFFile(
-        *device, FileUtils::getResourcePath("sponza/Sponza01.gltf"), {.sceneTransform = glm::scale(glm::mat4(1.f), glm::vec3(0.008f))});
+        *device, FileUtils::getResourcePath("sponza/Sponza01.gltf"), {.sceneScale =  glm::vec3(0.008f)});
 
     // scene = GltfLoading::LoadSceneFromGLTFFile(
     //     *device, "E:/code/vk_vxgi/VFS/Scene/Sponza/Sponza.gltf", {.bufferRate = BufferRate::PER_SCENE});

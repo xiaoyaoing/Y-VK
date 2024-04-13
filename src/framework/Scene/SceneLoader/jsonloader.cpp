@@ -80,16 +80,26 @@ void JsonLoader::LoadSceneFromGLTFFile(Device& device, const std::string& path, 
 void JsonLoader::loadCamera() {
     std::shared_ptr<Camera> camera     = std::make_shared<Camera>();
     Json                    cameraJson = sceneJson["camera"];
-    camera->setTranslation(GetOptional(cameraJson, "translation", glm::vec3(0.0f)));
+    camera->setTranslation(GetOptional(cameraJson, "translation", glm::vec3(12,-4,2)));
     camera->setRotation(GetOptional(cameraJson, "rotation", glm::vec3(0.0f)));
-    camera->setPerspective(GetOptional(cameraJson, "fov", 45.0f), GetOptional(cameraJson, "aspect", 1.0f), GetOptional(cameraJson, "zNear", 0.1f), GetOptional(cameraJson, "zFar", 100.0f));
+    camera->setPerspective(GetOptional(cameraJson, "fov", 45.0f), GetOptional(cameraJson, "aspect", 1.0f), GetOptional(cameraJson, "zNear", 0.1f), GetOptional(cameraJson, "zFar", 4000.0f));
+    camera->flipY = true;
     cameras.push_back(camera);
 }
 void JsonLoader::PreprocessMaterials() {
     Json materialsJson = sceneJson["bsdfs"];
     for(auto & materialJson : materialsJson) {
         materialJsons.push_back(materialJson);
+        if(materialJson.contains("name")) {
+            materialIndexMap[materialJson["name"].get<std::string>()] = materialJsons.size() - 1;
+        }
     }
+    // for(auto & primitiveJson : sceneJson["primitives"]) {
+    //     if(primitiveJson.contains("bsdf")) {
+    //         auto &  materialJson = primitiveJson["bsdf"];
+    //         if(ma)
+    //     }
+    // }
 }
 
 std::unordered_map<std::string,uint32_t> type2RTBSDFTYPE = {
@@ -105,7 +115,7 @@ void JsonLoader::loadMaterials() {
             texture_paths.insert(materialJson["albedo"].get<std::string>());
         }
     }
-    std::vector<std::unique_ptr<Texture>> textures;
+  //  std::vector<std::unique_ptr<Texture>> textures;
     std::unordered_map<std::string_view,int> texture_index;
     for(auto & texture_path : texture_paths) {
         textures.push_back(Texture::loadTextureFromFile(device,rootPath.string()+"/"+texture_path));
@@ -203,7 +213,7 @@ void JsonLoader::loadPrimitives() {
                 material_index = materialIndexMap[materialJson.get<std::string>()];
             } else {
                 materialJsons.emplace_back(std::move(materialJson));
-                material_index = materials.size() - 1;
+                material_index = materialJsons.size() - 1;
             }
         }
         auto primitive = std::make_unique<Primitive>(vertexOffset, indexOffset, indexCount, material_index);

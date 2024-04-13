@@ -53,7 +53,7 @@ void LightInjectionPass::render(RenderGraph& rg) {
                         voxelParam.clipmapLevel = i;
                         
                         mVoxelParamBuffers[i]->uploadData(&voxelParam, sizeof(VoxelizationParamater));
-                        g_context->bindBuffer(5, *mVoxelParamBuffers[i], 0, sizeof(VoxelizationParamater),3);
+                        g_context->bindBuffer(5, *mVoxelParamBuffers[i], 0, sizeof(VoxelizationParamater),3).bindPushConstants(frameIndex);
                         g_manager->fetchPtr<View>("view")->drawPrimitives(commandBuffer, [&](const Primitive& primitive) {
                             if(i==0)
                                 return clipRegion.getBoundingBox().overlaps(primitive.getDimensions());

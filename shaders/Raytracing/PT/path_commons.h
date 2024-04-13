@@ -1,4 +1,5 @@
-#pragma once
+#ifndef  PATH_COMMONS_H
+#define PATH_COMMONS_H
 #include "../commons.h"
 
 struct PCPath
@@ -11,3 +12,4 @@ struct PCPath
     uint enable_sample_bsdf;
     uint enable_sample_light;
 };
+#endif

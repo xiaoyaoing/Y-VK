@@ -33,6 +33,8 @@ layout(location = 0) in vec3 in_position;
 layout(location = 1) in vec2 in_uv;
 layout(location = 2) in vec3 in_normal;
 layout (location = 3) flat in uint in_primitive_index;
+layout(location = 4) in vec3 o_position_1;
+
 
 
 layout(binding = 2, set = 2, r32ui) volatile uniform uimage3D radiance_image;
@@ -41,6 +43,11 @@ layout(binding = 4, set = 0) uniform LightsInfo
 {
     Light lights[MAX_LIGHTS];
 }lights_info;
+
+layout(push_constant) uniform PushConstant
+{
+    uint frame_index;
+};
 
 
 uint convVec4ToRGBA8(vec4 val) {
@@ -92,7 +99,8 @@ void imageAtomicRGBA8Avg(ivec3 coords, vec4 value)
         curValF.xyz /= (curValF.w);// Renormalize
         newVal = convVec4ToRGBA8(curValF);
     }
-    //debugPrintfEXT("curValF %f %f %f %f val %f %f %f %f iterations %d\n", curValF.x, curValF.y, curValF.z, curValF.w, value.x, value.y, value.z, value.w,i);
+    if(coords.x == 45 && coords.y == 77 && coords.z == 111)
+    debugPrintfEXT("curValF %f %f %f %f val %f %f %f %f iterations %d newval coord %d %d %d \n", curValF.x, curValF.y, curValF.z, curValF.w, value.x, value.y, value.z, value.w, i, coords.x, coords.y, coords.z);
 }
 
 void voxelAtomicRGBA8Avg(ivec3 imageCoord, ivec3 faceIndex, vec4 color, vec3 weight)
@@ -128,12 +136,29 @@ ivec3 calculateVoxelFaceIndex(vec3 normal)
 void main(){
 
     vec3 world_pos = in_position;
-
+    
+    vec3 p = vec3(5.705555 ,9.622492, -2.028390);
+    vec3 pl = p-0.1f;
+    vec3 pu = p+0.1f;
+    if(all(greaterThan(world_pos, pl)) && all(lessThan(world_pos, pu)) )
+    { 
+        debugPrintfEXT("world_pos1 %f %f %f maxextentworld, %f %d %f %f %f %d\n", world_pos.x, world_pos.y, world_pos.z, max_extent_world.x, clip_map_resoultion, o_position_1.x, o_position_1.y, o_position_1.z, in_primitive_index);
+       // debugPrintfEXT("world_pos %f %f %f maxextentworld, %f %d %f %f %f %d\n", world_pos.x, world_pos.y, world_pos.z, max_extent_world.x, clip_map_resoultion, o_position_1.x, o_position_1.y, o_position_1.z, in_primitive_index);
+    }
+        if(in_primitive_index == 5)
+        debugPrintfEXT("world_pos %f %f %f maxextentworld, %f %d %f %f %f %d\n", world_pos.x, world_pos.y, world_pos.z, max_extent_world.x,clip_map_resoultion,o_position_1.x,o_position_1.y,o_position_1.z,in_primitive_index);
     if (!pos_in_clipmap(world_pos)){
         discard;
     }
-
+    
     ivec3 image_coords = computeImageCoords(world_pos);
+    
+//    if(image_coords.x == 45 && image_coords.y == 77 && image_coords.z == 111)
+//        debugPrintfEXT("world_pos %f %f %f maxextentworld, %f %d\n", world_pos.x, world_pos.y, world_pos.z, max_extent_world.x,clip_map_resoultion);
+//    if(frame_index > 0 )
+//        debugPrintfEXT("world_pos %f %f %f maxextentworld, %f %d\n", world_pos.x, world_pos.y, world_pos.z, max_extent_world.x,clip_map_resoultion);
+//    
+    
 
     uint material_index = primitive_infos[in_primitive_index].material_index;
     GltfMaterial material = scene_materials[material_index];
@@ -184,7 +209,7 @@ void main(){
         // diffuse_color = base_color.rgb * (vec3(1.0) - f0) * (1.0 - metallic);
         diffuse_color = base_color.rgb;
         diffuse_color = texture(scene_textures[material.pbrBaseColorTexture], in_uv).xyz;
-        //  diffuse_color = vec3(in_uv, 0);
+        //  diffuse_color = vec3(fract(abs(in_uv.x)),fract(abs(in_uv.y)), 0);
         //        diffuse_color = vec3(float(in_primitive_index) / 25, 0, 0);
         //   diffuse_color = subpassLoad(gbuffer_diffuse_roughness).rgb;
         //        diffuse_color = vec3(1,0,0,0);
@@ -210,7 +235,7 @@ void main(){
             Light light = lights_info.lights[i];
             vec3 light_dir = calcuate_light_dir(lights_info.lights[i], world_pos);
             vec3 half_vector = normalize(light_dir + view_dir);
-
+ 
             pbr_info.NdotL = clamp(dot(normal, light_dir), 0.001, 1.0);
             pbr_info.NdotH = clamp(dot(normal, half_vector), 0.0, 1.0);
             pbr_info.LdotH = clamp(dot(light_dir, half_vector), 0.0, 1.0);

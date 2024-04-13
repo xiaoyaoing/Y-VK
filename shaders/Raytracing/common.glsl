@@ -23,6 +23,7 @@ layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer Ind
 layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer Normals { vec3 n[]; };
 layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer TexCoords { vec2 t[]; };
 layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer Materials { RTMaterial m[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer Distribution1D { float m[]; };
 
 
 Indices indices = Indices(scene_desc.index_addr);
@@ -98,14 +99,39 @@ vec4 rand4(inout uvec4 rng_state) {
     return vec4(uint_to_float(pcg.x), uint_to_float(pcg.y), uint_to_float(pcg.z), uint_to_float(pcg.w));
 }
 
+uint binary_search(float u, const float[] cdf,uint cdf_begin, uint cdf_end) {
+    uint left = cdf_begin;
+    uint right = cdf_end;
+    while (left < right) {
+        uint mid = (left + right) / 2;
+        if (u < cdf[mid]) {
+            right = mid;
+        } else {
+            left = mid + 1;
+        }
+    }
+    return left;
+}
+
+uint sample_distribution(float u,  const Distribution1D distribution,out pdf) {
+    uint element_num = uint(distribution.m[0]);
+    float func_int = distribution.m[1];
+    uint idx = binary_search(u, distribution.m, 2, element_num + 2);
+    pdf = distribution.m[idx+2 +element_num] / (func_int * element_num);
+    return idx;
+}
+
 
 MeshSampleRecord uniform_sample_on_mesh(uint mesh_idx, vec3 rands, in mat4 world_matrix, uint triangle_idx){
 
     MeshSampleRecord result;
-
+    
     //first choose one triangle
 
     RTPrimitive mesh_info = prim_infos.p[mesh_idx];
+
+    Distribution1D dist = Distribution1D(area_distribution_buffer_addr);
+    triangle_idx = sample_distribution(rands.x, dist, result.pdf);
 
     uint triangle_count = mesh_info.index_count / 3;
 
@@ -136,7 +162,7 @@ MeshSampleRecord uniform_sample_on_mesh(uint mesh_idx, vec3 rands, in mat4 world
 
     float area = 0.5f * cross(p1 - p0, p2 - p0).length();
 
-    result.pdf  = 1.f / float(triangle_count) / area;
+    result.pdf /= area;
     result.n =  normalize(vec3(inv_tr_mat * n));
 
     //  result.n = normalize(n0 * barycentrics.x + n1 * barycentrics.y + n2 * barycentrics.z);

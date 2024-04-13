@@ -9,6 +9,7 @@
 #include "Core/View.h"
 #include "Core/math.h"
 #include "Core/Shader/GlslCompiler.h"
+#include "Scene/SceneLoader/SceneLoaderInterface.h"
 #include "Scene/SceneLoader/gltfloader.h"
 
 void Example::drawFrame(RenderGraph& rg) {
@@ -183,6 +184,13 @@ void Example::drawFrame(RenderGraph& rg) {
 void Example::prepare() {
     Application::prepare();
 
+    Shader shader(*device,"E:/code/moerengine2/shaders/3dgs_splatting/radix_sort.spv", VK_SHADER_STAGE_COMPUTE_BIT);
+    std::vector<Shader> shaders_{shader};
+    auto pipelinelayout = std::make_unique<PipelineLayout>(*device, shaders_);
+    g_context->getPipelineState().setPipelineType(PIPELINE_TYPE::E_COMPUTE).setPipelineLayout(*pipelinelayout);
+    auto commandBuffer = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+    g_context->flushPipelineState(commandBuffer);
+
     std::vector<Shader> shaders{
         Shader(*device, FileUtils::getShaderPath("defered_one_scene_buffer.vert")),
         Shader(*device, FileUtils::getShaderPath("defered.frag"))};
@@ -193,8 +201,7 @@ void Example::prepare() {
         Shader(*device, FileUtils::getShaderPath("lighting.frag"))};
     pipelineLayouts.lighting = std::make_unique<PipelineLayout>(*device, shaders1);
 
-    // scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("space_module/SpaceModule.gltf"));
-    scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"), {.bufferRate = BufferRate::PER_SCENE, .sceneTransform = glm::scale(glm::mat4(1.0f), glm::vec3(0.008f))});
+  scene = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("staircase2/scene.json"), {.bufferRate = BufferRate::PER_SCENE});
 
     // scene = GltfLoading::LoadSceneFromGLTFFile(
     //     *device, "E:/code/vk_vxgi/VFS/Scene/Sponza/Sponza.gltf");
@@ -202,7 +209,8 @@ void Example::prepare() {
     //  GlslCompiler::forceRecompile = true;
     // scene = GltfLoading::LoadSceneFromGLTFFile(*device, "E:/code/DirectX-Graphics-Samples/MiniEngine/ModelViewer/Sponza/pbr/sponza2.gltf");
     // scene = GltfLoading::LoadSceneFromGLTFFile(*device, "E:/code/DirectX-Graphics-Samples/MiniEngine/ModelViewer/Sponza/pbr/sponza2.gltf");
-    //  scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));
+  // scene = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));
+    // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/tungsten-original/cmake-build-release/data/example-scenes/cornell-box/scene.json");
 
     auto light_pos   = glm::vec3(0.0f, 128.0f, -225.0f);
     auto light_color = glm::vec3(1.0, 1.0, 1.0);
@@ -232,14 +240,14 @@ void Example::prepare() {
         }
     }
     camera        = scene->getCameras()[0];
-    camera->flipY = false;
+  //camera->flipY = true;
     // camera->setTranslation(glm::vec3(-494.f, -116.f, 99.f));
     camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
     camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 1.f, 4000.f);
     camera->setMoveSpeed(0.0005f);
 
-    camera->setPerspective(45.0f, float(mWidth), float(mHeight), 0.3f, 30.0f);
-    glm::vec3 cameraPositionOffset(0.46, 8.27, -1.54);
+   // camera->setPerspective(45.0f, float(mWidth), float(mHeight), 0.3f, 30.0f);
+    glm::vec3 cameraPositionOffset(12,-4,2);
     camera->getTransform()->setPosition(cameraPositionOffset);
     camera->getTransform()->setRotation(glm::quat(0.67, -0.24, 0.69, 0.12));
 

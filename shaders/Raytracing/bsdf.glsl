@@ -58,6 +58,26 @@ float mirror_pdf(const RTMaterial mat,const SurfaceScatterEvent event){
     return 0;
 }
 
+float conductor_pdf(const RTMaterial mat,const SurfaceScatterEvent event){
+    return 0;
+}
+
+BsdfSampleRecord conductor_sample(const RTMaterial mat,const vec2 rand ,inout SurfaceScatterEvent event){
+    BsdfSampleRecord record;
+    if(mat.roughness == 0){
+        event.wi = reflect(event.wo);
+        record.f = conductorReflectance(mat.eta,mat.k,event.wo);
+        record.pdf = 1;
+        record.sample_flags = RT_BSDF_LOBE_SPECULAR;
+        return record;
+    }
+}
+
+vec3 conductor_f(const RTMaterial mat,const SurfaceScatterEvent event){
+    return vec3(0);
+}
+
+
 BsdfSampleRecord mirror_sample(const RTMaterial mat,const vec2 rand ,inout SurfaceScatterEvent event){
     BsdfSampleRecord record;
     record.f = get_albedo(mat,event.uv);
@@ -84,6 +104,8 @@ float pdf_bsdf(const RTMaterial mat,const SurfaceScatterEvent event) {
 
 
 BsdfSampleRecord sample_bsdf(const RTMaterial mat,inout SurfaceScatterEvent event,const vec2 rand){
+    //Fill event.wi
+    //Fill record.f and record.pdf and record.sample_flags
     uint bsdf_type = mat.bsdf_type;
     HANDLE_BSDF_SAMPLE(MIRROR,mirror)
     HANDLE_BSDF_SAMPLE(DIFFUSE,diffuse)

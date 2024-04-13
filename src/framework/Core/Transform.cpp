@@ -33,6 +33,17 @@ void Transform::lateUpdate() {
     m_changedSinceLastFrame = false;
     m_lastFrameWorldBBox    = m_worldBBox;
 }
+void Transform::setLocalToWorldMatrix(const glm::mat4& matrix) {
+    m_localToWorldMatrix = matrix;
+    m_worldToLocalMatrix = glm::inverse(matrix);
+
+    m_position = glm::vec3(matrix[3]);
+    m_rotation = glm::normalize(glm::quat_cast(matrix));
+    m_scale    = getApproximateScale();
+
+    m_changedSinceLastFrame = true;
+    m_worldBBox             = m_originalBBox.toWorld(m_localToWorldMatrix);
+}
 
 glm::mat3 Transform::getLocalToWorldRotationMatrix() const {
     return glm::toMat3(getLocalToWorldRotation());

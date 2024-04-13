@@ -117,6 +117,7 @@ public:
     const glm::mat4& viewProj() const noexcept { return m_viewProj; }
 
     void updateViewMatrix() noexcept;
+    void updateProjMatrix() noexcept;
 
     Transform* getTransform() const noexcept { return m_transform.get(); }
 
@@ -221,6 +222,7 @@ public:
     } mouseButtons;
     float mMoveSpeed{1};
     bool  flipY{false};
+    bool  flipYTemp{false};
     bool  useInverseDepth{true};
 
 protected:

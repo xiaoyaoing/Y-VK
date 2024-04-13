@@ -26,4 +26,6 @@ void main()
     out_color = mix(u_borderColor, In.color, min(min(In.uv.x, min(In.uv.y, min((1.0 - In.uv.x), (1.0 - In.uv.y)))) / u_borderWidth, 1.0));
     // out_color.xyz  = vec3(1);
     out_color.a = u_alpha;
+    out_color = In.color;
+
 }

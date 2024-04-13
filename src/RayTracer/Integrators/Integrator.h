@@ -31,10 +31,10 @@ public:
 protected:
     SceneUbo sceneUbo;
 
-    std::unique_ptr<Buffer> vertexBuffer{nullptr};
-    std::unique_ptr<Buffer> normalBuffer{nullptr};
-    std::unique_ptr<Buffer> uvBuffer{nullptr};
-    std::unique_ptr<Buffer> indexBuffer{nullptr};
+     Buffer * vertexBuffer{nullptr};
+     Buffer * normalBuffer{nullptr};
+     Buffer * uvBuffer{nullptr};
+     Buffer * indexBuffer{nullptr};
 
     std::unique_ptr<Buffer> materialsBuffer{nullptr};
     std::unique_ptr<Buffer> primitiveMeshBuffer{nullptr};

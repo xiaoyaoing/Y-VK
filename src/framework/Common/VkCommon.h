@@ -14,20 +14,11 @@ namespace vkCommon {
             return {type, descriptorCount};
         }
 
-        inline VkViewport viewport(
+         VkViewport viewport(
             float width,
             float height,
             float minDepth,
-            float maxDepth) {
-            VkViewport viewport{};
-            viewport.width    = width;
-            viewport.height   = -height;
-            viewport.x        = 0;
-            viewport.y        = height;
-            viewport.minDepth = minDepth;
-            viewport.maxDepth = maxDepth;
-            return viewport;
-        }
+            float maxDepth) ;
 
         inline VkRect2D rect2D(
             int32_t width,

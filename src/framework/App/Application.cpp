@@ -94,6 +94,7 @@ void Application::updateGUI() {
     ImGui::PopItemWidth();
     ImGui::NextColumn();
     ImGui::InputFloat("Camera Move Speed", &camera->mMoveSpeed);
+    camera->onShowInEditor();
     onUpdateGUI();
 
     auto itemIter    = std::ranges::find(mCurrentTextures.begin(), mCurrentTextures.end(), mPresentTexture);

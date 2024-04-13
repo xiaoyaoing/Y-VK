@@ -22,7 +22,7 @@ void ClipMapCleaner::clearClipMapRegions(RenderGraph& rg, const ClipmapRegion& c
                 ImageCleaningDesc desc{.regionMinCorner = clipRegion.minCoord, .clipLevel = clipLevel, .clipMaxExtent = clipRegion.extent, .clipmapResolution = VOXEL_RESOLUTION, .faceCount = 6};
                 const glm::uvec3  groupCount = glm::uvec3(glm::ceil(glm::vec3(clipRegion.extent) / 8.0f));
                 g_context->getPipelineState().setPipelineLayout(*mPipelineLayout);
-                g_context->bindImage(0, rg.getTexture(imageToClear)->getHwTexture()->getVkImageView()).bindPushConstants(desc).dispath(context.commandBuffer, groupCount.x, groupCount.y, groupCount.z);
+                g_context->bindImage(0, rg.getTexture(imageToClear)->getHwTexture()->getVkImageView()).bindPushConstants(desc).flushAndDispatch(context.commandBuffer, groupCount.x, groupCount.y, groupCount.z);
             });
     }
 }

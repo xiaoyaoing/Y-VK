@@ -101,8 +101,9 @@ void View::drawPrimitives(CommandBuffer& commandBuffer, const PrimitiveSelectFun
     uint32_t instance_count = 0;
     for (const auto& primitive : mVisiblePrimitives) {
         if (selectFunc(*primitive)) {
-            g_context->flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, primitive->firstIndex, primitive->firstVertex, instance_count++);
+            g_context->flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, primitive->firstIndex, primitive->firstVertex, instance_count);
         }
+        instance_count++;
     }
 }
 

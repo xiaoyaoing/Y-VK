@@ -1,0 +1,39 @@
+#version 460
+#extension GL_EXT_buffer_reference2 : require
+
+layout(push_constant) uniform UniformBuffer {
+    uint32_t index_offset;
+    uint32_t index_count;
+    uint64_t vertex_address;
+    uint64_t index_address;
+    mat4 model;
+} ubo;
+
+layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer Vertices { vec3 v[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer Indices { uint i[]; };
+
+layout(binding = 0) buffer Area {
+    float areas[];
+};
+
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+ void main() {
+    uint index = gl_GlobalInvocationID.x;
+    if (index >= position.length()) {
+        return;
+    }
+     Indices indices = Indices(scene_desc.index_addr);
+     Vertices vertices = Vertices(scene_desc.vertex_addr);
+
+     uint index_offset = index_offset  + 3 * index;
+        uint i0 = indices.i[index_offset + 0];
+     uint i1 = indices.i[index_offset + 1];
+        uint i2 = indices.i[index_offset + 2];
+     
+     vec3 world_pos0 =model * vertices.v[i0];
+     vec3 world_pos1 =model * vertices.v[i1];
+     vec3 world_pos2 =model * vertices.v[i2];
+     
+     areas[index] = 0.5 * length(cross(world_pos1 - world_pos0, world_pos2 - world_pos0));
+     
+}

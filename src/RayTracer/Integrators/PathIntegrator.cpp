@@ -3,7 +3,7 @@
 #include "imgui.h"
 #include "Common/ResourceCache.h"
 #include "Scene/Compoments/Camera.h"
-#include "shaders/Raytracing/PT/path_commons.h"
+#include "Raytracing/PT/path_commons.h"
 
 void PathIntegrator::render(RenderGraph& renderGraph)
 {

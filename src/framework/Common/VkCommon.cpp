@@ -9,6 +9,19 @@
 #define VK_KHR_get_physical_device_properties2 1
 
 namespace vkCommon {
+
+    VkViewport initializers::viewport(float width, float height, float minDepth, float maxDepth) {
+            VkViewport viewport{};
+            viewport.width    = width;
+            viewport.height   = -height;
+            viewport.x        = 0;
+            viewport.y        = height;
+            viewport.minDepth = minDepth;
+            viewport.maxDepth = maxDepth;
+            return viewport;
+        
+    }
+
     void set_image_layout(
         VkCommandBuffer         command_buffer,
         VkImage                 image,

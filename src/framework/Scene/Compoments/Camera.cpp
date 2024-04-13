@@ -176,6 +176,11 @@ void Camera::onShowInEditor() {
 
     ImGui::DragFloat("Near Plane", &m_nearZ, 0.01f, 0.01f, 1000.0f);
     ImGui::DragFloat("Far Plane", &m_farZ, 0.01f, 0.0f, 1000.0f);
+    ImGui::Checkbox("Flip Y", &flipYTemp);
+    if(flipYTemp != flipY){
+        flipY = flipYTemp;
+        updateProjMatrix();
+    }
 }
 
 void Camera::setOrthographic(float screenWidth, float screenHeight, float zn, float zf) noexcept {
@@ -230,7 +235,8 @@ void Camera::updateViewMatrix() noexcept {
 
     glm::mat3 rotation = glm::toMat3(transform->getRotation());
     glm::vec3 pos      = transform->getPosition();
-    if (flipY) pos.y *= -1.0f;
+    // if (flipY)
+    //     pos.y *= -1.0f;
 
     glm::vec3& right = rotation[0];
     glm::vec3& up    = rotation[1];
@@ -263,6 +269,20 @@ void Camera::updateViewMatrix() noexcept {
     m_viewProj    = m_proj * m_view;
     m_viewInv     = glm::inverse(m_view);
     m_viewProjInv = m_viewInv * m_projInv;
+}
+void Camera::updateProjMatrix() noexcept {
+    float nz = useInverseDepth ? m_farZ : m_nearZ;
+    float fz = useInverseDepth ? m_nearZ : m_farZ;
+
+    if (m_perspective)
+        // use inverse zNear and zFar
+        m_proj = glm::perspective(glm::radians(m_fovY), m_aspect, nz, fz);
+    else
+        m_proj = glm::ortho(0.0f, 1.0f, 0.0f, 1.0f, nz, fz);
+    if (flipY)
+        m_proj[1][1] *= -1.0f;
+    m_projInv = glm::inverse(m_proj);
+    updateViewMatrix();
 }
 
 glm::vec3 Camera::screenToWorldPoint(const glm::vec3& p) const noexcept {
@@ -420,16 +440,7 @@ void Camera::setPerspective(float fov, float aspect, float zNear, float zFar) {
     m_farZ        = zFar;
     m_perspective = true;
 
-    float nz = useInverseDepth ? m_farZ : m_nearZ;
-    float fz = useInverseDepth ? m_nearZ : m_farZ;
-
-    if (m_perspective)
-        // use inverse zNear and zFar
-        m_proj = glm::perspective(glm::radians(m_fovY), m_aspect, nz, fz);
-    else
-        m_proj = glm::ortho(0.0f, 1.0f, 0.0f, 1.0f, nz, fz);
-    m_projInv = glm::inverse(m_proj);
-    updateViewMatrix();
+    updateProjMatrix();
 }
 void Camera::setRotation(glm::vec3 rotation) {
     m_transform->setRotation(math::eulerYZXQuat(rotation));

@@ -38,8 +38,10 @@ void PipelineLayout::create() {
 
     //It is not necessary to fill empty descriptorSetLayouts. 2024-03-12
 
+    uint32_t maxSet = 0;
+    if(shaderSets.size()>0)
     // In some case,you may want to skip set1 to use set2,so some empty descriptorSetLayouts may be created.
-    auto maxSet = std::ranges::max_element(shaderSets.begin(), shaderSets.end(), [](const auto& a, const auto& b) {
+     maxSet = std::ranges::max_element(shaderSets.begin(), shaderSets.end(), [](const auto& a, const auto& b) {
                       return a.first < b.first;
                   })->first;
 

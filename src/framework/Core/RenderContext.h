@@ -146,7 +146,7 @@ public:
 
     void traceRay(CommandBuffer& commandBuffer, VkExtent3D dims);
 
-    void dispath(CommandBuffer& commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
+    void flushAndDispatch(CommandBuffer& commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
 
     void beginRenderPass(CommandBuffer& commandBuffer, RenderTarget& renderTarget, const std::vector<SubpassInfo>& subpassInfos);
 
