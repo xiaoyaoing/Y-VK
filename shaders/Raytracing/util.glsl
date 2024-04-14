@@ -197,8 +197,8 @@ float diffuseReflectance(float eta, float sampleCount) {
     return float(diffuseFresnel);
 }
 
-bool sample_mirror_reflection(const vec3 wo,float roughness, const vec2 rand,out vec3 wi){
-    
+bool sample_microfacet_reflection(const vec3 wo, float roughness, const vec2 rand, out vec3 wi){
+    return false;
 }
 
 

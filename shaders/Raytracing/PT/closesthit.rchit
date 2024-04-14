@@ -23,13 +23,14 @@
 
 #extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
 #extension GL_EXT_buffer_reference2 : require
+#extension GL_EXT_debug_printf : require
 
 
 #include "../commons.h"
 #include "../util.glsl"
 
 hitAttributeEXT vec2 attribs;
-layout(location = 0) rayPayloadInEXT HitPayload payload;  
+layout(location = 0) rayPayloadInEXT HitPayload payload;
 
 layout(set = 0, binding = 3, scalar)  uniform SceneDesc_ {
     SceneDesc scene_desc;
@@ -51,6 +52,8 @@ layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer Mat
 
 void main()
 {
+
+
     // Object data
     Materials materials = Materials(scene_desc.material_addr);
     Indices indices = Indices(scene_desc.index_addr);

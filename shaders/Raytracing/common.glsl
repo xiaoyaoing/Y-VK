@@ -99,7 +99,30 @@ vec4 rand4(inout uvec4 rng_state) {
     return vec4(uint_to_float(pcg.x), uint_to_float(pcg.y), uint_to_float(pcg.z), uint_to_float(pcg.w));
 }
 
-uint binary_search(float u, const float[] cdf,uint cdf_begin, uint cdf_end) {
+
+
+
+uint sample_distribution(float u, const uint64_t sample_distribution_addr, out float pdf) {
+    Distribution1D distribution = Distribution1D(sample_distribution_addr);
+    uint element_num = uint(distribution.m[0]);
+    float func_int = distribution.m[1];
+
+    uint left = 2;
+    uint right = element_num + 2;
+    while (left < right) {
+        uint mid = (left + right) / 2;
+        if (u < distribution.m[mid]) {
+            right = mid;
+        } else {
+            left = mid + 1;
+        }
+    }
+    uint idx = left;
+    pdf = distribution.m[idx+2 +element_num] / (func_int * element_num);
+    return idx;
+}
+
+uint binary_search(float u, const float[5] cdf, uint cdf_begin, uint cdf_end) {
     uint left = cdf_begin;
     uint right = cdf_end;
     while (left < right) {
@@ -113,25 +136,18 @@ uint binary_search(float u, const float[] cdf,uint cdf_begin, uint cdf_end) {
     return left;
 }
 
-uint sample_distribution(float u,  const Distribution1D distribution,out pdf) {
-    uint element_num = uint(distribution.m[0]);
-    float func_int = distribution.m[1];
-    uint idx = binary_search(u, distribution.m, 2, element_num + 2);
-    pdf = distribution.m[idx+2 +element_num] / (func_int * element_num);
-    return idx;
-}
+
 
 
 MeshSampleRecord uniform_sample_on_mesh(uint mesh_idx, vec3 rands, in mat4 world_matrix, uint triangle_idx){
 
     MeshSampleRecord result;
-    
+
     //first choose one triangle
 
     RTPrimitive mesh_info = prim_infos.p[mesh_idx];
 
-    Distribution1D dist = Distribution1D(area_distribution_buffer_addr);
-    triangle_idx = sample_distribution(rands.x, dist, result.pdf);
+    triangle_idx = sample_distribution(rands.x, mesh_info.area_distribution_buffer_addr, result.pdf);
 
     uint triangle_count = mesh_info.index_count / 3;
 
@@ -258,6 +274,12 @@ float get_triangle_area(const uint prim_idx, const uint triangle_idx){
     return 0.5f * cross(p1 - p0, p2 - p0).length();
 }
 
+float get_primitive_area(const uint prim_idx){
+
+    RTPrimitive mesh_info = prim_infos.p[prim_idx];
+
+    return mesh_info.area;
+}
 
 LightSample sample_li(const RTLight light, const SurfaceScatterEvent event, const vec3 rand){
 

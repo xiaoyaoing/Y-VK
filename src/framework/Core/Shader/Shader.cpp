@@ -9,6 +9,8 @@
 #include "spdlog/fmt/bundled/os.h"
 #include "Core/Shader/SpirvShaderReflection.h"
 
+#include <stack>
+
 Shader::SHADER_LOAD_MODE getShaderMode(const std::string& ext) {
     if (ext == "spv")
         return Shader::SPV;
@@ -76,13 +78,18 @@ static std::string GetSpvPathFromShaderPath(const std::string& path) {
 }
 
 static std::ofstream OpenOrCreateFile(const std::string& path) {
-    std::filesystem::path folder = std::filesystem::path(path).parent_path();
+    std::filesystem::path             folder = std::filesystem::path(path).parent_path();
+    std::stack<std::filesystem::path> folderToCreate;
     while (true) {
         if (std::filesystem::exists(folder)) {
             break;
         }
-        std::filesystem::create_directory(folder);
+        folderToCreate.push(folder);
         folder = folder.parent_path();
+    }
+    while (!folderToCreate.empty()) {
+        std::filesystem::create_directory(folderToCreate.top());
+        folderToCreate.pop();
     }
     return std::ofstream(path, std::ios::binary);
 }

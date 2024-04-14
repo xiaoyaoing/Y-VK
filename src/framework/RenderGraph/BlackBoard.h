@@ -15,27 +15,27 @@ class RenderGraph;
 
 class Blackboard {
     using Container = std::unordered_map<
-        std::string_view,
+        std::string,
         RenderGraphHandle>;
 
 public:
     Blackboard(const RenderGraph& graph) noexcept;
     ~Blackboard() noexcept;
 
-    RenderGraphHandle& operator[](std::string_view name) noexcept;
-    void               put(std::string_view name, RenderGraphHandle handle) noexcept;
+    RenderGraphHandle& operator[](const std::string& name) noexcept;
+    void               put(const std::string& name, RenderGraphHandle handle) noexcept;
 
-    RenderGraphHandle getHandle(std::string_view name) const noexcept;
-    Image&            getImage(std::string_view name) const noexcept;
-    const ImageView&  getImageView(std::string_view name) const noexcept;
-    const SgImage&    getHwImage(std::string_view name) const noexcept;
-    const Buffer&     getBuffer(std::string_view name) const noexcept;
-    bool              contains(std::string_view name) const noexcept;
+    RenderGraphHandle getHandle(const std::string& name) const noexcept;
+    Image&            getImage(const std::string& name) const noexcept;
+    const ImageView&  getImageView(const std::string& name) const noexcept;
+    const SgImage&    getHwImage(const std::string& name) const noexcept;
+    const Buffer&     getBuffer(const std::string& name) const noexcept;
+    bool              contains(const std::string& name) const noexcept;
 
-    void remove(std::string_view name) noexcept;
+    void remove(const std::string& name) noexcept;
 
 private:
-    // RenderGraphHandle getHandle(std::string_view name) const noexcept;
+    // RenderGraphHandle getHandle(const std::string & name) const noexcept;
     Container          mMap;
     const RenderGraph& graph;
 };

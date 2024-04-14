@@ -40,13 +40,13 @@ struct SceneUbo {
 };
 
 struct RTMaterial {
-    vec3 emissiveFactor;
-    vec3 albedo;
-    int  texture_id;
-    uint bsdf_type;
+    vec3  emissiveFactor;
+    vec3  albedo;
+    int   texture_id;
+    uint  bsdf_type;
     float roughness;
-    vec3 eta;
-    vec3 k;
+    vec3  eta;
+    vec3  k;
 };
 
 struct RTLight {
@@ -55,34 +55,35 @@ struct RTLight {
     uint prim_idx;
     vec3 unused;
     uint light_type;
-    
+
     // vec3 to_use;
     // uint light_flags;
 };
 
 struct RTPrimitive {
-    uint material_index;
-    uint vertex_offset;
-    uint vertex_count;
-    uint index_offset;
-    uint index_count;
+    uint     material_index;
+    uint     vertex_offset;
+    uint     vertex_count;
+    uint     index_offset;
+    uint     index_count;
+    float    area;
     uint64_t area_distribution_buffer_addr;
-    mat4 world_matrix;
+    mat4     world_matrix;
 };
 
-#define RT_BSDF_TYPE_DIFFUSE 0
-#define RT_BSDF_TYPE_MIRROR 1
+#define RT_BSDF_TYPE_DIFFUSE   0
+#define RT_BSDF_TYPE_MIRROR    1
 #define RT_BSDF_TYPE_DIELCTRIC 2
 #define RT_BSDF_TYPE_CONDUCTOR 3
-#define RT_BSDF_TYPE_PLASTIC 4
+#define RT_BSDF_TYPE_PLASTIC   4
 #define RT_BSDF_TYPE_PRINCIPLE 5
 
-#define RT_LIGHT_TYPE_AREA 0
+#define RT_LIGHT_TYPE_AREA     0
 #define RT_LIGHT_TYPE_INFINITE 1
 
-#define RT_BSDF_LOBE_DIFFUSE 0
+#define RT_BSDF_LOBE_DIFFUSE  0
 #define RT_BSDF_LOBE_SPECULAR 1
-#define RT_BSDF_LOBE_GLOSSY 2
+#define RT_BSDF_LOBE_GLOSSY   2
 
 // struct PrimitiveMeshInfo
 // {

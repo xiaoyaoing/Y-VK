@@ -15,32 +15,36 @@ struct uvec3Hash {
     size_t operator()(const glm::uvec3& v) const {
         return std::hash<int>()(v.x) ^ std::hash<int>()(v.y) ^ std::hash<int>()(v.z);
     }
+    size_t operator()(const glm::ivec3& v) const {
+        return std::hash<int>()(v.x) ^ std::hash<int>()(v.y) ^ std::hash<int>()(v.z);
+    }
+    size_t operator()(const glm::vec3& v) const {
+        return std::hash<float>()(v.x) ^ std::hash<float>()(v.y) ^ std::hash<float>()(v.z);
+    }
 };
-
-
 
 class ObjLoader {
 public:
     ObjLoader(std::ifstream& stream);
-    void   loadFile(std::ifstream& stream);
-    void   loadLine(const char* line);
-    void   loadFace(const char* line);
-    
+    void loadFile(std::ifstream& stream);
+    void loadLine(const char* line);
+    void loadFace(const char* line);
+
     uint32_t fetchVertex(uint32_t pos, uint32_t normal, uint32_t uv);
 
 public:
-    std::vector<glm::vec3>                 objPos, objNormal;
-    std::vector<glm::vec3>                 primPos, primNormal;
-    std::vector<glm::vec2>                 objUV,primUV;
-    std::vector<uint32_t>             indexs;
-    std::unordered_map<glm::uvec3, uint32_t,uvec3Hash> _indices;
-    void                              skipWhitespace(const char*& s);
-    bool hasPrefix(const char* s, const char* pre);
+    std::vector<glm::vec3>                              objPos, objNormal;
+    std::vector<glm::vec3>                              primPos, primNormal;
+    std::vector<glm::vec2>                              objUV, primUV;
+    std::vector<uint32_t>                               indexs;
+    std::unordered_map<glm::uvec3, uint32_t, uvec3Hash> _indices;
+    void                                                skipWhitespace(const char*& s);
+    bool                                                hasPrefix(const char* s, const char* pre);
 };
 
 void ObjLoader::loadFace(const char* line) {
     uint32_t first = 0, current = 0;
-    int    vertexCount = 0;
+    int      vertexCount = 0;
 
     std::istringstream ss(line);
     while (!ss.fail() && !ss.eof()) {
@@ -62,8 +66,7 @@ void ObjLoader::loadFace(const char* line) {
             indexs.push_back(first);
             indexs.push_back(current);
             indexs.push_back(vert);
-        }
-        else
+        } else
             first = current;
         current = vert;
     }
@@ -85,7 +88,6 @@ bool ObjLoader::hasPrefix(const char* s, const char* pre) {
     } while (*++s && *++pre);
     return *pre == '\0' && (isspace(*s) || *s == '\0');
 }
-
 
 void ObjLoader::loadFile(std::ifstream& stream) {
     std::string meshLine;
@@ -155,7 +157,7 @@ struct Vertex {
     glm::vec2 _uv;
 
     Vertex(const glm::vec3& pos, const glm::vec3& normal, const glm::vec2& uv) : _pos(pos), _normal(normal), _uv(uv) {}
-    Vertex(const glm::vec3& pos,const glm::vec2& uv) : _pos(pos), _normal(0.0f, 1.0f, 0.0f), _uv(uv) {}
+    Vertex(const glm::vec3& pos, const glm::vec2& uv) : _pos(pos), _normal(0.0f, 1.0f, 0.0f), _uv(uv) {}
     Vertex(const glm::vec3& pos) : _pos(pos), _normal(0.0f, 1.0f, 0.0f), _uv(0.0f) {}
     Vertex() = default;
     const glm::vec3& normal() const {
@@ -183,14 +185,14 @@ struct Vertex {
     }
 };
 
-using VertAndIndex = std::pair<std::vector<Vertex>,std::vector<TriangleI>>;
+using VertAndIndex = std::pair<std::vector<Vertex>, std::vector<TriangleI>>;
 
-std::unique_ptr<PrimitiveData> vertexIndex2PrimitiveData(const std::vector<Vertex> &verts, const std::vector<TriangleI> &tris) {
-    auto primitiveData = std::make_unique<PrimitiveData>();
+std::unique_ptr<PrimitiveData> vertexIndex2PrimitiveData(const std::vector<Vertex>& verts, const std::vector<TriangleI>& tris) {
+    auto primitiveData                              = std::make_unique<PrimitiveData>();
     primitiveData->buffers[POSITION_ATTRIBUTE_NAME] = {};
-    primitiveData->buffers[NORMAL_ATTRIBUTE_NAME] = {};
+    primitiveData->buffers[NORMAL_ATTRIBUTE_NAME]   = {};
     primitiveData->buffers[TEXCOORD_ATTRIBUTE_NAME] = {};
-    primitiveData->indexs = {};
+    primitiveData->indexs                           = {};
 
     primitiveData->buffers[POSITION_ATTRIBUTE_NAME].reserve(verts.size() * sizeof(glm::vec3));
     primitiveData->buffers[NORMAL_ATTRIBUTE_NAME].reserve(verts.size() * sizeof(glm::vec3));
@@ -205,17 +207,16 @@ std::unique_ptr<PrimitiveData> vertexIndex2PrimitiveData(const std::vector<Verte
 
     for (int i = 0; i < tris.size(); i++) {
         primitiveData->indexs.insert(primitiveData->indexs.end(), (uint8_t*)&tris[i], (uint8_t*)&tris[i] + 3 * sizeof(uint32_t));
-    } 
-    auto uvec3 = reinterpret_cast<glm::uvec3*>(primitiveData->indexs.data());
+    }
+    auto uvec3                                               = reinterpret_cast<glm::uvec3*>(primitiveData->indexs.data());
     primitiveData->vertexAttributes[POSITION_ATTRIBUTE_NAME] = VertexAttribute{VK_FORMAT_R32G32B32_SFLOAT, sizeof(glm::vec3)};
-    primitiveData->vertexAttributes[NORMAL_ATTRIBUTE_NAME] = VertexAttribute{VK_FORMAT_R32G32B32_SFLOAT, sizeof(glm::vec3)};
+    primitiveData->vertexAttributes[NORMAL_ATTRIBUTE_NAME]   = VertexAttribute{VK_FORMAT_R32G32B32_SFLOAT, sizeof(glm::vec3)};
     primitiveData->vertexAttributes[TEXCOORD_ATTRIBUTE_NAME] = VertexAttribute{VK_FORMAT_R32G32_SFLOAT, sizeof(glm::vec2)};
 }
 
-
-std::unique_ptr<PrimitiveData> loadObj(std::ifstream &stream) {
+std::unique_ptr<PrimitiveData> loadObj(std::ifstream& stream) {
     ObjLoader objLoader(stream);
-    auto primitiveData = std::make_unique<PrimitiveData>();
+    auto      primitiveData = std::make_unique<PrimitiveData>();
     primitiveData->buffers[POSITION_ATTRIBUTE_NAME].resize(objLoader.primPos.size() * sizeof(glm::vec3));
     primitiveData->buffers[NORMAL_ATTRIBUTE_NAME].resize(objLoader.primNormal.size() * sizeof(glm::vec3));
     primitiveData->buffers[TEXCOORD_ATTRIBUTE_NAME].resize(objLoader.primUV.size() * sizeof(glm::vec2));
@@ -225,15 +226,15 @@ std::unique_ptr<PrimitiveData> loadObj(std::ifstream &stream) {
     std::ranges::copy(objLoader.primUV.begin(), objLoader.primUV.end(), reinterpret_cast<glm::vec2*>(primitiveData->buffers[TEXCOORD_ATTRIBUTE_NAME].data()));
     std::ranges::copy(objLoader.indexs.begin(), objLoader.indexs.end(), reinterpret_cast<uint32_t*>(primitiveData->indexs.data()));
     primitiveData->vertexAttributes[POSITION_ATTRIBUTE_NAME] = VertexAttribute{VK_FORMAT_R32G32B32_SFLOAT, sizeof(glm::vec3)};
-    primitiveData->vertexAttributes[NORMAL_ATTRIBUTE_NAME] = VertexAttribute{VK_FORMAT_R32G32B32_SFLOAT, sizeof(glm::vec3)};
+    primitiveData->vertexAttributes[NORMAL_ATTRIBUTE_NAME]   = VertexAttribute{VK_FORMAT_R32G32B32_SFLOAT, sizeof(glm::vec3)};
     primitiveData->vertexAttributes[TEXCOORD_ATTRIBUTE_NAME] = VertexAttribute{VK_FORMAT_R32G32_SFLOAT, sizeof(glm::vec2)};
     return primitiveData;
 }
 
-std::unique_ptr<PrimitiveData> loadWo3(std::ifstream &stream) {
-    std::vector<Vertex> vertexs;
+std::unique_ptr<PrimitiveData> loadWo3(std::ifstream& stream) {
+    std::vector<Vertex>    vertexs;
     std::vector<TriangleI> tris;
-    uint64_t numVerts, numTris;
+    uint64_t               numVerts, numTris;
     FileUtils::streamRead(stream, numVerts);
     vertexs.resize(size_t(numVerts));
     FileUtils::streamRead(stream, vertexs);
@@ -254,27 +255,24 @@ std::unique_ptr<PrimitiveData> PrimitiveLoader::loadPrimitive(const std::filesys
     std::string ext = FileUtils::getFileExt(path.string());
     if (ext == "wo3") {
         return loadWo3(stream);
-    }
-    else if(ext == "obj") {
-        
+    } else if (ext == "obj") {
     }
     LOGE("Unsupported file format: %s", ext.c_str());
     return {};
 }
 
-
 VertAndIndex makeCube() {
 
-    std::vector<Vertex> _verts;
+    std::vector<Vertex>    _verts;
     std::vector<TriangleI> _tris;
-    
+
     const glm::vec3 verts[6][4] = {
-        {{-0.5f, -0.5f, -0.5f}, {-0.5f, -0.5f,  0.5f}, { 0.5f, -0.5f,  0.5f}, { 0.5f, -0.5f, -0.5f}},
-        {{-0.5f,  0.5f,  0.5f}, {-0.5f,  0.5f, -0.5f}, { 0.5f,  0.5f, -0.5f}, { 0.5f,  0.5f,  0.5f}},
-        {{-0.5f,  0.5f, -0.5f}, {-0.5f, -0.5f, -0.5f}, { 0.5f, -0.5f, -0.5f}, { 0.5f,  0.5f, -0.5f}},
-        {{ 0.5f,  0.5f,  0.5f}, { 0.5f, -0.5f,  0.5f}, {-0.5f, -0.5f,  0.5f}, {-0.5f,  0.5f,  0.5f}},
-        {{-0.5f,  0.5f,  0.5f}, {-0.5f, -0.5f,  0.5f}, {-0.5f, -0.5f, -0.5f}, {-0.5f,  0.5f, -0.5f}},
-        {{ 0.5f,  0.5f, -0.5f}, { 0.5f, -0.5f, -0.5f}, { 0.5f, -0.5f,  0.5f}, { 0.5f,  0.5f,  0.5f}},
+        {{-0.5f, -0.5f, -0.5f}, {-0.5f, -0.5f, 0.5f}, {0.5f, -0.5f, 0.5f}, {0.5f, -0.5f, -0.5f}},
+        {{-0.5f, 0.5f, 0.5f}, {-0.5f, 0.5f, -0.5f}, {0.5f, 0.5f, -0.5f}, {0.5f, 0.5f, 0.5f}},
+        {{-0.5f, 0.5f, -0.5f}, {-0.5f, -0.5f, -0.5f}, {0.5f, -0.5f, -0.5f}, {0.5f, 0.5f, -0.5f}},
+        {{0.5f, 0.5f, 0.5f}, {0.5f, -0.5f, 0.5f}, {-0.5f, -0.5f, 0.5f}, {-0.5f, 0.5f, 0.5f}},
+        {{-0.5f, 0.5f, 0.5f}, {-0.5f, -0.5f, 0.5f}, {-0.5f, -0.5f, -0.5f}, {-0.5f, 0.5f, -0.5f}},
+        {{0.5f, 0.5f, -0.5f}, {0.5f, -0.5f, -0.5f}, {0.5f, -0.5f, 0.5f}, {0.5f, 0.5f, 0.5f}},
     };
     const glm::vec2 uvs[] = {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}};
 
@@ -291,20 +289,20 @@ VertAndIndex makeCube() {
 }
 
 VertAndIndex makeSphere() {
-    const float radius = 1.f;
-    std::vector<Vertex> _verts;
-    std::vector<TriangleI> _tris; 
-     int SubDiv = 10;
-     int Skip = SubDiv*2 + 1;
+    const float            radius = 1.f;
+    std::vector<Vertex>    _verts;
+    std::vector<TriangleI> _tris;
+    int                    SubDiv = 10;
+    int                    Skip   = SubDiv * 2 + 1;
     for (int f = 0, idx = _verts.size(); f < 3; ++f) {
         for (int s = -1; s <= 1; s += 2) {
             for (int u = -SubDiv; u <= SubDiv; ++u) {
                 for (int v = -SubDiv; v <= SubDiv; ++v, ++idx) {
                     glm::vec3 p(0.0f);
-                    p[f] = s;
-                    p[(f + 1) % 3] = u*(1.0f/SubDiv)*s;
-                    p[(f + 2) % 3] = v*(1.0f/SubDiv);
-                    _verts.emplace_back(glm::normalize(p)*radius);
+                    p[f]           = s;
+                    p[(f + 1) % 3] = u * (1.0f / SubDiv) * s;
+                    p[(f + 2) % 3] = v * (1.0f / SubDiv);
+                    _verts.emplace_back(glm::normalize(p) * radius);
 
                     if (v > -SubDiv && u > -SubDiv) {
                         _tris.emplace_back(idx - Skip - 1, idx, idx - Skip);
@@ -318,53 +316,107 @@ VertAndIndex makeSphere() {
 }
 
 VertAndIndex makeCylinder() {
-    const float radius = 1.f;
-    const float height = 1.f;
-    std::vector<Vertex> _verts;
+    const float            radius = 1.f;
+    const float            height = 1.f;
+    std::vector<Vertex>    _verts;
     std::vector<TriangleI> _tris;
-    const int SubDiv = 36;
-    int base = _verts.size();
+    const int              SubDiv = 36;
+    int                    base   = _verts.size();
     _verts.emplace_back(glm::vec3(0.0f, -height, 0.0f));
-    _verts.emplace_back(glm::vec3(0.0f,  height, 0.0f));
+    _verts.emplace_back(glm::vec3(0.0f, height, 0.0f));
     for (int i = 0; i < SubDiv; ++i) {
-        float a = i*math::TWO_PI/SubDiv;
-        _verts.emplace_back(glm::vec3(std::cos(a)*radius, -height, std::sin(a)*radius));
-        _verts.emplace_back(glm::vec3(std::cos(a)*radius,  height, std::sin(a)*radius));
+        float a = i * math::TWO_PI / SubDiv;
+        _verts.emplace_back(glm::vec3(std::cos(a) * radius, -height, std::sin(a) * radius));
+        _verts.emplace_back(glm::vec3(std::cos(a) * radius, height, std::sin(a) * radius));
         int i1 = (i + 1) % SubDiv;
-        _tris.emplace_back(base + 0, base + 2 + i*2, base + 2 + i1*2);
-        _tris.emplace_back(base + 1, base + 3 + i*2, base + 3 + i1*2);
-        _tris.emplace_back(base + 2 + i *2, base + 3 + i*2, base + 2 + i1*2);
-        _tris.emplace_back(base + 2 + i1*2, base + 3 + i*2, base + 3 + i1*2);
+        _tris.emplace_back(base + 0, base + 2 + i * 2, base + 2 + i1 * 2);
+        _tris.emplace_back(base + 1, base + 3 + i * 2, base + 3 + i1 * 2);
+        _tris.emplace_back(base + 2 + i * 2, base + 3 + i * 2, base + 2 + i1 * 2);
+        _tris.emplace_back(base + 2 + i1 * 2, base + 3 + i * 2, base + 3 + i1 * 2);
     }
     return {_verts, _tris};
 }
 
 VertAndIndex makeCone() {
-    const float radius = 1.f;
-    const float height = 1.f;
-    std::vector<Vertex> _verts;
-    std::vector<TriangleI> _tris; 
-    const int SubDiv = 36;
-    int base = _verts.size();
+    const float            radius = 1.f;
+    const float            height = 1.f;
+    std::vector<Vertex>    _verts;
+    std::vector<TriangleI> _tris;
+    const int              SubDiv = 36;
+    int                    base   = _verts.size();
     _verts.emplace_back(glm::vec3(0.0f));
     for (int i = 0; i < SubDiv; ++i) {
-        float a = i*math::TWO_PI/SubDiv;
-        _verts.emplace_back(glm::vec3(std::cos(a)*radius, height, std::sin(a)*radius));
+        float a = i * math::TWO_PI / SubDiv;
+        _verts.emplace_back(glm::vec3(std::cos(a) * radius, height, std::sin(a) * radius));
         _tris.emplace_back(base, base + i + 1, base + ((i + 1) % SubDiv) + 1);
     }
     return {_verts, _tris};
 }
 
-void recomputeNormals(std::vector<Vertex> &verts, const std::vector<TriangleI> &tris) {
-  
+//From Tungsten Render
+void recomputeNormals(std::vector<Vertex>& verts, std::vector<TriangleI>& tris) {
+    static const float SplitLimit = std::cos(math::PI * 0.15f);
+    //static CONSTEXPR float SplitLimit = -1.0f;
+
+    std::vector<glm::vec3>                                geometricN(verts.size(), glm::vec3(0.0f));
+    std::unordered_multimap<glm::vec3, uint32, uvec3Hash> posToVert;
+
+    for (uint32 i = 0; i < verts.size(); ++i) {
+        verts[i].normal() = glm::vec3(0.0f);
+        posToVert.insert(std::make_pair(verts[i].pos(), i));
+    }
+
+    for (TriangleI& t : tris) {
+        const glm::vec3& p0     = verts[t.v0].pos();
+        const glm::vec3& p1     = verts[t.v1].pos();
+        const glm::vec3& p2     = verts[t.v2].pos();
+        glm::vec3        normal = cross(p1 - p0, p2 - p0);
+        if (normal == glm::vec3(0.0f))
+            normal = glm::vec3(0.0f, 1.0f, 0.0f);
+        else
+            normal = glm::normalize(normal);
+
+        for (int i = 0; i < 3; ++i) {
+            glm::vec3& n = geometricN[t.vs[i]];
+            if (n == glm::vec3(0.0f)) {
+                n = normal;
+            } else if (dot(n, normal) < SplitLimit) {
+                verts.push_back(verts[t.vs[i]]);
+                geometricN.push_back(normal);
+                t.vs[i] = verts.size() - 1;
+            }
+        }
+    }
+
+    for (TriangleI& t : tris) {
+        const glm::vec3& p0     = verts[t.v0].pos();
+        const glm::vec3& p1     = verts[t.v1].pos();
+        const glm::vec3& p2     = verts[t.v2].pos();
+        glm::vec3        normal = cross(p1 - p0, p2 - p0);
+        glm::vec3        nN     = glm::normalize(normal);
+
+        for (int i = 0; i < 3; ++i) {
+            auto iters = posToVert.equal_range(verts[t.vs[i]].pos());
+
+            for (auto t = iters.first; t != iters.second; ++t)
+                if (glm::dot(geometricN[t->second], nN) >= SplitLimit)
+                    verts[t->second].normal() += normal;
+        }
+    }
+
+    for (uint32 i = 0; i < verts.size(); ++i) {
+        if (verts[i].normal() == glm::vec3(0.0f))
+            verts[i].normal() = geometricN[i];
+        else
+            verts[i].normal() = glm::normalize(verts[i].normal());
+    }
 }
 
-static std::unordered_map<std::string,std::function<VertAndIndex()>> primitiveMap = {
+static std::unordered_map<std::string, std::function<VertAndIndex()>> primitiveMap = {
     {"cube", makeCube},
     {"sphere", makeSphere},
     {"cylinder", makeCylinder},
-    {"cone", makeCone}
-};
+    {"cone", makeCone}};
 
 std::unique_ptr<PrimitiveData> PrimitiveLoader::loadPrimitiveFromType(const std::string& type) {
     VertAndIndex vertAndIndex = primitiveMap[type]();

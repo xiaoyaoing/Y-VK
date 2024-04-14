@@ -9,12 +9,12 @@ Integrator::Integrator(Device& device) : renderContext(g_context), device(device
 }
 
 void Integrator::initScene(Scene& scene) {
-    auto sceneEntry     = RTSceneUtil::convertScene(device, scene);
-    vertexBuffer        = std::move(sceneEntry->vertexBuffer);
-    normalBuffer        = std::move(sceneEntry->normalBuffer);
-    uvBuffer            = std::move(sceneEntry->uvBuffer);
-    indexBuffer         = std::move(sceneEntry->indexBuffer);
-    
+    auto sceneEntry = RTSceneUtil::convertScene(device, scene);
+    vertexBuffer    = std::move(sceneEntry->vertexBuffer);
+    normalBuffer    = std::move(sceneEntry->normalBuffer);
+    uvBuffer        = std::move(sceneEntry->uvBuffer);
+    indexBuffer     = std::move(sceneEntry->indexBuffer);
+
     materialsBuffer     = std::move(sceneEntry->materialsBuffer);
     primitiveMeshBuffer = std::move(sceneEntry->primitiveMeshBuffer);
     transformBuffers    = std::move(sceneEntry->transformBuffers);
@@ -306,11 +306,11 @@ Integrator::~Integrator() {
 void Integrator::bindRaytracingResources(CommandBuffer& commandBuffer)
 
 {
-    sceneUbo.projInverse = glm::inverse(camera->proj());
-    sceneUbo.viewInverse = glm::inverse(camera->view());
+    sceneUbo.projInverse = camera->projInverse();
+    sceneUbo.viewInverse = camera->viewInverse();
     sceneUboBuffer->uploadData(&sceneUbo, sizeof(sceneUbo));
 
-    g_context->bindAcceleration(0, tlas, 0, 0)
+    g_context->bindAcceleration(0, tlas)
         .bindBuffer(2, *sceneUboBuffer, 0, sizeof(sceneUbo))
         .bindBuffer(3, *sceneDescBuffer)
         .bindBuffer(4, *rtLightBuffer);

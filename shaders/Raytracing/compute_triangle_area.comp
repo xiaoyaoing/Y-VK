@@ -1,13 +1,16 @@
 #version 460
 #extension GL_EXT_buffer_reference2 : require
+#extension GL_ARB_gpu_shader_int64 : require
+#extension GL_EXT_scalar_block_layout : require
+#extension GL_EXT_debug_printf : enable
 
 layout(push_constant) uniform UniformBuffer {
-    uint32_t index_offset;
-    uint32_t index_count;
+    uint index_offset;
+    uint index_count;
     uint64_t vertex_address;
     uint64_t index_address;
     mat4 model;
-} ubo;
+};
 
 layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer Vertices { vec3 v[]; };
 layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer Indices { uint i[]; };
@@ -16,24 +19,27 @@ layout(binding = 0) buffer Area {
     float areas[];
 };
 
-layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
- void main() {
+layout(local_size_x = 16, local_size_y = 1, local_size_z = 1) in;
+void main() {
     uint index = gl_GlobalInvocationID.x;
-    if (index >= position.length()) {
+    debugPrintfEXT("index %d\n", index);
+    if (index >= index_count/3) {
         return;
     }
-     Indices indices = Indices(scene_desc.index_addr);
-     Vertices vertices = Vertices(scene_desc.vertex_addr);
+    Indices indices = Indices(index_address);
+    Vertices vertices = Vertices(vertex_address);
 
-     uint index_offset = index_offset  + 3 * index;
-        uint i0 = indices.i[index_offset + 0];
-     uint i1 = indices.i[index_offset + 1];
-        uint i2 = indices.i[index_offset + 2];
-     
-     vec3 world_pos0 =model * vertices.v[i0];
-     vec3 world_pos1 =model * vertices.v[i1];
-     vec3 world_pos2 =model * vertices.v[i2];
-     
-     areas[index] = 0.5 * length(cross(world_pos1 - world_pos0, world_pos2 - world_pos0));
-     
+    uint index_offset = index_offset  + 3 * index;
+    uint i0 = indices.i[index_offset + 0];
+    uint i1 = indices.i[index_offset + 1];
+    uint i2 = indices.i[index_offset + 2];
+
+    vec3 world_pos0 =mat3(model) * vertices.v[i0];
+    vec3 world_pos1 =mat3(model) * vertices.v[i1];
+    vec3 world_pos2 =mat3(model) * vertices.v[i2];
+
+    debugPrintfEXT("index world_pos0 pos1 pos2 %d %f %f %f %f %f %f %f %f %f\n", index, world_pos0.x, world_pos0.y, world_pos0.z, world_pos1.x, world_pos1.y, world_pos1.z, world_pos2.x, world_pos2.y, world_pos2.z);
+
+    areas[index] = 0.5 * length(cross(world_pos1 - world_pos0, world_pos2 - world_pos0));
+
 }

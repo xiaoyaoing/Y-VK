@@ -11,8 +11,9 @@ struct SceneLoadingConfig {
     bool                            bufferForAccel{false};
     bool                            bufferForTransferSrc{false};
     bool                            bufferForTransferDst{false};
+    bool                            bufferForStorage{false};
     BufferRate                      bufferRate{BufferRate::PER_SCENE};
-    glm::vec3 sceneTranslation{0.0f};
-    glm::quat sceneRotation{1.0f, 0.0f, 0.0f, 0.0f};
-    glm::vec3 sceneScale{1.0f};
+    glm::vec3                       sceneTranslation{0.0f};
+    glm::quat                       sceneRotation{1.0f, 0.0f, 0.0f, 0.0f};
+    glm::vec3                       sceneScale{1.0f};
 };

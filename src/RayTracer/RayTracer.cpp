@@ -9,6 +9,7 @@
 #include "Core/Shader/GlslCompiler.h"
 #include "Integrators/PathIntegrator.h"
 #include "Integrators/SimpleIntegrator.h"
+#include "Scene/SceneLoader/SceneLoaderInterface.h"
 #include "Scene/SceneLoader/gltfloader.h"
 
 // static BlasInput toVkGeometry(const Primitive & primitive)
@@ -79,15 +80,11 @@ void RayTracer::drawFrame(RenderGraph& renderGraph) {
 
     // integrator->render(renderGraph);
 
-    auto& commandBuffer = renderContext->getGraphicCommandBuffer();
-
     integrator->render(renderGraph);
 
     renderGraph.addImageCopyPass(renderGraph.getBlackBoard().getHandle("RT"), renderGraph.getBlackBoard().getHandle(SWAPCHAIN_IMAGE_NAME));
 
     gui->addGuiPass(renderGraph);
-
-    renderGraph.execute(commandBuffer);
 }
 
 // void RayTracer::update()
@@ -128,28 +125,30 @@ void RayTracer::drawFrame(RenderGraph& renderGraph) {
 void RayTracer::prepare() {
     Application::prepare();
     GlslCompiler::setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_5);
+    //GlslCompiler::forceRecompile = true;
+
+    integrator = std::make_unique<PathIntegrator>(*device);
 
     SceneLoadingConfig sceneConfig = {.requiredVertexAttribute = {POSITION_ATTRIBUTE_NAME, INDEX_ATTRIBUTE_NAME, NORMAL_ATTRIBUTE_NAME, TEXCOORD_ATTRIBUTE_NAME},
                                       .indexType               = VK_INDEX_TYPE_UINT32,
                                       .bufferAddressAble       = true,
                                       .bufferForAccel          = true,
-                                      .bufferForTransferSrc    = true};
+                                      .bufferForStorage        = true,
+                                      //.bufferRate              = BufferRate::PER_PRIMITIVE,
+                                      .sceneScale = glm::vec3(0.1f)};
     camera                         = std::make_shared<Camera>();
-  //  scene                          = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"), sceneConfig);
-    scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"),sceneConfig);
-    camera        = scene->getCameras()[0];
-    camera->flipY = true;
+    //scene                          = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"), sceneConfig);
+    scene = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"), sceneConfig);
+    // scene = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("staircase2/scene.json"), sceneConfig);
+
+    //scene  = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("vulkanscene_shadow.gltf"), sceneConfig);
+    camera = scene->getCameras()[0];
+    // camera->flipY                  = true;
     camera->setTranslation(glm::vec3(-2.5f, -3.34f, -20.f));
+
     camera->setRotation(glm::vec3(0.f, -15.f, 0.0f));
     camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 0.1f, 4000.f);
-    // camera->setTranslation(glm::vec3(-494.f,-116.f,99.f));
-    // camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
-    // camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
-    // camera->setPerspective(60.0f, (float) width / (float) height, 1.f,4000.f);
-    // camera->setMoveSpeed(0.05f);
 
-    // integrator = std::make_unique<SimpleIntegrator>(*device);
-    integrator = std::make_unique<PathIntegrator>(*device);
     integrator->init(*scene);
 }
 

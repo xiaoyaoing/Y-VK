@@ -78,13 +78,13 @@ Buffer& Scene::getVertexBuffer(const std::string& name) const {
 VkIndexType Scene::getIndexType() const {
     return indexType;
 }
-Buffer & Scene::getIndexBuffer() const {
+Buffer& Scene::getIndexBuffer() const {
     return *sceneIndexBuffer;
 }
-Buffer & Scene::getUniformBuffer() const {
+Buffer& Scene::getUniformBuffer() const {
     return *sceneUniformBuffer;
 }
-Buffer & Scene::getPrimitiveIdBuffer() const {
+Buffer& Scene::getPrimitiveIdBuffer() const {
     return *primitiveIdBuffer;
 }
 bool Scene::usePrimitiveIdBuffer() const {
@@ -143,21 +143,21 @@ bool Primitive::hasVertexBuffer(const std::string& name) const {
     return vertexBuffers.contains(name);
 }
 
-Buffer & Primitive::getIndexBuffer() const {
+Buffer& Primitive::getIndexBuffer() const {
     return *indexBuffer;
 }
 bool Primitive::hasIndexBuffer() const {
     return indexBuffer != nullptr;
 }
 
-Buffer & Primitive::getUniformBuffer() const {
+Buffer& Primitive::getUniformBuffer() const {
     return *uniformBuffer;
 }
 
 std::unique_ptr<Scene> loadDefaultTriangleScene(Device& device) {
     GltfMaterial                            mat{};
     std::vector<std::unique_ptr<Primitive>> primitives = {};
-    primitives.push_back(std::make_unique<Primitive>(0, 0, 3, 0));
+    primitives.push_back(std::make_unique<Primitive>(0, 0, 3, 3, 0));
 
     const uint32_t bufferSize      = sizeof(float) * 3 * 3;
     const uint32_t indexBufferSize = sizeof(uint32_t) * 3;
@@ -191,20 +191,19 @@ std::unique_ptr<Scene> loadDefaultTriangleScene(Device& device) {
 }
 GltfMaterial InitGltfMaterial() {
     GltfMaterial material{};
-    material.pbrBaseColorFactor = glm::vec4(1.0f);
-    material.pbrBaseColorTexture = -1;
-    material.pbrMetallicFactor = 0.f;
-    material.pbrRoughnessFactor = 0.f;
+    material.pbrBaseColorFactor          = glm::vec4(1.0f);
+    material.pbrBaseColorTexture         = -1;
+    material.pbrMetallicFactor           = 0.f;
+    material.pbrRoughnessFactor          = 0.f;
     material.pbrMetallicRoughnessTexture = -1;
-    material.emissiveTexture = -1;
-    material.emissiveFactor = glm::vec3(0.0f);
-    material.normalTexture = -1;
-    material.occlusionTexture = -1;
-    material.alphaMode = 0;
-    material.alphaCutoff = 0.5f;
-    material.doubleSided = false;
-    material.occlusionTextureStrength = 1.0f;
-    material.normalTextureScale = 1.0f;
+    material.emissiveTexture             = -1;
+    material.emissiveFactor              = glm::vec3(0.0f);
+    material.normalTexture               = -1;
+    material.occlusionTexture            = -1;
+    material.alphaMode                   = 0;
+    material.alphaCutoff                 = 0.5f;
+    material.doubleSided                 = false;
+    material.occlusionTextureStrength    = 1.0f;
+    material.normalTextureScale          = 1.0f;
     return material;
-    
 }
