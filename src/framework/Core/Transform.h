@@ -50,6 +50,7 @@ public:
     * Sets the rotation in world space.
     */
     void setRotation(const glm::quat& rotation);
+    void setRotation(const glm::mat4& rotationMatrix);
 
     /**
     * Returns the rotation quaternion in world space.
@@ -147,7 +148,7 @@ private:
 
 private:
     // Local coordinate attributes
-    glm::vec3 m_position{0.f,0.f,0.f};
+    glm::vec3 m_position{0.f, 0.f, 0.f};
     glm::vec3 m_scale{1.0f, 1.0f, 1.0f};
     glm::quat m_rotation{};
 

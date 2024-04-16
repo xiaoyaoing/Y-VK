@@ -72,11 +72,11 @@ public:
         RenderGraph& renderGraph;
     };
 
-    RenderGraphHandle createTexture(const char* name, const RenderGraphTexture::Descriptor& desc = {});
-    RenderGraphHandle importTexture(const char* name, SgImage* hwTexture, bool addRef = true);
+    RenderGraphHandle createTexture(const std::string& name, const RenderGraphTexture::Descriptor& desc = {});
+    RenderGraphHandle importTexture(const std::string& name, SgImage* hwTexture, bool addRef = true);
 
-    RenderGraphHandle createBuffer(const char* name, const RenderGraphBuffer::Descriptor& desc = {});
-    RenderGraphHandle importBuffer(const char* name, Buffer* hwBuffer);
+    RenderGraphHandle createBuffer(const std::string& name, const RenderGraphBuffer::Descriptor& desc = {});
+    RenderGraphHandle importBuffer(const std::string& name, Buffer* hwBuffer);
 
     ResourceNode*       getResource(RenderGraphHandle handle) const;
     RenderGraphTexture* getTexture(RenderGraphHandle handle) const;
@@ -95,7 +95,7 @@ public:
     using ComputeSetUp    = std::function<void(Builder& builder, ComputePassSettings&)>;
     using RayTracingSetup = std::function<void(Builder& builder, RaytracingPassSettings&)>;
 
-    void addPass(const char* name, const GraphicSetup& setup, GraphicsExecute&& execute);
+    void addPass(const std::string& name, const GraphicSetup& setup, GraphicsExecute&& execute);
 
     // rg.addComputePass("",
     // [&](RenderGraph::Builder& builder, ComputePassSettings& settings){
@@ -105,7 +105,7 @@ public:
     //
     // });
 
-    void addComputePass(const char* name, const ComputeSetUp& setup, ComputeExecute&& execute);
+    void addComputePass(const std::string& name, const ComputeSetUp& setup, ComputeExecute&& execute);
 
     // rg.addRayTracingPass("",
     // [&](RenderGraph::Builder& builder, RayTracingPassSettings& settings){
@@ -114,11 +114,10 @@ public:
     // [&](RenderPassContext& context) {
     //
     // });
-    void addRaytracingPass(const char* name, const RayTracingSetup& setup, RaytracingExecute&& execute);
+    void addRaytracingPass(const std::string& name, const RayTracingSetup& setup, RaytracingExecute&& execute);
     void addImageCopyPass(RenderGraphHandle src, RenderGraphHandle dst);
 
     void setOutput(RenderGraphHandle resource);
-    
 
     // void /(RenderGraphHandle textureId);
 
@@ -127,8 +126,8 @@ public:
 
     Device& getDevice() const;
 
-    std::vector<const char*> getResourceNames(RENDER_GRAPH_RESOURCE_TYPE type) const;
-    std::vector<const char*> getPasseNames(RENDER_GRAPH_PASS_TYPE type) const;
+    std::vector<std::string> getResourceNames(RENDER_GRAPH_RESOURCE_TYPE type) const;
+    std::vector<std::string> getPasseNames(RENDER_GRAPH_PASS_TYPE type) const;
 
     bool needToCutResource(ResourceNode* resourceNode) const;
 
@@ -147,7 +146,7 @@ private:
     std::vector<RenderGraphNode*> getInComingNodes(RenderGraphNode* node) const;
     std::vector<RenderGraphNode*> getOutComingNodes(RenderGraphNode* node) const;
 
-    PassNode* addPassImpl(const char* name, RenderGraphPassBase* base) {
+    PassNode* addPassImpl(const std::string& name, RenderGraphPassBase* base) {
         auto node = new RenderPassNode(*this, name, base);
         mPassNodes.emplace_back(node);
         return node;

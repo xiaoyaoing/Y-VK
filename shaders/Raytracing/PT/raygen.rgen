@@ -40,7 +40,6 @@ vec3 eval_light(const RTLight light, const vec3 p, const vec3 n_s, const vec3 w)
 }
 
 vec3   uniform_sample_one_light(inout uvec4 seed, inout SurfaceScatterEvent event, const uint light_num){
-
     vec3 result = vec3(0);
 
     float light_choose_rand = rand1(seed);
@@ -55,12 +54,22 @@ vec3   uniform_sample_one_light(inout uvec4 seed, inout SurfaceScatterEvent even
     bool enable_sample_light = pc_ray.enable_sample_light > 0;
     bool enable_sample_bsdf = pc_ray.enable_sample_bsdf > 0;
 
+    enable_sample_bsdf = pc_ray.enable_sample_bsdf > 0;
+    enable_sample_light = pc_ray.enable_sample_light > 0;
+
+    LightSample light_sample = sample_li(light, event, light_sample_rand);
+
     if (enable_sample_light)
     {
-        LightSample light_sample = sample_li(light, event, light_sample_rand);
+        //  return visualize_normal(light_sample.p / 10.f);
+        //   return visualize_normal(light_sample.wi);
+
+        // debugPrintfEXT("light_sample %f %f %f %f\n", light_sample.indensity.x, light_sample.indensity.y, light_sample.indensity.z, light_sample.pdf);
         if (!isBlack(light_sample.indensity) && light_sample.pdf != 0){
+
             //trace ray 
             any_hit_payload.hit = 1;
+
             traceRayEXT(tlas,
             gl_RayFlagsTerminateOnFirstHitEXT |
             gl_RayFlagsSkipClosestHitShaderEXT,
@@ -71,17 +80,30 @@ vec3   uniform_sample_one_light(inout uvec4 seed, inout SurfaceScatterEvent even
                 event.wi = to_local(event.frame, light_sample.wi);
                 float bsdf_pdf = pdf_bsdf(materials.m[material_idx], event);
                 float light_mis_weight =enable_sample_bsdf? power_heuristic(light_sample.pdf, bsdf_pdf):1;
-                result += light_sample.indensity * eval_bsdf(materials.m[material_idx], event) * light_mis_weight / light_sample.pdf;
+                vec3 bsdf =eval_bsdf(materials.m[material_idx], event);
+                float t = light_sample.indensity.x / light_sample.pdf;
+                float cos = abs(dot(light_sample.wi, light_sample.n));
+                //                if (t>100)
+                //                debugPrintfEXT("t %f %f %f %f %f , %f %f\n", t, light_sample.indensity.x, light_sample.indensity.y, light_sample.indensity.z, light_sample.pdf, light_sample.dist, cos);
+                //    vec3 res =  vec3(light_sample.indensity / light_sample.pdf) * bsdf;
+                //                if (length(res)>1000){
+                //                    RTPrimitive prim =  prim_infos.p[light.prim_idx];
+                //                    debugPrintfEXT("res %f %f %f %f %f %f %f %d %d\n", res.x, res.y, res.z, light_sample.pdf, event.p.x, event.p.y, event.p.z, event.material_idx, prim.material_index);
+                //                }
+                result += light_sample.indensity * bsdf * light_mis_weight / light_sample.pdf;
             }
         }
     }
-
+    //    return result;
     if (enable_sample_bsdf)
     {
         BsdfSampleRecord record = sample_bsdf(materials.m[event.material_idx], event, rand2(seed));
         vec3 f = record.f;
         float bsdf_pdf = record.pdf;
-        if (f != vec3(0) && bsdf_pdf != 0 && false){
+        //  debugPrintfEXT("f %f %f %f\n", f.x, f.y, f.z);
+        if (f != vec3(0) && bsdf_pdf != 0){
+
+            //return f/bsdf_pdf;
 
             vec3 world_wi = to_world(event.frame, event.wi);
             //trace ray 
@@ -92,22 +114,21 @@ vec3   uniform_sample_one_light(inout uvec4 seed, inout SurfaceScatterEvent even
 
             bool same_light = hitPayload.prim_idx == light.prim_idx;
 
+            // debugPrintfEXT("prim_idx %d %d\n", hitPayload.prim_idx, light.prim_idx);
             if (same_light){
-
 
                 uint material_idx = event.material_idx;
 
-
                 float light_pdf = 1.f/get_primitive_area(light.prim_idx) *  length(hitPayload.p-event.p) * length(hitPayload.p-event.p) / abs(dot(hitPayload.n_s, world_wi));
 
+                //   float area = get_triangle_area(light.prim_idx, hitPayload.triangle_idx);
+                //  debugPrintfEXT("area %f\n",area);
+                //   light_pdf = 1.f/ area *  length(hitPayload.p-event.p) * length(hitPayload.p-event.p) / abs(dot(hitPayload.n_s, world_wi));
 
                 float bsdf_mis_weight = enable_sample_light?power_heuristic(bsdf_pdf, light_pdf):1;
 
-                uint triangle_count = prim_infos.p[light.prim_idx].index_count / 3;
-
+                // return f/bsdf_pdf;
                 result += f * light.L * bsdf_mis_weight / bsdf_pdf;
-
-
             }
         }
     }
@@ -131,15 +152,13 @@ void main()
     const vec2 inUV = pixelCenter/vec2(gl_LaunchSizeEXT.xy);
     vec2 d = inUV * 2.0 - 1.0;
 
-    vec4 origin = scene_ubo.viewInverse * vec4(0, 0, 0, 1);
+    vec3 origin = (scene_ubo.viewInverse * vec4(0, 0, 0, 1)).xyz;
     vec4 target = scene_ubo.projInverse * vec4(d.x, d.y, 1, 1);
     // origin =  vec4(0, 0, 0, 1);
     //   target = vec4(d.x, d.y, 100, 1);
     vec4 direction = scene_ubo.viewInverse*vec4(normalize(target.xyz / target.w), 0);
 
-    //    origin.xzy = vec3(2.500000, 3.340000, 20.000000);
-    //    direction.xzy = vec3(-0.406870, 0.032189, -0.912919);
-    //debugPrintfEXT("origin and direction %f %f %f %f %f %f\n", origin.x, origin.y, origin.z, direction.x, direction.y, direction.z);
+    // debugPrintfEXT("origin %f %f %f direction %f %f %f\n", origin.x, origin.y, origin.z, direction.x, direction.y, direction.z);
 
     uint rayFlags = gl_RayFlagsOpaqueEXT;
     uint cullMask = 0xff;
@@ -154,16 +173,34 @@ void main()
 
 
     for (depth = 0; depth<pc_ray.max_depth; depth++){
+        uint prev_material_idx = hitPayload.material_idx;
 
         hitPayload.material_idx = -1;
+
+
         traceRayEXT(tlas, rayFlags, cullMask, 0, 0, 0, origin.xyz, tmin, direction.xyz, tmax, 0);
-        const  bool found_intersect = hitPayload.material_idx != -1;
+
+        traceRayEXT(tlas,
+        gl_RayFlagsTerminateOnFirstHitEXT |
+        gl_RayFlagsSkipClosestHitShaderEXT,
+        0xFF, 1, 0, 1, origin.xyz, tmin, direction.xyz, tmax, 1);
+
+        bool found_intersect = hitPayload.material_idx != -1;
+
+
+        found_intersect = any_hit_payload.hit != 0;
+
+        //        if (depth ==1){
+        //            debugPrintfEXT("prev_material_idx %d %d\n", prev_material_idx, hitPayload.material_idx);
+        //        }
 
         if (!found_intersect) {
             break;
         }
 
 
+        imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(1, 0, 0, 1));
+        return;
 
         RTLight light = lights[0];
 
@@ -173,11 +210,8 @@ void main()
             color += throughput *  Le(event);;
         }
 
-        vec3 direct_l =   uniform_sample_one_light(seed, event, pc_ray.light_num);
-
-
         if (depth >= pc_ray.min_depth)
-        color +=  throughput *  direct_l;
+        color +=  throughput *  uniform_sample_one_light(seed, event, pc_ray.light_num);
 
 
         BsdfSampleRecord record = sample_bsdf(materials.m[event.material_idx], event, rand2(seed));
@@ -190,10 +224,13 @@ void main()
         vec3 wi_world = to_world(event.frame, event.wi);
         throughput *= record.f / record.pdf;
         direction = vec4(wi_world, 0);
-        origin = vec4(event.p, 1);
+        origin = event.p + direction.xyz * EPS;
+        //origin = offset_ray_origin(event.p,  , direction);
     }
 
-
+    if (isnan(color.x) || isnan(color.y) || isnan(color.z)){
+        debugPrintfEXT("nan %f %f %f\n", color.x, color.y, color.z);
+    }
     if (pc_ray.frame_num > 0) {
 
         float w = 1. / float(pc_ray.frame_num + 1);

@@ -1,12 +1,12 @@
 #include "RenderGraphBuffer.h"
 #include "Common/ResourceCache.h"
 
-RenderGraphBuffer::RenderGraphBuffer(const char * name, const Descriptor& descriptor) {
+RenderGraphBuffer::RenderGraphBuffer(const std::string& name, const Descriptor& descriptor) {
     //todo
     //mBuffer = ResourceCache::getResourceCache().requestNamedBuffer(name, descriptor.size, descriptor.usage, descriptor.memoryUsage);
 }
 
-RenderGraphBuffer::RenderGraphBuffer(const char * name, Buffer* hwBuffer){
+RenderGraphBuffer::RenderGraphBuffer(const std::string& name, Buffer* hwBuffer) {
     RenderGraphNode::setName(name);
 
     mBuffer = hwBuffer;

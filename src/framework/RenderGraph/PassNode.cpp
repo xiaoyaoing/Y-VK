@@ -11,7 +11,7 @@
 #include <set>
 #include <unordered_set>
 
-std::string getPassName(const char* passType, const char* passName) {
+std::string getPassName(const std::string& passType, const std::string& passName) {
     return std::string(passType) + " " + passName;
 }
 
@@ -114,7 +114,7 @@ void RenderPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuf
     g_context->beginRenderPass(commandBuffer, renderTarget, subpassInfos);
 
     RenderPassContext context = {
-        .commandBuffer = g_context->getGraphicCommandBuffer()};
+        .commandBuffer = commandBuffer};
 
     auto passName = getPassName("Render Pass", getName());
     DebugUtils::CmdBeginLabel(context.commandBuffer.getHandle(), passName, {1, 0, 0, 1});
@@ -124,22 +124,22 @@ void RenderPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuf
     g_context->endRenderPass(commandBuffer, renderTarget);
 }
 
-void RenderPassNode::declareRenderTarget(const char* name, const RenderGraphPassDescriptor& descriptor) {
+void RenderPassNode::declareRenderTarget(const std::string& name, const RenderGraphPassDescriptor& descriptor) {
     renderPassData.name = name;
 
     renderPassData.desc = descriptor;
 }
 
-RenderPassNode::RenderPassNode(RenderGraph& renderGraph, const char* name, RenderGraphPassBase* base) : PassNode(name), mRenderPass(
-                                                                                                                            base),
-                                                                                                        name(name) {
+RenderPassNode::RenderPassNode(RenderGraph& renderGraph, const std::string& name, RenderGraphPassBase* base) : PassNode(name), mRenderPass(
+                                                                                                                                   base),
+                                                                                                               name(name) {
 }
 
 void RenderPassNode::declareRenderPass(const RenderGraphPassDescriptor& descriptor) {
     renderPassData.desc = descriptor;
 }
 
-PassNode::PassNode(const char* passName) {
+PassNode::PassNode(const std::string& passName) {
     setName(passName);
 }
 
@@ -177,7 +177,7 @@ ImageCopyPassNode::ImageCopyPassNode(RenderGraphHandle src, RenderGraphHandle ds
 void ComputePassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) {
     g_context->getPipelineState().setPipelineType(PIPELINE_TYPE::E_COMPUTE);
 
-    RenderPassContext context{.commandBuffer = g_context->getComputeCommandBuffer()};
+    RenderPassContext context{.commandBuffer = commandBuffer};
 
     auto passName = getPassName("Compute Pass", getName());
     DebugUtils::CmdBeginLabel(commandBuffer.getHandle(), passName, {1, 0, 0, 1});
@@ -191,7 +191,7 @@ void RayTracingPassNode::execute(RenderGraph& renderGraph, CommandBuffer& comman
     auto& settings = mPass->getData();
     g_context->getPipelineState().setPipelineType(PIPELINE_TYPE::E_RAY_TRACING).setPipelineLayout(*settings.pipelineLayout).setrTPipelineSettings(settings.rTPipelineSettings);
     g_context->bindAcceleration(0, *settings.accel, 0, 0);
-    RenderPassContext context{.commandBuffer = g_context->getGraphicCommandBuffer()};
+    RenderPassContext context{.commandBuffer = commandBuffer};
 
     auto passName = getPassName("RayTracing Pass", getName());
     DebugUtils::CmdBeginLabel(context.commandBuffer.getHandle(), passName, {1, 0, 0, 1});
@@ -203,10 +203,10 @@ void RayTracingPassNode::execute(RenderGraph& renderGraph, CommandBuffer& comman
     // renderContext->getPipelineState().setPipelineType(PIPELINE_TYPE::E_RAY_TRACING).setPipelineLayout(*layout).setrTPipelineSettings({.maxDepth = 5,.dims = {width,height,1}});
 }
 
-ComputePassNode::ComputePassNode(RenderGraph& renderGraph, const char* name, ComputeRenderGraphPass* base) : PassNode(name), mPass(base) {
+ComputePassNode::ComputePassNode(RenderGraph& renderGraph, const std::string& name, ComputeRenderGraphPass* base) : PassNode(name), mPass(base) {
 }
 
-RayTracingPassNode::RayTracingPassNode(RenderGraph& renderGraph, const char* name, RaytracingRenderGraphPass* base) : PassNode(name), mPass(base) {
+RayTracingPassNode::RayTracingPassNode(RenderGraph& renderGraph, const std::string& name, RaytracingRenderGraphPass* base) : PassNode(name), mPass(base) {
 }
 
 RENDER_GRAPH_PASS_TYPE RenderPassNode::getType() const {

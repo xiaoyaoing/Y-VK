@@ -31,10 +31,10 @@ public:
 protected:
     SceneUbo sceneUbo;
 
-     Buffer * vertexBuffer{nullptr};
-     Buffer * normalBuffer{nullptr};
-     Buffer * uvBuffer{nullptr};
-     Buffer * indexBuffer{nullptr};
+    Buffer* vertexBuffer{nullptr};
+    Buffer* normalBuffer{nullptr};
+    Buffer* uvBuffer{nullptr};
+    Buffer* indexBuffer{nullptr};
 
     std::unique_ptr<Buffer> materialsBuffer{nullptr};
     std::unique_ptr<Buffer> primitiveMeshBuffer{nullptr};
@@ -51,6 +51,11 @@ protected:
     std::vector<RTPrimitive> primitives;
     std::vector<RTMaterial>  materials;
     std::vector<Texture*>    textures;
+
+    std::unordered_map<uint32_t, std::unique_ptr<Buffer>> primAreaBuffers{};
+    std::unordered_map<uint32_t, std::unique_ptr<Buffer>> primAreaDistributionBuffers{};
+    std::unique_ptr<PipelineLayout>                       computePrimAreaLayout;
+    bool                                                  primAreaBuffersInitialized{false};
 
     std::unique_ptr<SgImage> storageImage;
 

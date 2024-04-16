@@ -11,6 +11,7 @@
 #include "Core/Texture.h"
 #include "Core/math.h"
 #include "Core/Shader/GlslCompiler.h"
+#include "RenderPasses/RenderPassBase.h"
 #include "Scene/Compoments/Camera.h"
 #include "Scene/SceneLoader/gltfloader.h"
 
@@ -86,11 +87,9 @@ void Application::updateGUI() {
     ImGui::Text(" %d fps", toUint32(1.f / deltaTime));
 
     vec3 pos = camera->getPosition();
-    // ImGui::InputFloat3("Camera Position", , "%.2f %.2f %.2f", 2);z
     ImGui::Text("Camera Position: %.2f %.2f %.2f", pos.x, pos.y, pos.z);
     glm::quat rotat = camera->getTransform()->getRotation();
     ImGui::Text("Camera Rotation: %.2f %.2f %.2f %.2f", rotat.x, rotat.y, rotat.z, rotat.w);
-    // ImGui::InputFloat3("Camera Rotation", &camera->rotation[0], "%.2f %.2f %.2f", 2);
     ImGui::PopItemWidth();
     ImGui::NextColumn();
     ImGui::InputFloat("Camera Move Speed", &camera->mMoveSpeed);
@@ -100,7 +99,9 @@ void Application::updateGUI() {
     auto itemIter    = std::ranges::find(mCurrentTextures.begin(), mCurrentTextures.end(), mPresentTexture);
     int  itemCurrent = itemIter - mCurrentTextures.begin();
 
-    ImGui::Combo("RenderGraphTextures", &itemCurrent, mCurrentTextures.data(), mCurrentTextures.size());
+    std::vector<const char*> currentTexturesCStr;
+    std::ranges::transform(mCurrentTextures.begin(), mCurrentTextures.end(), std::back_inserter(currentTexturesCStr), [](const std::string& str) { return str.c_str(); });
+    ImGui::Combo("RenderGraphTextures", &itemCurrent, currentTexturesCStr.data(), currentTexturesCStr.size());
     mPresentTexture = mCurrentTextures[itemCurrent];
 
     ImGui::End();
@@ -120,6 +121,10 @@ void Application::updateGUI() {
 void Application::update() {
 
     deltaTime = timer.tick<Timer::Seconds>();
+
+    //  camera->pitch(0.1f);
+    //  camera->roll(0.2f);
+    // camera->rotateY(0.3f);
 
     if (!m_focused)
         return;
@@ -356,6 +361,9 @@ void Application::initView() {
     }
     view->setScene(scene.get());
     view->setCamera(camera.get());
+
+    RenderPtrManangr::init();
+    g_manager->putPtr("view", view.get());
 }
 
 Application::~Application() {

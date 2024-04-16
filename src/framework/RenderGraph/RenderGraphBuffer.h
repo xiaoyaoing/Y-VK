@@ -11,8 +11,8 @@ public:
         Usage          usage;
         VmaMemoryUsage memoryUsage{VMA_MEMORY_USAGE_GPU_ONLY};
     };
-    RenderGraphBuffer(const char * name, const Descriptor& descriptor);
-    RenderGraphBuffer(const char * name, Buffer* hwBuffer);
+    RenderGraphBuffer(const std::string& name, const Descriptor& descriptor);
+    RenderGraphBuffer(const std::string& name, Buffer* hwBuffer);
     void                       devirtualize() override;
     void                       destroy() override;
     RENDER_GRAPH_RESOURCE_TYPE getType() const override;

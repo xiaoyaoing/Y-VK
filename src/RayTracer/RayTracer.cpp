@@ -138,17 +138,18 @@ void RayTracer::prepare() {
                                       .sceneScale = glm::vec3(0.1f)};
     camera                         = std::make_shared<Camera>();
     //scene                          = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"), sceneConfig);
-    scene = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"), sceneConfig);
+    //  scene = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"), sceneConfig);
     // scene = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("staircase2/scene.json"), sceneConfig);
+    //scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/cornell-box/scene.json", sceneConfig);
+    scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/classroom/scene.json", sceneConfig);
 
-    //scene  = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("vulkanscene_shadow.gltf"), sceneConfig);
-    camera = scene->getCameras()[0];
-    // camera->flipY                  = true;
-    camera->setTranslation(glm::vec3(-2.5f, -3.34f, -20.f));
-
-    camera->setRotation(glm::vec3(0.f, -15.f, 0.0f));
+    camera        = scene->getCameras()[0];
+    camera->flipY = true;
+    camera->getTransform()->setPosition(glm::vec3(0, 1, 4));
+    camera->getTransform()->setRotation(glm::quat(1, 0, 0, 0));
     camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 0.1f, 4000.f);
 
+    initView();
     integrator->init(*scene);
 }
 
@@ -251,7 +252,7 @@ void RayTracer::onUpdateGUI() {
 // 		VkDeviceSize compact_size =
 // 			std::accumulate(buildAs.begin(), buildAs.end(), 0ULL,
 // 							[](const auto& a, const auto& b) { return a + b.size_info.accelerationStructureSize; });
-// 		LUMEN_TRACE(" RT BLAS: reducing from: %u to: %u = %u (%2.2f%s smaller) \n", as_total_size, compact_size,
+// 		LUMEN_TRACE(" RT BLAS: reducing from: %u to: %u = %u (%2.2f%s smaller) /n", as_total_size, compact_size,
 // 					as_total_size - compact_size, (as_total_size - compact_size) / float(as_total_size) * 100.f, "%");
 // 	}
 //

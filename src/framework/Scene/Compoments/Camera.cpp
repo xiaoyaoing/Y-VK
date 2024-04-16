@@ -161,7 +161,7 @@ void Camera::update(float deltaTime) {
             firstUpdate = false;
         }
     } else {
-        mMoveSpeed = 1.f;
+        // mMoveSpeed = 1.f;
     }
 }
 
@@ -177,7 +177,7 @@ void Camera::onShowInEditor() {
     ImGui::DragFloat("Near Plane", &m_nearZ, 0.01f, 0.01f, 1000.0f);
     ImGui::DragFloat("Far Plane", &m_farZ, 0.01f, 0.0f, 1000.0f);
     ImGui::Checkbox("Flip Y", &flipYTemp);
-    if(flipYTemp != flipY){
+    if (flipYTemp != flipY) {
         flipY = flipYTemp;
         updateProjMatrix();
     }

@@ -17,9 +17,10 @@ void LightingPass::render(RenderGraph& rg) {
             auto  depth      = blackBoard["depth"];
             auto  normal     = blackBoard["normal"];
             auto  diffuse    = blackBoard["diffuse"];
+            auto  emission   = blackBoard["emission"];
             auto  output     = blackBoard.getHandle(SWAPCHAIN_IMAGE_NAME);
 
-            builder.readTextures({depth, normal, diffuse});
+            builder.readTextures({depth, normal, diffuse, emission});
             builder.writeTexture(output);
 
             RenderGraphPassDescriptor desc{};

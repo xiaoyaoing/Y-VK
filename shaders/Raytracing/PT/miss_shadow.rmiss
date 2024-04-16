@@ -10,4 +10,5 @@ layout(location = 1) rayPayloadInEXT AnyHitPayload payload;
 void main()
 {
     payload.hit = 0;
+    //  debugPrintfEXT("AnyHit\n");
 }

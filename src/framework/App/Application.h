@@ -132,9 +132,8 @@ protected:
     void handleMouseMove(float x, float y);
 
 private:
-
     std::string              mPresentTexture = SWAPCHAIN_IMAGE_NAME;
-    std::vector<const char*> mCurrentTextures{SWAPCHAIN_IMAGE_NAME};
+    std::vector<std::string> mCurrentTextures{SWAPCHAIN_IMAGE_NAME};
     //Camera related  variable end
 
     VkFence fence{VK_NULL_HANDLE};
@@ -143,5 +142,4 @@ private:
 #else
     const bool enableValidationLayers = true;
 #endif
-
 };

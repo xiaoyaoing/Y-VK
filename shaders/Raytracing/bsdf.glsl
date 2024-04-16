@@ -30,6 +30,7 @@ vec3 get_albedo(const RTMaterial mat, const vec2 uv){
 }
 
 vec3 diffuse_f(const RTMaterial mat, const SurfaceScatterEvent event){
+    // return INV_PI * vec3(max(0, get_cos_theta(event.wi)));
     vec3 albedo  = get_albedo(mat, event.uv);
     return albedo * INV_PI * max(0, get_cos_theta(event.wi));
 }

@@ -12,6 +12,7 @@ layout(location = 3) in uint primitive_id;
 layout (location = 0) out vec2 o_uv;
 layout (location = 1) out vec3 o_normal;
 layout (location = 2) out  flat uint o_primitive_id;
+layout (location = 3) out  vec3 o_position;
 
 
 layout(std430, set = 0, binding = 2) readonly buffer _GlobalPrimitiveUniform {
@@ -23,12 +24,7 @@ void main(void)
     mat4  matrix = primitive_infos[primitive_id].model;
     mat4  matrixIT = primitive_infos[primitive_id].modelIT;
     vec4 pos = matrix  * vec4(position, 1.0f);
-
-    vec3 p = vec3(5.705555 ,9.622492, -2.028390);
-    vec3 pl = p-0.5f;
-    vec3 pu = p+0.5f;
-    if(all(greaterThan( pos.xyz, pl)) && all(lessThan( pos.xyz, pu)))
-    debugPrintfEXT(" pos_defered %f %f %f frame_index \n", pos.x, pos.y, pos.z);
+    
 
     o_uv = texcoord_0;
 
@@ -36,7 +32,9 @@ void main(void)
 
     o_primitive_id = primitive_id;
 
+    o_position = pos.xyz;
+
     gl_Position = per_frame.view_proj * pos;
-   // gl_Position.y *= -1.f;
+    // gl_Position.y *= -1.f;
     //gl_Position.z = 1.f / gl_Position.z;
 }

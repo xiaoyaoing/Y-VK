@@ -212,6 +212,7 @@ std::unique_ptr<PrimitiveData> vertexIndex2PrimitiveData(const std::vector<Verte
     primitiveData->vertexAttributes[POSITION_ATTRIBUTE_NAME] = VertexAttribute{VK_FORMAT_R32G32B32_SFLOAT, sizeof(glm::vec3)};
     primitiveData->vertexAttributes[NORMAL_ATTRIBUTE_NAME]   = VertexAttribute{VK_FORMAT_R32G32B32_SFLOAT, sizeof(glm::vec3)};
     primitiveData->vertexAttributes[TEXCOORD_ATTRIBUTE_NAME] = VertexAttribute{VK_FORMAT_R32G32_SFLOAT, sizeof(glm::vec2)};
+    return primitiveData;
 }
 
 std::unique_ptr<PrimitiveData> loadObj(std::ifstream& stream) {
@@ -256,6 +257,7 @@ std::unique_ptr<PrimitiveData> PrimitiveLoader::loadPrimitive(const std::filesys
     if (ext == "wo3") {
         return loadWo3(stream);
     } else if (ext == "obj") {
+        return loadObj(stream);
     }
     LOGE("Unsupported file format: %s", ext.c_str());
     return {};
@@ -353,6 +355,18 @@ VertAndIndex makeCone() {
     return {_verts, _tris};
 }
 
+VertAndIndex makeQuad() {
+    std::vector<Vertex>    _verts;
+    std::vector<TriangleI> _tris;
+    _verts.emplace_back(glm::vec3(-0.5f, 0.0f, -0.5f), glm::vec2(0.0f, 0.0f));
+    _verts.emplace_back(glm::vec3(-0.5f, 0.0f, 0.5f), glm::vec2(0.0f, 1.0f));
+    _verts.emplace_back(glm::vec3(0.5f, 0.0f, 0.5f), glm::vec2(1.0f, 1.0f));
+    _verts.emplace_back(glm::vec3(0.5f, 0.0f, -0.5f), glm::vec2(1.0f, 0.0f));
+    _tris.emplace_back(0, 1, 2);
+    _tris.emplace_back(0, 2, 3);
+    return {_verts, _tris};
+}
+
 //From Tungsten Render
 void recomputeNormals(std::vector<Vertex>& verts, std::vector<TriangleI>& tris) {
     static const float SplitLimit = std::cos(math::PI * 0.15f);
@@ -416,9 +430,14 @@ static std::unordered_map<std::string, std::function<VertAndIndex()>> primitiveM
     {"cube", makeCube},
     {"sphere", makeSphere},
     {"cylinder", makeCylinder},
+    {"quad", makeQuad},
     {"cone", makeCone}};
 
 std::unique_ptr<PrimitiveData> PrimitiveLoader::loadPrimitiveFromType(const std::string& type) {
+    if (!primitiveMap.contains(type)) {
+        LOGW("Primitive type not found: {}", type);
+        return {};
+    }
     VertAndIndex vertAndIndex = primitiveMap[type]();
     recomputeNormals(vertAndIndex.first, vertAndIndex.second);
     return vertexIndex2PrimitiveData(vertAndIndex.first, vertAndIndex.second);

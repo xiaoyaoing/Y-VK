@@ -99,7 +99,8 @@ void main(void)
     }
     o_emssion = vec4(emissionColor, 1.0);
 
-    //o_diffuse_roughness.xy = in_uv;
+    //o_diffuse_roughness.xyz  =  in_world_pos / 200.f;
 
+    //  o_diffuse_roughness.a = 1;
 
 }

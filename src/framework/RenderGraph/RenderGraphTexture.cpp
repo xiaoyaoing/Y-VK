@@ -14,7 +14,7 @@ SgImage* RenderGraphTexture::getHwTexture() const {
     return mHwTexture;
 }
 
-void RenderGraphTexture::create(const char* name, const Descriptor& descriptor) {
+void RenderGraphTexture::create(const std::string& name, const Descriptor& descriptor) {
     mHwTexture = &ResourceCache::getResourceCache().requestSgImage(
         name, {descriptor.extent.width, descriptor.extent.height, 1}, ImageUtil::getFormat(descriptor.useage), ImageUtil::getUsageFlags(descriptor.useage), VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_VIEW_TYPE_2D);
 }
@@ -50,12 +50,12 @@ void RenderGraphTexture::resloveUsage(CommandBuffer& commandBuffer, uint16_t usa
 //     //     delete mHwTexture;
 // }
 
-RenderGraphTexture::RenderGraphTexture(const char* name, SgImage* hwTexture) : mHwTexture(hwTexture), imported(true),
-                                                                               mDescriptor({}) {
+RenderGraphTexture::RenderGraphTexture(const std::string& name, SgImage* hwTexture) : mHwTexture(hwTexture), imported(true),
+                                                                                      mDescriptor({}) {
     RenderGraphNode::setName(name);
 }
 
-RenderGraphTexture::RenderGraphTexture(const char* name, const Descriptor& descriptor) : mDescriptor({descriptor}) {
+RenderGraphTexture::RenderGraphTexture(const std::string& name, const Descriptor& descriptor) : mDescriptor({descriptor}) {
     RenderGraphNode::setName(name);
 }
 

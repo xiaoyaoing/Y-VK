@@ -72,12 +72,12 @@ RenderGraphHandle RenderGraph::Builder::writeBuffer(RenderGraphHandle output, Re
     return output;
 }
 
-RenderGraphHandle RenderGraph::createBuffer(const char* name, const RenderGraphBuffer::Descriptor& desc) {
+RenderGraphHandle RenderGraph::createBuffer(const std::string& name, const RenderGraphBuffer::Descriptor& desc) {
     auto buffer = new RenderGraphBuffer(name, desc);
     return addBuffer(buffer);
 }
 
-RenderGraphHandle RenderGraph::importBuffer(const char* name, Buffer* hwBuffer) {
+RenderGraphHandle RenderGraph::importBuffer(const std::string& name, Buffer* hwBuffer) {
     auto buffer = new RenderGraphBuffer(name, hwBuffer);
     return addBuffer(buffer);
 }
@@ -102,7 +102,7 @@ RenderGraphHandle RenderGraph::addBuffer(RenderGraphBuffer* buffer) {
     return handle;
 }
 
-RenderGraphHandle RenderGraph::createTexture(const char* name, const RenderGraphTexture::Descriptor& desc) {
+RenderGraphHandle RenderGraph::createTexture(const std::string& name, const RenderGraphTexture::Descriptor& desc) {
     auto texture = new RenderGraphTexture(name, desc);
     return addTexture(texture);
 }
@@ -180,7 +180,7 @@ RenderGraphHandle RenderGraph::addTexture(RenderGraphTexture* texture) {
         LOGE("Texture with name %s already exists in render graph", texture->getName());
     }
     const RenderGraphHandle handle(mResources.size());
-    if (strcmp(texture->getName(), "depth") == 0)
+    if (texture->getName() == "depth")
         texture->addRef();
     mBlackBoard->put(texture->getName(), handle);
     texture->handle = handle;
@@ -215,7 +215,7 @@ ResourceNode* RenderGraph::getResource(RenderGraphHandle handle) const {
     return mResources[handle.index];
 }
 
-void RenderGraph::addPass(const char* name, const GraphicSetup& setup, GraphicsExecute&& execute) {
+void RenderGraph::addPass(const std::string& name, const GraphicSetup& setup, GraphicsExecute&& execute) {
 
     GraphicRenderGraphPass* pass = new GraphicRenderGraphPass(std::move(execute));
     auto                    node = new RenderPassNode(*this, name, pass);
@@ -224,7 +224,7 @@ void RenderGraph::addPass(const char* name, const GraphicSetup& setup, GraphicsE
     setup(builder, pass->getData());
 }
 
-void RenderGraph::addComputePass(const char* name, const ComputeSetUp& setup, ComputeExecute&& execute) {
+void RenderGraph::addComputePass(const std::string& name, const ComputeSetUp& setup, ComputeExecute&& execute) {
     ComputeRenderGraphPass* pass = new ComputeRenderGraphPass(std::move(execute));
     auto                    node = new ComputePassNode(*this, name, pass);
     mPassNodes.emplace_back(node);
@@ -232,7 +232,7 @@ void RenderGraph::addComputePass(const char* name, const ComputeSetUp& setup, Co
     setup(builder, pass->getData());
 }
 
-void RenderGraph::addRaytracingPass(const char* name, const RayTracingSetup& setup, RaytracingExecute&& execute) {
+void RenderGraph::addRaytracingPass(const std::string& name, const RayTracingSetup& setup, RaytracingExecute&& execute) {
     RaytracingRenderGraphPass* pass = new RaytracingRenderGraphPass(std::move(execute));
     auto                       node = new RayTracingPassNode(*this, name, pass);
     mPassNodes.emplace_back(node);
@@ -347,8 +347,8 @@ void RenderGraph::clearPass() {
 Device& RenderGraph::getDevice() const {
     return device;
 }
-std::vector<const char*> RenderGraph::getResourceNames(RENDER_GRAPH_RESOURCE_TYPE type) const {
-    std::vector<const char*> names{};
+std::vector<std::string> RenderGraph::getResourceNames(RENDER_GRAPH_RESOURCE_TYPE type) const {
+    std::vector<std::string> names{};
     for (const auto& resource : mResources) {
         if (any(resource->getType() & type))
             names.push_back(resource->getName());
@@ -356,9 +356,9 @@ std::vector<const char*> RenderGraph::getResourceNames(RENDER_GRAPH_RESOURCE_TYP
     return names;
 }
 
-std::vector<const char*> RenderGraph::getPasseNames(RENDER_GRAPH_PASS_TYPE type) const {
+std::vector<std::string> RenderGraph::getPasseNames(RENDER_GRAPH_PASS_TYPE type) const {
 
-    std::vector<const char*> names{};
+    std::vector<std::string> names{};
     for (const auto& passNode : mPassNodes) {
         if (any(passNode->getType() & type))
             names.push_back(passNode->getName());
@@ -402,7 +402,7 @@ Blackboard& RenderGraph::getBlackBoard() const {
     return *mBlackBoard;
 }
 
-RenderGraphHandle RenderGraph::importTexture(const char* name, SgImage* hwTexture, bool addRef) {
+RenderGraphHandle RenderGraph::importTexture(const std::string& name, SgImage* hwTexture, bool addRef) {
     auto texture = new RenderGraphTexture(name, hwTexture);
     if (addRef) texture->addRef();
     return addTexture(texture);

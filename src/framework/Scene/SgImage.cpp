@@ -129,7 +129,6 @@ SgImage::SgImage(Device& device, const std::string& name, const VkExtent3D& exte
     vkImage = std::make_unique<Image>(device, extent, format, image_usage, memory_usage, sample_count, mipLevels, array_layers, flags);
     createImageView();
 
-
     size_t hash;
     hash_combine(hash, name);
     hash_combine(hash, extent);
@@ -141,8 +140,8 @@ SgImage::SgImage(Device& device, const std::string& name, const VkExtent3D& exte
     hash_combine(hash, mipLevels);
     hash_combine(hash, array_layers);
     hash_combine(hash, flags);
- //   LOGI("Creating  {0} with hash {1} ", typeid(SgImage).name(), hash);
-    
+    //   LOGI("Creating  {0} with hash {1} ", typeid(SgImage).name(), hash);
+
     this->format    = format;
     this->mExtent3D = extent;
 
@@ -370,6 +369,8 @@ void SgImage::loadResources(const std::string& path) {
             AstcImageHelper::decodeAstcImage(*this);
         }
     }
+}
+void SgImage::saveToFile(const std::string& path) {
 }
 
 SgImage::SgImage(Device& device, VkImage handle, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags image_usage, VkSampleCountFlagBits sample_count, VkImageViewType viewType) : device(device) {

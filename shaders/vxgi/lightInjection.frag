@@ -99,8 +99,8 @@ void imageAtomicRGBA8Avg(ivec3 coords, vec4 value)
         curValF.xyz /= (curValF.w);// Renormalize
         newVal = convVec4ToRGBA8(curValF);
     }
-    if(coords.x == 45 && coords.y == 77 && coords.z == 111)
-    debugPrintfEXT("curValF %f %f %f %f val %f %f %f %f iterations %d newval coord %d %d %d \n", curValF.x, curValF.y, curValF.z, curValF.w, value.x, value.y, value.z, value.w, i, coords.x, coords.y, coords.z);
+    //    if (coords.x == 45 && coords.y == 77 && coords.z == 111)
+    //    debugPrintfEXT("curValF %f %f %f %f val %f %f %f %f iterations %d newval coord %d %d %d \n", curValF.x, curValF.y, curValF.z, curValF.w, value.x, value.y, value.z, value.w, i, coords.x, coords.y, coords.z);
 }
 
 void voxelAtomicRGBA8Avg(ivec3 imageCoord, ivec3 faceIndex, vec4 color, vec3 weight)
@@ -136,29 +136,29 @@ ivec3 calculateVoxelFaceIndex(vec3 normal)
 void main(){
 
     vec3 world_pos = in_position;
-    
-    vec3 p = vec3(5.705555 ,9.622492, -2.028390);
-    vec3 pl = p-0.1f;
-    vec3 pu = p+0.1f;
-    if(all(greaterThan(world_pos, pl)) && all(lessThan(world_pos, pu)) )
-    { 
-        debugPrintfEXT("world_pos1 %f %f %f maxextentworld, %f %d %f %f %f %d\n", world_pos.x, world_pos.y, world_pos.z, max_extent_world.x, clip_map_resoultion, o_position_1.x, o_position_1.y, o_position_1.z, in_primitive_index);
-       // debugPrintfEXT("world_pos %f %f %f maxextentworld, %f %d %f %f %f %d\n", world_pos.x, world_pos.y, world_pos.z, max_extent_world.x, clip_map_resoultion, o_position_1.x, o_position_1.y, o_position_1.z, in_primitive_index);
-    }
-        if(in_primitive_index == 5)
-        debugPrintfEXT("world_pos %f %f %f maxextentworld, %f %d %f %f %f %d\n", world_pos.x, world_pos.y, world_pos.z, max_extent_world.x,clip_map_resoultion,o_position_1.x,o_position_1.y,o_position_1.z,in_primitive_index);
+
+    //    vec3 p = vec3(5.705555 ,9.622492, -2.028390);
+    //    vec3 pl = p-0.1f;
+    //    vec3 pu = p+0.1f;
+    //    if(all(greaterThan(world_pos, pl)) && all(lessThan(world_pos, pu)) )
+    //    { 
+    //        debugPrintfEXT("world_pos1 %f %f %f maxextentworld, %f %d %f %f %f %d\n", world_pos.x, world_pos.y, world_pos.z, max_extent_world.x, clip_map_resoultion, o_position_1.x, o_position_1.y, o_position_1.z, in_primitive_index);
+    //       // debugPrintfEXT("world_pos %f %f %f maxextentworld, %f %d %f %f %f %d\n", world_pos.x, world_pos.y, world_pos.z, max_extent_world.x, clip_map_resoultion, o_position_1.x, o_position_1.y, o_position_1.z, in_primitive_index);
+    //    }
+    //        if(in_primitive_index == 5)
+    //        debugPrintfEXT("world_pos %f %f %f maxextentworld, %f %d %f %f %f %d\n", world_pos.x, world_pos.y, world_pos.z, max_extent_world.x,clip_map_resoultion,o_position_1.x,o_position_1.y,o_position_1.z,in_primitive_index);
     if (!pos_in_clipmap(world_pos)){
         discard;
     }
-    
+
     ivec3 image_coords = computeImageCoords(world_pos);
-    
-//    if(image_coords.x == 45 && image_coords.y == 77 && image_coords.z == 111)
-//        debugPrintfEXT("world_pos %f %f %f maxextentworld, %f %d\n", world_pos.x, world_pos.y, world_pos.z, max_extent_world.x,clip_map_resoultion);
-//    if(frame_index > 0 )
-//        debugPrintfEXT("world_pos %f %f %f maxextentworld, %f %d\n", world_pos.x, world_pos.y, world_pos.z, max_extent_world.x,clip_map_resoultion);
-//    
-    
+
+    //    if(image_coords.x == 45 && image_coords.y == 77 && image_coords.z == 111)
+    //        debugPrintfEXT("world_pos %f %f %f maxextentworld, %f %d\n", world_pos.x, world_pos.y, world_pos.z, max_extent_world.x,clip_map_resoultion);
+    //    if(frame_index > 0 )
+    //        debugPrintfEXT("world_pos %f %f %f maxextentworld, %f %d\n", world_pos.x, world_pos.y, world_pos.z, max_extent_world.x,clip_map_resoultion);
+    //    
+
 
     uint material_index = primitive_infos[in_primitive_index].material_index;
     GltfMaterial material = scene_materials[material_index];
@@ -235,7 +235,7 @@ void main(){
             Light light = lights_info.lights[i];
             vec3 light_dir = calcuate_light_dir(lights_info.lights[i], world_pos);
             vec3 half_vector = normalize(light_dir + view_dir);
- 
+
             pbr_info.NdotL = clamp(dot(normal, light_dir), 0.001, 1.0);
             pbr_info.NdotH = clamp(dot(normal, half_vector), 0.0, 1.0);
             pbr_info.LdotH = clamp(dot(light_dir, half_vector), 0.0, 1.0);

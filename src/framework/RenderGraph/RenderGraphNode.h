@@ -15,9 +15,9 @@ public:
     uint32_t getRefCount() const { return refCount; }
     void     addRef() { refCount++; }
 
-    const char* getName() const { return mName; }
-    void        setName(const char* name) { mName = name; }
+    const std::string& getName() const { return mName; }
+    void               setName(const std::string& name) { mName = name; }
 
 protected:
-    const char* mName;
+    std::string mName;
 };

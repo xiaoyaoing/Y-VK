@@ -69,8 +69,6 @@ void RTSceneEntryImpl::initScene(Scene& scene) {
 
     buildBLAS();
     buildTLAS();
-
-    RenderGraph                                           graph(device);
     std::vector<Shader>                                   shaders        = {Shader(device, FileUtils::getShaderPath("Raytracing/compute_triangle_area.comp"))};
     std::unique_ptr<PipelineLayout>                       pipelineLayout = std::make_unique<PipelineLayout>(device, shaders);
     std::unordered_map<uint32_t, std::unique_ptr<Buffer>> primAreaBuffers{};
@@ -83,6 +81,8 @@ void RTSceneEntryImpl::initScene(Scene& scene) {
         mat4     model;
     };
 
+    //  RenderGraph graph(device);
+
     for (auto light : scene.getLights()) {
         if (light.type != LIGHT_TYPE::Area)
             continue;
@@ -92,36 +92,38 @@ void RTSceneEntryImpl::initScene(Scene& scene) {
         rtLight.prim_idx     = prim_idx;
         rtLight.L            = light.lightProperties.color;
         lights.push_back(rtLight);
-        if (primAreaBuffers.contains(prim_idx))
-            continue;
-        uint32_t tri_count        = primitives[prim_idx].index_count / 3;
-        primAreaBuffers[prim_idx] = std::make_unique<Buffer>(device, sizeof(float) * tri_count, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-        std::string bufferName    = ("area_distribution" + std::to_string(prim_idx));
-        graph.addComputePass(
-            "",
-            [&](RenderGraph::Builder& builder, ComputePassSettings& settings) {
-                auto areaBuffer = graph.importBuffer(("area_distribution" + std::to_string(prim_idx)).c_str(), primAreaBuffers[prim_idx].get());
-                graph.setOutput(areaBuffer);
-                builder.writeBuffer(areaBuffer, BufferUsage::STORAGE);
-            },
-            [&, prim_idx](RenderPassContext& context) {
-                g_context->getPipelineState().setPipelineLayout(*pipelineLayout);
-                PC pc{primitives[prim_idx].index_offset, primitives[prim_idx].index_count, vertexBuffer->getDeviceAddress(), indexBuffer->getDeviceAddress(), primitives[prim_idx].world_matrix};
-                g_context->bindBuffer(0, graph.getBlackBoard().getBuffer("area_distribution" + std::to_string(prim_idx))).bindPushConstants(pc).flushAndDispatch(context.commandBuffer, ceil(float(tri_count) / 16), 1, 1);
-            });
+        // if (primAreaBuffers.contains(prim_idx))
+        //     continue;
+        // uint32_t tri_count        = primitives[prim_idx].index_count / 3;
+        // primAreaBuffers[prim_idx] = std::make_unique<Buffer>(device, sizeof(float) * tri_count, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+        // std::string bufferName    = ("area_distribution" + std::to_string(prim_idx));
+        // for (int i = 0; i < 10; i++)
+        //     graph.addComputePass(
+        //         "",
+        //         [&](RenderGraph::Builder& builder, ComputePassSettings& settings) {
+        //             LOGI("Adding compute pass");
+        //             auto areaBuffer = graph.importBuffer(("area_distribution" + std::to_string(i)).c_str(), primAreaBuffers[prim_idx].get());
+        //             graph.setOutput(areaBuffer);
+        //             builder.writeBuffer(areaBuffer, BufferUsage::STORAGE);
+        //         },
+        //         [&, prim_idx, i](RenderPassContext& context) {
+        //             g_context->getPipelineState().setPipelineLayout(*pipelineLayout);
+        //             PC pc{primitives[prim_idx].index_offset, primitives[prim_idx].index_count, vertexBuffer->getDeviceAddress(), indexBuffer->getDeviceAddress(), primitives[prim_idx].world_matrix};
+        //             LOGI("Dispatching compute pass")
+        //             g_context->bindBuffer(0, graph.getBlackBoard().getBuffer("area_distribution" + std::to_string(i))).bindPushConstants(pc).flushAndDispatch(context.commandBuffer, ceil(float(tri_count) / 16), 1, 1);
+        //         });
     }
+    // auto commandBuffer = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+    // graph.execute(commandBuffer);
+    // g_context->submit(commandBuffer);
 
-    auto commandBuffer = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
-    graph.execute(commandBuffer);
-    g_context->submit(commandBuffer);
-
-    for (const auto& pair : primAreaBuffers) {
-        auto           data = pair.second->getData<float>();
-        Distribution1D distribution1D(data.data(), data.size());
-        primAreaDistributionBuffers.push_back(distribution1D.toGpuBuffer(device));
-        primitives[pair.first].area_distribution_buffer_addr = primAreaDistributionBuffers.back()->getDeviceAddress();
-        primitives[pair.first].area                          = std::accumulate(data.begin(), data.end(), 0.0f);
-    }
+    // for (const auto& pair : primAreaBuffers) {
+    //     auto           data = pair.second->getData<float>();
+    //     Distribution1D distribution1D(data.data(), data.size());
+    //     primAreaDistributionBuffers.push_back(distribution1D.toGpuBuffer(device));
+    //     primitives[pair.first].area_distribution_buffer_addr = primAreaDistributionBuffers.back()->getDeviceAddress();
+    //     primitives[pair.first].area                          = std::accumulate(data.begin(), data.end(), 0.0f);
+    // }
 
     // for (uint32_t i = 0; i < primitives.size(); i++) {
     //     const auto& primitive = primitives[i];

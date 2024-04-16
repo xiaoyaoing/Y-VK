@@ -65,6 +65,15 @@ T GetOptional(const Json& j, const std::string& key, const T& defaultValue) {
     return defaultValue;
 }
 
+template<class T>
+inline bool ContainsAndGet(const Json& j, std::string field, T& value) {
+    if (j.find(field) != j.end()) {
+        value = j.at(field).get<T>();
+        return true;
+    }
+    return false;
+}
+
 void JsonLoader::LoadSceneFromGLTFFile(Device& device, const std::string& path, const SceneLoadingConfig& config) {
     std::ifstream file(path);
     file >> sceneJson;
@@ -125,7 +134,9 @@ void JsonLoader::loadMaterials() {
             rtMaterial.texture_id = -1;
             rtMaterial.albedo     = materialJson["albedo"];
         }
-        rtMaterial.bsdf_type = type2RTBSDFTYPE[materialJson["type"].get<std::string>()];
+        rtMaterial.emissiveFactor = vec3(0);
+        // rtMaterial.bsdf_type = type2RTBSDFTYPE[materialJson["type"].get<std::string>()];
+        rtMaterial.bsdf_type = RT_BSDF_TYPE_DIFFUSE;
         rtMaterials.push_back(rtMaterial);
 
         GltfMaterial material        = InitGltfMaterial();
@@ -143,6 +154,79 @@ std::vector<T> getTFromGpuBuffer(Buffer& buffer) {
     vkCmdCopyBuffer(commandBuffer.getHandle(), buffer.getHandle(), stagingBuffer.getHandle(), 1, &copyRegion);
     g_context->submit(commandBuffer, true);
     return stagingBuffer.getData<T>();
+}
+
+static vec3 randomOrtho(const vec3& a) {
+    vec3 res;
+    if (std::abs(a.x) > std::abs(a.y))
+        res = vec3(0.0f, 1.0f, 0.0f);
+    else
+        res = vec3(1.0f, 0.0f, 0.0f);
+    return normalize(cross(a, res));
+}
+
+static void gramSchmidt(vec3& a, vec3& b, vec3& c) {
+    a = normalize(a);
+    b -= a * dot(a, b);
+    if (length2(b) < 1e-5)
+        b = randomOrtho(a);
+    else
+        b = normalize(b);
+
+    c -= a * dot(a, c);
+    c -= b * dot(b, c);
+    if (length2(c) < 1e-5)
+        c = cross(a, b);
+    else
+        c = normalize(c);
+}
+
+static inline vec3 mult(const mat4& a, const vec4 point) {
+    return vec3(
+        a[0][0] * point.x + a[0][1] * point.y + a[0][2] * point.z + a[0][3] * point.w,
+        a[1][0] * point.x + a[1][1] * point.y + a[1][2] * point.z + a[1][3] * point.w,
+        a[2][0] * point.x + a[2][1] * point.y + a[2][2] * point.z + a[2][3] * point.w);
+}
+
+static mat4 rotYXZ(const vec3& rot) {
+    vec3  r   = rot * math::PI / 180.0f;
+    float c[] = {std::cos(r.x), std::cos(r.y), std::cos(r.z)};
+    float s[] = {std::sin(r.x), std::sin(r.y), std::sin(r.z)};
+
+    return mat4(
+        c[1] * c[2] - s[1] * s[0] * s[2], -c[1] * s[2] - s[1] * s[0] * c[2], -s[1] * c[0], 0.0f, c[0] * s[2], c[0] * c[2], -s[0], 0.0f, s[1] * c[2] + c[1] * s[0] * s[2], -s[1] * s[2] + c[1] * s[0] * c[2], c[1] * c[0], 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+}
+
+glm::mat4 mat4FromJson(const Json& json) {
+    vec3 x(1.0f, 0.0f, 0.0f);
+    vec3 y(0.0f, 1.0f, 0.0f);
+    vec3 z(0.0f, 0.0f, 1.0f);
+
+    vec3 pos = GetOptional(json, "position", vec3(0.0f));
+
+    gramSchmidt(z, y, x);
+
+    if (dot(cross(x, y), z) < 0.0f) {
+        x = -x;
+    }
+
+    vec3 scale;
+    if (json.contains("scale")) {
+        scale = json["scale"];
+        x *= scale.x;
+        y *= scale.y;
+        z *= scale.z;
+    }
+
+    vec3 rot;
+    if (ContainsAndGet(json, "rotation", rot)) {
+        mat4 tform = rotYXZ(rot);
+        x          = mult(tform, vec4(x, 1.0));
+        y          = mult(tform, vec4(y, 1.0));
+        z          = mult(tform, vec4(z, 1.0));
+    }
+    return mat4(
+        x[0], y[0], z[0], pos[0], x[1], y[1], z[1], pos[1], x[2], y[2], z[2], pos[2], 0.0f, 0.0f, 0.0f, 1.0f);
 }
 
 void JsonLoader::loadPrimitives() {
@@ -166,13 +250,6 @@ void JsonLoader::loadPrimitives() {
 
     for (auto& primitiveJson : primitivesJson) {
 
-        {
-            if (primitiveJson.contains("emission")) {
-                vec3 color = primitiveJson["emission"];
-                lights.push_back(SgLight{.type = LIGHT_TYPE::Area, .lightProperties = {.color = color, .prim_index = static_cast<uint32_t>(primitives.size())}});
-            }
-        }
-
         std::unique_ptr<PrimitiveData> primitiveData;
         if (primitiveJson.contains("file")) {
             primitiveData = PrimitiveLoader::loadPrimitive(rootPath.string() + "/" + primitiveJson["file"].get<std::string>());
@@ -186,10 +263,21 @@ void JsonLoader::loadPrimitives() {
             LOGW("Failed to load primitive");
             continue;
         }
+
+        if (primitiveJson.contains("emission")) {
+            vec3 color = primitiveJson["emission"];
+            lights.push_back(SgLight{.type = LIGHT_TYPE::Area, .lightProperties = {.color = color, .prim_index = static_cast<uint32_t>(primitives.size())}});
+        }
+
+        if (primitiveJson.contains("power")) {
+            vec3 color = primitiveJson["power"];
+            //todo
+            lights.push_back(SgLight{.type = LIGHT_TYPE::Area, .lightProperties = {.color = color, .prim_index = static_cast<uint32_t>(primitives.size())}});
+        }
         // auto primitiveData = PrimitiveLoader::loadPrimitive(rootPath.string()+"/"+primitiveJson["file"].get<std::string>());
         //
         uint32_t vertexCount = primitiveData->buffers.at(POSITION_ATTRIBUTE_NAME).size() / sizeof(glm::vec3);
-        uint32_t indexCount  = primitiveData->indexs.size();
+        uint32_t indexCount  = primitiveData->indexs.size() / sizeof(uint32_t);
 
         //    maxVertexCount = std::max(maxVertexCount, vertexCount);
         //   maxIndexCount  = std::max(maxIndexCount, indexCount);
@@ -212,19 +300,25 @@ void JsonLoader::loadPrimitives() {
         vertexOffset += vertexCount;
         indexOffset += indexCount;
 
-        indexBuffers.emplace_back(std::move(primitiveData->indexs));
-        vertexDatas.push_back(std::move(primitiveData->buffers));
-
         Transform transform;
         if (primitiveJson.contains("transform")) {
             auto transformJson = primitiveJson["transform"];
             auto position      = GetOptional(transformJson, "position", glm::vec3(0.0f));
             transform.setPosition(position);
-            auto rotation = GetOptional(transformJson, "rotation", glm::vec3(0.0f));
-            transform.setRotation(math::eulerYZXQuat(rotation));
+
             auto scale = GetOptional(transformJson, "scale", glm::vec3(1.0f));
             transform.setLocalScale(scale);
+
+            auto rotation = GetOptional(transformJson, "rotation", glm::vec3(0.0f));
+            transform.setRotation(math::eulerYZXQuat(rotation));
+            transform.setRotation(transpose(rotYXZ(rotation)));
+
+            //  transform.setLocalToWorldMatrix(transpose(mat4FromJson(transformJson)));
         }
+
+        indexBuffers.emplace_back(std::move(primitiveData->indexs));
+        vertexDatas.push_back(std::move(primitiveData->buffers));
+
         //  transforms.push_back(transform);
         primitive->transform = transform;
         primitives.push_back(std::move(primitive));

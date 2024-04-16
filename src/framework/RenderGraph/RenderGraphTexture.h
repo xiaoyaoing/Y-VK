@@ -38,8 +38,8 @@ public:
 
     ~RenderGraphTexture() override = default;
 
-    RenderGraphTexture(const char* name, SgImage* hwTexture);
-    RenderGraphTexture(const char* name, const Descriptor& descriptor);
+    RenderGraphTexture(const std::string& name, SgImage* hwTexture);
+    RenderGraphTexture(const std::string& name, const Descriptor& descriptor);
 
     bool isDepthStencilTexture() const;
 
@@ -49,8 +49,8 @@ public:
 
     // const HwTexture& getHandle() const;
 
-    void create(const char*       name,
-                const Descriptor& descriptor);
+    void create(const std::string& name,
+                const Descriptor&  descriptor);
 
     void devirtualize() override;
 

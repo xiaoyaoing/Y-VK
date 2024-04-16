@@ -42,7 +42,7 @@ struct RenderGraphPassDescriptor {
 
 class PassNode : public RenderGraphNode {
 public:
-    PassNode(const char* passName);
+    PassNode(const std::string& passName);
     ~PassNode() override = default;
     void resolveTextureUsages(RenderGraph& renderGraph, CommandBuffer& commandBuffer);
     void addResourceUsage(ResourceNode* texture, uint16_t usage);
@@ -70,12 +70,12 @@ protected:
 };
 
 class RenderPassNode final : public PassNode {
-    virtual void declareRenderTarget(const char* name, const RenderGraphPassDescriptor& descriptor);
+    virtual void declareRenderTarget(const std::string& name, const RenderGraphPassDescriptor& descriptor);
 
 public:
     void execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) override;
 
-    RenderPassNode(RenderGraph& renderGraph, const char* name, RenderGraphPassBase* base);
+    RenderPassNode(RenderGraph& renderGraph, const std::string& name, RenderGraphPassBase* base);
 
     ~RenderPassNode() override {
         delete mRenderPass;
@@ -87,11 +87,10 @@ public:
 private:
     class RenderPassData {
     public:
-        static constexpr size_t ATTACHMENT_COUNT = 6;
-        const char*             name             = {};
-        bool                    imported         = false;
-        std::unordered_map<RenderGraphHandle,size_t, RenderGraphHandle::Hash> attachment_textures;
-
+        static constexpr size_t                                                ATTACHMENT_COUNT = 6;
+        std::string                                                            name             = {};
+        bool                                                                   imported         = false;
+        std::unordered_map<RenderGraphHandle, size_t, RenderGraphHandle::Hash> attachment_textures;
 
         RenderGraphPassDescriptor desc;
 
@@ -99,22 +98,21 @@ private:
 
         std::unique_ptr<RenderTarget> renderTarget;
 
-        RenderTarget& getRenderTarget();
-        const std::unordered_map<RenderGraphHandle,size_t, RenderGraphHandle::Hash> & getAttachmentTextures() const {
+        RenderTarget&                                                                 getRenderTarget();
+        const std::unordered_map<RenderGraphHandle, size_t, RenderGraphHandle::Hash>& getAttachmentTextures() const {
             return attachment_textures;
         }
     };
 
     RenderPassData       renderPassData{};
     RenderGraphPassBase* mRenderPass{nullptr};
-    const char*          name;
-
+    std::string          name;
 };
 
 class ComputePassNode final : public PassNode {
 public:
     void execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) override;
-    ComputePassNode(RenderGraph& renderGraph, const char* name, ComputeRenderGraphPass* base);
+    ComputePassNode(RenderGraph& renderGraph, const std::string& name, ComputeRenderGraphPass* base);
     ~ComputePassNode() override { delete mPass; }
     RENDER_GRAPH_PASS_TYPE getType() const override;
 
@@ -125,7 +123,7 @@ private:
 class RayTracingPassNode final : public PassNode {
 public:
     void execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) override;
-    RayTracingPassNode(RenderGraph& renderGraph, const char* name, RaytracingRenderGraphPass* base);
+    RayTracingPassNode(RenderGraph& renderGraph, const std::string& name, RaytracingRenderGraphPass* base);
     ~RayTracingPassNode() override { delete mPass; }
     RENDER_GRAPH_PASS_TYPE getType() const override;
     // ~RayTracingPassNode() override;

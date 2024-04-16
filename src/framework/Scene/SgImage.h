@@ -100,6 +100,8 @@ public:
 
     void loadResources(const std::string& path);
 
+    void saveToFile(const std::string& path);
+
 private:
 protected:
     friend class AstcImageHelper;

@@ -202,6 +202,7 @@ void Example::prepare() {
     pipelineLayouts.lighting = std::make_unique<PipelineLayout>(*device, shaders1);
 
     //scene = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("staircase2/scene.json"), {.bufferRate = BufferRate::PER_SCENE});
+    scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/cornell-box/scene.json", {.bufferRate = BufferRate::PER_SCENE});
 
     // scene = GltfLoading::LoadSceneFromGLTFFile(
     //     *device, "E:/code/vk_vxgi/VFS/Scene/Sponza/Sponza.gltf");
@@ -209,7 +210,7 @@ void Example::prepare() {
     //  GlslCompiler::forceRecompile = true;
     // scene = GltfLoading::LoadSceneFromGLTFFile(*device, "E:/code/DirectX-Graphics-Samples/MiniEngine/ModelViewer/Sponza/pbr/sponza2.gltf");
     // scene = GltfLoading::LoadSceneFromGLTFFile(*device, "E:/code/DirectX-Graphics-Samples/MiniEngine/ModelViewer/Sponza/pbr/sponza2.gltf");
-    scene = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));
+    // scene = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));
     // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/tungsten-original/cmake-build-release/data/example-scenes/cornell-box/scene.json");
 
     auto light_pos   = glm::vec3(0.0f, 128.0f, -225.0f);
@@ -247,9 +248,8 @@ void Example::prepare() {
     camera->setMoveSpeed(0.0005f);
 
     // camera->setPerspective(45.0f, float(mWidth), float(mHeight), 0.3f, 30.0f);
-    glm::vec3 cameraPositionOffset(12, -4, 2);
-    camera->getTransform()->setPosition(cameraPositionOffset);
-    camera->getTransform()->setRotation(glm::quat(0.67, -0.24, 0.69, 0.12));
+    camera->getTransform()->setPosition(glm::vec3(0, 1, 4));
+    camera->getTransform()->setRotation(glm::quat(1, 0, 0, 0));
 
     view = std::make_unique<View>(*device);
     view->setScene(scene.get());

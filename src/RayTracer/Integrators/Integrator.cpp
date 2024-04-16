@@ -111,6 +111,8 @@ void Integrator::initScene(Scene& scene) {
 
 void Integrator::init(Scene& scene) {
     initScene(scene);
+    std::vector<Shader> shaders = {Shader(device, FileUtils::getShaderPath("Raytracing/compute_triangle_area.comp"))};
+    computePrimAreaLayout       = std::make_unique<PipelineLayout>(device, shaders);
 }
 
 void Integrator::updateGui() {
@@ -310,10 +312,7 @@ void Integrator::bindRaytracingResources(CommandBuffer& commandBuffer)
     sceneUbo.viewInverse = camera->viewInverse();
     sceneUboBuffer->uploadData(&sceneUbo, sizeof(sceneUbo));
 
-    g_context->bindAcceleration(0, tlas)
-        .bindBuffer(2, *sceneUboBuffer, 0, sizeof(sceneUbo))
-        .bindBuffer(3, *sceneDescBuffer)
-        .bindBuffer(4, *rtLightBuffer);
+    g_context->bindAcceleration(0, tlas).bindBuffer(2, *sceneUboBuffer, 0, sizeof(sceneUbo)).bindBuffer(3, *sceneDescBuffer).bindBuffer(4, *rtLightBuffer);
     uint32_t arrayElement = 0;
     for (const auto& texture : this->textures) {
         g_context->bindImageSampler(5, texture->getImage().getVkImageView(), texture->getSampler(), 0, arrayElement++);

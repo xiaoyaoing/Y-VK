@@ -4,28 +4,32 @@
 #extension GL_EXT_scalar_block_layout : require
 #extension GL_EXT_debug_printf : enable
 
-layout(push_constant) uniform UniformBuffer {
+layout(push_constant, std140) uniform UniformBuffer {
     uint index_offset;
+    uint vertex_offset;
     uint index_count;
+    uint padding;
     uint64_t vertex_address;
     uint64_t index_address;
-    mat4 model;
+    mat4     model;
 };
 
 layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer Vertices { vec3 v[]; };
 layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer Indices { uint i[]; };
 
-layout(binding = 0) buffer Area {
+layout(binding = 0, set = 0) buffer Area {
     float areas[];
 };
 
 layout(local_size_x = 16, local_size_y = 1, local_size_z = 1) in;
 void main() {
     uint index = gl_GlobalInvocationID.x;
-    debugPrintfEXT("index %d\n", index);
+    // debugPrintfEXT("index %d index_count %d index_offset %d\n", index, index_count, index_offset);
+
     if (index >= index_count/3) {
         return;
     }
+
     Indices indices = Indices(index_address);
     Vertices vertices = Vertices(vertex_address);
 
@@ -34,12 +38,26 @@ void main() {
     uint i1 = indices.i[index_offset + 1];
     uint i2 = indices.i[index_offset + 2];
 
-    vec3 world_pos0 =mat3(model) * vertices.v[i0];
-    vec3 world_pos1 =mat3(model) * vertices.v[i1];
-    vec3 world_pos2 =mat3(model) * vertices.v[i2];
+    i0 = i0 + vertex_offset;
+    i1 = i1 + vertex_offset;
+    i2 = i2 + vertex_offset;
 
-    debugPrintfEXT("index world_pos0 pos1 pos2 %d %f %f %f %f %f %f %f %f %f\n", index, world_pos0.x, world_pos0.y, world_pos0.z, world_pos1.x, world_pos1.y, world_pos1.z, world_pos2.x, world_pos2.y, world_pos2.z);
+    vec3 world_pos0 = (model * vec4(vertices.v[i0], 1.0)).xyz;
+    vec3 world_pos1 = (model * vec4(vertices.v[i1], 1.0)).xyz;
+    vec3 world_pos2 = (model * vec4(vertices.v[i2], 1.0)).xyz;
 
-    areas[index] = 0.5 * length(cross(world_pos1 - world_pos0, world_pos2 - world_pos0));
+
+    float area = 0.5 * length(cross(world_pos1 - world_pos0, world_pos2 - world_pos0));
+    //  debugPrintfEXT("model %f %f %f %f %f %f %f %f %f %f %f %f\n", model[0][0], model[0][1], model[0][2], model[0][3], model[1][0], model[1][1], model[1][2], model[1][3], model[2][0], model[2][1], model[2][2], model[2][3]);
+    areas[index] = area;
+
+    uint triangle_idx = index;
+    vec3 p0 = world_pos0;
+    vec3 p1 = world_pos1;
+    vec3 p2 = world_pos2;
+
+    debugPrintfEXT("%d p0 %f %f %f p1 %f %f %f p2 %f %f %f %f\n", triangle_idx, p0.x, p0.y, p0.z, p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, area);
+
+    // areas[index] = 1.f;
 
 }

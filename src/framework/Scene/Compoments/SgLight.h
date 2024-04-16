@@ -15,6 +15,7 @@ struct LightProperties {
     glm::vec3 position;
 
     glm::vec3 color{1.0f, 1.0f, 1.0f};
+    glm::vec3 power{0, 0, 0};
 
     float intensity{1.0f};
 

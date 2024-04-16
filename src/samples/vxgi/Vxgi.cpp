@@ -56,7 +56,7 @@ void Example::prepare() {
     Shader shader(*device, "E:/code/moerengine2/shaders/3dgs_splatting/tile_boundary.spv", VK_SHADER_STAGE_COMPUTE_BIT);
 
     scene = GltfLoading::LoadSceneFromGLTFFile(
-        *device, FileUtils::getResourcePath("sponza/Sponza01.gltf"), {.sceneScale =  glm::vec3(0.008f)});
+        *device, FileUtils::getResourcePath("sponza/Sponza01.gltf"), {.sceneScale = glm::vec3(0.08f)});
 
     // scene = GltfLoading::LoadSceneFromGLTFFile(
     //     *device, "E:/code/vk_vxgi/VFS/Scene/Sponza/Sponza.gltf", {.bufferRate = BufferRate::PER_SCENE});
@@ -100,9 +100,10 @@ void Example::prepare() {
     camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 0.1f, 4000.f);
     camera->setMoveSpeed(0.05f);
 
-    camera->setPerspective(45.0f, float(mWidth), float(mHeight), 0.3f, 30.0f);
+    camera->setPerspective(45.0f, float(mWidth), float(mHeight), 0.1f, 4000.f);
     glm::vec3 cameraPositionOffset(0.46, 8.27, -1.54);
     camera->getTransform()->setPosition(cameraPositionOffset);
+    camera->getTransform()->setPosition(glm::vec3(-33, 70, 3));
     camera->getTransform()->setRotation(glm::quat(0.67, -0.24, 0.69, 0.12));
 
     view = std::make_unique<View>(*device);
