@@ -176,6 +176,8 @@ ImageCopyPassNode::ImageCopyPassNode(RenderGraphHandle src, RenderGraphHandle ds
 
 void ComputePassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) {
     g_context->getPipelineState().setPipelineType(PIPELINE_TYPE::E_COMPUTE);
+    if(mPass->getData().pipelineLayout)
+    g_context->getPipelineState().setPipelineLayout(*mPass->getData().pipelineLayout);
 
     RenderPassContext context{.commandBuffer = commandBuffer};
 

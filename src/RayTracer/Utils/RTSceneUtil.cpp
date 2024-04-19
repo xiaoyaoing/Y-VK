@@ -45,7 +45,9 @@ void RTSceneEntryImpl::initScene(Scene& scene) {
     uvBuffer     = &scene.getVertexBuffer(TEXCOORD_ATTRIBUTE_NAME);
     normalBuffer = &scene.getVertexBuffer(NORMAL_ATTRIBUTE_NAME);
     vertexBuffer = &scene.getVertexBuffer(POSITION_ATTRIBUTE_NAME);
-    // initBuffers(scene);
+
+    textures.resize(scene.getTextures().size());
+    std::ranges::transform(scene.getTextures().begin(), scene.getTextures().end(), textures.begin(), [](const auto& texture) { return texture.get(); });
 
     if (!scene.getRTMaterials().empty())
         materials = scene.getRTMaterials();
@@ -68,7 +70,9 @@ void RTSceneEntryImpl::initScene(Scene& scene) {
     }
 
     buildBLAS();
+
     buildTLAS();
+
     std::vector<Shader>                                   shaders        = {Shader(device, FileUtils::getShaderPath("Raytracing/compute_triangle_area.comp"))};
     std::unique_ptr<PipelineLayout>                       pipelineLayout = std::make_unique<PipelineLayout>(device, shaders);
     std::unordered_map<uint32_t, std::unique_ptr<Buffer>> primAreaBuffers{};
@@ -293,9 +297,10 @@ void RTSceneEntryImpl::buildBLAS() {
 void RTSceneEntryImpl::buildTLAS() {
     auto cmdBuffer = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
-    uint32_t               primIdx = 0;
     std::vector<TlasInput> tlasInputs;
-    for (uint32_t i = 0; i < primitives.size(); i++) {
+
+    uint primCount = toUint32(primitives.size());
+    for (uint32_t i = 0; i < primCount; i++) {
         VkAccelerationStructureInstanceKHR instance{};
         instance.transform                              = toVkTransformMatrix(primitives[i].world_matrix);
         instance.instanceCustomIndex                    = i;
@@ -309,8 +314,16 @@ void RTSceneEntryImpl::buildTLAS() {
     uint32_t instanceCount = toUint32(tlasInputs.size());
 
     //Allocate instance Buffer
-    Buffer     instanceBuffer(device, sizeof(TlasInput) * tlasInputs.size(), VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR, VMA_MEMORY_USAGE_CPU_TO_GPU, tlasInputs.data());
-    const auto instanceBufferAddress = instanceBuffer.getDeviceAddress();
+    auto stagingBuffer = std::make_unique<Buffer>(device, sizeof(TlasInput) * tlasInputs.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, tlasInputs.data());
+
+    auto instanceBuffer = Buffer::FromBuffer(device, cmdBuffer, *stagingBuffer, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR);
+
+    const auto instanceBufferAddress = instanceBuffer->getDeviceAddress();
+
+    VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
+    vkCmdPipelineBarrier(cmdBuffer.getHandle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 1, &barrier, 0, nullptr, 0, nullptr);
 
     VkAccelerationStructureGeometryInstancesDataKHR instances_vk{
         VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR};
@@ -342,8 +355,8 @@ void RTSceneEntryImpl::buildTLAS() {
     tlas             = createAccel(create_info);
 
     //Build TLAS
-    Buffer                    scratchBuffer(device, size_info.buildScratchSize, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-    VkBufferDeviceAddressInfo bufferInfo{VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, nullptr, scratchBuffer.getHandle()};
+    auto                      scratchBuffer = std::make_unique<Buffer>(device, size_info.buildScratchSize, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+    VkBufferDeviceAddressInfo bufferInfo{VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, nullptr, scratchBuffer->getHandle()};
     VkDeviceAddress           scratchAddress = vkGetBufferDeviceAddress(device.getHandle(), &bufferInfo);
 
     // Update build information

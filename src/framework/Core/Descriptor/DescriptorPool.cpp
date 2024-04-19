@@ -11,7 +11,10 @@ DescriptorPool::DescriptorPool(Device &device, const DescriptorLayout &layout, u
     std::unordered_map<VkDescriptorType, uint32_t> descTypeCounts;
     //  std::vector<VkDescriptorPoolSize> poolSizes;
 
+ 
     for (const auto &binding: bindings) {
+        if(binding.descriptorCount == 0) {
+        }   
         descTypeCounts[binding.descriptorType] += binding.descriptorCount;
     }
 

@@ -28,6 +28,7 @@ struct GraphicPassSettings {
 
 struct ComputePassSettings {
     RENDER_GRAPH_PASS_TYPE type = RENDER_GRAPH_PASS_TYPE::COMPUTE;
+    PipelineLayout *       pipelineLayout{nullptr};
 };
 
 struct RaytracingPassSettings {

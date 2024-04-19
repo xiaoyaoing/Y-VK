@@ -11,10 +11,6 @@ void* Buffer::map() {
     return dstData;
 }
 
-void Buffer::cleanup() {
-    vmaDestroyBuffer(_allocator, _buffer, _bufferAllocation);
-}
-
 VkDeviceSize Buffer::getDeviceAddress() const {
     VkBufferDeviceAddressInfo info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO};
     info.buffer                    = _buffer;

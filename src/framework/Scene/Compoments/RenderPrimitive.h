@@ -65,8 +65,10 @@ public:
     bool        getVertexAttribute(const std::string& name, VertexAttribute* attribute = nullptr) const;
     void        setVertxAttribute(const std::string& name, const VertexAttribute& attribute);
     void        setVertexBuffer(const std::string& name, std::unique_ptr<Buffer>& buffer);
+    // void        setVertexBuffer(const std::string& name, std::unique_ptr<Buffer> buffer);
     void        setUniformBuffer(std::unique_ptr<Buffer>& buffer);
     void        setIndexBuffer(std::unique_ptr<Buffer>& buffer);
+    // void        setIndexBuffer(std::unique_ptr<Buffer> buffer);
     bool        valid() const;
     Buffer&     getVertexBuffer(const std::string& name) const;
     VkIndexType getIndexType() const;
@@ -79,7 +81,7 @@ public:
     void        setDimensions(glm::vec3 min, glm::vec3 max);
     const BBox& getDimensions() const;
 
-    Primitive(uint32_t firstVertex, uint32_t firstIndex, uint32_t vertexCount, uint32_t indexCount, uint32_t materialIndex) : firstIndex(firstIndex),
+    Primitive(uint32_t firstVertex, uint32_t firstIndex, uint32_t vertexCount, uint32_t indexCount, uint32_t materialIndex = 0) : firstIndex(firstIndex),
                                                                                                                               indexCount(indexCount), firstVertex(firstVertex), vertexCount(vertexCount),
                                                                                                                               materialIndex(materialIndex), dimensions({}) {
     }

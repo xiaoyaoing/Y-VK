@@ -28,7 +28,7 @@ void LightInjectionPass::render(RenderGraph& rg) {
             }
         }
     }
-    rg.addPass(
+    rg.addGraphicPass(
         "LightInjectionPass", [&](auto& builder, auto& settings) {
 
         builder.writeTexture(radiance);   

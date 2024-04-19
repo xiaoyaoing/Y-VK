@@ -7,6 +7,8 @@
 
 #define GLM_ENABLE_EXPERIMENTAL
 
+#include "App/Application.h"
+
 #include <glm/gtx/hash.hpp>
 
 #include <mutex>
@@ -42,6 +44,8 @@ struct ResourceCacheState {
     std::unordered_map<std::size_t, FrameBuffer> frameBuffers;
 
     std::unordered_map<std::size_t, Buffer> buffers;
+
+    std::unordered_map<std::size_t, Sampler> samplers;
 };
 
 template<class T, class... A>
@@ -95,7 +99,7 @@ public:
 
     static void initCache(Device& device);
 
-    SgImage& requestSgImage(const std::string& path, VkImageViewType viewType);
+    SgImage& requestSgImage(const std::string& path);
 
     SgImage& requestSgImage(const std::string&    name,
                             const VkExtent3D&     extent,
@@ -128,6 +132,11 @@ public:
                                           uint32_t                poolSize = DescriptorPool::MAX_SETS_PER_POOL);
 
     Buffer& requestNamedBuffer(const std::string& name, uint64_t bufferSize, VkBufferUsageFlags bufferUsage, VmaMemoryUsage memoryUsage);
+
+    Shader&         requestShaderModule(const std::string& path, VkShaderStageFlagBits stage = VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM);
+    PipelineLayout& requestPipelineLayout(const std::vector<std::string>& shaderPaths);
+
+    Sampler& requestSampler(VkSamplerAddressMode sampleMode, VkFilter filter, float maxLod);
 
     ResourceCache(Device& device);
 
@@ -197,6 +206,10 @@ private:
     std::mutex sgImageMutex;
 
     std::mutex bufferMutex;
+
+    std::mutex shaderMutex;
+
+    std::mutex samplerMutex;
 
     VkPipelineCache pipelineCache;
 };

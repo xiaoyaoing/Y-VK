@@ -95,7 +95,15 @@ public:
     using ComputeSetUp    = std::function<void(Builder& builder, ComputePassSettings&)>;
     using RayTracingSetup = std::function<void(Builder& builder, RaytracingPassSettings&)>;
 
-    void addPass(const std::string& name, const GraphicSetup& setup, GraphicsExecute&& execute);
+    // rg.addGraphicPass("",
+    // [&](RenderGraph::Builder& builder, GraphicPassSettings& settings){
+    //
+    // },
+    // [&](RenderPassContext& context) {
+    //
+    // });
+
+    void addGraphicPass(const std::string& name, const GraphicSetup& setup, GraphicsExecute&& execute);
 
     // rg.addComputePass("",
     // [&](RenderGraph::Builder& builder, ComputePassSettings& settings){

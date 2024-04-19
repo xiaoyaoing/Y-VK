@@ -113,7 +113,7 @@ void Example::drawFrame(RenderGraph& rg) {
         renderContext->flushAndDispatch(commandBuffer,num_particles/128,1,1);
         renderContext->clearPassResources(); });
 
-    rg.addPass(
+    rg.addGraphicPass(
         "Graphics Pass",
         [&](auto& builder, auto& settings) {
             auto handle = rg.getBlackBoard().getHandle(SWAPCHAIN_IMAGE_NAME);

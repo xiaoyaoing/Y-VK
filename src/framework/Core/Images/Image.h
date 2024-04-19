@@ -65,6 +65,8 @@ public:
 
     uint32_t getArrayLayerCount() const;
 
+    uint32_t getMipLevelCount() const;
+
     void         transitionLayout(CommandBuffer& commandBuffer, VulkanLayout newLayout, const VkImageSubresourceRange& subresourceRange = {
                                                                                             .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
                                                                                             .baseMipLevel   = 0,
@@ -127,6 +129,8 @@ protected:
     VkImageTiling tiling{};
 
     uint32_t array_layer_count{1};
+
+    uint32_t mip_level_count{1};
 
     uint8_t* mapped_data{nullptr};
 

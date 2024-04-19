@@ -32,8 +32,8 @@ void ResourceCache::initCache(Device& device) {
     cache = &device.getResourceCache();
 }
 
-SgImage& ResourceCache::requestSgImage(const std::string& path, VkImageViewType viewType) {
-    return requestResource(device, sgImageMutex, state.sgImages, path, viewType);
+SgImage& ResourceCache::requestSgImage(const std::string& path) {
+    return requestResource(device, sgImageMutex, state.sgImages, path);
 }
 
 SgImage& ResourceCache::requestSgImage(const std::string& name, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags image_usage, VmaMemoryUsage memory_usage, VkImageViewType viewType, VkSampleCountFlagBits sample_count, uint32_t mip_levels, uint32_t array_layers, VkImageCreateFlags flags) {
@@ -41,12 +41,12 @@ SgImage& ResourceCache::requestSgImage(const std::string& name, const VkExtent3D
     // same parameters will get different hash value
     // so we don't use requestResource function there for sgImage
     // However, I don't know why this happens
-    // It happens on release mode and only for sgImage class 
+    // It happens on release mode and only for sgImage class
     // when i call log in hash_param function, it works well
     // Does it have to do with execution speed?
     // May be mutex is not working well
     std::lock_guard<std::mutex> mutex(sgImageMutex);
-    size_t hash{};
+    size_t                      hash{};
     hash_combine(hash, name);
     hash_combine(hash, extent);
     hash_combine(hash, format);
@@ -57,12 +57,12 @@ SgImage& ResourceCache::requestSgImage(const std::string& name, const VkExtent3D
     hash_combine(hash, mip_levels);
     hash_combine(hash, array_layers);
     hash_combine(hash, flags);
-    
-    if(auto res = state.sgImages.find(hash); res != state.sgImages.end()) {
+
+    if (auto res = state.sgImages.find(hash); res != state.sgImages.end()) {
         return res->second;
     }
     SgImage resource(device, name, extent, format, image_usage, memory_usage, viewType, sample_count, mip_levels, array_layers, flags);
-    auto res_it = state.sgImages.emplace(hash, std::move(resource));
+    auto    res_it = state.sgImages.emplace(hash, std::move(resource));
     return res_it.first->second;
     //return requestResource(device, sgImageMutex, state.sgImages, name, extent, format, image_usage, memory_usage, viewType, sample_count, mip_levels, array_layers, flags);
 }
@@ -98,6 +98,17 @@ DescriptorPool& ResourceCache::requestDescriptorPool(const DescriptorLayout& lay
 
 Buffer& ResourceCache::requestNamedBuffer(const std::string& name, uint64_t bufferSize, VkBufferUsageFlags bufferUsage, VmaMemoryUsage memoryUsage) {
     return requestResource(device, name, bufferMutex, state.buffers, bufferSize, bufferUsage, memoryUsage);
+}
+
+PipelineLayout& ResourceCache::requestPipelineLayout(const std::vector<std::string>& shaderPaths) {
+    return requestResource(device, pipelineLayoutMutex, state.pipeline_layouts, shaderPaths);
+}
+Sampler& ResourceCache::requestSampler(VkSamplerAddressMode sampleMode, VkFilter filter, float maxLod) {
+    return requestResource(device, samplerMutex, state.samplers, sampleMode, filter, maxLod);
+}
+
+Shader& ResourceCache::requestShaderModule(const std::string& path, VkShaderStageFlagBits stage) {
+    return requestResource(device, shaderMutex, state.shader_modules, path, stage);
 }
 
 ResourceCache::ResourceCache(Device& device) : device(device) {

@@ -50,7 +50,8 @@ protected:
     std::vector<RTLight>     lights;
     std::vector<RTPrimitive> primitives;
     std::vector<RTMaterial>  materials;
-    std::vector<Texture*>    textures;
+
+    const Scene* mScene{nullptr};
 
     std::unordered_map<uint32_t, std::unique_ptr<Buffer>> primAreaBuffers{};
     std::unordered_map<uint32_t, std::unique_ptr<Buffer>> primAreaDistributionBuffers{};

@@ -1,5 +1,6 @@
 #include "GBufferPass.h"
 
+#include "Common/ResourceCache.h"
 #include "Core/RenderContext.h"
 #include "Core/View.h"
 void GBufferPass::init() {
@@ -11,7 +12,7 @@ void GBufferPass::init() {
     mPipelineLayout = std::make_unique<PipelineLayout>(device, shaders);
 }
 void LightingPass::render(RenderGraph& rg) {
-    rg.addPass(
+    rg.addGraphicPass(
         "LightingPass", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
             auto& blackBoard = rg.getBlackBoard();
             auto  depth      = blackBoard["depth"];
@@ -24,7 +25,7 @@ void LightingPass::render(RenderGraph& rg) {
             builder.writeTexture(output);
 
             RenderGraphPassDescriptor desc{};
-            desc.setTextures({output, diffuse, depth, normal}).addSubpass({.inputAttachments = {diffuse, depth, normal}, .outputAttachments = {output}, .disableDepthTest = true});
+            desc.setTextures({output, diffuse, depth, normal, emission}).addSubpass({.inputAttachments = {diffuse, depth, normal, emission}, .outputAttachments = {output}, .disableDepthTest = true});
             builder.declare(desc);
             // builder.addSubPass();
         },
@@ -46,11 +47,53 @@ void LightingPass::init() {
         Shader(g_context->getDevice(), FileUtils::getShaderPath("lighting_pbr.frag"))};
     mPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), shaders);
 }
+void IBLLightingPass::render(RenderGraph& rg) {
+    rg.addGraphicPass(
+        "IBLLightingPass", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
+            auto& blackBoard = rg.getBlackBoard();
+            auto  depth      = blackBoard["depth"];
+            auto  normal     = blackBoard["normal"];
+            auto  diffuse    = blackBoard["diffuse"];
+            auto  emission   = blackBoard["emission"];
+            auto  output     = blackBoard.getHandle(SWAPCHAIN_IMAGE_NAME);
+
+            builder.readTextures({depth, normal, diffuse, emission});
+            builder.writeTexture(output);
+
+            RenderGraphPassDescriptor desc{};
+            desc.setTextures({output, diffuse, depth, normal, emission}).addSubpass({.inputAttachments = {diffuse, depth, normal, emission}, .outputAttachments = {output}, .disableDepthTest = true});
+            builder.declare(desc);
+            // builder.addSubPass();
+        },
+        [&](RenderPassContext& context) {
+            auto& commandBuffer = context.commandBuffer;
+            auto  view          = g_manager->fetchPtr<View>("view");
+            auto& blackBoard    = rg.getBlackBoard();
+            g_context->getPipelineState().setPipelineLayout(g_context->getDevice().getResourceCache().requestPipelineLayout(std::vector<std::string>{"pbrLab/lighting_ibl.frag"})).setRasterizationState({.cullMode = VK_CULL_MODE_NONE}).setDepthStencilState({.depthTestEnable = false});
+            view->bindViewBuffer();
+
+            auto& irradianceCube = blackBoard.getImageView("irradianceCube");
+            auto& prefilterCube  = blackBoard.getImageView("prefilterCube");
+            auto& brdfLUT        = blackBoard.getImageView("brdfLUT");
+
+            auto& irradianceCubeSampler = g_context->getDevice().getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_FILTER_LINEAR, irradianceCube.getImage().getMipLevelCount());
+            auto& prefilterCubeSampler  = g_context->getDevice().getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_FILTER_LINEAR, prefilterCube.getImage().getMipLevelCount());
+            auto& brdfLUTSampler        = g_context->getDevice().getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_FILTER_LINEAR, 1);
+
+            g_context->bindImageSampler(4, irradianceCube, irradianceCubeSampler).bindImageSampler(5, prefilterCube, prefilterCubeSampler).bindImageSampler(6, brdfLUT, brdfLUTSampler);
+
+            g_context->bindImage(0, blackBoard.getImageView("diffuse"))
+                .bindImage(1, blackBoard.getImageView("depth"))
+                .bindImage(2, blackBoard.getImageView("normal"))
+                .bindImage(3, blackBoard.getImageView("emission"))
+                .flushAndDraw(commandBuffer, 3, 1, 0, 0);
+        });
+}
 
 void GBufferPass::render(RenderGraph& rg) {
     auto& blackBoard    = rg.getBlackBoard();
     auto& renderContext = g_context;
-    rg.addPass(
+    rg.addGraphicPass(
         "GBufferPass", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
             auto diffuse = rg.createTexture("diffuse",
                                             {.extent = renderContext->getSwapChainExtent(),

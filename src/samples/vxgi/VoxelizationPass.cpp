@@ -73,7 +73,7 @@ void VoxelizationPass::render(RenderGraph& rg) {
 
     Blackboard& blackboard    = rg.getBlackBoard();
     auto&       commandBuffer = g_context->getGraphicCommandBuffer();
-    rg.addPass(
+    rg.addGraphicPass(
         "voxelization pass",
         [&](auto& builder, auto& setting) {
             auto opacity = rg.getBlackBoard().getHandle("opacity");

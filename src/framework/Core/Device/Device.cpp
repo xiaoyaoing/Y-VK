@@ -125,12 +125,12 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkInstance
     VkPhysicalDeviceFeatures2 device_features2{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2};
 
     //todo check if this is needed
-    device_features2.features.geometryShader = VK_TRUE;
+    device_features2.features.geometryShader    = VK_TRUE;
     device_features2.features.shaderInt64       = true;
-
+    VkPhysicalDeviceVulkan12Features features12 = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};
+    features12.runtimeDescriptorArray           = true;
 
     if (enableRayTracing) {
-        VkPhysicalDeviceVulkan12Features              features12 = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};
         VkPhysicalDeviceRayTracingPipelineFeaturesKHR rt_fts{
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR};
         VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_fts{
@@ -160,7 +160,6 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkInstance
         rt_fts.rayTracingPipeline                            = true;
         rt_fts.pNext                                         = &accel_fts;
         features12.bufferDeviceAddress                       = true;
-        features12.runtimeDescriptorArray                    = true;
         features12.shaderSampledImageArrayNonUniformIndexing = true;
         features12.scalarBlockLayout                         = true;
 
@@ -177,12 +176,12 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkInstance
         device_features2.features.vertexPipelineStoresAndAtomics = true;
         //
 
-        device_features2.pNext = &features12;
-
         VkPhysicalDeviceProperties2 device_properties{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2};
         device_properties.pNext = &rayTracingPipelineProperties;
         vkGetPhysicalDeviceProperties2(physicalDevice, &device_properties);
     }
+
+    device_features2.pNext = &features12;
 
     bool enableFragmentStoresAndAtomics = true;
 
@@ -216,29 +215,31 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkInstance
     ResourceCache::initCache(*this);
 
     //Init Vma
+    VmaVulkanFunctions vma_vulkan_func{};
+    // vma_vulkan_func.vkAllocateMemory                    = vkAllocateMemory;
+    // vma_vulkan_func.vkBindBufferMemory                  = vkBindBufferMemory;
+    // vma_vulkan_func.vkBindImageMemory                   = vkBindImageMemory;
+    // vma_vulkan_func.vkCreateBuffer                      = vkCreateBuffer;
+    // vma_vulkan_func.vkCreateImage                       = vkCreateImage;
+    // vma_vulkan_func.vkDestroyBuffer                     = vkDestroyBuffer;
+    // vma_vulkan_func.vkDestroyImage                      = vkDestroyImage;
+    // vma_vulkan_func.vkFlushMappedMemoryRanges           = vkFlushMappedMemoryRanges;
+    // vma_vulkan_func.vkFreeMemory                        = vkFreeMemory;
+    // vma_vulkan_func.vkGetBufferMemoryRequirements       = vkGetBufferMemoryRequirements;
+    // vma_vulkan_func.vkGetImageMemoryRequirements        = vkGetImageMemoryRequirements;
+    // vma_vulkan_func.vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties;
+    // vma_vulkan_func.vkGetPhysicalDeviceProperties       = vkGetPhysicalDeviceProperties;
+    // vma_vulkan_func.vkInvalidateMappedMemoryRanges      = vkInvalidateMappedMemoryRanges;
+    // vma_vulkan_func.vkMapMemory                         = vkMapMemory;
+    // vma_vulkan_func.vkUnmapMemory                       = vkUnmapMemory;
+    vma_vulkan_func.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
+    vma_vulkan_func.vkGetDeviceProcAddr   = vkGetDeviceProcAddr;
 
     VmaAllocatorCreateInfo allocatorInfo = {};
     allocatorInfo.physicalDevice         = physicalDevice;
     allocatorInfo.device                 = _device;
     allocatorInfo.instance               = instance;
-
-    VmaVulkanFunctions vma_vulkan_func{};
-    vma_vulkan_func.vkAllocateMemory                    = vkAllocateMemory;
-    vma_vulkan_func.vkBindBufferMemory                  = vkBindBufferMemory;
-    vma_vulkan_func.vkBindImageMemory                   = vkBindImageMemory;
-    vma_vulkan_func.vkCreateBuffer                      = vkCreateBuffer;
-    vma_vulkan_func.vkCreateImage                       = vkCreateImage;
-    vma_vulkan_func.vkDestroyBuffer                     = vkDestroyBuffer;
-    vma_vulkan_func.vkDestroyImage                      = vkDestroyImage;
-    vma_vulkan_func.vkFlushMappedMemoryRanges           = vkFlushMappedMemoryRanges;
-    vma_vulkan_func.vkFreeMemory                        = vkFreeMemory;
-    vma_vulkan_func.vkGetBufferMemoryRequirements       = vkGetBufferMemoryRequirements;
-    vma_vulkan_func.vkGetImageMemoryRequirements        = vkGetImageMemoryRequirements;
-    vma_vulkan_func.vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties;
-    vma_vulkan_func.vkGetPhysicalDeviceProperties       = vkGetPhysicalDeviceProperties;
-    vma_vulkan_func.vkInvalidateMappedMemoryRanges      = vkInvalidateMappedMemoryRanges;
-    vma_vulkan_func.vkMapMemory                         = vkMapMemory;
-    vma_vulkan_func.vkUnmapMemory                       = vkUnmapMemory;
+    allocatorInfo.pVulkanFunctions       = &vma_vulkan_func;
 
     if (isExtensionSupported("VK_KHR_get_memory_requirements2") && isExtensionSupported("VK_KHR_dedicated_allocation")) {
         allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;

@@ -50,6 +50,8 @@ void View::setCamera(const Camera* camera) {
 View& View::bindViewBuffer() {
     PerViewUnifom perViewUnifom{};
     perViewUnifom.view_proj     = mCamera->viewProj();
+    perViewUnifom.proj          = mCamera->proj();
+    perViewUnifom.view          = mCamera->view();
     perViewUnifom.inv_view_proj = glm::inverse(perViewUnifom.view_proj);
 
     vec3 position = vec3(mCamera->getPosition() + 1.f);

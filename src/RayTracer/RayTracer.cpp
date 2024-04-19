@@ -78,8 +78,6 @@ RayTracer::RayTracer(const RayTracerSettings& settings) {
 
 void RayTracer::drawFrame(RenderGraph& renderGraph) {
 
-    // integrator->render(renderGraph);
-
     integrator->render(renderGraph);
 
     renderGraph.addImageCopyPass(renderGraph.getBlackBoard().getHandle("RT"), renderGraph.getBlackBoard().getHandle(SWAPCHAIN_IMAGE_NAME));
@@ -138,10 +136,11 @@ void RayTracer::prepare() {
                                       .sceneScale = glm::vec3(0.1f)};
     camera                         = std::make_shared<Camera>();
     //scene                          = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"), sceneConfig);
-    //  scene = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"), sceneConfig);
+    scene = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"), sceneConfig);
     // scene = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("staircase2/scene.json"), sceneConfig);
     //scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/cornell-box/scene.json", sceneConfig);
-    scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/classroom/scene.json", sceneConfig);
+    // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/classroom/scene.json", sceneConfig);
+    // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/cornell-box-json/scene.json", sceneConfig);
 
     camera        = scene->getCameras()[0];
     camera->flipY = true;

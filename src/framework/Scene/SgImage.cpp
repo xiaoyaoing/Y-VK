@@ -68,7 +68,7 @@ static KTX_error_code KTXAPIENTRY callBack(int mipLevel, int face, int width, in
         return result;
     }
 
-    auto& mipmap         = callback_data->mipmaps->at(mipLevel);
+    auto& mipmap         = callback_data->mipmaps->at(callback_data->texture->numFaces * mipLevel + face);
     mipmap.level         = mipLevel;
     mipmap.offset        = toUint32(mipmap_offset);
     mipmap.extent.width  = width;
@@ -98,16 +98,18 @@ static size_t ImageViewHash(const VkImageViewType& view_type, const VkFormat& fo
 void SgImage::createVkImage(Device& device, VkImageViewType imageViewType, VkImageCreateFlags flags) {
     assert(vkImage == nullptr && "Image has been created");
     //   assert(vkImageView == nullptr && "ImageView has been created");
-    vkImage = std::make_unique<Image>(device, mExtent3D, format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_SAMPLE_COUNT_1_BIT, toUint32(mipMaps.size()), layers, flags);
-
+    setIsCubeMap(imageViewType == VK_IMAGE_VIEW_TYPE_CUBE);
+    if (isCubeMap()) flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+    vkImage = std::make_unique<Image>(device, mExtent3D, format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_SAMPLE_COUNT_1_BIT, toUint32(getMipLevelCount()), layers, flags);
     createImageView();
 }
 
-SgImage::SgImage(Device& device, const std::string& path, VkImageViewType viewType) : device(device) {
+SgImage::SgImage(Device& device, const std::string& path) : device(device) {
     loadResources(path);
     //createVkImage(device, viewType);
 }
 SgImage::SgImage(Device& device, const std::vector<uint8_t>& data, VkExtent3D extent, VkImageViewType viewType, VkFormat format) : device(device), mData(data), format(format) {
+    setIsCubeMap(viewType == VK_IMAGE_VIEW_TYPE_CUBE);
     setExtent(extent);
 }
 
@@ -119,13 +121,15 @@ SgImage::~SgImage() {
 SgImage::SgImage(SgImage&& other) : vkImage(std::move(other.vkImage)), vkImageViews(std::move(other.vkImageViews)),
                                     mData(std::move(other.mData)),
                                     format(other.format), mExtent3D(other.mExtent3D),
-                                    mipMaps(std::move(other.mipMaps)), offsets(std::move(other.offsets)),
+                                    mipMaps(std::move(other.mipMaps)), offsets(std::move(other.offsets)), mIsCubeMap(other.mIsCubeMap),
                                     name(std::move(other.name)),
                                     device(other.device), layers(other.layers) {
     other.vkImage = nullptr;
 }
 
-SgImage::SgImage(Device& device, const std::string& name, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags image_usage, VmaMemoryUsage memory_usage, VkImageViewType viewType, VkSampleCountFlagBits sample_count, uint32_t mipLevels, uint32_t array_layers, VkImageCreateFlags flags) : format(format), mExtent3D(extent), name(name), device(device) {
+SgImage::SgImage(Device& device, const std::string& name, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags image_usage, VmaMemoryUsage memory_usage, VkImageViewType viewType, VkSampleCountFlagBits sample_count, uint32_t mipLevels, uint32_t array_layers, VkImageCreateFlags flags) : format(format), mExtent3D(extent), name(name), device(device), layers(array_layers) {
+    setIsCubeMap(viewType == VK_IMAGE_VIEW_TYPE_CUBE);
+    if (isCubeMap()) flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
     vkImage = std::make_unique<Image>(device, extent, format, image_usage, memory_usage, sample_count, mipLevels, array_layers, flags);
     createImageView();
 
@@ -176,12 +180,17 @@ Image& SgImage::getVkImage() const {
     return *vkImage;
 }
 
-VkImageViewType GetViewType(VkImageType type) {
+VkImageViewType GetViewType(VkImageType type, uint32_t layerCount) {
     switch (type) {
         case VK_IMAGE_TYPE_1D:
             return VK_IMAGE_VIEW_TYPE_1D;
         case VK_IMAGE_TYPE_2D:
-            return VK_IMAGE_VIEW_TYPE_2D;
+            if (layerCount >= 6)
+                return VK_IMAGE_VIEW_TYPE_CUBE;
+            else if (layerCount > 1)
+                return VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+            else
+                return VK_IMAGE_VIEW_TYPE_2D;
         case VK_IMAGE_TYPE_3D:
             return VK_IMAGE_VIEW_TYPE_3D;
         default:
@@ -192,27 +201,35 @@ VkImageViewType GetViewType(VkImageType type) {
 ImageView& SgImage::getVkImageView(VkImageViewType view_type, VkFormat format, uint32_t mip_level, uint32_t base_array_layer, uint32_t n_mip_levels, uint32_t n_array_layers) const {
 
     if (view_type == VK_IMAGE_VIEW_TYPE_MAX_ENUM) {
-        view_type = GetViewType(vkImage->getImageType());
+        view_type = GetViewType(vkImage->getImageType(), vkImage->getArrayLayerCount());
     }
     if (format == VK_FORMAT_UNDEFINED) {
         format = vkImage->getFormat();
     }
-
+    if (n_mip_levels == 0)
+        n_mip_levels = getMipLevelCount();
+    if (n_array_layers == 0)
+        n_array_layers = layers;
     size_t hashValue = ImageViewHash(view_type, format, mip_level, base_array_layer, n_mip_levels, n_array_layers);
-
     if (!vkImageViews.contains(hashValue)) {
-        LOGE("No image view found for hash value: {}", hashValue);
+        LOGI("No image view found for hash value: {} created", hashValue)
+        //may be ugly
+        const_cast<std::unordered_map<size_t, std::unique_ptr<ImageView>>&>(vkImageViews)[hashValue] = std::make_unique<ImageView>(*vkImage, view_type, format, mip_level, base_array_layer, n_mip_levels, n_array_layers);
     }
     return *vkImageViews.at(hashValue);
 }
 
 void SgImage::createImageView(VkImageViewType view_type, VkFormat format, uint32_t mip_level, uint32_t base_array_layer, uint32_t n_mip_levels, uint32_t n_array_layers) {
     if (view_type == VK_IMAGE_VIEW_TYPE_MAX_ENUM) {
-        view_type = GetViewType(vkImage->getImageType());
+        view_type = GetViewType(vkImage->getImageType(), vkImage->getArrayLayerCount());
     }
     if (format == VK_FORMAT_UNDEFINED) {
         format = vkImage->getFormat();
     }
+    if (n_mip_levels == 0)
+        n_mip_levels = getMipLevelCount();
+    if (n_array_layers == 0)
+        n_array_layers = layers;
     size_t hashValue = ImageViewHash(view_type, format, mip_level, base_array_layer, n_mip_levels, n_array_layers);
     if (vkImageViews.contains(hashValue)) {
         LOGW("Image view already created for hash value: {}", hashValue);
@@ -232,54 +249,59 @@ const std::vector<std::vector<VkDeviceSize>>& SgImage::getOffsets() const {
     return offsets;
 }
 
-uint32_t SgImage::getLayers() const {
+uint32_t SgImage::getArrayLayerCount() const {
     return layers;
 }
+uint32_t SgImage::getMipLevelCount() const {
+    return mipMaps.size() / layers;
+}
 
-void SgImage::setLayers(uint32_t layers) {
+void SgImage::setArrayLevelCount(uint32_t layers) {
     SgImage::layers = layers;
 }
 
 void SgImage::generateMipMapOnCpu() {
-    if (mipMaps.size() > 1)
+    if (mipMaps.size() > 1 && mipMaps[0].isInitialized())
         return;
     assert(mipMaps.size() == 1 && "Mipmaps already generated");
 
-    auto extent      = getExtent();
-    auto next_width  = std::max<uint32_t>(1u, extent.width / 2);
-    auto next_height = std::max<uint32_t>(1u, extent.height / 2);
-    auto channels    = 4;
-    auto next_size   = next_width * next_height * channels;
+    for (int i = 0; i < layers; i++) {
+        auto extent      = getExtent();
+        auto next_width  = std::max<uint32_t>(1u, extent.width / 2);
+        auto next_height = std::max<uint32_t>(1u, extent.height / 2);
+        auto channels    = 4;
+        auto next_size   = next_width * next_height * channels;
+        auto level       = 0;
+        while (true) {
+            // Make space for next mipmap
+            auto old_size = toUint32(mData.size());
+            mData.resize(old_size + next_size);
 
-    while (true) {
-        // Make space for next mipmap
-        auto old_size = toUint32(mData.size());
-        mData.resize(old_size + next_size);
+            auto& prev_mipmap = mipMaps.back();
+            // Update mipmaps
+            Mipmap next_mipmap{};
+            next_mipmap.level  = level++;
+            next_mipmap.offset = old_size;
+            next_mipmap.extent = {next_width, next_height, 1u};
 
-        auto& prev_mipmap = mipMaps.back();
-        // Update mipmaps
-        Mipmap next_mipmap{};
-        next_mipmap.level  = prev_mipmap.level + 1;
-        next_mipmap.offset = old_size;
-        next_mipmap.extent = {next_width, next_height, 1u};
+            //todo
 
-        //todo
+            stbir_resize_uint8(mData.data() + prev_mipmap.offset, prev_mipmap.extent.width, prev_mipmap.extent.height, 0, mData.data() + next_mipmap.offset, next_mipmap.extent.width, next_mipmap.extent.height, 0, channels);
+            // Fill next mipmap memory
+            //            stbir_resize_uint8(data.data() + prev_mipmap.offset, prev_mipmap.extent.width, prev_mipmap.extent.height, 0,
+            //                               data.data() + next_mipmap.offset, next_mipmap.extent.width, next_mipmap.extent.height, 0,
+            //                               channels);
 
-        stbir_resize_uint8(mData.data() + prev_mipmap.offset, prev_mipmap.extent.width, prev_mipmap.extent.height, 0, mData.data() + next_mipmap.offset, next_mipmap.extent.width, next_mipmap.extent.height, 0, channels);
-        // Fill next mipmap memory
-        //            stbir_resize_uint8(data.data() + prev_mipmap.offset, prev_mipmap.extent.width, prev_mipmap.extent.height, 0,
-        //                               data.data() + next_mipmap.offset, next_mipmap.extent.width, next_mipmap.extent.height, 0,
-        //                               channels);
+            mipMaps.emplace_back(std::move(next_mipmap));
 
-        mipMaps.emplace_back(std::move(next_mipmap));
+            // Next mipmap values
+            next_width  = std::max<uint32_t>(1u, next_width / 2);
+            next_height = std::max<uint32_t>(1u, next_height / 2);
+            next_size   = next_width * next_height * channels;
 
-        // Next mipmap values
-        next_width  = std::max<uint32_t>(1u, next_width / 2);
-        next_height = std::max<uint32_t>(1u, next_height / 2);
-        next_size   = next_width * next_height * channels;
-
-        if (next_width <= 1 && next_height <= 1) {
-            break;
+            if (next_width <= 1 && next_height <= 1) {
+                break;
+            }
         }
     }
 }
@@ -324,13 +346,13 @@ void SgImage::loadResources(const std::string& path) {
         ktx_uint8_t* ktxTextureData = ktxTexture_GetData(ktxTexture);
         ktx_size_t   ktxTextureSize = ktxTexture_GetSize(ktxTexture);
 
-        mipMaps.resize(ktxTexture->numLevels);
+        mipMaps.resize(ktxTexture->numLevels * ktxTexture->numFaces);
 
         CallbackData callbackData{
             .texture = ktxTexture,
             .mipmaps = &mipMaps,
         };
-        result = ktxTexture_IterateLevels(ktxTexture, callBack, &callbackData);
+        result = ktxTexture_IterateLevelFaces(ktxTexture, callBack, &callbackData);
         assert(result == KTX_SUCCESS);
 
         // for(uint32_t i = 0; i < ktxTexture->numLevels; i++)
@@ -339,6 +361,10 @@ void SgImage::loadResources(const std::string& path) {
         // }
 
         layers = ktxTexture->numLayers;
+        setIsCubeMap(ktxTexture->isCubemap);
+        if (ktxTexture->isCubemap) {
+            layers = 6;
+        }
 
         ktx_size_t pixelsMulChannels;
         result = ktxTexture_GetImageOffset(ktxTexture, 0, 0, 0, &pixelsMulChannels);
@@ -351,10 +377,15 @@ void SgImage::loadResources(const std::string& path) {
         if (layers > 1) {
             for (uint32_t layer = 0; layer < layers; layer++) {
                 std::vector<VkDeviceSize> layerOffsets{};
-                for (uint32_t level = 0; level < mipMaps.size(); level++) {
+                for (uint32_t level = 0; level < getMipLevelCount(); level++) {
                     ktx_size_t offset;
 
-                    result = ktxTexture_GetImageOffset(ktxTexture, level, layer, 0, &offset);
+                    if (ktxTexture->isCubemap)
+                        result = ktxTexture_GetImageOffset(ktxTexture, level, 0, layer, &offset);
+
+                    else
+                        result = ktxTexture_GetImageOffset(ktxTexture, level, layer, 0, &offset);
+
                     assert(result == KTX_SUCCESS);
                     layerOffsets.push_back(static_cast<VkDeviceSize>(offset));
                 }
@@ -372,10 +403,17 @@ void SgImage::loadResources(const std::string& path) {
 }
 void SgImage::saveToFile(const std::string& path) {
 }
+bool SgImage::isCubeMap() const {
+    return mIsCubeMap;
+}
+void SgImage::setIsCubeMap(bool _isCube) {
+    mIsCubeMap = _isCube;
+}
 
 SgImage::SgImage(Device& device, VkImage handle, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags image_usage, VkSampleCountFlagBits sample_count, VkImageViewType viewType) : device(device) {
-    vkImage = std::make_unique<Image>(device, handle, extent, format, image_usage, sample_count);
-    createImageView();
+    VkImageCreateFlags flags = 0;
+    vkImage                  = std::make_unique<Image>(device, handle, extent, format, image_usage, sample_count);
+    createImageView(viewType);
     this->format = format;
     setExtent(extent);
 }

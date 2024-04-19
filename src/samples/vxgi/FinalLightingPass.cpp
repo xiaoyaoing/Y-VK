@@ -32,7 +32,7 @@ void FinalLightingPass::init() {
     mVoxelParam.uIndirectLighting = 10;
 }
 void FinalLightingPass::render(RenderGraph& rg) {
-    rg.addPass(
+    rg.addGraphicPass(
         "Final Lighting Pass",
         [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
             auto& blackBoard = rg.getBlackBoard();

@@ -10,10 +10,12 @@ Integrator::Integrator(Device& device) : renderContext(g_context), device(device
 
 void Integrator::initScene(Scene& scene) {
     auto sceneEntry = RTSceneUtil::convertScene(device, scene);
-    vertexBuffer    = std::move(sceneEntry->vertexBuffer);
-    normalBuffer    = std::move(sceneEntry->normalBuffer);
-    uvBuffer        = std::move(sceneEntry->uvBuffer);
-    indexBuffer     = std::move(sceneEntry->indexBuffer);
+
+    //  return;
+    vertexBuffer = std::move(sceneEntry->vertexBuffer);
+    normalBuffer = std::move(sceneEntry->normalBuffer);
+    uvBuffer     = std::move(sceneEntry->uvBuffer);
+    indexBuffer  = std::move(sceneEntry->indexBuffer);
 
     materialsBuffer     = std::move(sceneEntry->materialsBuffer);
     primitiveMeshBuffer = std::move(sceneEntry->primitiveMeshBuffer);
@@ -26,81 +28,9 @@ void Integrator::initScene(Scene& scene) {
     primitives = std::move(sceneEntry->primitives);
     materials  = std::move(sceneEntry->materials);
 
-    textures = std::move(sceneEntry->textures);
+    mScene = &scene;
 
     sceneUboBuffer = std::make_unique<Buffer>(device, sizeof(SceneUbo), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, &sceneUbo);
-
-    //  bool useStagingBuffer = true;;
-    //
-    // uint32_t positionBufferSize =  0;
-    // uint32_t indexBufferSize = 0;
-    // for(const auto & primitive : scene.getPrimitives())
-    // {
-    //     if(primitive->vertexAttributes.contains(POSITION_ATTRIBUTE_NAME))
-    //         positionBufferSize += primitive->vertexBuffers.at(POSITION_ATTRIBUTE_NAME)->getSize();
-    //     // if(primitive->vertexAttributes.contains(INDEX_ATTRIBUTE_NAME))
-    //         indexBufferSize += primitive->indexBuffer->getSize();
-    // }
-    // vertexBuffer = std::make_unique<Buffer>(device, positionBufferSize,
-    //     VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-    // indexBuffer = std::make_unique<Buffer>(device, indexBufferSize,
-    //     VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-    //
-    // std::unique_ptr<Buffer> stagingVertexBuffer{nullptr},stagingIndexBuffer{nullptr};
-    // static constexpr VkBufferUsageFlags buffer_usage_flags = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-    // const VkBufferUsageFlags            staging_flags      = useStagingBuffer ? VK_BUFFER_USAGE_TRANSFER_SRC_BIT : buffer_usage_flags;
-    //
-    //
-    // auto commandBuffer = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
-    //
-    // std::vector<VkBufferCopy> bufferCopies;
-    // uint32 positionBufferOffset{0},indexBufferOffset{0},uvBufferOffset{0};
-    //
-    // uint32 vertexOffset{0},indexOffset{0};
-    //
-    // for(const auto & primitive : scene.getPrimitives())
-    // {
-    //
-    //      primitives.emplace_back(RTPrimitive{.vertexOffset = vertexOffset,.vertexCount = primitive->vertexCount,
-    //                              .indexOffset =  indexOffset,.indexCount = primitive->indexCount,.worldMatrix = primitive->matrix});
-    //
-    //      vertexOffset += primitive->vertexCount;
-    //      indexOffset += primitive->indexCount;
-    //
-    //     {
-    //         auto & buffer = *primitive->vertexBuffers.at(POSITION_ATTRIBUTE_NAME);
-    //         // primitive.vertexBuffers.at(attributeName)->copyTo()
-    //         VkBufferCopy copy{.srcOffset = 0,.dstOffset = positionBufferOffset,.size =   buffer.getSize()};
-    //         vkCmdCopyBuffer(commandBuffer.getHandle(),buffer.getHandle(),vertexBuffer->getHandle(),1,&copy);
-    //         positionBufferOffset += buffer.getSize();
-    //     }
-    //
-    //     {
-    //
-    //         auto & buffer = *primitive->indexBuffer;
-    //         VkBufferCopy copy{.srcOffset = 0,.dstOffset = indexBufferOffset ,.size =   buffer.getSize()};
-    //         vkCmdCopyBuffer(commandBuffer.getHandle(),buffer.getHandle(),indexBuffer->getHandle(),1,&copy);
-    //         indexBufferOffset += buffer.getSize();
-    //     }
-    //
-    //     transformBuffers.emplace_back(Buffer{device, sizeof(glm::mat4),
-    //                                                         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
-    //                                                         | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
-    //                                                         | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
-    //                                                         VMA_MEMORY_USAGE_CPU_TO_GPU,&primitive->matrix});
-    //
-    // }
-    //
-    //
-    // for(const auto & material : scene.getMaterials())
-    // {
-    //     materials.emplace_back(RTMaterial{.albedo = material->albedo,.emissive = material->emissive,.metallic = material->metallic,.roughness = material->roughness});
-    // }
-    //
-    // renderContext->submit(commandBuffer);
-    //
-    // buildBLAS();
-    // buildTLAS();
 
     camera        = scene.getCameras()[0];
     camera->flipY = false;
@@ -109,10 +39,10 @@ void Integrator::initScene(Scene& scene) {
     height = renderContext->getSwapChainExtent().height;
 }
 
-void Integrator::init(Scene& scene) {
-    initScene(scene);
-    std::vector<Shader> shaders = {Shader(device, FileUtils::getShaderPath("Raytracing/compute_triangle_area.comp"))};
-    computePrimAreaLayout       = std::make_unique<PipelineLayout>(device, shaders);
+void Integrator::init(Scene& scene_) {
+
+    initScene(scene_);
+    computePrimAreaLayout = std::make_unique<PipelineLayout>(device, std::vector<std::string>{"Raytracing/compute_triangle_area.comp"});
 }
 
 void Integrator::updateGui() {
@@ -314,7 +244,7 @@ void Integrator::bindRaytracingResources(CommandBuffer& commandBuffer)
 
     g_context->bindAcceleration(0, tlas).bindBuffer(2, *sceneUboBuffer, 0, sizeof(sceneUbo)).bindBuffer(3, *sceneDescBuffer).bindBuffer(4, *rtLightBuffer);
     uint32_t arrayElement = 0;
-    for (const auto& texture : this->textures) {
-        g_context->bindImageSampler(5, texture->getImage().getVkImageView(), texture->getSampler(), 0, arrayElement++);
+    for (const auto& texture : mScene->getTextures()) {
+        g_context->bindImageSampler(6, texture->getImage().getVkImageView(), texture->getSampler(), 0, arrayElement++);
     }
 }

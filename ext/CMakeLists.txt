@@ -3,19 +3,18 @@ find_package(Vulkan REQUIRED)
 
 # vma
 add_library(vma INTERFACE)
-set(VMA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vma/src)
+set(VMA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/vma/include)
 target_sources(vma INTERFACE ${VMA_DIR}/vk_mem_alloc.h)
 target_include_directories(vma INTERFACE ${VMA_DIR})
 target_link_libraries(vma INTERFACE Vulkan::Vulkan)
 
 add_library(stb_image INTERFACE)
 set(STB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/stb_image)
-target_sources(stb_image INTERFACE  ${STB_DIR}/stb_image_resize.h )
+target_sources(stb_image INTERFACE ${STB_DIR}/stb_image_resize.h)
 target_include_directories(stb_image INTERFACE ${STB_DIR})
 
 add_subdirectory(glfw)
 add_subdirectory(spdlog)
-
 
 add_subdirectory(glm)
 set(GLM_DIR ${CMAKE_CURRENT_SOURCE_DIR}/glm)
@@ -148,4 +147,3 @@ target_sources(tiny_obj_loader PRIVATE ${TINY_OBJ_LOADER_FILES})
 
 add_subdirectory(volk)
 add_subdirectory(json)
-

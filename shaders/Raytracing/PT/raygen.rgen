@@ -199,10 +199,10 @@ void main()
         }
 
 
-        imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(1, 0, 0, 1));
-        return;
+        //        imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(1, 0, 0, 1));
+        //        return;
 
-        RTLight light = lights[0];
+        // RTLight light = lights[0];
 
         SurfaceScatterEvent event = make_suface_scatter_event(hitPayload, -direction.xyz);
 

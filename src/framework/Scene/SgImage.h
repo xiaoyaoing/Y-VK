@@ -18,6 +18,10 @@ struct Mipmap {
 
     /// Width depth and height of the mipmap
     VkExtent3D extent = {0, 0, 0};
+
+    bool isInitialized() const {
+        return extent.width != 0 && extent.height != 0 && extent.depth != 0;
+    }
 };
 
 class SgImage {
@@ -25,7 +29,7 @@ public:
     /**
      * \brief load from hardware texture
      */
-    SgImage(Device& device, const std::string& path, VkImageViewType viewType);
+    SgImage(Device& device, const std::string& path);
 
     /**
      * \brief load from memory
@@ -89,9 +93,10 @@ public:
 
     const std::vector<Mipmap>& getMipMaps() const;
 
-    uint32_t getLayers() const;
+    uint32_t getArrayLayerCount() const;
+    uint32_t getMipLevelCount() const;
 
-    void setLayers(uint32_t layers);
+    void setArrayLevelCount(uint32_t layers);
 
     void generateMipMapOnCpu();
     void generateMipMapOnGpu();
@@ -102,21 +107,29 @@ public:
 
     void saveToFile(const std::string& path);
 
+    bool isCubeMap() const;
+
 private:
 protected:
+    void setIsCubeMap(bool _isCube);
+
     friend class AstcImageHelper;
 
-    std::unique_ptr<Image> vkImage{nullptr};
-
     std::unordered_map<size_t, std::unique_ptr<ImageView>> vkImageViews{};
-    size_t                                                 firstImageViewHash{0};
+    std::unique_ptr<Image>                                 vkImage{nullptr};
+
+    size_t firstImageViewHash{0};
 
     //Attributes to init when load resources
-    std::vector<uint8_t>                   mData;
-    VkFormat                               format;
-    VkExtent3D                             mExtent3D;
+    std::vector<uint8_t> mData;
+    VkFormat             format;
+    VkExtent3D           mExtent3D;
+
+    //Attention: size = layer * level
+    //layer 0 mipmap 0, layer1 mipmap0 layer2 mipmap0 ...
     std::vector<Mipmap>                    mipMaps{{}};
     std::vector<std::vector<VkDeviceSize>> offsets;
+    bool                                   mIsCubeMap;
 
     std::string name;
 

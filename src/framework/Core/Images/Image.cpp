@@ -56,7 +56,7 @@ Image::Image(Device& device, const VkExtent3D& extent, VkFormat format, VkImageU
                                                                                                                                                                                                                                                 extent{extent},
                                                                                                                                                                                                                                                 type{findImageType(extent)},
                                                                                                                                                                                                                                                 format{format},
-                                                                                                                                                                                                                                                usage{image_usage},
+                                                                                                                                                                                                                                                usage{image_usage}, mip_level_count(mip_levels),
                                                                                                                                                                                                                                                 sample_count{sample_count},
                                                                                                                                                                                                                                                 array_layer_count{array_layers} {
     assert(mip_levels > 0 && "Image should have at least one level");
@@ -109,8 +109,10 @@ Image::Image(Device& device, VkImage handle, const VkExtent3D& extent, VkFormat 
 
 Image::~Image() {
     //只有memory也有意义的时候 这个image才是我们自己分配的
-    if (image != VK_NULL_HANDLE && memory != VK_NULL_HANDLE)
+    if (image != VK_NULL_HANDLE && memory != VK_NULL_HANDLE) {
+        LOGI("Destroying image")
         vmaDestroyImage(device.getMemoryAllocator(), image, memory);
+    }
 }
 
 Image::Image(Image&& other) : subresource{other.subresource},
@@ -141,6 +143,9 @@ Device& Image::getDevice() {
 
 uint32_t Image::getArrayLayerCount() const {
     return array_layer_count;
+}
+uint32_t Image::getMipLevelCount() const {
+    return mip_level_count;
 }
 
 void Image::transitionLayout(CommandBuffer& commandBuffer, VulkanLayout newLayout, const VkImageSubresourceRange& subresourceRange) {

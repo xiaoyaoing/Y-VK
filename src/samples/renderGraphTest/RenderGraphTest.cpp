@@ -34,7 +34,7 @@ void Example::drawFrame(RenderGraph& rg) {
 
     if (useSubpass) {
 
-        rg.addPass(
+        rg.addGraphicPass(
             "gbuffer", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
             auto albedo = rg.createTexture("albedo",
                                                      {
@@ -98,7 +98,7 @@ void Example::drawFrame(RenderGraph& rg) {
     //Two RenderPass
     else {
         view->bindViewBuffer();
-        rg.addPass(
+        rg.addGraphicPass(
             "GBufferPass", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
                     auto albedo = rg.createTexture("albedo",
                                                       {
@@ -144,7 +144,7 @@ void Example::drawFrame(RenderGraph& rg) {
                     renderContext->flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, primitive->firstIndex, primitive->firstVertex,instance_count++);
                 } });
 
-        rg.addPass(
+        rg.addGraphicPass(
             "LightingPass", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
                 auto depth  = blackBoard["depth"];
                 auto normal = blackBoard["normal"];
@@ -184,13 +184,6 @@ void Example::drawFrame(RenderGraph& rg) {
 void Example::prepare() {
     Application::prepare();
 
-    Shader              shader(*device, "E:/code/moerengine2/shaders/3dgs_splatting/radix_sort.spv", VK_SHADER_STAGE_COMPUTE_BIT);
-    std::vector<Shader> shaders_{shader};
-    auto                pipelinelayout = std::make_unique<PipelineLayout>(*device, shaders_);
-    g_context->getPipelineState().setPipelineType(PIPELINE_TYPE::E_COMPUTE).setPipelineLayout(*pipelinelayout);
-    auto commandBuffer = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
-    g_context->flushPipelineState(commandBuffer);
-
     std::vector<Shader> shaders{
         Shader(*device, FileUtils::getShaderPath("defered_one_scene_buffer.vert")),
         Shader(*device, FileUtils::getShaderPath("defered.frag"))};
@@ -201,15 +194,24 @@ void Example::prepare() {
         Shader(*device, FileUtils::getShaderPath("lighting.frag"))};
     pipelineLayouts.lighting = std::make_unique<PipelineLayout>(*device, shaders1);
 
-    //scene = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("staircase2/scene.json"), {.bufferRate = BufferRate::PER_SCENE});
-    scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/cornell-box/scene.json", {.bufferRate = BufferRate::PER_SCENE});
+    SceneLoadingConfig config;
 
-    // scene = GltfLoading::LoadSceneFromGLTFFile(
-    //     *device, "E:/code/vk_vxgi/VFS/Scene/Sponza/Sponza.gltf");
+    //scene = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("staircase2/scene.json"), {.bufferRate = BufferRate::PER_SCENE});
+    //scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/cornell-box/scene.json", {.bufferRate = BufferRate::PER_SCENE});
+    //scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/classroom/scene.json", {.bufferRate = BufferRate::PER_SCENE});
+    scene = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("sponza/sponza01.gltf"), {.bufferRate = BufferRate::PER_SCENE});
+
+    SceneLoadingConfig sceneConfig = {.requiredVertexAttribute = {POSITION_ATTRIBUTE_NAME, INDEX_ATTRIBUTE_NAME, NORMAL_ATTRIBUTE_NAME, TEXCOORD_ATTRIBUTE_NAME},
+                                      .indexType               = VK_INDEX_TYPE_UINT32,
+                                      .bufferAddressAble       = true,
+                                      .bufferForAccel          = true,
+                                      .bufferForStorage        = true,
+                                      //.bufferRate              = BufferRate::PER_PRIMITIVE,
+                                      .sceneScale = glm::vec3(0.1f)};
+
+    // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/classroom/scene.json", sceneConfig);
 
     //  GlslCompiler::forceRecompile = true;
-    // scene = GltfLoading::LoadSceneFromGLTFFile(*device, "E:/code/DirectX-Graphics-Samples/MiniEngine/ModelViewer/Sponza/pbr/sponza2.gltf");
-    // scene = GltfLoading::LoadSceneFromGLTFFile(*device, "E:/code/DirectX-Graphics-Samples/MiniEngine/ModelViewer/Sponza/pbr/sponza2.gltf");
     // scene = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));
     // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/tungsten-original/cmake-build-release/data/example-scenes/cornell-box/scene.json");
 
@@ -254,6 +256,8 @@ void Example::prepare() {
     view = std::make_unique<View>(*device);
     view->setScene(scene.get());
     view->setCamera(camera.get());
+
+    //std::unique_ptr<Texture> t = Texture::loadTextureFromFile(*device, "E:/DM/scenes/classroom/textures/blackboard.jpg");
 }
 
 Example::Example() : Application("Drawing Triangle", 1024, 1024) {

@@ -215,7 +215,7 @@ ResourceNode* RenderGraph::getResource(RenderGraphHandle handle) const {
     return mResources[handle.index];
 }
 
-void RenderGraph::addPass(const std::string& name, const GraphicSetup& setup, GraphicsExecute&& execute) {
+void RenderGraph::addGraphicPass(const std::string& name, const GraphicSetup& setup, GraphicsExecute&& execute) {
 
     GraphicRenderGraphPass* pass = new GraphicRenderGraphPass(std::move(execute));
     auto                    node = new RenderPassNode(*this, name, pass);

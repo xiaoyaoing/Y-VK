@@ -8,4 +8,5 @@ cmake-build-release-visual-studio--2022
 /shaders/spvcachedFiles
 /build
 /build-vs2022
+/resources
 .idea

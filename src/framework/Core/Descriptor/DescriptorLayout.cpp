@@ -69,6 +69,10 @@ DescriptorLayout::DescriptorLayout(Device& device, std::vector<Shader>& shaders)
             bindingInfo.stageFlags      = resource.stages;
             bindingInfo.binding         = resource.binding;
             bindingInfo.descriptorCount = resource.arraySize;
+            if (bindingInfo.descriptorCount == 0) {
+                LOGI("Descriptor count is 0 for {} set 64", resource.name);
+                bindingInfo.descriptorCount = 64;
+            }
             //   if(binding == 5) bindingInfo.descriptorCount = 25;
             //todo fix this
             bindingInfo.descriptorType = find_descriptor_type(resource.type, false);
@@ -117,6 +121,11 @@ DescriptorLayout::DescriptorLayout(Device& device, uint32_t setIdx, const std::v
         bindingInfo.stageFlags      = resource.stages;
         bindingInfo.binding         = resource.binding;
         bindingInfo.descriptorCount = resource.arraySize;
+
+        if (bindingInfo.descriptorCount == 0) {
+            LOGI("Descriptor count is 0 for {} set 64", resource.name);
+            bindingInfo.descriptorCount = 64;
+        }
         //   if(binding == 5) bindingInfo.descriptorCount = 25;
         //todo fix this
         bindingInfo.descriptorType = find_descriptor_type(resource.type, false);

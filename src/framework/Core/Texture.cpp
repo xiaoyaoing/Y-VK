@@ -19,7 +19,50 @@ const Sampler& Texture::getSampler() const {
     return *sampler;
 }
 
-static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture) {
+// static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture) {
+//     texture->image->generateMipMapOnCpu();
+//     texture->image->createVkImage(device);
+//
+//     auto imageBuffer = Buffer(device, texture->image->getBufferSize(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+//     imageBuffer.uploadData(static_cast<void*>(texture->image->getData().data()), texture->image->getBufferSize());
+//
+//     std::vector<VkBufferImageCopy> imageCopyRegions;
+//
+//     uint32_t levelCount = texture->image->getLevels();
+//     auto&    mipmaps    = texture->image->getMipMaps();
+//     for (int i = 0; i < mipmaps.size(); i++) {
+//         VkBufferImageCopy imageCopy{};
+//         imageCopy.bufferRowLength                 = 0;
+//         imageCopy.bufferImageHeight               = 0;
+//         imageCopy.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+//         imageCopy.bufferOffset                    = mipmaps[i].offset;
+//         imageCopy.imageSubresource.mipLevel       = toUint32(i % levelCount);
+//         imageCopy.imageSubresource.baseArrayLayer = i / levelCount;
+//         imageCopy.imageSubresource.layerCount     = 1;
+//         imageCopy.imageOffset                     = {0, 0, 0};
+//         imageCopy.imageExtent                     = texture->image->getMipMaps()[i].extent;
+//         imageCopyRegions.push_back(imageCopy);
+//     }
+//
+//     auto                    commandBuffer = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+//     VkImageSubresourceRange subresourceRange{};
+//     subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+//     subresourceRange.baseMipLevel   = 0;
+//     subresourceRange.baseArrayLayer = 0;
+//     subresourceRange.levelCount     = mipmaps.size();
+//     subresourceRange.layerCount     = texture->image->getLayers();
+//
+//     texture->getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::TRANSFER_DST, subresourceRange);
+//
+//     commandBuffer.copyBufferToImage(imageBuffer, texture->image->getVkImage(), imageCopyRegions);
+//
+//     texture->getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY, subresourceRange);
+//
+//     g_context->submit(commandBuffer);
+//     texture->sampler = std::make_unique<Sampler>(device, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, mipmaps.size());
+// }
+
+static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture, CommandBuffer& commandBuffer) {
     texture->image->generateMipMapOnCpu();
     texture->image->createVkImage(device);
 
@@ -28,27 +71,29 @@ static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture) {
 
     std::vector<VkBufferImageCopy> imageCopyRegions;
 
-    auto& mipmaps = texture->image->getMipMaps();
+    uint32_t layerCount = texture->image->getArrayLayerCount();
+    auto&    mipmaps    = texture->image->getMipMaps();
     for (int i = 0; i < mipmaps.size(); i++) {
         VkBufferImageCopy imageCopy{};
         imageCopy.bufferRowLength                 = 0;
         imageCopy.bufferImageHeight               = 0;
         imageCopy.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
         imageCopy.bufferOffset                    = mipmaps[i].offset;
-        imageCopy.imageSubresource.mipLevel       = toUint32(i);
-        imageCopy.imageSubresource.baseArrayLayer = 0;
+        imageCopy.imageSubresource.mipLevel       = toUint32(i / layerCount);
+        imageCopy.imageSubresource.baseArrayLayer = i % layerCount;
         imageCopy.imageSubresource.layerCount     = 1;
         imageCopy.imageOffset                     = {0, 0, 0};
         imageCopy.imageExtent                     = texture->image->getMipMaps()[i].extent;
         imageCopyRegions.push_back(imageCopy);
     }
-
-    auto                    commandBuffer = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+    //LOGI("imageCopyRegions.size() = {}", imageCopyRegions.size());
+    // imageCopyRegions.resize(0);
     VkImageSubresourceRange subresourceRange{};
-    subresourceRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
-    subresourceRange.baseMipLevel = 0;
-    subresourceRange.levelCount   = mipmaps.size();
-    subresourceRange.layerCount   = 1;
+    subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    subresourceRange.baseMipLevel   = 0;
+    subresourceRange.baseArrayLayer = 0;
+    subresourceRange.levelCount     = texture->image->getMipLevelCount();
+    subresourceRange.layerCount     = layerCount;
 
     texture->getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::TRANSFER_DST, subresourceRange);
 
@@ -56,20 +101,23 @@ static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture) {
 
     texture->getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY, subresourceRange);
 
-    g_context->submit(commandBuffer);
-    texture->sampler = std::make_unique<Sampler>(device, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, mipmaps.size());
+    texture->sampler = std::make_unique<Sampler>(device, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, texture->image->getMipLevelCount());
 }
 
 std::unique_ptr<Texture> Texture::loadTextureFromFile(Device& device, const std::string& path) {
     std::unique_ptr<Texture> texture = std::make_unique<Texture>();
-    texture->image                   = std::make_unique<SgImage>(device, path, VK_IMAGE_VIEW_TYPE_2D);
-    initVKTexture(device, texture);
+    texture->image                   = std::make_unique<SgImage>(device, path);
+    CommandBuffer commandBuffer      = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+    initVKTexture(device, texture, commandBuffer);
+    g_context->submit(commandBuffer);
     return texture;
 }
 std::unique_ptr<Texture> Texture::loadTextureFromMemory(Device& device, const std::vector<uint8_t>& data, VkExtent3D extent, VkImageViewType viewType, VkFormat format) {
     std::unique_ptr<Texture> texture = std::make_unique<Texture>();
     texture->image                   = std::make_unique<SgImage>(device, data, extent, viewType, format);
-    initVKTexture(device, texture);
+    CommandBuffer commandBuffer      = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+    initVKTexture(device, texture, commandBuffer);
+    g_context->submit(commandBuffer);
     return texture;
 }
 
@@ -81,37 +129,39 @@ std::unique_ptr<Texture> Texture::loadTextureArrayFromFile(Device& device, const
 
     std::vector<VkBufferImageCopy> imageCopyRegions;
 
-    auto mipmaps = texture->image->getMipMaps();
-    auto layers  = texture->image->getLayers();
-    auto offsets = texture->image->getOffsets();
-    for (int32_t layer = 0; layer < layers; layer++)
-        for (int i = 0; i < mipmaps.size(); i++) {
-            VkBufferImageCopy imageCopy{};
+    auto mipmaps    = texture->image->getMipMaps();
+    auto levelCount = texture->image->getMipLevelCount();
+    auto layerCount = texture->image->getArrayLayerCount();
+    auto offsets    = texture->image->getOffsets();
+    //   for (int32_t layer = 0; layer < layerCount; layer++)
+    for (int i = 0; i < mipmaps.size(); i++) {
+        VkBufferImageCopy imageCopy{};
 
-            imageCopy.bufferRowLength   = 0;
-            imageCopy.bufferImageHeight = 0;
+        imageCopy.bufferRowLength   = 0;
+        imageCopy.bufferImageHeight = 0;
 
-            imageCopy.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-            imageCopy.imageSubresource.mipLevel       = toUint32(i);
-            imageCopy.imageSubresource.baseArrayLayer = layer;
-            imageCopy.imageSubresource.layerCount     = 1;
+        imageCopy.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+        imageCopy.imageSubresource.mipLevel       = i % levelCount;
+        imageCopy.imageSubresource.baseArrayLayer = i / levelCount;
+        imageCopy.imageSubresource.layerCount     = 1;
 
-            imageCopy.imageOffset  = {0, 0, 0};
-            imageCopy.bufferOffset = offsets[layer][i];
+        imageCopy.imageOffset  = {0, 0, 0};
+        imageCopy.bufferOffset = mipmaps[i].offset;
 
-            imageCopy.imageExtent.width  = texture->image->getExtent().width >> i;
+        imageCopy.imageExtent.width =
             imageCopy.imageExtent.height = texture->image->getExtent().height >> i;
-            imageCopy.imageExtent.depth  = 1;
+        imageCopy.imageExtent.depth      = 1;
 
-            imageCopyRegions.push_back(imageCopy);
-        }
+        imageCopyRegions.push_back(imageCopy);
+    }
+    //    }
 
     auto                    commandBuffer = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
     VkImageSubresourceRange subresourceRange{};
     subresourceRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
     subresourceRange.baseMipLevel = 0;
-    subresourceRange.levelCount   = mipmaps.size();
-    subresourceRange.layerCount   = layers;
+    subresourceRange.levelCount   = levelCount;
+    subresourceRange.layerCount   = layerCount;
 
     texture->getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::TRANSFER_DST, subresourceRange);
 
@@ -130,9 +180,16 @@ std::unique_ptr<Texture> Texture::loadTextureArrayFromFile(Device& device, const
     submitInfo.pCommandBuffers = &vkCmdBuffer;
 
     queue.submit({submitInfo}, VK_NULL_HANDLE);
-    texture->sampler = std::make_unique<Sampler>(device, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, mipmaps.size());
+    texture->sampler = std::make_unique<Sampler>(device, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, levelCount);
     queue.wait();
     return texture;
+}
+void Texture::initTexturesInOneSubmit(std::vector<std::unique_ptr<Texture>>& textures) {
+    CommandBuffer commandBuffer = g_context->getDevice().createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+    for (auto& texture : textures) {
+        initVKTexture(g_context->getDevice(), texture, commandBuffer);
+    }
+    g_context->submit(commandBuffer);
 }
 
 Texture& Texture::operator=(Texture&& rhs) {

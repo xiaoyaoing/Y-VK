@@ -85,7 +85,7 @@ void VisualizeVoxelPass::visualize3DClipmapGS(RenderGraph& rg, RenderGraphHandle
 
     mUniformBuffers[clipmapLevel].uploadData(&params, sizeof(VisualizeParams));
 
-    rg.addPass(
+    rg.addGraphicPass(
         "VisualizeVoxelPass", [&](auto& builder, auto& settings) {
         RenderGraphPassDescriptor desc{};
             auto output = rg.getBlackBoard().getHandle(SWAPCHAIN_IMAGE_NAME);

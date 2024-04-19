@@ -34,6 +34,8 @@ protected:
     struct PerViewUnifom {
         glm::mat4 view_proj;
         glm::mat4 inv_view_proj;
+        glm::mat4 proj;
+        glm::mat4 view;
 
         glm::vec3 camera_pos;
         uint32_t  light_count;

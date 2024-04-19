@@ -133,5 +133,5 @@ void main()
     //    debugPrintfEXT("material idx: %d %d\n", material_index, gl_InstanceCustomIndexEXT);
     //
     //    debugPrintfEXT("prim idx: %d\n", gl_InstanceCustomIndexEXT);
-    debugPrintfEXT("hit pos: %f %f %f\n", world_pos.x, world_pos.y, world_pos.z);
+  //  debugPrintfEXT("hit pos: %f %f %f\n", world_pos.x, world_pos.y, world_pos.z);
 }

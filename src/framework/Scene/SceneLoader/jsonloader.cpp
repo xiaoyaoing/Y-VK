@@ -126,14 +126,29 @@ void JsonLoader::loadMaterials() {
         textures.push_back(Texture::loadTextureFromFile(device, rootPath.string() + "/" + texture_path));
         texture_index[texture_path] = textures.size() - 1;
     }
+
+    // textures.push_back(Texture::loadTextureFromFile(device, "E:/DM/dist/scenes/classroom/textures/blackboard.jpg"));
+
+    // textures.clear();
+    //
+    // for (auto& texture_path : texture_paths) {
+    //     textures.push_back(Texture::loadTextureFromFile(device, rootPath.string() + "/" + texture_path));
+    //     texture_index[texture_path] = textures.size() - 1;
+    // }
+    //
+    // texture_paths.clear();
+    // texture_index.clear();
+
     for (auto& materialJson : materialJsons) {
         RTMaterial rtMaterial;
         if (materialJson.contains("albedo") && materialJson["albedo"].is_string()) {
-            rtMaterial.texture_id = texture_index[materialJson["albedo"].get<std::string>()];
+            auto textureName      = materialJson["albedo"].get<std::string>();
+            rtMaterial.texture_id = texture_index.contains(textureName) ? texture_index[textureName] : -1;
         } else {
             rtMaterial.texture_id = -1;
             rtMaterial.albedo     = materialJson["albedo"];
         }
+        rtMaterial.texture_id     = -1;
         rtMaterial.emissiveFactor = vec3(0);
         // rtMaterial.bsdf_type = type2RTBSDFTYPE[materialJson["type"].get<std::string>()];
         rtMaterial.bsdf_type = RT_BSDF_TYPE_DIFFUSE;
@@ -144,6 +159,10 @@ void JsonLoader::loadMaterials() {
         material.pbrBaseColorTexture = rtMaterial.texture_id;
         materials.push_back(material);
     }
+    //textures.clear();
+    //  static std::unique_ptr<Texture> t = std::move(textures[0]);
+    //  delete t.get();
+    // textures.clear();
 }
 
 template<typename T>
@@ -229,6 +248,9 @@ glm::mat4 mat4FromJson(const Json& json) {
         x[0], y[0], z[0], pos[0], x[1], y[1], z[1], pos[1], x[2], y[2], z[2], pos[2], 0.0f, 0.0f, 0.0f, 1.0f);
 }
 
+//when load primitives from type
+//tlas build error
+//can't find bug now
 void JsonLoader::loadPrimitives() {
     const Json& primitivesJson = sceneJson["primitives"];
 
@@ -253,9 +275,12 @@ void JsonLoader::loadPrimitives() {
         std::unique_ptr<PrimitiveData> primitiveData;
         if (primitiveJson.contains("file")) {
             primitiveData = PrimitiveLoader::loadPrimitive(rootPath.string() + "/" + primitiveJson["file"].get<std::string>());
+            // primitiveData = nullptr;
         } else if (primitiveJson.contains("type")) {
             std::string type = primitiveJson["type"];
-            primitiveData    = PrimitiveLoader::loadPrimitiveFromType(type);
+            // if (type == "cube") continue;
+            // if (type == "quad") continue;
+            primitiveData = PrimitiveLoader::loadPrimitiveFromType(type);
         } else {
             LOGE("Primitive must have a type or a file")
         }
@@ -410,8 +435,6 @@ std::unique_ptr<Scene> Jsonloader::LoadSceneFromGLTFFile(Device& device, const s
     scene->sceneUniformBuffer = std::move(loader.sceneUniformBuffer);
     scene->indexType          = VK_INDEX_TYPE_UINT32;
     scene->primitiveIdBuffer  = std::move(loader.scenePrimitiveIdBuffer);
-
-    auto vertex_data = getTFromGpuBuffer<glm::vec3>(scene->getVertexBuffer(POSITION_ATTRIBUTE_NAME));
 
     return scene;
 }

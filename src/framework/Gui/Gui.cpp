@@ -294,7 +294,7 @@ void Gui::draw(CommandBuffer& commandBuffer) {
 
 void Gui::addGuiPass(RenderGraph& graph) {
     auto& renderContext = *g_context;
-    graph.addPass(
+    graph.addGraphicPass(
         "Gui Pass",
         [&graph](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
             auto output = graph.getBlackBoard()[SWAPCHAIN_IMAGE_NAME];

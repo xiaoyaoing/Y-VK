@@ -67,8 +67,8 @@ void PathIntegrator::render(RenderGraph& renderGraph) {
     // graph.execute(cmd);
     //  g_context->submit(cmd);
 
-    gbufferPass.render(renderGraph);
-    lightingPass.render(renderGraph);
+    // gbufferPass.render(renderGraph);
+    // lightingPass.render(renderGraph);
 
     renderGraph.addRaytracingPass(
         "PT pass", [&](RenderGraph::Builder& builder, RaytracingPassSettings& settings) {
@@ -76,8 +76,8 @@ void PathIntegrator::render(RenderGraph& renderGraph) {
         settings.pipelineLayout = layout.get();
         settings.rTPipelineSettings.dims = {width,height,1};
         settings.rTPipelineSettings.maxDepth = 5;
-        
-        
+    
+    
         auto output = renderGraph.createTexture("RT output",{width,height,TextureUsage::STORAGE | TextureUsage::TRANSFER_SRC});
         builder.writeTexture(output,TextureUsage::STORAGE);
         renderGraph.getBlackBoard().put("RT",output); }, [&](RenderPassContext& context) {
@@ -87,12 +87,12 @@ void PathIntegrator::render(RenderGraph& renderGraph) {
             // buffer.buffer->uploadData(&cameraUbo,sizeof(cameraUbo));
             // renderContext->bindBuffer(2,*buffer.buffer,0,sizeof(cameraUbo));
             bindRaytracingResources(commandBuffer);
-
+    
             auto pushConstant = toBytes(pcPath);
             renderContext->bindPushConstants(pushConstant);
             renderContext->bindImage(0, renderGraph.getBlackBoard().getImageView("RT"));
             renderContext->traceRay(commandBuffer, {width, height, 1});
-
+    
             pcPath.frame_num++; });
 }
 void PathIntegrator::initLightAreaDistribution(RenderGraph& graph_) {
@@ -146,6 +146,8 @@ void PathIntegrator::initLightAreaDistribution(RenderGraph& graph_) {
 
 void PathIntegrator::initScene(Scene& scene) {
     Integrator::initScene(scene);
+
+    //  return;
 
     SceneDesc desc{
         .vertex_addr    = vertexBuffer->getDeviceAddress(),

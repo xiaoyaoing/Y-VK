@@ -22,3 +22,8 @@ public:
 private:
     std::unique_ptr<PipelineLayout> mPipelineLayout{nullptr};
 };
+
+class IBLLightingPass {
+public:
+    static void render(RenderGraph& rg);
+};

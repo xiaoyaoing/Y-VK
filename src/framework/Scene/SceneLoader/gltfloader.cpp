@@ -616,6 +616,10 @@ void GLTFLoadingImpl::loadImages(const std::filesystem::path& modelPath, const t
     thread_count = thread_count == 0 ? 1 : thread_count;
     ctpl::thread_pool thread_pool(thread_count);
 
+    using TextureFuture = std::future<std::unique_ptr<Texture>>;
+
+    std::vector<TextureFuture>* futures = new std::vector<TextureFuture>();
+
     for (const auto& image : gltfModel.images) {
         auto fut = thread_pool.push(
             [this, parentDir, image](size_t) {
@@ -626,8 +630,17 @@ void GLTFLoadingImpl::loadImages(const std::filesystem::path& modelPath, const t
                 else
                     LOGE("Image uri is empty and image data is empty!");
             });
-        textures.emplace_back(fut.get());
+        futures->emplace_back(std::move(fut));
+        textures.emplace_back(futures->back().get());
     }
+
+    thread_pool.push([this, futures](size_t) {
+        for (int i = 0; i < futures->size(); i++) {
+            futures->operator[](i).wait();
+        }
+        Texture::initTexturesInOneSubmit(textures);
+        delete futures;
+    });
 }
 
 template<class T, class Y>
@@ -743,7 +756,7 @@ void GLTFLoadingImpl::loadNode(const tinygltf::Node& node, const tinygltf::Model
             // auto matrix = getTransformMatrix(node);
 
             if (config.bufferAddressAble) {
-                auto transformBuffer = std::make_unique<Buffer>(device, sizeof(glm::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR, VMA_MEMORY_USAGE_CPU_TO_GPU, &matrix);
+                auto transformBuffer = std::make_unique<Buffer>(device, sizeof(glm::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | getBufferUsageFlags(config) | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR, VMA_MEMORY_USAGE_CPU_TO_GPU, &matrix);
                 newPrimitive->setVertexBuffer("transform", transformBuffer);
             }
 
