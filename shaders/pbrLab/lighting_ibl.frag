@@ -15,11 +15,6 @@ layout(location = 0) in vec2 in_uv;
 
 layout(location = 0) out vec4 out_color;
 
-layout(binding = 4, set = 0) uniform LightsInfo
-{
-    Light lights[MAX_LIGHTS];
-}lights_info;
-
 
 #define ROUGHNESS_PREFILTER_COUNT 5
 
@@ -29,45 +24,99 @@ layout(input_attachment_index = 1, binding = 1, set=2) uniform subpassInput gbuf
 layout(input_attachment_index = 2, binding = 2, set=2) uniform subpassInput gbuffer_emission;
 layout(input_attachment_index = 3, binding = 3, set=2) uniform subpassInput gbuffer_depth;
 
-layout(binding = 0, set=1, rgba8) uniform sampler2D brdf_lut;
-layout(binding = 1, set=1, rgba8) uniform samplerCube irradiance_map;
-layout(binding = 2, set=1, rgba8) uniform samplerCube prefilter_map;
+layout(binding = 0, set=1) uniform sampler2D brdf_lut;
+layout(binding = 1, set=1) uniform samplerCube irradiance_map;
+layout(binding = 2, set=1) uniform samplerCube prefilter_map;
 
 layout(push_constant) uniform Params
 {
+    float exposure;
+    float gamma;
     float scaleIBLAmbient;
     float prefilteredCubeMipLevels;
+    int debugMode;
+    int padding[3];
 };
 
-vec3 ibl_fragment_shader(const PBRInfo pbr_info, vec3 n, vec3 reflection)
+vec3 Uncharted2Tonemap(vec3 color)
 {
-    float lod = (pbrInputs.alphaRoughness * prefilteredCubeMipLevels);
+    float A = 0.15;
+    float B = 0.50;
+    float C = 0.10;
+    float D = 0.20;
+    float E = 0.02;
+    float F = 0.30;
+    float W = 11.2;
+    return ((color*(A*color+C*B)+D*E)/(color*(A*color+B)+D*F))-E/F;
+}
+
+
+vec4 tonemap(vec4 color)
+{
+    vec3 outcol = Uncharted2Tonemap(color.rgb * exposure);
+    outcol = outcol * (1.0f / Uncharted2Tonemap(vec3(11.2f)));
+    return vec4(pow(outcol, vec3(1.0f / gamma)), color.a);
+}
+
+vec4 SRGBtoLINEAR(vec4 srgbIn)
+{
+    vec3 bLess = step(vec3(0.04045), srgbIn.xyz);
+    vec3 linOut = mix(srgbIn.xyz/vec3(12.92), pow((srgbIn.xyz+vec3(0.055))/vec3(1.055), vec3(2.4)), bLess);
+    return vec4(linOut, srgbIn.w);;
+}
+
+vec3 ibl_fragment_shader(const in PBRInfo pbr_info, vec3 n, vec3 reflection)
+{
+    // return vec3(1.0);
+    //  return vec3(pbr_info.alphaRoughness);
+
+    float lod = (pbr_info.perceptualRoughness * prefilteredCubeMipLevels);
+
     // retrieve a scale and bias to F0. See [1], Figure 3
-    vec3 brdf = (texture(samplerBRDFLUT, vec2(pbrInputs.NdotV, 1.0 - pbrInputs.perceptualRoughness))).rgb;
-    vec3 diffuseLight = SRGBtoLINEAR(tonemap(texture(samplerIrradiance, n))).rgb;
+    //  debugPrintfEXT("lod: NdotV roughness %f %f %f\n", lod, pbr_info.NdotV, pbr_info.alphaRoughness);
 
-    vec3 specularLight = SRGBtoLINEAR(tonemap(textureLod(prefilteredMap, reflection, lod))).rgb;
+    vec3 brdf = (texture(brdf_lut, vec2(pbr_info.NdotV, 1.0 - pbr_info.perceptualRoughness))).rgb;
 
-    vec3 diffuse = diffuseLight * pbrInputs.diffuseColor;
-    vec3 specular = specularLight * (pbrInputs.F0 * brdf.x + brdf.y);
+
+    vec3 diffuseLight = SRGBtoLINEAR(tonemap(texture(irradiance_map, n))).rgb;
+
+    vec3 specularLight = SRGBtoLINEAR(tonemap(textureLod(prefilter_map, reflection, lod))).rgb;
+
+    vec3 diffuse = diffuseLight * pbr_info.diffuseColor;
+    vec3 specular = specularLight * (pbr_info.F0 * brdf.x + brdf.y);
+    specular =  specularLight;
 
     // For presentation, this allows us to disable IBL terms
     // For presentation, this allows us to disable IBL terms
     diffuse *= scaleIBLAmbient;
     specular *= scaleIBLAmbient;
 
+    if (debugMode == 1)
+    {
+        return diffuse;
+    }
+    else if (debugMode == 2)
+    {
+        return specular;
+    }
     return diffuse + specular;
 }
 
 
 void main(){
+    return;
     vec4  diffuse_roughness  = subpassLoad(gbuffer_diffuse_roughness);
     vec4  normal_metalic    = subpassLoad(gbuffer_normal_metalic);
+
     vec3 normal      = normalize(2.0 * normal_metalic.xyz - 1.0);
     float metallic    = normal_metalic.w;
 
     vec3  emission = subpassLoad(gbuffer_emission).rgb;
     float depth    = subpassLoad(gbuffer_depth).x;
+
+    if (depth == 0.0){
+        discard;
+    }
 
     vec3 world_pos = worldPosFromDepth(in_uv, depth);
 
@@ -80,6 +129,7 @@ void main(){
 
     //calcuate sppecular contribution
     vec3 color = vec3(0.0);
+
 
     bool has_emission = any(greaterThan(emission, vec3(1e-6)));
     if (has_emission)
@@ -103,6 +153,7 @@ void main(){
         pbr_info.F0 = mix(vec3(0.04), diffuse_color, metallic);
         pbr_info.F90 = vec3(1.0);
         pbr_info.alphaRoughness = perceptual_roughness * perceptual_roughness;
+        pbr_info.perceptualRoughness = perceptual_roughness;
         //  pbr_info.alphaRoughness = 0.01f;
         pbr_info.diffuseColor = diffuse_color;
 
