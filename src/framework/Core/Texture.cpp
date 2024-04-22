@@ -62,11 +62,12 @@ const Sampler& Texture::getSampler() const {
 //     texture->sampler = std::make_unique<Sampler>(device, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, mipmaps.size());
 // }
 
-static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture, CommandBuffer& commandBuffer) {
+static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture, CommandBuffer& commandBuffer, std::vector<std::unique_ptr<Buffer>>& buffers) {
     texture->image->generateMipMapOnCpu();
     texture->image->createVkImage(device);
 
-    auto imageBuffer = Buffer(device, texture->image->getBufferSize(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+    buffers.emplace_back(std::make_unique<Buffer>(device, texture->image->getBufferSize(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY));
+    auto& imageBuffer = *buffers.back();
     imageBuffer.uploadData(static_cast<void*>(texture->image->getData().data()), texture->image->getBufferSize());
 
     std::vector<VkBufferImageCopy> imageCopyRegions;
@@ -105,18 +106,20 @@ static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture, Com
 }
 
 std::unique_ptr<Texture> Texture::loadTextureFromFile(Device& device, const std::string& path) {
-    std::unique_ptr<Texture> texture = std::make_unique<Texture>();
-    texture->image                   = std::make_unique<SgImage>(device, path);
-    CommandBuffer commandBuffer      = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
-    initVKTexture(device, texture, commandBuffer);
+    std::unique_ptr<Texture> texture                   = std::make_unique<Texture>();
+    texture->image                                     = std::make_unique<SgImage>(device, path);
+    CommandBuffer                        commandBuffer = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+    std::vector<std::unique_ptr<Buffer>> buffers;
+    initVKTexture(device, texture, commandBuffer, buffers);
     g_context->submit(commandBuffer);
     return texture;
 }
 std::unique_ptr<Texture> Texture::loadTextureFromMemory(Device& device, const std::vector<uint8_t>& data, VkExtent3D extent, VkImageViewType viewType, VkFormat format) {
-    std::unique_ptr<Texture> texture = std::make_unique<Texture>();
-    texture->image                   = std::make_unique<SgImage>(device, data, extent, viewType, format);
-    CommandBuffer commandBuffer      = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
-    initVKTexture(device, texture, commandBuffer);
+    std::unique_ptr<Texture> texture                   = std::make_unique<Texture>();
+    texture->image                                     = std::make_unique<SgImage>(device, data, extent, viewType, format);
+    CommandBuffer                        commandBuffer = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+    std::vector<std::unique_ptr<Buffer>> buffers;
+    initVKTexture(device, texture, commandBuffer, buffers);
     g_context->submit(commandBuffer);
     return texture;
 }
@@ -185,9 +188,10 @@ std::unique_ptr<Texture> Texture::loadTextureArrayFromFile(Device& device, const
     return texture;
 }
 void Texture::initTexturesInOneSubmit(std::vector<std::unique_ptr<Texture>>& textures) {
-    CommandBuffer commandBuffer = g_context->getDevice().createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+    CommandBuffer                        commandBuffer = g_context->getDevice().createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+    std::vector<std::unique_ptr<Buffer>> buffers;
     for (auto& texture : textures) {
-        initVKTexture(g_context->getDevice(), texture, commandBuffer);
+        initVKTexture(g_context->getDevice(), texture, commandBuffer, buffers);
     }
     g_context->submit(commandBuffer);
 }

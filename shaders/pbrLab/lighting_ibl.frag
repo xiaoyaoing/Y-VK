@@ -24,9 +24,9 @@ layout(input_attachment_index = 1, binding = 1, set=2) uniform subpassInput gbuf
 layout(input_attachment_index = 2, binding = 2, set=2) uniform subpassInput gbuffer_emission;
 layout(input_attachment_index = 3, binding = 3, set=2) uniform subpassInput gbuffer_depth;
 
-layout(binding = 0, set=1) uniform sampler2D brdf_lut;
-layout(binding = 1, set=1) uniform samplerCube irradiance_map;
-layout(binding = 2, set=1) uniform samplerCube prefilter_map;
+layout(binding = 2, set=1) uniform sampler2D brdf_lut;
+layout(binding = 0, set=1) uniform samplerCube irradiance_map;
+layout(binding = 1, set=1) uniform samplerCube prefilter_map;
 
 layout(push_constant) uniform Params
 {
@@ -67,6 +67,10 @@ vec4 SRGBtoLINEAR(vec4 srgbIn)
 
 vec3 ibl_fragment_shader(const in PBRInfo pbr_info, vec3 n, vec3 reflection)
 {
+    if (debugMode == 6)
+    {
+        reflection = -reflection;
+    }
     // return vec3(1.0);
     //  return vec3(pbr_info.alphaRoughness);
 
@@ -75,17 +79,23 @@ vec3 ibl_fragment_shader(const in PBRInfo pbr_info, vec3 n, vec3 reflection)
     // retrieve a scale and bias to F0. See [1], Figure 3
     //  debugPrintfEXT("lod: NdotV roughness %f %f %f\n", lod, pbr_info.NdotV, pbr_info.alphaRoughness);
 
-    vec3 brdf = (texture(brdf_lut, vec2(pbr_info.NdotV, 1.0 - pbr_info.perceptualRoughness))).rgb;
+    vec3 brdf = (texture(brdf_lut, vec2(pbr_info.NdotV, pbr_info.perceptualRoughness))).rgb;
+
+    //    return vec3(pbr_info.NdotV, pbr_info.perceptualRoughness, 0);
 
 
     vec3 diffuseLight = SRGBtoLINEAR(tonemap(texture(irradiance_map, n))).rgb;
 
+
     vec3 specularLight = SRGBtoLINEAR(tonemap(textureLod(prefilter_map, reflection, lod))).rgb;
+
+    //    return specularLight;
 
     vec3 diffuse = diffuseLight * pbr_info.diffuseColor;
     vec3 specular = specularLight * (pbr_info.F0 * brdf.x + brdf.y);
-    specular =  specularLight;
 
+    // return pbr_info.F0;
+    // return vec3(brdf.y);
     // For presentation, this allows us to disable IBL terms
     // For presentation, this allows us to disable IBL terms
     diffuse *= scaleIBLAmbient;
@@ -99,12 +109,23 @@ vec3 ibl_fragment_shader(const in PBRInfo pbr_info, vec3 n, vec3 reflection)
     {
         return specular;
     }
+    else if (debugMode == 3)
+    {
+        return n;
+    }
+    else if (debugMode == 4)
+    {
+        return reflection;
+    }
+    else if (debugMode == 5){
+        return -reflection;
+    }
     return diffuse + specular;
 }
 
 
 void main(){
-    return;
+    //  return;
     vec4  diffuse_roughness  = subpassLoad(gbuffer_diffuse_roughness);
     vec4  normal_metalic    = subpassLoad(gbuffer_normal_metalic);
 
@@ -144,7 +165,12 @@ void main(){
         // for 
 
         vec3 view_dir = normalize(per_frame.camera_pos - world_pos);
-        vec3 R = 2 * dot(normal, view_dir) * normal - view_dir;
+        vec3 R = -normalize(reflect(view_dir, normal));
+        R.y = -R.y;
+        //   color = R;
+        //   out_color = vec4(color, 1);
+        //  return;
+        //  R = -R;
 
         PBRInfo pbr_info;
         // why use abs here?
@@ -155,9 +181,20 @@ void main(){
         pbr_info.alphaRoughness = perceptual_roughness * perceptual_roughness;
         pbr_info.perceptualRoughness = perceptual_roughness;
         //  pbr_info.alphaRoughness = 0.01f;
-        pbr_info.diffuseColor = diffuse_color;
+        pbr_info.diffuseColor = diffuse_color * (1- metallic) * (1-0.04);
+
+
 
         color += ibl_fragment_shader(pbr_info, normal, R);
+        //        color = pbr_info.F0;
+        //        color = diffuse_color;
+        //  out_color = vec4(view_dir,1);
+        //return ;
     }
+
+    //  if (debugMode == 7)
+    //    {
+    //        color = vec3(perceptual_roughness);
+    //    }
     out_color = vec4(color, 1);
 }

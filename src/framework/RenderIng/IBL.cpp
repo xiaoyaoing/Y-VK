@@ -14,6 +14,7 @@ static constexpr uint32_t PrefilteredEnvMapDim = 512;
 
 struct PrefilteredEnvMapPushConstant {
     float roughness;
+    uint  numSamples = 32;
     ivec2 size;
 };
 
@@ -42,15 +43,13 @@ void IBL::generatePrefilteredCubeMap(RenderGraph& rg) {
             PrefilteredCubeMapPushConstant constant;
             uint                           mipCount = toUint32(ceil(log2(IrradianceCubeDim)));
             g_context->bindImageSampler(0, environmentCube->getImage().getVkImageView(VK_IMAGE_VIEW_TYPE_CUBE), environmentCube->getSampler());
-            for (int i = 0; i < mipCount; i++) {
-                g_context->bindImage(1, irradianceCube->getVkImageView(VK_IMAGE_VIEW_TYPE_CUBE, irradianceCube->getFormat(), i), static_cast<uint32_t>(DescriptorSetPoints::INPUT), i);
-            }
             for (uint32_t mip = 0; mip < mipCount; ++mip) {
+                g_context->bindImage(0, irradianceCube->getVkImageView(VK_IMAGE_VIEW_TYPE_CUBE, irradianceCube->getFormat(), mip, 0, 1, 6));
                 ivec2 size         = ivec2(IrradianceCubeDim >> mip, IrradianceCubeDim >> mip);
                 constant.size      = size;
                 constant.mip_level = mip;
                 g_context->bindPushConstants(constant);
-                ivec3 groupCount = ivec3((size.x + 8 - 1) / 8, (size.y + 8 - 1) / 8, 1);
+                ivec3 groupCount = ivec3((size.x + 8 - 1) / 8, (size.y + 8 - 1) / 8, 6);
                 g_context->flushAndDispatch(context.commandBuffer, groupCount.x, groupCount.y, groupCount.z);
             }
         });
@@ -66,14 +65,12 @@ void IBL::generatePrefilertedEnvMap(RenderGraph& rg) {
             PrefilteredEnvMapPushConstant constant;
             uint                          mipCount = toUint32(ceil(log2(PrefilteredEnvMapDim)));
 
-            for (int i = 0; i < mipCount; i++) {
-            }
             g_context->bindImageSampler(0, environmentCube->getImage().getVkImageView(VK_IMAGE_VIEW_TYPE_CUBE), environmentCube->getSampler());
 
             for (int mip = 0; mip < mipCount; mip++) {
                 constant.roughness = (float)mip / (float)(mipCount - 1);
                 constant.size      = ivec2(PrefilteredEnvMapDim >> mip, PrefilteredEnvMapDim >> mip);
-                g_context->bindImage(1, prefilterCube->getVkImageView(VK_IMAGE_VIEW_TYPE_CUBE, prefilterCube->getFormat(), mip), static_cast<uint32_t>(DescriptorSetPoints::INPUT));
+                g_context->bindImage(0, prefilterCube->getVkImageView(VK_IMAGE_VIEW_TYPE_CUBE, prefilterCube->getFormat(), mip, 0, 1, 6));
                 g_context->bindPushConstants(constant);
                 ivec3 groupCount = ivec3((constant.size.x + 8 - 1) / 8, (constant.size.y + 8 - 1) / 8, 6);
                 g_context->flushAndDispatch(context.commandBuffer, groupCount.x, groupCount.y, groupCount.z);
@@ -99,9 +96,10 @@ void IBL::generateBRDFLUT(RenderGraph& rg) {
 }
 
 void IBL::importTexturesToRenderGraph(RenderGraph& rg) {
-    rg.importTexture("irradianceCube", irradianceCube);
-    rg.importTexture("prefilterCube", prefilterCube);
-    rg.importTexture("brdfLUT", brdfLUT);
+    rg.setOutput(rg.importTexture("irradianceCube", irradianceCube));
+    rg.setOutput(rg.importTexture("prefilterCube", prefilterCube));
+    rg.setOutput(rg.importTexture("brdfLUT", brdfLUT));
+
     //  rg.importTexture("environmentCube", environmentCube->image.get());
 }
 IBL::IBL(Device& device, const Texture* texture) : device(g_context->getDevice()), environmentCube(texture) {
@@ -116,7 +114,7 @@ IBL::IBL(Device& device, const Texture* texture) : device(g_context->getDevice()
 IBL::~IBL() {
 }
 void IBL::generate(RenderGraph& rg) {
-    if (generated) return;
+    // if (generated) return;
     generatePrefilteredCubeMap(rg);
     generatePrefilertedEnvMap(rg);
     generateBRDFLUT(rg);

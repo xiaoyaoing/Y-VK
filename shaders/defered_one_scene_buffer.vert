@@ -24,7 +24,8 @@ void main(void)
     mat4  matrix = primitive_infos[primitive_id].model;
     mat4  matrixIT = primitive_infos[primitive_id].modelIT;
     vec4 pos = matrix  * vec4(position, 1.0f);
-    
+
+    // pos.y = -pos.y;
 
     o_uv = texcoord_0;
 
@@ -32,9 +33,8 @@ void main(void)
 
     o_primitive_id = primitive_id;
 
-    o_position = pos.xyz;
+    o_position =    pos.xyz;
 
     gl_Position = per_frame.view_proj * pos;
-    // gl_Position.y *= -1.f;
     //gl_Position.z = 1.f / gl_Position.z;
 }

@@ -21,7 +21,7 @@ void LightingPass::render(RenderGraph& rg) {
             auto  emission   = blackBoard["emission"];
             auto  output     = blackBoard.getHandle(SWAPCHAIN_IMAGE_NAME);
 
-            builder.readTextures({depth, normal, diffuse, emission});
+            builder.readTextures({depth, normal, diffuse, emission, output});
             builder.writeTexture(output);
 
             RenderGraphPassDescriptor desc{};
@@ -36,8 +36,9 @@ void LightingPass::render(RenderGraph& rg) {
             g_context->getPipelineState().setPipelineLayout(*mPipelineLayout).setRasterizationState({.cullMode = VK_CULL_MODE_NONE}).setDepthStencilState({.depthTestEnable = false});
             view->bindViewBuffer();
             g_context->bindImage(0, blackBoard.getImageView("diffuse"))
-                .bindImage(1, blackBoard.getImageView("depth"))
-                .bindImage(2, blackBoard.getImageView("normal"))
+                .bindImage(1, blackBoard.getImageView("normal"))
+                .bindImage(2, blackBoard.getImageView("emission"))
+                .bindImage(3, blackBoard.getImageView("depth"))
                 .flushAndDraw(commandBuffer, 3, 1, 0, 0);
         });
 }
@@ -47,17 +48,31 @@ void LightingPass::init() {
         Shader(g_context->getDevice(), FileUtils::getShaderPath("lighting_pbr.frag"))};
     mPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), shaders);
 }
+
+struct IBLLightingPassPushConstant {
+    float exposure        = 4.5f;
+    float gamma           = 2.2f;
+    float scaleIBLAmbient = 1.0f;
+    float prefilteredCubeMipLevels;
+    int   debugMode;
+    int   padding[3];
+};
+
 void IBLLightingPass::render(RenderGraph& rg) {
     rg.addGraphicPass(
         "IBLLightingPass", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
-            auto& blackBoard = rg.getBlackBoard();
-            auto  depth      = blackBoard["depth"];
-            auto  normal     = blackBoard["normal"];
-            auto  diffuse    = blackBoard["diffuse"];
-            auto  emission   = blackBoard["emission"];
-            auto  output     = blackBoard.getHandle(SWAPCHAIN_IMAGE_NAME);
+            auto& blackBoard     = rg.getBlackBoard();
+            auto  depth          = blackBoard["depth"];
+            auto  normal         = blackBoard["normal"];
+            auto  diffuse        = blackBoard["diffuse"];
+            auto  emission       = blackBoard["emission"];
+            auto  output         = blackBoard.getHandle(SWAPCHAIN_IMAGE_NAME);
+            auto  irradianceCube = blackBoard.getHandle("irradianceCube");
+            auto  prefilterCube  = blackBoard.getHandle("prefilterCube");
+            auto  brdfLUT        = blackBoard.getHandle("brdfLUT");
 
-            builder.readTextures({depth, normal, diffuse, emission});
+            builder.readTextures({depth, normal, diffuse, emission, output});
+            builder.readTextures({irradianceCube, prefilterCube, brdfLUT}, TextureUsage::SAMPLEABLE);
             builder.writeTexture(output);
 
             RenderGraphPassDescriptor desc{};
@@ -69,25 +84,49 @@ void IBLLightingPass::render(RenderGraph& rg) {
             auto& commandBuffer = context.commandBuffer;
             auto  view          = g_manager->fetchPtr<View>("view");
             auto& blackBoard    = rg.getBlackBoard();
-            g_context->getPipelineState().setPipelineLayout(g_context->getDevice().getResourceCache().requestPipelineLayout(std::vector<std::string>{"pbrLab/lighting_ibl.frag"})).setRasterizationState({.cullMode = VK_CULL_MODE_NONE}).setDepthStencilState({.depthTestEnable = false});
+            g_context->getPipelineState().setPipelineLayout(g_context->getDevice().getResourceCache().requestPipelineLayout(std::vector<std::string>{"lighting.vert", "pbrLab/lighting_ibl.frag"})).setRasterizationState({.cullMode = VK_CULL_MODE_NONE}).setDepthStencilState({.depthTestEnable = false});
             view->bindViewBuffer();
 
             auto& irradianceCube = blackBoard.getImageView("irradianceCube");
             auto& prefilterCube  = blackBoard.getImageView("prefilterCube");
             auto& brdfLUT        = blackBoard.getImageView("brdfLUT");
 
+            IBLLightingPassPushConstant constant;
+            constant.prefilteredCubeMipLevels = prefilterCube.getImage().getMipLevelCount();
+            constant.debugMode                = debugMode;
+            g_context->bindPushConstants(constant);
+
             auto& irradianceCubeSampler = g_context->getDevice().getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_FILTER_LINEAR, irradianceCube.getImage().getMipLevelCount());
             auto& prefilterCubeSampler  = g_context->getDevice().getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_FILTER_LINEAR, prefilterCube.getImage().getMipLevelCount());
             auto& brdfLUTSampler        = g_context->getDevice().getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_FILTER_LINEAR, 1);
 
-            g_context->bindImageSampler(4, irradianceCube, irradianceCubeSampler).bindImageSampler(5, prefilterCube, prefilterCubeSampler).bindImageSampler(6, brdfLUT, brdfLUTSampler);
+            g_context->bindImageSampler(0, irradianceCube, irradianceCubeSampler).bindImageSampler(1, prefilterCube, prefilterCubeSampler).bindImageSampler(2, brdfLUT, brdfLUTSampler);
 
             g_context->bindImage(0, blackBoard.getImageView("diffuse"))
-                .bindImage(1, blackBoard.getImageView("depth"))
-                .bindImage(2, blackBoard.getImageView("normal"))
-                .bindImage(3, blackBoard.getImageView("emission"))
+                .bindImage(1, blackBoard.getImageView("normal"))
+                .bindImage(2, blackBoard.getImageView("emission"))
+                .bindImage(3, blackBoard.getImageView("depth"))
                 .flushAndDraw(commandBuffer, 3, 1, 0, 0);
         });
+}
+
+enum class DebugMode {
+    NONE = 0,
+    DIFFUSE,
+    SPECULAR,
+    NORMAL,
+    DEPTH,
+    ALBEDO,
+    METALLIC,
+    ROUGHNESS,
+    AMBIENT_OCCLUSION,
+    IRRADIANCE,
+    PREFILTER,
+    BRDF_LUT
+};
+
+void IBLLightingPass::updateGui() {
+    ImGui::Combo("Debug Mode", &debugMode, "None\0Diffuse\0Specular\0Normal\0Depth\0Albedo\0Metallic\0Roughness\0Ambient Occlusion\0Irradiance\0Prefilter\0BRDF LUT\0");
 }
 
 void GBufferPass::render(RenderGraph& rg) {

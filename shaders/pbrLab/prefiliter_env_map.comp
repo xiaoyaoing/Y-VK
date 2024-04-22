@@ -104,9 +104,9 @@ void main(){
     uint face = storePos.z;
     vec2 normal2d = vec2(storePos.x / float(size.x), storePos.y / float(size.y));
     normal2d = normal2d * 2.0 - 1.0;
-    vec3 N;;
-    if (face == 0) N = vec3(1.0, normal2d.x, normal2d.y);
-    if (face == 1) N = vec3(-1.0, normal2d.x, normal2d.y);
+    vec3 N;
+    if (face == 0) N = vec3(1.0, normal2d.y, normal2d.x);
+    if (face == 1) N = vec3(-1.0, normal2d.y, normal2d.x);
     if (face == 2) N = vec3(normal2d.x, 1.0, normal2d.y);
     if (face == 3) N = vec3(normal2d.x, -1.0, normal2d.y);
     if (face == 4) N = vec3(normal2d.x, normal2d.y, 1.0);
@@ -114,6 +114,7 @@ void main(){
 
     N = normalize(N);
     //  debugPrintfEXT("storePos: %d %d %d size %d %d\n", storePos.x, storePos.y, storePos.z, size.x, size.y);
+    storePos.y = size.y - storePos.y;
     imageStore(prefilter_cube, ivec3(storePos), vec4(prefilterEnvMap(N, roughness), 1.0));
     //   imageStore(prefilter_cube, ivec3(storePos), vec4(N, 1.0));
     // if (storePos.z == 0)

@@ -10,16 +10,15 @@
 
 namespace vkCommon {
 
-    VkViewport initializers::viewport(float width, float height, float minDepth, float maxDepth) {
-            VkViewport viewport{};
-            viewport.width    = width;
-            viewport.height   = -height;
-            viewport.x        = 0;
-            viewport.y        = height;
-            viewport.minDepth = minDepth;
-            viewport.maxDepth = maxDepth;
-            return viewport;
-        
+    VkViewport initializers::viewport(float width, float height, float minDepth, float maxDepth, bool flipViewPort) {
+        VkViewport viewport{};
+        viewport.width    = width;
+        viewport.height   = flipViewPort ? -height : height;
+        viewport.x        = 0;
+        viewport.y        = flipViewPort ? height : 0;
+        viewport.minDepth = minDepth;
+        viewport.maxDepth = maxDepth;
+        return viewport;
     }
 
     void set_image_layout(

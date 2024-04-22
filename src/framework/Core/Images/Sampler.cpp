@@ -34,3 +34,6 @@ Sampler::~Sampler() {
         vkDestroySampler(device.getHandle(), _sampler, nullptr);
     }
 }
+Sampler::Sampler(Sampler&& other) : device(other.device), _sampler(other._sampler) {
+    other._sampler = VK_NULL_HANDLE;
+}

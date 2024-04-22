@@ -85,7 +85,7 @@ void main(void)
     {
         baseColor *= texture(scene_textures[material.pbrBaseColorTexture], in_uv);
     }
-    diffuseColor = baseColor.rgb * (vec3(1.0) - f0) * (1.0 - metallic);
+    diffuseColor = baseColor.rgb;
 
     o_diffuse_roughness  = vec4(diffuseColor, perceptualRoughness);
 
@@ -102,5 +102,7 @@ void main(void)
     //o_diffuse_roughness.xyz  =  in_world_pos / 200.f;
 
     //  o_diffuse_roughness.a = 1;
+
+    // o_diffuse_roughness.xy = in_uv;
 
 }

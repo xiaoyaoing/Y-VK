@@ -82,23 +82,44 @@ static size_t ImageViewHash(const VkImageViewType& view_type, const VkFormat& fo
     size_t hashValue = 0;
 
     //todo optimize this
-    hashValue = view_type << 2 | format << 4 | mip_level << 10 | base_array_layer << 16 | n_mip_levels << 20 | n_array_layers << 24;
+    //hashValue = view_type << 2 | format << 4 | mip_level << 10 | base_array_layer << 16 | n_mip_levels << 20 | n_array_layers << 24;
 
-    // std::hash<std::underlying_type<VkImageViewType>::type> hasher;
-    //
-    // glm::detail::hash_combine( hashValue,hasher(view_type));
-    // glm::detail::hash_combine(hashValue, static_cast<std::underlying_type<VkFormat>::type>(format));
-    // glm::detail::hash_combine(hashValue, std::hash<uint32_t>(mip_level));
-    // glm::detail::hash_combine(hashValue, base_array_layer);
-    // glm::detail::hash_combine(hashValue, n_mip_levels);
-    // glm::detail::hash_combine(hashValue, n_array_layers);
+    std::hash<std::underlying_type<VkImageViewType>::type> hasher;
+
+    glm::detail::hash_combine(hashValue, hasher(view_type));
+    glm::detail::hash_combine(hashValue, static_cast<std::underlying_type<VkFormat>::type>(format));
+    glm::detail::hash_combine(hashValue, mip_level);
+    glm::detail::hash_combine(hashValue, base_array_layer);
+    glm::detail::hash_combine(hashValue, n_mip_levels);
+    glm::detail::hash_combine(hashValue, n_array_layers);
     return hashValue;
+}
+
+VkImageType GetImageType(VkImageViewType viewType) {
+    switch (viewType) {
+        case VK_IMAGE_VIEW_TYPE_1D:
+            return VK_IMAGE_TYPE_1D;
+        case VK_IMAGE_VIEW_TYPE_2D:
+            return VK_IMAGE_TYPE_2D;
+        case VK_IMAGE_VIEW_TYPE_3D:
+            return VK_IMAGE_TYPE_3D;
+        case VK_IMAGE_VIEW_TYPE_CUBE:
+            return VK_IMAGE_TYPE_3D;
+        case VK_IMAGE_VIEW_TYPE_1D_ARRAY:
+            return VK_IMAGE_TYPE_1D;
+        case VK_IMAGE_VIEW_TYPE_2D_ARRAY:
+            return VK_IMAGE_TYPE_2D;
+        case VK_IMAGE_VIEW_TYPE_CUBE_ARRAY:
+            return VK_IMAGE_TYPE_2D;
+        default:
+            return VK_IMAGE_TYPE_MAX_ENUM;
+    }
 }
 
 void SgImage::createVkImage(Device& device, VkImageViewType imageViewType, VkImageCreateFlags flags) {
     assert(vkImage == nullptr && "Image has been created");
     //   assert(vkImageView == nullptr && "ImageView has been created");
-    setIsCubeMap(imageViewType == VK_IMAGE_VIEW_TYPE_CUBE);
+    setIsCubeMap(imageViewType == VK_IMAGE_VIEW_TYPE_CUBE | isCubeMap());
     if (isCubeMap()) flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
     vkImage = std::make_unique<Image>(device, mExtent3D, format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_SAMPLE_COUNT_1_BIT, toUint32(getMipLevelCount()), layers, flags);
     createImageView();

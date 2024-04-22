@@ -101,7 +101,7 @@ void RenderContext::beginFrame() {
     auto& commandBuffer = getGraphicCommandBuffer();
     commandBuffer.beginRecord(0);
 
-    commandBuffer.setViewport(0, {vkCommon::initializers::viewport(float(getSwapChainExtent().width), float(getSwapChainExtent().height), 0.0f, 1.0f)});
+    commandBuffer.setViewport(0, {vkCommon::initializers::viewport(float(getSwapChainExtent().width), float(getSwapChainExtent().height), 0.0f, 1.0f, flipViewport)});
     commandBuffer.setScissor(0, {vkCommon::initializers::rect2D(float(getSwapChainExtent().width), float(getSwapChainExtent().height), 0, 0)});
 
     // return commandBuffer;
@@ -264,7 +264,6 @@ RenderContext& RenderContext::bindAcceleration(uint32_t binding, const Accel& ac
 
 RenderContext& RenderContext::bindImageSampler(uint32_t binding, const ImageView& view, const Sampler& sampler, uint32_t setId, uint32_t array_element) {
     if (setId == -1)
-
         setId = static_cast<uint32_t>(DescriptorSetPoints::SAMPLER);
     resourceSets[setId].bindImage(view, sampler, binding, array_element);
     resourceSetsDirty = true;
@@ -734,4 +733,10 @@ void RenderContext::copyBuffer(const Buffer& src, Buffer& dst) {
     copy_region.size           = src.getSize();
     vkCmdCopyBuffer(commandBuffer.getHandle(), src.getHandle(), dst.getHandle(), 1, &copy_region);
     submit(commandBuffer);
+}
+void RenderContext::setFlipViewport(bool flip) {
+    flipViewport = flip;
+}
+bool RenderContext::getFlipViewport() const {
+    return flipViewport;
 }

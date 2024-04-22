@@ -80,7 +80,7 @@ void Application::updateGUI() {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
     ImGui::SetNextWindowPos(ImVec2(50 * gui->scale, 50 * gui->scale));
     // ImGui::SetNextWindowSize(ImVec2(0, 0), ImGuiSetCond_FirstUseEver);
-    ImGui::Begin("Vulkan Example", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+    ImGui::Begin("Y-Vulkan", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
     ImGui::PushItemWidth(200.0f * gui->scale);
     ImGui::Text("%.2f ms/frame ", 1000.f * deltaTime);
     ImGui::NextColumn();
@@ -108,7 +108,7 @@ void Application::updateGUI() {
     ImGui::PopStyleVar();
 
     bool showDeomWindow = true;
-    ImGui::ShowDemoWindow(&showDeomWindow);
+    // ImGui::ShowDemoWindow(&showDeomWindow);
 
     ImGui::Render();
     ImGui::EndFrame();
@@ -183,7 +183,7 @@ void Application::initWindow(const char* name, uint32_t width, uint32_t height) 
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-    window = std::make_unique<Window>(Window::WindowProp{"title", {width, height}}, this);
+    window = std::make_unique<Window>(Window::WindowProp{name, {width, height}}, this);
 }
 
 void Application::initGUI() {

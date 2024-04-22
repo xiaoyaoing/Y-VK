@@ -39,6 +39,10 @@ void main(){
     vec3  emission = subpassLoad(gbuffer_emission).rgb;
     float depth    = subpassLoad(gbuffer_depth).x;
 
+    if (depth == 0.0){
+        discard;
+    }
+
     vec3 world_pos = worldPosFromDepth(in_uv, depth);
 
 

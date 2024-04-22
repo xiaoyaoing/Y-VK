@@ -30,7 +30,6 @@ public:
     bool inputEvent(const InputEvent& event);
     void prepareResoucrces(Application* app);
     bool update();
-    void draw(CommandBuffer& commandBuffer);
     void addGuiPass(RenderGraph& graph);
     void setColorsDark();
     bool checkBox(const char* caption, bool* value);
@@ -69,6 +68,8 @@ protected:
     struct PushConstBlock {
         glm::vec2 scale;
         glm::vec2 translate;
+        int       flipViewPort;
+        glm::vec3 padding;
     } pushConstBlock;
 
     PipelineLayout* pipelineLayout;

@@ -9,6 +9,9 @@ layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 layout (constant_id = 0) const uint NUM_SAMPLES = 1024u;
 
 
+#define MINCOS 0.001
+#define MAXCOS 0.999
+
 //Follow code from https://github.com/SaschaWillems/Vulkan-glTF-PBR.git
 
 const float PI = 3.1415926536;
@@ -96,7 +99,7 @@ void main(){
     if (thread_id.x >= size.x || thread_id.y >= size.y){
         return;
     }
-    vec2 uv = vec2(delta_cos * float(thread_id.x), delta_roughness * float(thread_id.y));
+    vec2 uv = vec2((float(thread_id.x) + 0.5) * delta_cos, (float(thread_id.y) + 0.5) * delta_roughness);
     vec2 lut = BRDF(uv.x, uv.y);
     imageStore(brdf_lut, thread_id, vec4(lut, 0.0, 0.0));
 }

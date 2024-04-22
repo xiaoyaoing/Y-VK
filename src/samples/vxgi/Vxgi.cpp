@@ -137,7 +137,7 @@ void Example::prepare() {
     mVisualizeVoxelPass.init();
 }
 
-Example::Example() : Application("Drawing Triangle", 1024, 1024) {
+Example::Example() : Application("VXGI", 1024, 1024) {
     // addDeviceExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     addDeviceExtension(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
     addInstanceExtension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);

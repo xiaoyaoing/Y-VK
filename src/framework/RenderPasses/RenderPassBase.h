@@ -6,7 +6,7 @@ class RenderGraph;
 class PassBase {
 public:
     virtual void render(RenderGraph& rg) = 0;
-    virtual void init()                  = 0;
+    virtual void init() {}
     virtual void updateGui() {}
     virtual void update() {}
     virtual ~PassBase() = default;

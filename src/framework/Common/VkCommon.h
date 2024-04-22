@@ -9,16 +9,18 @@
 //class Texture;
 
 namespace vkCommon {
+
     namespace initializers {
         inline VkDescriptorPoolSize descriptorPoolSize(VkDescriptorType type, uint32_t descriptorCount) {
             return {type, descriptorCount};
         }
 
-         VkViewport viewport(
+        VkViewport viewport(
             float width,
             float height,
             float minDepth,
-            float maxDepth) ;
+            float maxDepth,
+            bool  filpViewport = false);
 
         inline VkRect2D rect2D(
             int32_t width,

@@ -9,4 +9,5 @@ cmake-build-release-visual-studio--2022
 /build
 /build-vs2022
 /resources
+/.vscode
 .idea

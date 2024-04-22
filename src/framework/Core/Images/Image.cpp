@@ -1,6 +1,8 @@
 #include "Image.h"
 #include "Core/Device/Device.h"
 #include "ImageUtil.h"
+
+#include <glm/gtx/hash.hpp>
 //
 //Image::Image(VmaAllocator allocator, VmaMemoryUsage memoryUsage, const VkImageCreateInfo &createInfo) {
 //    _allocator = allocator;
@@ -16,6 +18,26 @@
 //                          &createInfo, &allocationInfo,
 //                          &_image, &_allocation, nullptr) == VK_SUCCESS, "Create image");
 //}
+
+static size_t HashImageSubresourceRange(const VkImageSubresourceRange& subresource) {
+    size_t              hash = 0;
+    std::hash<uint32_t> hasher;
+    glm::detail::hash_combine(hash, hasher(subresource.baseMipLevel));
+    glm::detail::hash_combine(hash, hasher(subresource.levelCount));
+    glm::detail::hash_combine(hash, hasher(subresource.baseArrayLayer));
+    glm::detail::hash_combine(hash, hasher(subresource.layerCount));
+    return hash;
+}
+
+struct SubResourceHash {
+    std::size_t operator()(const VkImageSubresourceRange& subresource) const {
+        return std::hash<uint32_t>()(subresource.aspectMask) ^
+               std::hash<uint32_t>()(subresource.baseMipLevel) ^
+               std::hash<uint32_t>()(subresource.levelCount) ^
+               std::hash<uint32_t>()(subresource.baseArrayLayer) ^
+               std::hash<uint32_t>()(subresource.layerCount);
+    }
+};
 
 inline VkImageType findImageType(VkExtent3D extent) {
     VkImageType result{};
@@ -52,13 +74,13 @@ inline VkImageType findImageType(VkExtent3D extent) {
     return result;
 }
 
-Image::Image(Device& device, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags image_usage, VmaMemoryUsage memory_usage, VkSampleCountFlagBits sample_count, uint32_t mip_levels, uint32_t array_layers, VkImageCreateFlags flags) : device(device),
-                                                                                                                                                                                                                                                extent{extent},
-                                                                                                                                                                                                                                                type{findImageType(extent)},
-                                                                                                                                                                                                                                                format{format},
-                                                                                                                                                                                                                                                usage{image_usage}, mip_level_count(mip_levels),
-                                                                                                                                                                                                                                                sample_count{sample_count},
-                                                                                                                                                                                                                                                array_layer_count{array_layers} {
+Image::Image(Device& device, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags image_usage, VmaMemoryUsage memory_usage, VkSampleCountFlagBits sample_count, uint32_t mip_levels, uint32_t array_layers, VkImageCreateFlags flags, VkImageType type_unused) : device(device),
+                                                                                                                                                                                                                                                                         extent{extent},
+                                                                                                                                                                                                                                                                         type{findImageType(extent)},
+                                                                                                                                                                                                                                                                         format{format},
+                                                                                                                                                                                                                                                                         usage{image_usage}, mip_level_count(mip_levels),
+                                                                                                                                                                                                                                                                         sample_count{sample_count},
+                                                                                                                                                                                                                                                                         array_layer_count{array_layers} {
     assert(mip_levels > 0 && "Image should have at least one level");
     assert(array_layers > 0 && "Image should have at least one layer");
 
@@ -165,14 +187,15 @@ void Image::transitionLayout(CommandBuffer& commandBuffer, VulkanLayout newLayou
         .subresourceRange    = subresourceRange};
     vkCmdPipelineBarrier(commandBuffer.getHandle(), srcStage, dstStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 
-    layouts.insert_or_assign(subresourceRange.baseArrayLayer << 16 | subresourceRange.baseMipLevel, newLayout);
+    setLayout(newLayout, subresourceRange);
 }
 
 void Image::setLayout(VulkanLayout newLayout, const VkImageSubresourceRange& subresourceRange) {
-    layouts.insert_or_assign(subresourceRange.baseArrayLayer << 16 | subresourceRange.baseMipLevel, newLayout);
+
+    layouts.insert_or_assign(HashImageSubresourceRange(subresourceRange), newLayout);
 }
 
 VulkanLayout Image::getLayout(const VkImageSubresourceRange& subresourceRange) {
-    uint32_t layoutKey = subresourceRange.baseArrayLayer << 16 | subresourceRange.baseMipLevel;
-    return layouts.contains(layoutKey) ? layouts[layoutKey] : VulkanLayout::UNDEFINED;
+    auto key = HashImageSubresourceRange(subresourceRange);
+    return layouts.contains(key) ? layouts[key] : VulkanLayout::UNDEFINED;
 }

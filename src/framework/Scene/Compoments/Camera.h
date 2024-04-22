@@ -205,6 +205,7 @@ public:
     bool  moving() const;
     void  setPerspective(float fov, float aspect, float zNear, float zFar);
     void  setRotation(glm::vec3 rotation);
+    void  setRotation(glm::quat rotation);
     void  setMoveSpeed(float moveSpeed);
     float getMoveSpeed() const;
 

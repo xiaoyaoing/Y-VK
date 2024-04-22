@@ -245,53 +245,6 @@ bool Gui::update() {
     return false;
 }
 
-void Gui::draw(CommandBuffer& commandBuffer) {
-    auto&       renderContext = *g_context;
-    ImDrawData* imDrawData    = ImGui::GetDrawData();
-    int32_t     vertexOffset  = 0;
-    int32_t     indexOffset   = 0;
-    if ((!imDrawData) || (imDrawData->CmdListsCount == 0)) {
-        return;
-    }
-    const ImGuiIO& io = ImGui::GetIO();
-
-    renderContext.getPipelineState().setPipelineLayout(*pipelineLayout);
-    renderContext.getPipelineState().setVertexInputState(vertexInputState);
-    renderContext.getPipelineState().setColorBlendState(colorBlendState);
-    renderContext.getPipelineState().setRasterizationState({.cullMode = VK_CULL_MODE_NONE});
-
-    pushConstBlock.scale     = glm::vec2(2.0f / io.DisplaySize.x, 2.0f / io.DisplaySize.y);
-    pushConstBlock.translate = glm::vec2(-1.0f);
-
-    const auto           blockPtr = reinterpret_cast<const uint8_t*>(&pushConstBlock);
-    std::vector<uint8_t> pushConstants(blockPtr, blockPtr + sizeof(PushConstBlock));
-    renderContext.bindPushConstants(pushConstants);
-
-    renderContext.bindImageSampler(0, fontTexture->getImage().getVkImageView(), fontTexture->getSampler());
-
-    std::vector<const Buffer*> vertexBuffers = {mvertexBuffer.buffer};
-
-    commandBuffer.bindVertexBuffer(vertexBuffers, {mvertexBuffer.offset});
-    commandBuffer.bindIndicesBuffer(*mIndexBuffer.buffer, mIndexBuffer.offset);
-
-    for (int32_t i = 0; i < imDrawData->CmdListsCount; i++) {
-        const ImDrawList* cmd_list = imDrawData->CmdLists[i];
-        for (int32_t j = 0; j < cmd_list->CmdBuffer.Size; j++) {
-            const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[j];
-            VkRect2D         scissorRect;
-            scissorRect.offset.x      = std::max((int32_t)(pcmd->ClipRect.x), 0);
-            scissorRect.offset.y      = std::max((int32_t)(pcmd->ClipRect.y), 0);
-            scissorRect.extent.width  = (uint32_t)(pcmd->ClipRect.z - pcmd->ClipRect.x);
-            scissorRect.extent.height = (uint32_t)(pcmd->ClipRect.w - pcmd->ClipRect.y);
-            commandBuffer.setScissor(0, {scissorRect});
-            renderContext.flushAndDrawIndexed(
-                commandBuffer, pcmd->ElemCount, 1, indexOffset, vertexOffset, 0);
-            indexOffset += pcmd->ElemCount;
-        }
-        vertexOffset += cmd_list->VtxBuffer.Size;
-    }
-}
-
 void Gui::addGuiPass(RenderGraph& graph) {
     auto& renderContext = *g_context;
     graph.addGraphicPass(
@@ -313,12 +266,11 @@ void Gui::addGuiPass(RenderGraph& graph) {
 
             renderContext.getPipelineState().setPipelineLayout(*pipelineLayout).setVertexInputState(vertexInputState).setColorBlendState(colorBlendState).setRasterizationState({.cullMode = VK_CULL_MODE_NONE});
 
-            pushConstBlock.scale     = glm::vec2(2.0f / io.DisplaySize.x, 2.0f / io.DisplaySize.y);
-            pushConstBlock.translate = glm::vec2(-1.0f);
+            pushConstBlock.scale        = glm::vec2(2.0f / io.DisplaySize.x, 2.0f / io.DisplaySize.y);
+            pushConstBlock.translate    = glm::vec2(-1.0f);
+            pushConstBlock.flipViewPort = g_context->getFlipViewport();
 
-            const auto           blockPtr = reinterpret_cast<const uint8_t*>(&pushConstBlock);
-            std::vector<uint8_t> pushConstants(blockPtr, blockPtr + sizeof(PushConstBlock));
-            renderContext.bindPushConstants(pushConstants);
+            renderContext.bindPushConstants(pushConstBlock);
 
             renderContext.bindImageSampler(0, fontTexture->getImage().getVkImageView(), fontTexture->getSampler());
 

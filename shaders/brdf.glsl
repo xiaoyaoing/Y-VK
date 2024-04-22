@@ -18,6 +18,7 @@ struct PBRInfo
     vec3 F90;// Reflectance at a grazing angle
     float alphaRoughness;// roughness mapped to a more linear change in the roughness (proposed by [2])
     vec3 diffuseColor;// already considered by metalness 
+    float perceptualRoughness;
 //  vec3 specularColor;// color contribution from specular lighting
 };
 

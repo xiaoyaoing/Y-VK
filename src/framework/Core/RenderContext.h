@@ -174,6 +174,8 @@ public:
     void recrateSwapChain(VkExtent2D extent);
 
     void copyBuffer(const Buffer& src, Buffer& dst);
+    void setFlipViewport(bool flip);
+    bool getFlipViewport() const;
 
 private:
     bool        frameActive = false;
@@ -209,6 +211,7 @@ private:
 
     std::vector<uint8_t> storePushConstants;
     uint32_t             maxPushConstantSize;
+    bool                 flipViewport = true;
 };
 
 extern RenderContext* g_context;

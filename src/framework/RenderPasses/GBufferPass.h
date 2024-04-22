@@ -23,7 +23,11 @@ private:
     std::unique_ptr<PipelineLayout> mPipelineLayout{nullptr};
 };
 
-class IBLLightingPass {
+class IBLLightingPass : public PassBase {
 public:
-    static void render(RenderGraph& rg);
+    void render(RenderGraph& rg) override;
+    void updateGui() override;
+
+protected:
+    int debugMode = 0;
 };

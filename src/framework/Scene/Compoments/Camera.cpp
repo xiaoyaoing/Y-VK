@@ -444,6 +444,11 @@ void Camera::setPerspective(float fov, float aspect, float zNear, float zFar) {
 }
 void Camera::setRotation(glm::vec3 rotation) {
     m_transform->setRotation(math::eulerYZXQuat(rotation));
+    updateViewMatrix();
+}
+void Camera::setRotation(glm::quat rotation) {
+    m_transform->setRotation(rotation);
+    updateViewMatrix();
 }
 void Camera::setMoveSpeed(float moveSpeed) {
     mMoveSpeed = moveSpeed;

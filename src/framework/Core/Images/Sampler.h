@@ -11,6 +11,7 @@ public:
 
     Sampler(Device& device, VkSamplerAddressMode sampleMode, VkFilter filter, float maxLod);
     ~Sampler();
+    Sampler(Sampler&&);
 
 protected:
     VkSampler _sampler;

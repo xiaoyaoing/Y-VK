@@ -18,7 +18,8 @@ public:
           VkSampleCountFlagBits sample_count = VK_SAMPLE_COUNT_1_BIT,
           uint32_t              mip_levels   = 1,
           uint32_t              array_layers = 1,
-          VkImageCreateFlags    flags        = 0);
+          VkImageCreateFlags    flags        = 0,
+          VkImageType           type         = VK_IMAGE_TYPE_2D);
 
     Image(Device&               device,
           VkImage               handle,
@@ -136,7 +137,7 @@ protected:
 
     bool mapped;
 
-    std::unordered_map<uint32_t, VulkanLayout> layouts;
+    std::unordered_map<std::size_t, VulkanLayout> layouts;
 };
 
 //struct HwTexture
