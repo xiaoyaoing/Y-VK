@@ -114,7 +114,7 @@ IBL::IBL(Device& device, const Texture* texture) : device(g_context->getDevice()
 IBL::~IBL() {
 }
 void IBL::generate(RenderGraph& rg) {
-    // if (generated) return;
+    if (generated) return;
     generatePrefilteredCubeMap(rg);
     generatePrefilertedEnvMap(rg);
     generateBRDFLUT(rg);

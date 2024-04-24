@@ -51,7 +51,7 @@ void Example::drawFrame(RenderGraph& rg) {
 void Example::prepare() {
     Application::prepare();
 
-    g_context->setFlipViewport(false);
+    g_context->setFlipViewport(true);
     mRenderPasses.push_back(std::make_unique<GBufferPass>());
     //  mRenderPasses.push_back(std::make_unique<LightingPass>());
     mRenderPasses.push_back(std::make_unique<IBLLightingPass>());
@@ -60,7 +60,9 @@ void Example::prepare() {
     glm::mat3          rotate    = glm::make_mat3(matrix);
     SceneLoadingConfig config{.sceneRotation = glm::quat_cast(rotate)};
     config = {};
-    scene  = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Vulkan-glTF-PBR/data/models/DamagedHelmet/glTF-Embedded/DamagedHelmet.gltf", config);
+    auto m = glm::toMat3(config.sceneRotation);
+    // config.sceneRotation = glm::quat(0, 0, 0, 1);
+    scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Vulkan-glTF-PBR/data/models/DamagedHelmet/glTF-Embedded/DamagedHelmet.gltf", config);
 
     scene->addDirectionalLight({0, -0.95f, 0.3f}, glm::vec3(1.0f), 1.5f);
     scene->addDirectionalLight({1.0f, 0, 0}, glm::vec3(1.0f), 0.5f);
@@ -87,6 +89,7 @@ void Example::prepare() {
 
     cube             = SceneLoaderInterface::loadSpecifyTypePrimitive(*device, "cube");
     std::string path = "E:/code/Vulkan-glTF-PBR/data/environments/papermill.ktx";
+    path             = "E:/code/Vulkan-Samples/assets/textures/uffizi_rgba16f_cube_inverse.ktx";
     environmentCube  = Texture::loadTextureFromFile(g_context->getDevice(), path);
     ibl              = std::make_unique<IBL>(*device, environmentCube.get());
 }

@@ -116,9 +116,8 @@ void main()
     const vec3 e1t = gl_ObjectToWorldEXT * vec4(e1, 0);
 
 
-    payload.n_g = normalize(vec3(cross(e0, e1) * gl_WorldToObjectEXT));
+    payload.n_g = normalize(vec3(cross(e1, e0) * gl_WorldToObjectEXT));
     payload.n_s = world_nrm;
-    //  payload.n_s = n_g;
     payload.p = world_pos;
     payload.p = world_pos;
     payload.uv = uv;
@@ -133,5 +132,5 @@ void main()
     //    debugPrintfEXT("material idx: %d %d\n", material_index, gl_InstanceCustomIndexEXT);
     //
     //    debugPrintfEXT("prim idx: %d\n", gl_InstanceCustomIndexEXT);
-  //  debugPrintfEXT("hit pos: %f %f %f\n", world_pos.x, world_pos.y, world_pos.z);
+    //  debugPrintfEXT("hit pos: %f %f %f\n", world_pos.x, world_pos.y, world_pos.z);
 }

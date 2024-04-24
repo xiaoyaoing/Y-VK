@@ -84,4 +84,9 @@ void FinalLightingPass::pushFinalLightingParam() {
 void FinalLightingPass::updateGui() {
     ImGui::InputInt("Direct intensity", &mVoxelParam.uDirectLighting);
     ImGui::InputInt("Indirect intensity", &mVoxelParam.uIndirectLighting);
+    // ImGui::Checkbox("useHigherLevel", &mVoxelParam.useHigherLevel);
+    // ImGui::SameLine();
+    // ImGui::Checkbox("useLowerLevel", &mVoxelParam.useLowerLevel);
+    // ImGui::SameLine();
+    // ImGui::Checkbox("mix", &mVoxelParam.mix);
 }

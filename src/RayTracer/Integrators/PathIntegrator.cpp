@@ -160,8 +160,8 @@ void PathIntegrator::initScene(Scene& scene) {
     sceneDescBuffer = std::make_unique<Buffer>(device, sizeof(SceneDesc), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, &desc);
 
     pcPath.light_num = lights.size();
-    pcPath.max_depth = 2;
-    pcPath.min_depth = 1;
+    pcPath.max_depth = 1;
+    pcPath.min_depth = 0;
 
     gbufferPass.init();
     lightingPass.init();
@@ -173,7 +173,7 @@ void PathIntegrator::initScene(Scene& scene) {
 void PathIntegrator::onUpdateGUI() {
     int maxDepth = pcPath.max_depth;
     int minDepth = pcPath.min_depth;
-    ImGui::SliderInt("Min Depth", &minDepth, 1, pcPath.max_depth);
+    ImGui::SliderInt("Min Depth", &minDepth, 0, pcPath.max_depth);
     ImGui::SliderInt("Max Depth", &maxDepth, 1, 10);
     if (maxDepth != pcPath.max_depth) {
         pcPath.max_depth = maxDepth;

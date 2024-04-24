@@ -129,7 +129,7 @@ protected:
     //layer 0 mipmap 0, layer1 mipmap0 layer2 mipmap0 ...
     std::vector<Mipmap>                    mipMaps{{}};
     std::vector<std::vector<VkDeviceSize>> offsets;
-    bool                                   mIsCubeMap;
+    bool                                   mIsCubeMap{false};
 
     std::string name;
 

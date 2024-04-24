@@ -132,7 +132,7 @@ Shader::Shader(Device& device, std::string path, VkShaderStageFlagBits spv_stage
         if (!GlslCompiler::compileToSpirv(stage, shaderBuffer, "main", spirvCode, shaderLog, path)) {
             LOGE("Failed to compile shader {}, Error: {}", path, shaderLog.c_str())
         } else {
-            LOGI("Shader compiled from source code succrssfully", path.c_str());
+            LOGI("Shader compiled from source code succrssfully {}", path.c_str());
         }
         std::string   spvPath = GetSpvPathFromShaderPath(path);
         std::ofstream file    = OpenOrCreateFile(spvPath);

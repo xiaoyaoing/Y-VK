@@ -117,9 +117,9 @@ void main()
         colors = vec4[6] (color, color, color, color, color, color);
     }
 
-  // vec4     color = vec4(float(pos.x) / float(resolution), float(pos.y) / float(resolution), float(pos.z) / float(resolution), texelFetch(u_3dTexture, samplePos, 0).a);
- //  colors = vec4[6] (color, color, color, color, color, color);
- 
+    // vec4     color = vec4(float(pos.x) / float(resolution), float(pos.y) / float(resolution), float(pos.z) / float(resolution), 1);
+    // colors = vec4[6] (color, color, color, color, color, color);
+
 
     //  posV = pos;
 

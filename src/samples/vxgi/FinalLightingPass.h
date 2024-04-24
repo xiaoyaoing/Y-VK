@@ -25,6 +25,10 @@ protected:
         int       uEnable32Cones{0};
         int       uDirectLighting{1};
         int       uIndirectLighting{1};
+        // bool      useLowerLevel{0};
+        // bool      useHigherLevel{0};
+        // bool      mix{1};
+        // bool      padding;
     };
     std::unique_ptr<PipelineLayout> mFinalLightingPipelineLayout{nullptr};
     std::unique_ptr<Sampler>        mRadianceMapSampler{nullptr};

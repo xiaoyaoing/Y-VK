@@ -33,7 +33,6 @@ layout(location = 0) in vec3 in_position;
 layout(location = 1) in vec2 in_uv;
 layout(location = 2) in vec3 in_normal;
 layout (location = 3) flat in uint in_primitive_index;
-layout(location = 4) in vec3 o_position_1;
 
 
 
@@ -84,6 +83,15 @@ void imageAtomicRGBA8Avg(ivec3 coords, vec4 value)
     uint curStoredVal;
 
     // debugPrintfEXT("coords and value %d %d %d %f %f %f %f \n", coords.x, coords.y, coords.z, value.x, value.y, value.z, value.w);
+
+    //    { uint curval = imageload(radiance_image, coords);
+    //        vec4 rval = convRGBA8ToVec4(curval);
+    //        rval.xyz = (rval.xyz * rval.w);// Denormalize
+    //        vec4 curValF = rval + value;// Add new value
+    //        curValF.xyz /= (curValF.w);// Renormalize
+    //        newVal = convVec4ToRGBA8(curValF);
+    //        imageStore(radiance_image, coords, newVal);
+    //        return; }
 
 
     const int maxIterations = 100;
@@ -137,42 +145,15 @@ void main(){
 
     vec3 world_pos = in_position;
 
-    //    vec3 p = vec3(5.705555 ,9.622492, -2.028390);
-    //    vec3 pl = p-0.1f;
-    //    vec3 pu = p+0.1f;
-    //    if(all(greaterThan(world_pos, pl)) && all(lessThan(world_pos, pu)) )
-    //    { 
-    //        debugPrintfEXT("world_pos1 %f %f %f maxextentworld, %f %d %f %f %f %d\n", world_pos.x, world_pos.y, world_pos.z, max_extent_world.x, clip_map_resoultion, o_position_1.x, o_position_1.y, o_position_1.z, in_primitive_index);
-    //       // debugPrintfEXT("world_pos %f %f %f maxextentworld, %f %d %f %f %f %d\n", world_pos.x, world_pos.y, world_pos.z, max_extent_world.x, clip_map_resoultion, o_position_1.x, o_position_1.y, o_position_1.z, in_primitive_index);
-    //    }
-    //        if(in_primitive_index == 5)
-    //        debugPrintfEXT("world_pos %f %f %f maxextentworld, %f %d %f %f %f %d\n", world_pos.x, world_pos.y, world_pos.z, max_extent_world.x,clip_map_resoultion,o_position_1.x,o_position_1.y,o_position_1.z,in_primitive_index);
     if (!pos_in_clipmap(world_pos)){
         discard;
     }
 
     ivec3 image_coords = computeImageCoords(world_pos);
 
-    //    if(image_coords.x == 45 && image_coords.y == 77 && image_coords.z == 111)
-    //        debugPrintfEXT("world_pos %f %f %f maxextentworld, %f %d\n", world_pos.x, world_pos.y, world_pos.z, max_extent_world.x,clip_map_resoultion);
-    //    if(frame_index > 0 )
-    //        debugPrintfEXT("world_pos %f %f %f maxextentworld, %f %d\n", world_pos.x, world_pos.y, world_pos.z, max_extent_world.x,clip_map_resoultion);
-    //    
-
-
     uint material_index = primitive_infos[in_primitive_index].material_index;
     GltfMaterial material = scene_materials[material_index];
 
-    //    if (any(greaterThan(material.emissiveFactor, vec3(0.0)))){
-    //        vec4 emission = vec4(material.emissiveFactor, 1.0);
-    //        if (material.emissiveTexture > -1)
-    //        {
-    //            emission.rgb = texture(scene_textures[material.emissiveTexture], in_uv).rgb;
-    //        }
-    //        emission.rgb = clamp(emission.rgb, 0.0, 1.0);
-    //        // voxelAtomicRGBA8Avg6Faces(image_coords, emission);
-    //    }
-    //    else
     {
 
 

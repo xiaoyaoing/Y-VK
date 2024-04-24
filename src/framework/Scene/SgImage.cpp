@@ -120,7 +120,8 @@ void SgImage::createVkImage(Device& device, VkImageViewType imageViewType, VkIma
     assert(vkImage == nullptr && "Image has been created");
     //   assert(vkImageView == nullptr && "ImageView has been created");
     setIsCubeMap(imageViewType == VK_IMAGE_VIEW_TYPE_CUBE | isCubeMap());
-    if (isCubeMap()) flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+    if (isCubeMap())
+        flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
     vkImage = std::make_unique<Image>(device, mExtent3D, format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_SAMPLE_COUNT_1_BIT, toUint32(getMipLevelCount()), layers, flags);
     createImageView();
 }
@@ -150,7 +151,8 @@ SgImage::SgImage(SgImage&& other) : vkImage(std::move(other.vkImage)), vkImageVi
 
 SgImage::SgImage(Device& device, const std::string& name, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags image_usage, VmaMemoryUsage memory_usage, VkImageViewType viewType, VkSampleCountFlagBits sample_count, uint32_t mipLevels, uint32_t array_layers, VkImageCreateFlags flags) : format(format), mExtent3D(extent), name(name), device(device), layers(array_layers) {
     setIsCubeMap(viewType == VK_IMAGE_VIEW_TYPE_CUBE);
-    if (isCubeMap()) flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+    if (isCubeMap())
+        flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
     vkImage = std::make_unique<Image>(device, extent, format, image_usage, memory_usage, sample_count, mipLevels, array_layers, flags);
     createImageView();
 

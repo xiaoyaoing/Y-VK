@@ -37,8 +37,12 @@ layout (push_constant) uniform PushConstants
     float uIndirectSpecularIntensity;// 44
     float uOcclusionDecay;// 48
     int   uEnable32Cones;// 52
-    int       uDirectLighting;
-    int       uIndirectLighting;
+    int       uDirectLighting;//56
+    int       uIndirectLighting;//60
+//    bool useLowerLevel;
+//    bool useHigherLevel;
+//    bool usemix;
+//    bool padding;
 };
 
 //layout(push_constant) uniform PushConstants
@@ -325,6 +329,16 @@ vec4 sampleClipmapLinear(sampler3D clipmap, vec3 worldPos, float curLevel, ivec3
     vec4 lowerSample = sampleClipmap(clipmap, worldPos, lowerLevel, faceOffset, weight);
     vec4 upperSample = sampleClipmap(clipmap, worldPos, upperLevel, faceOffset, weight);
 
+    return lowerSample;
+
+    //    if (useLowerLevel)
+    //    {
+    //        return lowerSample;
+    //    }
+    //    if (useHigherLevel)
+    //    {
+    //        return upperSample;
+    //    }
     return mix(lowerSample, upperSample, fract(curLevel));
 }
 
@@ -347,10 +361,7 @@ vec4 traceCone(vec3 start_pos, vec3 direction, float aperture, float maxDistance
     float curLevel = startLevel;
     float cur_voxel_size = voxel_size * exp2(curLevel);
 
-
-    start_pos += direction * cur_voxel_size  * 0.5;
-
-
+    //   start_pos += direction * cur_voxel_size  * 0.5;
 
     float step         = 0.0;
     float diameter     = max(step * coneCoefficient, voxel_size);
@@ -381,16 +392,15 @@ vec4 traceCone(vec3 start_pos, vec3 direction, float aperture, float maxDistance
 
         min_level = curLevel;
 
-        // return vec4(SIX_LEVEL_DEBUG_COLORS[int(min_level)], 1);
 
-        //        return vec4(log2(distanceToVoxelCenter)/20.f);
+        int min_level_int = int(min_level);
 
-        //        if (min_level == 0) return vec4(1, 0, 0, 1);
-        //        if (min_level ==1) return vec4(0, 1, 0, 1);
-        //        if (min_level ==2) return vec4(0, 0, 1, 1);
-        //        if (min_level ==3) return vec4(1, 1, 0, 1);
-        //        if (min_level ==4) return vec4(1, 0, 1, 1);
-        //        if (min_level ==5) return vec4(1, 1, 1, 1);
+        //        if (min_level_int == 0) return vec4(1, 0, 0, 1);
+        //        if (min_level_int ==1) return vec4(0, 1, 0, 1);
+        //        if (min_level_int ==2) return vec4(0, 0, 1, 1);
+        //        if (min_level_int ==3) return vec4(1, 1, 0, 1);
+        //        if (min_level_int ==4) return vec4(1, 0, 1, 1);
+        //        if (min_level_int ==5) return vec4(1, 1, 1, 1);
 
         vec4 clipmapSample = sampleClipmapLinear(radiance_map, position, curLevel, faceIndex, weight);
         vec3 radiance = clipmapSample.rgb;
@@ -398,7 +408,7 @@ vec4 traceCone(vec3 start_pos, vec3 direction, float aperture, float maxDistance
         //  if (radiance.x!=0 || radiance.y!=0 || radiance.z!=0)
         //  debugPrintfEXT("My float is %f %f %f", radiance.x, radiance.y, radiance.z);
 
-        //   return clipmapSample;
+        return clipmapSample;
 
         float opacity = clipmapSample.a;
 
@@ -408,6 +418,8 @@ vec4 traceCone(vec3 start_pos, vec3 direction, float aperture, float maxDistance
         //todo what does correction do?
         radiance = radiance * correction;
         opacity  = clamp(1.0 - pow(1.0 - opacity, correction), 0.0, 1.0);
+
+
 
         vec4 src = vec4(radiance.rgb, opacity);
         // Alpha blending

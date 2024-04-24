@@ -15,6 +15,23 @@ Pipeline::Pipeline(Device& device, const PipelineState& pipelineState) : device(
         return shader.PipelineShaderStageCreateInfo();
     });
 
+    std::array<VkDynamicState, 9> dynamicStates{
+        VK_DYNAMIC_STATE_VIEWPORT,
+        VK_DYNAMIC_STATE_SCISSOR,
+        VK_DYNAMIC_STATE_LINE_WIDTH,
+        VK_DYNAMIC_STATE_DEPTH_BIAS,
+        VK_DYNAMIC_STATE_BLEND_CONSTANTS,
+        VK_DYNAMIC_STATE_DEPTH_BOUNDS,
+        VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK,
+        VK_DYNAMIC_STATE_STENCIL_WRITE_MASK,
+        VK_DYNAMIC_STATE_STENCIL_REFERENCE,
+    };
+
+    VkPipelineDynamicStateCreateInfo dynamicState{VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};
+
+    dynamicState.pDynamicStates    = dynamicStates.data();
+    dynamicState.dynamicStateCount = toUint32(dynamicStates.size());
+
     if (type == PIPELINE_TYPE::E_GRAPHICS) {
         VkGraphicsPipelineCreateInfo createInfo{.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
 
@@ -100,23 +117,6 @@ Pipeline::Pipeline(Device& device, const PipelineState& pipelineState) : device(
         colorBlendState.blendConstants[2] = 1.0f;
         colorBlendState.blendConstants[3] = 1.0f;
 
-        std::array<VkDynamicState, 9> dynamicStates{
-            VK_DYNAMIC_STATE_VIEWPORT,
-            VK_DYNAMIC_STATE_SCISSOR,
-            VK_DYNAMIC_STATE_LINE_WIDTH,
-            VK_DYNAMIC_STATE_DEPTH_BIAS,
-            VK_DYNAMIC_STATE_BLEND_CONSTANTS,
-            VK_DYNAMIC_STATE_DEPTH_BOUNDS,
-            VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK,
-            VK_DYNAMIC_STATE_STENCIL_WRITE_MASK,
-            VK_DYNAMIC_STATE_STENCIL_REFERENCE,
-        };
-
-        VkPipelineDynamicStateCreateInfo dynamicState{VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};
-
-        dynamicState.pDynamicStates    = dynamicStates.data();
-        dynamicState.dynamicStateCount = toUint32(dynamicStates.size());
-
         createInfo.pVertexInputState   = &vertexInputState;
         createInfo.pInputAssemblyState = &inputAssemblyState;
         createInfo.pViewportState      = &viewportState;
@@ -185,6 +185,7 @@ Pipeline::Pipeline(Device& device, const PipelineState& pipelineState) : device(
 
         VkRayTracingPipelineCreateInfoKHR pipeline_CI = {VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR};
 
+        pipeline_CI.pDynamicState                = &dynamicState;
         pipeline_CI.stageCount                   = stageCreateInfos.size();
         pipeline_CI.pStages                      = stageCreateInfos.data();
         pipeline_CI.groupCount                   = static_cast<uint32_t>(groups.size());

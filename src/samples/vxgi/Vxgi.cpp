@@ -52,18 +52,10 @@ BBox Example::getBBox(uint32_t clipmapLevel) {
 void Example::prepare() {
     Application::prepare();
 
-    //Shader shader(*device,"E:/code/moerengine2/shaders/3dgs_splatting/preprocess.spv", VK_SHADER_STAGE_COMPUTE_BIT);
-    Shader shader(*device, "E:/code/moerengine2/shaders/3dgs_splatting/tile_boundary.spv", VK_SHADER_STAGE_COMPUTE_BIT);
-
     scene = GltfLoading::LoadSceneFromGLTFFile(
-        *device, FileUtils::getResourcePath("sponza/Sponza01.gltf"), {.sceneScale = glm::vec3(0.08f)});
+        *device, FileUtils::getResourcePath("sponza/Sponza01.gltf"), {.sceneScale = glm::vec3(0.008f)});
 
-    // scene = GltfLoading::LoadSceneFromGLTFFile(
-    //     *device, "E:/code/vk_vxgi/VFS/Scene/Sponza/Sponza.gltf", {.bufferRate = BufferRate::PER_SCENE});
-
-    // scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));
-
-    GlslCompiler::forceRecompile = true;
+    GlslCompiler::forceRecompile = false;
 
     auto light_pos   = glm::vec3(0.0f, 128.0f, -225.0f);
     auto light_color = glm::vec3(1.0, 1.0, 1.0);
@@ -103,7 +95,7 @@ void Example::prepare() {
     camera->setPerspective(45.0f, float(mWidth), float(mHeight), 0.1f, 4000.f);
     glm::vec3 cameraPositionOffset(0.46, 8.27, -1.54);
     camera->getTransform()->setPosition(cameraPositionOffset);
-    camera->getTransform()->setPosition(glm::vec3(-33, 70, 3));
+    // camera->getTransform()->setPosition(glm::vec3(-33, 70, 3));
     camera->getTransform()->setRotation(glm::quat(0.67, -0.24, 0.69, 0.12));
 
     view = std::make_unique<View>(*device);

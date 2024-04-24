@@ -275,12 +275,9 @@ void JsonLoader::loadPrimitives() {
         std::unique_ptr<PrimitiveData> primitiveData;
         if (primitiveJson.contains("file")) {
             primitiveData = PrimitiveLoader::loadPrimitive(rootPath.string() + "/" + primitiveJson["file"].get<std::string>());
-            // primitiveData = nullptr;
         } else if (primitiveJson.contains("type")) {
             std::string type = primitiveJson["type"];
-            // if (type == "cube") continue;
-            // if (type == "quad") continue;
-            primitiveData = PrimitiveLoader::loadPrimitiveFromType(type);
+            primitiveData    = PrimitiveLoader::loadPrimitiveFromType(type);
         } else {
             LOGE("Primitive must have a type or a file")
         }

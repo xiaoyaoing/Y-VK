@@ -166,7 +166,7 @@ void main(){
 
         vec3 view_dir = normalize(per_frame.camera_pos - world_pos);
         vec3 R = -normalize(reflect(view_dir, normal));
-        R.y = -R.y;
+        //R.y = -R.y;
         //   color = R;
         //   out_color = vec4(color, 1);
         //  return;

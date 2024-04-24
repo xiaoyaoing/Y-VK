@@ -71,7 +71,7 @@ struct SurfaceScatterEvent{
 
 
 
-SurfaceScatterEvent make_suface_scatter_event(HitPayload hit_pay_load, const vec3 wo){
+SurfaceScatterEvent make_surface_scatter_event(HitPayload hit_pay_load, const vec3 wo){
     SurfaceScatterEvent event;
 
 

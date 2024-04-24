@@ -138,7 +138,7 @@ void RayTracer::prepare() {
     //scene                          = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"), sceneConfig);
     scene = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"), sceneConfig);
     // scene = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("staircase2/scene.json"), sceneConfig);
-    //scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/cornell-box/scene.json", sceneConfig);
+    scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/cornell-box/scene.json", sceneConfig);
     // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/classroom/scene.json", sceneConfig);
     // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/cornell-box-json/scene.json", sceneConfig);
 
