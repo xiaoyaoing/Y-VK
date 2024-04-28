@@ -113,12 +113,7 @@ void main(){
     if (face == 5) N = vec3(normal2d.x, normal2d.y, -1.0);
 
     N = normalize(N);
-    //  debugPrintfEXT("storePos: %d %d %d size %d %d\n", storePos.x, storePos.y, storePos.z, size.x, size.y);
     storePos.y = size.y - storePos.y;
     imageStore(prefilter_cube, ivec3(storePos), vec4(prefilterEnvMap(N, roughness), 1.0));
-    //   imageStore(prefilter_cube, ivec3(storePos), vec4(N, 1.0));
-    // if (storePos.z == 0)
-    //  debugPrintfEXT("storePos: %d %d %d size %d %d\n", storePos.x, storePos.y, storePos.z, size.x, size.y);
-    //   imageStore(prefilter_cube, ivec3(storePos), vec4(1, 0, 0, 1.0));
 
 }

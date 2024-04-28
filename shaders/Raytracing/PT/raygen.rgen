@@ -61,20 +61,14 @@ vec3   uniform_sample_one_light(inout uvec4 seed, inout SurfaceScatterEvent even
     bool enable_sample_light = pc_ray.enable_sample_light > 0;
     bool enable_sample_bsdf = pc_ray.enable_sample_bsdf > 0;
 
-    enable_sample_bsdf = pc_ray.enable_sample_bsdf > 0;
-    enable_sample_light = pc_ray.enable_sample_light > 0;
 
     LightSample light_sample = sample_li(light, event, light_sample_rand);
 
+
     if (enable_sample_light)
     {
-        //  return visualize_normal(light_sample.p / 10.f);
-        //   return visualize_normal(light_sample.wi);
-
-        // debugPrintfEXT("light_sample %f %f %f %f\n", light_sample.indensity.x, light_sample.indensity.y, light_sample.indensity.z, light_sample.pdf);
         if (!isBlack(light_sample.indensity) && light_sample.pdf != 0){
 
-            //trace ray 
             any_hit_payload.hit = 1;
 
             traceRayEXT(tlas,
@@ -82,13 +76,16 @@ vec3   uniform_sample_one_light(inout uvec4 seed, inout SurfaceScatterEvent even
             gl_RayFlagsSkipClosestHitShaderEXT,
             0xFF, 1, 0, 1, event.p, EPS, light_sample.wi, light_sample.dist - EPS, 1);
             bool  visible = any_hit_payload.hit == 0;
+            //   visible = true;
             if (visible){
                 uint material_idx = event.material_idx;
-                event.wi = to_local(event.frame, light_sample.wi);
+                event.wo = to_local(event.frame, light_sample.wi);
                 float bsdf_pdf = pdf_bsdf(materials.m[material_idx], event);
                 float light_mis_weight =enable_sample_bsdf? power_heuristic(light_sample.pdf, bsdf_pdf):1;
                 vec3 bsdf =eval_bsdf(materials.m[material_idx], event);
                 result += light_sample.indensity  * bsdf * light_mis_weight / light_sample.pdf;
+                // return visualize_normal(light_sample.wi);
+                //return vec3(dot(event.frame.n, light_sample.wi));
             }
         }
     }
@@ -103,7 +100,7 @@ vec3   uniform_sample_one_light(inout uvec4 seed, inout SurfaceScatterEvent even
 
             //return f/bsdf_pdf;
 
-            vec3 world_wi = to_world(event.frame, event.wi);
+            vec3 world_wi = to_world(event.frame, event.wo);
             //trace ray 
             hitPayload.prim_idx = -1;
             traceRayEXT(tlas,
@@ -121,16 +118,12 @@ vec3   uniform_sample_one_light(inout uvec4 seed, inout SurfaceScatterEvent even
 
                 float light_pdf = 1.f/get_primitive_area(light.prim_idx) *  length(hitPayload.p-event.p) * length(hitPayload.p-event.p) / abs(dot(hitPayload.n_g, world_wi));
 
-                //   float area = get_triangle_area(light.prim_idx, hitPayload.triangle_idx);
-                //  debugPrintfEXT("area %f\n",area);
-                //   light_pdf = 1.f/ area *  length(hitPayload.p-event.p) * length(hitPayload.p-event.p) / abs(dot(hitPayload.n_s, world_wi));
-
                 float bsdf_mis_weight = enable_sample_light?power_heuristic(bsdf_pdf, light_pdf):1;
 
                 result += f * eval_light(light, hitPayload.p, hitPayload.n_g, world_wi) * bsdf_mis_weight / bsdf_pdf;
 
+                //                return eval_light(light, hitPayload.p, hitPayload.n_g, world_wi);
             }
-            //            result =  f * light.L / bsdf_pdf;
 
         }
     }
@@ -142,7 +135,7 @@ vec3   uniform_sample_one_light(inout uvec4 seed, inout SurfaceScatterEvent even
 
 
 vec3 Le(const SurfaceScatterEvent event){
-    if (materials.m[event.material_idx].emissiveFactor != vec3(0) && get_cos_theta(event.wo)>0){
+    if (materials.m[event.material_idx].emissiveFactor != vec3(0) && get_cos_theta(event.wi)>0){
         return materials.m[event.material_idx].emissiveFactor;
     }
     return vec3(0);
@@ -182,10 +175,14 @@ void main()
 
         traceRayEXT(tlas, rayFlags, cullMask, 0, 0, 0, origin.xyz, tmin, direction.xyz, tmax, 0);
 
+        traceRayEXT(tlas,
+        gl_RayFlagsTerminateOnFirstHitEXT |
+        gl_RayFlagsSkipClosestHitShaderEXT,
+        0xFF, 1, 0, 1, origin.xyz, tmin, direction.xyz, tmax, 1);
 
         bool found_intersect = hitPayload.material_idx != -1;
 
-
+        //        found_intersect  = any_hit_payload.hit == 1;
         if (!found_intersect) {
             break;
         }
@@ -194,7 +191,7 @@ void main()
 
         SurfaceScatterEvent event = make_surface_scatter_event(hitPayload, -direction.xyz);
 
-        //        imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(visualize_normal(event.frame.n), 1));
+        //        imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(visualize_normal(vec3(1)), 1));
         //        return;
 
         if (specular_bounce){
@@ -212,8 +209,12 @@ void main()
         if (record.f == vec3(0) || record.pdf ==0){
             break;
         }
-        vec3 wi_world = to_world(event.frame, event.wi);
+        vec3 wi_world = to_world(event.frame, event.wo);
         throughput *= record.f / record.pdf;
+
+        //        imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(throughput, 1));
+        //        return;
+
         direction = vec4(wi_world, 0);
         origin = event.p + direction.xyz * EPS;
         //origin = offset_ray_origin(event.p,  , direction);
@@ -228,6 +229,7 @@ void main()
         vec3 old_color = imageLoad(image, ivec2(gl_LaunchIDEXT.xy)).xyz;
         imageStore(image, ivec2(gl_LaunchIDEXT.xy),
         vec4(mix(old_color, color, w), 1.f));
+
     } else {
 
         imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(color, 1.f));

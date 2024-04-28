@@ -76,7 +76,6 @@ vec3 microfacetBRDF(PBRInfo pbrInputs)
     vec3 specContrib = F * G * D / (4.0 *  pbrInputs.NdotV);
     //! Obtain final intensity as reflectance (BRDF) scaled by the energy of the light (cos law)
     return diffuseContrib * pbrInputs.NdotL + specContrib;
-    return pbrInputs.NdotL  * (specContrib);
 }
 
 #endif

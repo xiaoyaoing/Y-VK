@@ -1,5 +1,6 @@
 #include "jsonloader.h"
 
+#include "ComplexIor.hpp"
 #include "LoaderHelper.h"
 #include "ObjLoader.hpp"
 #include "Core/BufferPool.h"
@@ -110,8 +111,16 @@ void JsonLoader::PreprocessMaterials() {
 
 std::unordered_map<std::string, uint32_t> type2RTBSDFTYPE = {
     {"diffuse", RT_BSDF_TYPE_DIFFUSE},
-    {"specular", RT_BSDF_TYPE_MIRROR}};
+    {"specular", RT_BSDF_TYPE_MIRROR},
+    {"conductor", RT_BSDF_TYPE_CONDUCTOR},
+    {"rough_conductor", RT_BSDF_TYPE_CONDUCTOR}};
 
+void handleSpecifyMaterialAttribute(RTMaterial& rtMaterial, const Json& materialJson) {
+    if (rtMaterial.bsdf_type == RT_BSDF_TYPE_CONDUCTOR) {
+        auto material = GetOptional<std::string>(materialJson, "material", "Cu");
+        ComplexIorList::lookup(material, rtMaterial.eta, rtMaterial.k);
+    }
+}
 void JsonLoader::loadMaterials() {
     std::unordered_set<std::string> texture_paths;
     for (auto& materialJson : materialJsons) {
@@ -150,8 +159,10 @@ void JsonLoader::loadMaterials() {
         }
         rtMaterial.texture_id     = -1;
         rtMaterial.emissiveFactor = vec3(0);
-        // rtMaterial.bsdf_type = type2RTBSDFTYPE[materialJson["type"].get<std::string>()];
-        rtMaterial.bsdf_type = RT_BSDF_TYPE_DIFFUSE;
+        rtMaterial.bsdf_type      = type2RTBSDFTYPE[materialJson["type"].get<std::string>()];
+        // rtMaterial.bsdf_type = RT_BSDF_TYPE_DIFFUSE;
+        rtMaterial.roughness = GetOptional(materialJson, "roughness", 0.0f);
+        handleSpecifyMaterialAttribute(rtMaterial, materialJson);
         rtMaterials.push_back(rtMaterial);
 
         GltfMaterial material        = InitGltfMaterial();
@@ -335,7 +346,7 @@ void JsonLoader::loadPrimitives() {
             transform.setRotation(math::eulerYZXQuat(rotation));
             transform.setRotation(transpose(rotYXZ(rotation)));
 
-            //  transform.setLocalToWorldMatrix(transpose(mat4FromJson(transformJson)));
+            // transform.setLocalToWorldMatrix(transpose(mat4FromJson(transformJson)));
         }
 
         indexBuffers.emplace_back(std::move(primitiveData->indexs));

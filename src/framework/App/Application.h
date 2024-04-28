@@ -129,6 +129,12 @@ protected:
     bool     enableGui{true};
     uint32_t frameCounter{0};
 
+    struct ImageSave {
+        bool                    savePng = false;
+        bool                    saveExr = false;
+        std::unique_ptr<Buffer> buffer{nullptr};
+    } imageSave;
+
     void handleMouseMove(float x, float y);
 
 private:

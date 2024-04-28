@@ -9,12 +9,14 @@
 #include "Core/Images/Image.h"
 #include "RenderTarget.h"
 #include "View.h"
+#include "ctpl_stl.h"
 #include "Core/FrameBuffer.h"
 #include "Core/Buffer.h"
 
 #include "PlatForm/Window.h"
 #include "Common/ResourceCache.h"
 #include "Common/VkCommon.h"
+#include "IO/ImageIO.h"
 #include "Images/ImageUtil.h"
 #include "Images/Sampler.h"
 #include "RayTracing/Accel.h"
@@ -73,10 +75,6 @@ RenderContext::RenderContext(Device& device, VkSurfaceKHR surface, Window& windo
 
     std::vector<VkCommandBuffer> vkGraphicCommandBuffers(getSwapChainImageCount());
     VK_CHECK_RESULT(vkAllocateCommandBuffers(device.getHandle(), &allocateInfo, vkGraphicCommandBuffers.data()))
-
-    allocateInfo.commandPool = device.getCommandPool(VK_QUEUE_COMPUTE_BIT).getHandle();
-    std::vector<VkCommandBuffer> vkComputeCommandBuffers(getSwapChainImageCount());
-    VK_CHECK_RESULT(vkAllocateCommandBuffers(device.getHandle(), &allocateInfo, vkComputeCommandBuffers.data()))
 
     for (uint32_t i = 0; i < getSwapChainImageCount(); i++) {
         frameResources.emplace_back(std::make_unique<FrameResource>(device));

@@ -129,7 +129,7 @@ void PathIntegrator::initLightAreaDistribution(RenderGraph& graph_) {
             });
     }
 
-    auto commandBuffer = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true, VK_QUEUE_COMPUTE_BIT);
+    auto commandBuffer = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
     graph.execute(commandBuffer);
     g_context->submit(commandBuffer);
 
@@ -202,6 +202,6 @@ PathIntegrator::PathIntegrator(Device& device_) : Integrator(device_) {
     std::vector<Shader> shaders = {Shader(device, FileUtils::getShaderPath("Raytracing/compute_triangle_area.comp"))};
     tem_layout                  = std::make_unique<PipelineLayout>(device, shaders);
 
-    pcPath.enable_sample_bsdf  = 1;
-    pcPath.enable_sample_light = 0;
+    pcPath.enable_sample_bsdf  = 0;
+    pcPath.enable_sample_light = 1;
 }

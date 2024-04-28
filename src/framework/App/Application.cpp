@@ -11,6 +11,7 @@
 #include "Core/Texture.h"
 #include "Core/math.h"
 #include "Core/Shader/GlslCompiler.h"
+#include "IO/ImageIO.h"
 #include "RenderPasses/RenderPassBase.h"
 #include "Scene/Compoments/Camera.h"
 #include "Scene/SceneLoader/gltfloader.h"
@@ -94,6 +95,10 @@ void Application::updateGUI() {
     ImGui::NextColumn();
     ImGui::InputFloat("Camera Move Speed", &camera->mMoveSpeed);
     camera->onShowInEditor();
+
+    ImGui::Checkbox("save png", &imageSave.savePng);
+    ImGui::Checkbox("save exr", &imageSave.saveExr);
+
     onUpdateGUI();
 
     auto itemIter    = std::ranges::find(mCurrentTextures.begin(), mCurrentTextures.end(), mPresentTexture);
@@ -151,11 +156,56 @@ void Application::update() {
     mCurrentTextures = graph.getResourceNames(RENDER_GRAPH_RESOURCE_TYPE::ETexture);
 
     graph.addImageCopyPass(graph.getBlackBoard().getHandle(mPresentTexture), graph.getBlackBoard().getHandle(SWAPCHAIN_IMAGE_NAME));
+
+    if (imageSave.saveExr | imageSave.savePng) {
+        graph.addComputePass(
+            "image to file ",
+            [&](RenderGraph::Builder& builder, ComputePassSettings& settings) {
+                auto image = graph.getBlackBoard().getHandle(SWAPCHAIN_IMAGE_NAME);
+                builder.readTexture(image, TextureUsage::TRANSFER_SRC);
+
+                //Not really write to image. Avoid pass cut
+                builder.writeTexture(image, TextureUsage::TRANSFER_SRC);
+            },
+            [&](RenderPassContext& context) {
+                auto& swapchainImage = graph.getBlackBoard().getHwImage(SWAPCHAIN_IMAGE_NAME);
+                auto  width          = swapchainImage.getExtent2D().width;
+                auto  height         = swapchainImage.getExtent2D().height;
+                if (imageSave.buffer == nullptr || imageSave.buffer->getSize() < width * height * 4) {
+                    imageSave.buffer = std::make_unique<Buffer>(*device, swapchainImage.getExtent2D().width * swapchainImage.getExtent2D().height * 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+                }
+                VkBufferImageCopy region = {.bufferOffset      = 0,
+                                            .bufferRowLength   = 0,
+                                            .bufferImageHeight = 0,
+                                            .imageSubresource  = {.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
+                                                                  .mipLevel       = 0,
+                                                                  .baseArrayLayer = 0,
+                                                                  .layerCount     = 1},
+                                            .imageOffset       = {0, 0, 0},
+                                            .imageExtent       = {width, height, 1}};
+                vkCmdCopyImageToBuffer(context.commandBuffer.getHandle(), swapchainImage.getVkImage().getHandle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, imageSave.buffer->getHandle(), 1, &region);
+            });
+    }
     gui->addGuiPass(graph);
 
     graph.execute(renderContext->getGraphicCommandBuffer());
 
     renderContext->submitAndPresent(renderContext->getGraphicCommandBuffer(), fence);
+
+    if (imageSave.savePng | imageSave.saveExr) {
+
+        auto width  = g_context->getSwapChainExtent().width;
+        auto height = g_context->getSwapChainExtent().height;
+
+        std::shared_ptr<std::vector<uint8_t>> data   = std::make_shared<std::vector<uint8_t>>(width * height * 4);
+        auto                                  mapped = imageSave.buffer->map();
+        memcpy(data->data(), mapped, data->size());
+        imageSave.buffer->unmap();
+        ImageIO::saveImage("output.png", data, width, height, 4, imageSave.savePng, imageSave.saveExr);
+
+        imageSave.saveExr = false;
+        imageSave.savePng = false;
+    }
 
     camera->update(deltaTime);
 

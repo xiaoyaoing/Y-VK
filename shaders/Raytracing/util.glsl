@@ -76,12 +76,12 @@ SurfaceScatterEvent make_surface_scatter_event(HitPayload hit_pay_load, const ve
 
 
     //Todo Handle two side bsdf 
-    //    if (dot(wo, hit_pay_load.n_s) < 0){
-    //        hit_pay_load.n_s = -hit_pay_load.n_s;
-    //    }
+    if (dot(wo, hit_pay_load.n_s) < 0){
+        hit_pay_load.n_s = -hit_pay_load.n_s;
+    }
 
     event.frame = make_frame(hit_pay_load.n_s);
-    event.wo = to_local(event.frame, wo);
+    event.wi = to_local(event.frame, wo);
     event.p = hit_pay_load.p;
     event.material_idx = hit_pay_load.material_idx;
     event.uv = hit_pay_load.uv;
@@ -122,20 +122,33 @@ float power_heuristic(float a, float b) {
     return (a * a) / (a * a + b * b);
 }
 
-float ggx_g(float cos_theta, float alpha) {
+float ggx_g1(float cos_theta, float alpha) {
     float alphaSq = alpha*alpha;
     float cosThetaSq = cos_theta*cos_theta;
     float tanThetaSq = max(1.0f - cosThetaSq, 0.0f)/cosThetaSq;
     return 2.0f/(1.0f + sqrt(1.0f + alphaSq*tanThetaSq));
 }
 
+float ggx_g(float alpha, vec3 wi, vec3 wo, vec3 wh) {
+    return ggx_g1(dot(wh, wo), alpha)*ggx_g1(dot(wh, wi), alpha);
+}
 
-float ggx_d(float cos_theta, float alpha) {
+
+float ggx_d(float alpha, vec3 wh, vec3 wi) {
+    float cos_theta = wh.z;
     float alphaSq = alpha*alpha;
     float cosThetaSq = cos_theta*cos_theta;
     float tanThetaSq = max(1.0f - cosThetaSq, 0.0f)/cosThetaSq;
     float cosThetaQu = cosThetaSq*cosThetaSq;
     return alphaSq*INV_PI/(cosThetaQu*sqr(alphaSq + tanThetaSq));
+}
+
+vec3 ggx_sample(float alpha, const vec2 rand) {
+    float phi = 2.0f*PI*rand.x;
+    float cosThetaSq = 1.0f/(1.0f + alpha*alpha*rand.y/(1.0f - rand.y));
+    float cosTheta = sqrt(cosThetaSq);
+    float sinTheta = sqrt(max(1.0f - cosThetaSq, 0.0f));
+    return vec3(sinTheta*cos(phi), sinTheta*sin(phi), cosTheta);
 }
 
 
@@ -184,7 +197,7 @@ float conductorReflectance(float eta, float k, float cosThetaI) {
     return 0.5f * (Rs + Rs * Rp);
 }
 
-vec3 conductorReflectance(const vec3 eta, const vec3 k, float cosThetaI) {
+vec3 conductorReflectanceVec3(const vec3 eta, const vec3 k, float cosThetaI) {
     return vec3(
     conductorReflectance(eta.x, k.x, cosThetaI),
     conductorReflectance(eta.y, k.y, cosThetaI),

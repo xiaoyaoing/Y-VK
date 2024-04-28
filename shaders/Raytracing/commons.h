@@ -81,9 +81,11 @@ struct RTPrimitive {
 #define RT_LIGHT_TYPE_AREA     0
 #define RT_LIGHT_TYPE_INFINITE 1
 
-#define RT_BSDF_LOBE_DIFFUSE  0
-#define RT_BSDF_LOBE_SPECULAR 1
-#define RT_BSDF_LOBE_GLOSSY   2
+#define RT_BSDF_LOBE_DIFFUSE    1u
+#define RT_BSDF_LOBE_SPECULAR   1u << 1
+#define RT_BSDF_LOBE_GLOSSY     1u << 2
+#define RT_BSDF_LOBE_REFLECTION 1u << 3
+#define RT_BSDF_LOBE_REFRACTION 1u << 4
 
 // struct PrimitiveMeshInfo
 // {

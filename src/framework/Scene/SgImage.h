@@ -105,8 +105,6 @@ public:
 
     void loadResources(const std::string& path);
 
-    void saveToFile(const std::string& path);
-
     bool isCubeMap() const;
 
 private:

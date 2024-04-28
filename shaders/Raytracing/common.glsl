@@ -1,7 +1,6 @@
 #ifndef COMMONS_DEVICE
 #define COMMONS_DEVICE
 
-
 #include "commons.h"
 #include "PT/pt_commons.glsl"
 #include "util.glsl"
@@ -333,6 +332,9 @@ LightSample sample_li(const RTLight light, const SurfaceScatterEvent event, cons
     //    return result;
 
     float cos_theta_light = dot(record.n, -wi);
+
+    // if (abs(p.y - 2.f)>0.1f)
+    //  debugPrintfEXT("record.n ,wi %f %f %f %f %f %f light_p p %f %f %f %f %f %f\n", record.n.x, record.n.y, record.n.z, wi.x, wi.y, wi.z, light_p.x, light_p.y, light_p.z, p.x, p.y, p.z);
     if (cos_theta_light <= 0.0){
         result.n = record.n;
         result.wi = wi;
@@ -341,7 +343,7 @@ LightSample sample_li(const RTLight light, const SurfaceScatterEvent event, cons
         return result;
     }
     //convert pdf
-    pdf = record.pdf * dist * dist / abs(cos_theta_light);
+    pdf = record.pdf * dist * dist  / abs(cos_theta_light);
 
     result.wi = wi;
     //   debugPrintfEXT("wi %f %f %f\n", wi.x, wi.y, wi.z);
