@@ -70,6 +70,10 @@ void createQuad(vec4 v0, vec4 v1, vec4 v2, vec4 v3, vec4 color)
     EndPrimitive();
 }
 
+bool GenerateVoxel(vec4 color){
+    return color.a >= EPSILON || color.r >= EPSILON || color.g >= EPSILON || color.b >= EPSILON;
+}
+
 void main()
 {
     ivec3 pos = ivec3(gl_in[0].gl_Position.xyz);
@@ -106,27 +110,9 @@ void main()
     else
     {
         vec4 color = texelFetch(u_3dTexture, samplePos, 0);
-        //      color = vec4(float(pos.x) / float(resolution), float(pos.y) / float(resolution), float(pos.z) / float(resolution), color.a);
-        //        if (u_clipmapLevel == 0)
-        //        color.xyz= vec3(1, 0, 0);
-        //        if (u_clipmapLevel == 1)
-        //        color.xyz= vec3(0, 1, 0);
-        //        if (u_clipmapLevel == 2)
-        //        color.xyz= vec3(0, 0, 1);
-        // color = vec4(1.0, 0, 0, 1);
         colors = vec4[6] (color, color, color, color, color, color);
     }
 
-    // vec4     color = vec4(float(pos.x) / float(resolution), float(pos.y) / float(resolution), float(pos.z) / float(resolution), 1);
-    // colors = vec4[6] (color, color, color, color, color, color);
-
-
-    //  posV = pos;
-
-    //    if (u_hasPrevClipmapLevel > 0 && (all(greaterThanEqual(toWorld(posV), u_prevRegionMinWorld)) && all(lessThan(toWorld(posV), u_prevRegionMaxWorld))))
-    //    {
-    //        debugPrintfEXT("pos %d %d %d\n", pos.x, pos.y, pos.z);
-    //    }
     vec4 v0 = u_viewProj * vec4(toWorld(posV), 1.0);
     vec4 v1 = u_viewProj * vec4(toWorld(posV + ivec3(1, 0, 0)), 1.0);
     vec4 v2 = u_viewProj * vec4(toWorld(posV + ivec3(0, 1, 0)), 1.0);
@@ -136,25 +122,9 @@ void main()
     vec4 v6 = u_viewProj * vec4(toWorld(posV + ivec3(0, 1, 1)), 1.0);
     vec4 v7 = u_viewProj * vec4(toWorld(posV + ivec3(1, 1, 1)), 1.0);
 
-    //v0.y += u_voxelSize * 0.5;
-    //v1.y += u_voxelSize * 0.5;
-    //v2.y += u_voxelSize * 0.5;
-    //v3.y += u_voxelSize * 0.5;
-    //v4.y += u_voxelSize * 0.5;
-    //v5.y += u_voxelSize * 0.5;
-    //v6.y += u_voxelSize * 0.5;
-    //v7.y += u_voxelSize * 0.5;
-
-    // To visualize borders of a clipmap level
-    //if (any(equal(pos, ivec3(0))) || any(equal(pos, ivec3(u_clipmapResolution - 1))))
-    //{
-    //    for (int i = 0; i < 6; ++i)
-    //        colors[i].rgb = vec3(0.0);
-    //}
-
 
     // X Axis left face of the cube
-    if (colors[0].a >= EPSILON)
+    if (GenerateVoxel(colors[0]))
     {
         //   Out.color = colors[0];
         createQuad(v0, v2, v6, v4, colors[0]);
@@ -162,35 +132,35 @@ void main()
 
 
     // X Axis right face of the cube
-    if (colors[1].a >= EPSILON)
+    if (GenerateVoxel(colors[1]))
     {
         //  Out.color = colors[1];
         createQuad(v1, v5, v7, v3, colors[1]);
     }
 
     // Y Axis bottom face of the cube
-    if (colors[2].a >= EPSILON)
+    if (GenerateVoxel(colors[2]))
     {
         //  Out.color = colors[2];
         createQuad(v0, v4, v5, v1, colors[2]);
     }
 
     // Y Axis top face of the cube
-    if (colors[3].a >= EPSILON)
+    if (GenerateVoxel(colors[3]))
     {
         //  Out.color = colors[3];
         createQuad(v2, v3, v7, v6, colors[3]);
     }
 
     // Z Axis front face of the cube
-    if (colors[4].a >= EPSILON)
+    if (GenerateVoxel(colors[4]))
     {
         // Out.color = colors[4];
         createQuad(v0, v1, v3, v2, colors[4]);
     }
 
     // Z Axis back face of the cube
-    if (colors[5].a >= EPSILON)
+    if (GenerateVoxel(colors[5]))
     {
         // Out.color = colors[5];
         createQuad(v4, v6, v7, v5, colors[5]);

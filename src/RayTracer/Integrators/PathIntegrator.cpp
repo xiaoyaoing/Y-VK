@@ -9,6 +9,8 @@
 
 #include <numeric>
 
+#define OFFSET(structure, member) ((int64_t) & ((structure*)0)->member)// 64位系统
+
 void PathIntegrator::render(RenderGraph& renderGraph) {
     if (!primAreaBuffersInitialized) {
         initLightAreaDistribution(renderGraph);
@@ -96,6 +98,17 @@ void PathIntegrator::render(RenderGraph& renderGraph) {
             pcPath.frame_num++; });
 }
 void PathIntegrator::initLightAreaDistribution(RenderGraph& graph_) {
+    uint32_t offset1 = OFFSET(RTPrimitive, area_distribution_buffer_addr);
+    uint32_t offset2 = OFFSET(RTPrimitive, area);
+    uint32_t offset3 = OFFSET(RTPrimitive, world_matrix);
+    uint32_t offset4 = OFFSET(RTPrimitive, index_offset);
+    uint32_t offset5 = OFFSET(RTPrimitive, index_count);
+    uint32_t offset6 = OFFSET(RTPrimitive, vertex_offset);
+    uint32_t offset7 = OFFSET(RTPrimitive, vertex_count);
+    uint32_t offset8 = OFFSET(RTPrimitive, material_index);
+
+    std::vector<uint32_t> offsets = {offset8, offset6, offset7, offset4, offset5, offset2, offset3, offset1};
+
     RenderGraph graph(device);
     // RenderGraph graph(device);
     struct PC {
@@ -116,6 +129,7 @@ void PathIntegrator::initLightAreaDistribution(RenderGraph& graph_) {
             primAreaBuffers[prim_idx] = std::make_unique<Buffer>(device, sizeof(float) * tri_count, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
         std::string bufferName = ("area_distribution" + std::to_string(prim_idx));
         graph.addComputePass(
+
             "",
             [&](RenderGraph::Builder& builder, ComputePassSettings& settings) {
                 auto areaBuffer = graph.importBuffer("area_distribution" + std::to_string(prim_idx), primAreaBuffers[prim_idx].get());

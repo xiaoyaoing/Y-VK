@@ -16,7 +16,7 @@ layout(binding = 0, set = 2, rgba32f) uniform image2D image;
 layout(binding = 6, set = 0) uniform sampler2D scene_textures[];
 
 
-layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer InstanceInfo{ RTPrimitive p[]; };
+layout(buffer_reference, std430, buffer_reference_align = 4) readonly buffer InstanceInfo{ RTPrimitive p[]; };
 layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer Vertices { vec3 v[]; };
 layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer Indices { uint i[]; };
 layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer Normals { vec3 n[]; };
@@ -153,6 +153,8 @@ MeshSampleRecord uniform_sample_on_mesh(uint mesh_idx, vec3 rands, in mat4 world
     RTPrimitive mesh_info = prim_infos.p[mesh_idx];
 
     uint triangle_idx = sample_distribution(rands.x, mesh_info.area_distribution_buffer_addr, result.pdf);
+
+    //    debugPrintfEXT("triangle_idx %d\n", triangle_idx);
 
     uint triangle_count = mesh_info.index_count / 3;
 

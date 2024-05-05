@@ -44,6 +44,7 @@ struct JsonLoader {
     std::unique_ptr<Buffer>                                  scenePrimitiveIdBuffer{nullptr};
 
     std::filesystem::path rootPath;
+    SceneLoadingConfig    config;
 };
 
 namespace glm {
@@ -57,6 +58,16 @@ namespace glm {
         v.z = j.at(2).get<float>();
     }
 }// namespace glm
+
+VkBufferUsageFlags GetBufferUsageFlags(const SceneLoadingConfig& config, VkBufferUsageFlags flags) {
+    VkBufferUsageFlags vkBufferUsageFlags = flags;
+    if (config.bufferAddressAble) vkBufferUsageFlags = vkBufferUsageFlags | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+    if (config.bufferForAccel) vkBufferUsageFlags = vkBufferUsageFlags | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+    if (config.bufferForTransferSrc) vkBufferUsageFlags = vkBufferUsageFlags | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    if (config.bufferForTransferDst) vkBufferUsageFlags = vkBufferUsageFlags | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    if (config.bufferForStorage) vkBufferUsageFlags = vkBufferUsageFlags | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    return vkBufferUsageFlags;
+}
 
 template<typename T>
 T GetOptional(const Json& j, const std::string& key, const T& defaultValue) {
@@ -78,7 +89,8 @@ inline bool ContainsAndGet(const Json& j, std::string field, T& value) {
 void JsonLoader::LoadSceneFromGLTFFile(Device& device, const std::string& path, const SceneLoadingConfig& config) {
     std::ifstream file(path);
     file >> sceneJson;
-    rootPath = std::filesystem::path(path).parent_path();
+    rootPath     = std::filesystem::path(path).parent_path();
+    this->config = config;
     PreprocessMaterials();
     loadCamera();
     loadPrimitives();
@@ -297,15 +309,18 @@ void JsonLoader::loadPrimitives() {
             continue;
         }
 
+        uint32_t lightIndex = -1;
         if (primitiveJson.contains("emission")) {
             vec3 color = primitiveJson["emission"];
             lights.push_back(SgLight{.type = LIGHT_TYPE::Area, .lightProperties = {.color = color, .prim_index = static_cast<uint32_t>(primitives.size())}});
+            lightIndex = lights.size() - 1;
         }
 
         if (primitiveJson.contains("power")) {
             vec3 color = primitiveJson["power"];
             //todo
             lights.push_back(SgLight{.type = LIGHT_TYPE::Area, .lightProperties = {.color = color, .prim_index = static_cast<uint32_t>(primitives.size())}});
+            lightIndex = lights.size() - 1;
         }
         // auto primitiveData = PrimitiveLoader::loadPrimitive(rootPath.string()+"/"+primitiveJson["file"].get<std::string>());
         //
@@ -352,6 +367,7 @@ void JsonLoader::loadPrimitives() {
         indexBuffers.emplace_back(std::move(primitiveData->indexs));
         vertexDatas.push_back(std::move(primitiveData->buffers));
 
+        primitive->lightIndex = lightIndex;
         //  transforms.push_back(transform);
         primitive->transform = transform;
         primitives.push_back(std::move(primitive));
@@ -384,9 +400,9 @@ void JsonLoader::loadPrimitives() {
     }
 
     for (auto& [name, buffer] : stagingVertexBuffers) {
-        sceneVertexBuffer[name] = Buffer::FromBuffer(device, commandBuffer, *buffer, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+        sceneVertexBuffer[name] = Buffer::FromBuffer(device, commandBuffer, *buffer, GetBufferUsageFlags(config, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT));
     }
-    sceneIndexBuffer = Buffer::FromBuffer(device, commandBuffer, *stagingIndexBuffer, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    sceneIndexBuffer = Buffer::FromBuffer(device, commandBuffer, *stagingIndexBuffer, GetBufferUsageFlags(config, VK_BUFFER_USAGE_INDEX_BUFFER_BIT));
 
     g_context->submit(commandBuffer, true);
 

@@ -14,6 +14,7 @@
 #include "Common/FIleUtils.h"
 #include "Core/Shader/GlslCompiler.h"
 #include "Core/Shader/Shader.h"
+#include "Scene/SceneLoader/SceneLoaderInterface.h"
 #include "Scene/SceneLoader/gltfloader.h"
 
 void Example::drawFrame(RenderGraph& rg) {
@@ -52,8 +53,10 @@ BBox Example::getBBox(uint32_t clipmapLevel) {
 void Example::prepare() {
     Application::prepare();
 
-    scene = GltfLoading::LoadSceneFromGLTFFile(
-        *device, FileUtils::getResourcePath("sponza/Sponza01.gltf"), {.sceneScale = glm::vec3(0.008f)});
+    // scene = GltfLoading::LoadSceneFromGLTFFile(
+    //     *device, FileUtils::getResourcePath("sponza/Sponza01.gltf"), {.sceneScale = glm::vec3(0.008f)});
+
+    scene = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"), {});
 
     GlslCompiler::forceRecompile = false;
 
@@ -94,9 +97,10 @@ void Example::prepare() {
 
     camera->setPerspective(45.0f, float(mWidth), float(mHeight), 0.1f, 4000.f);
     glm::vec3 cameraPositionOffset(0.46, 8.27, -1.54);
+    cameraPositionOffset = glm::vec3(0.29, 6, 11);
     camera->getTransform()->setPosition(cameraPositionOffset);
     // camera->getTransform()->setPosition(glm::vec3(-33, 70, 3));
-    camera->getTransform()->setRotation(glm::quat(0.67, -0.24, 0.69, 0.12));
+    camera->getTransform()->setRotation(glm::quat(0.95, -0.29, 0, -0.01));
 
     view = std::make_unique<View>(*device);
     view->setScene(scene.get());

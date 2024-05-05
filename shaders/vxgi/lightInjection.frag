@@ -75,26 +75,13 @@ void imageAtomicRGBA8Avg(ivec3 coords, vec4 value)
     {
         return;
     }
-    //atomicAdd(radiance_image, coords, value));
     value.rgb *= 255.0;
     uint newVal = convVec4ToRGBA8(value);
 
     uint prevStoredVal = 0;
     uint curStoredVal;
 
-    // debugPrintfEXT("coords and value %d %d %d %f %f %f %f \n", coords.x, coords.y, coords.z, value.x, value.y, value.z, value.w);
-
-    //    { uint curval = imageload(radiance_image, coords);
-    //        vec4 rval = convRGBA8ToVec4(curval);
-    //        rval.xyz = (rval.xyz * rval.w);// Denormalize
-    //        vec4 curValF = rval + value;// Add new value
-    //        curValF.xyz /= (curValF.w);// Renormalize
-    //        newVal = convVec4ToRGBA8(curValF);
-    //        imageStore(radiance_image, coords, newVal);
-    //        return; }
-
-
-    const int maxIterations = 100;
+    const int maxIterations = 255;
     int i = 0;
     vec4 curValF = vec4(0.0);
     while ((curStoredVal = imageAtomicCompSwap(radiance_image, coords, prevStoredVal, newVal)) != prevStoredVal && i < maxIterations)

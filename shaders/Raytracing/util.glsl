@@ -69,6 +69,23 @@ struct SurfaceScatterEvent{
     uint triangle_idx;
 };
 
+uint jenkinsHash(uint a)
+{
+    a = (a + 0x7ed55d16) + (a << 12);
+    a = (a ^ 0xc761c23cu) ^ (a >> 19);
+    a = (a + 0x165667b1) + (a << 5);
+    a = (a + 0xd3a2646c) ^ (a << 9);
+    a = (a + 0xfd7046c5) + (a << 3);
+    a = (a ^ 0xb55a4f09u) ^ (a >> 16);
+    return a;
+}
+
+vec3 pseudocolor(uint value)
+{
+    uint h = jenkinsHash(value);
+    return (uvec3(h, h >> 8, h >> 16) & 0xffu) / 255.f;
+}
+
 
 
 SurfaceScatterEvent make_surface_scatter_event(HitPayload hit_pay_load, const vec3 wo){

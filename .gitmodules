@@ -19,3 +19,7 @@
 [submodule "ext/vma"]
 	path = ext/vma
 	url = git@github.com:GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+
+[submodule "ext/tinyexr"]
+	path = ext/tinyexr
+	url = git@github.com:syoyo/tinyexr.git

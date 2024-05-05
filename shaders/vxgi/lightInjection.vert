@@ -29,7 +29,6 @@ void main(void)
     mat4  matrix = primitive_infos[primitive_id].model;
     vec4 pos =  matrix * vec4(position, 1.0f);
 
-    o_position_1 = position.xyz;
     o_position = pos.xyz;
 
     o_uv = texcoord_0;
@@ -40,10 +39,5 @@ void main(void)
 
     gl_Position = per_frame.view_proj * pos;
 
-    //    vec3 p = vec3(5.705555 ,9.622492, -2.028390);
-    //    vec3 pl = p-0.5f;
-    //    vec3 pu = p+0.5f;
-    //    if(all(greaterThan( o_position, pl)) && all(lessThan( o_position, pu)))
-    //    debugPrintfEXT(" o_position %f %f %f frame_index %d\n", o_position.x, o_position.y, o_position.z, frame_index);
-    //gl_Position.z = 1.f / gl_Position.z;
+
 }

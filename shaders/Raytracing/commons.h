@@ -12,6 +12,8 @@ using uvec4 = glm::uvec4;
 using ivec2 = glm::ivec2;
 using uint  = unsigned int;
 using uvec2 = glm::uvec2;
+#define ALIGN16 alignas(16)
+
 #else
 #define NAMESPACE_BEGIN(name)
 #define NAMESPACE_END()
@@ -61,14 +63,21 @@ struct RTLight {
 };
 
 struct RTPrimitive {
-    uint     material_index;
-    uint     vertex_offset;
-    uint     vertex_count;
-    uint     index_offset;
-    uint     index_count;
-    float    area;
+    uint material_index;//4
+    uint vertex_offset; //8
+    uint vertex_count;  //12
+    uint index_offset;
+
+    uint  index_count;
+    float area;//24
+    uint  light_index;
+    uint  padding2;
+
+    mat4     world_matrix;//104
     uint64_t area_distribution_buffer_addr;
-    mat4     world_matrix;
+    uint     padding3;
+    uint     padding4;
+    //  uint64_t padding_64;
 };
 
 #define RT_BSDF_TYPE_DIFFUSE   0

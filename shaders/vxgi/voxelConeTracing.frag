@@ -216,7 +216,7 @@ void main(){
         if (cos_theta < 0.0)
         continue;
 
-        indirect_contribution += traceCone(start_pos, DIFFUSE_CONE_DIRECTIONS_16[i], DIFFUSE_CONE_APERTURE_16,
+        indirect_contribution += traceCone(world_pos, DIFFUSE_CONE_DIRECTIONS_16[i], DIFFUSE_CONE_APERTURE_16,
         MAX_TRACE_DISTANCE, min_level, 1).rgb * cos_theta;// / 3.141592;
 
         // out_color = vec4(world_pos,1);
@@ -408,7 +408,7 @@ vec4 traceCone(vec3 start_pos, vec3 direction, float aperture, float maxDistance
         //  if (radiance.x!=0 || radiance.y!=0 || radiance.z!=0)
         //  debugPrintfEXT("My float is %f %f %f", radiance.x, radiance.y, radiance.z);
 
-        return clipmapSample;
+        //  return clipmapSample;
 
         float opacity = clipmapSample.a;
 

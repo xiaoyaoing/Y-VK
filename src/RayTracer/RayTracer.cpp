@@ -88,7 +88,7 @@ void RayTracer::drawFrame(RenderGraph& renderGraph) {
 void RayTracer::prepare() {
     Application::prepare();
     GlslCompiler::setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_5);
-    //GlslCompiler::forceRecompile = true;
+    GlslCompiler::forceRecompile = true;
 
     integrator = std::make_unique<PathIntegrator>(*device);
 
@@ -101,20 +101,22 @@ void RayTracer::prepare() {
                                       .sceneScale = glm::vec3(0.1f)};
     camera                         = std::make_shared<Camera>();
     //scene                          = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"), sceneConfig);
-    // scene = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"), sceneConfig);
+    scene = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"), sceneConfig);
     //auto buffer = Buffer(*device, 8192, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
     // scene       = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/cornell-box/scene.json", sceneConfig);
     // scene       = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/cornell-box/scene.json", sceneConfig);
     //  scene       = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/cornell-box/scene.json", sceneConfig);
-    scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/cornell-box-json/scene.json", sceneConfig);
+    // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/cornell-box-json/scene.json", sceneConfig);
     scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/veach-mis/scene.json", sceneConfig);
 
     camera        = scene->getCameras()[0];
     camera->flipY = true;
     camera->getTransform()->setPosition(glm::vec3(0, 1, 4));
-    camera->getTransform()->setRotation(glm::quat(1, 0, 0, 0));
+    camera->getTransform()->setPosition(glm::vec3(15, 1, 0.27));
+    camera->getTransform()->setRotation(glm::quat(0.7, 0, 0.7, 0));
     camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 0.1f, 4000.f);
 
+    //  camera->
     initView();
     integrator->init(*scene);
 }

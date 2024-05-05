@@ -39,6 +39,7 @@ void Example::drawFrame(RenderGraph& rg) {
         [&](RenderPassContext& context) {
             renderContext->getPipelineState().setDepthStencilState({.depthTestEnable = false}).setRasterizationState({.cullMode = VK_CULL_MODE_NONE}).setPipelineLayout(device->getResourceCache().requestPipelineLayout(std::vector<std::string>{"skybox.vert", "skybox.frag"}));
             view->bindViewBuffer();
+
             renderContext->bindPrimitiveGeom(context.commandBuffer, *cube).bindImageSampler(0, environmentCube->getImage().getVkImageView(), environmentCube->getSampler()).bindPushConstants(SkyBoxPushConstant{.exposure = exposure, .gamma = gamma});
             renderContext->flushAndDrawIndexed(context.commandBuffer, cube->indexCount, 1, 0, 0, 0);
         });
@@ -89,9 +90,9 @@ void Example::prepare() {
 
     cube             = SceneLoaderInterface::loadSpecifyTypePrimitive(*device, "cube");
     std::string path = "E:/code/Vulkan-glTF-PBR/data/environments/papermill.ktx";
-    path             = "E:/code/Vulkan-Samples/assets/textures/uffizi_rgba16f_cube_inverse.ktx";
-    environmentCube  = Texture::loadTextureFromFile(g_context->getDevice(), path);
-    ibl              = std::make_unique<IBL>(*device, environmentCube.get());
+    //  path             = "E:/code/Vulkan-Samples/assets/textures/uffizi_rgba16f_cube_inverse.ktx";
+    environmentCube = Texture::loadTextureFromFile(g_context->getDevice(), path);
+    ibl             = std::make_unique<IBL>(*device, environmentCube.get());
 }
 
 Example::Example() : Application("Pbr Lab", 1920, 1024) {
