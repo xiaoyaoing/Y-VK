@@ -140,9 +140,12 @@ protected:
 
     void handleMouseMove(float x, float y);
 
+
 private:
-    std::string              mPresentTexture = SWAPCHAIN_IMAGE_NAME;
-    std::vector<std::string> mCurrentTextures{SWAPCHAIN_IMAGE_NAME};
+    std::string              mPresentTexture = RENDER_VIEW_PORT_IMAGE_NAME;
+    std::vector<std::string> mCurrentTextures{RENDER_VIEW_PORT_IMAGE_NAME};
+    const char * mAppName;
+
     //Camera related  variable end
 
     VkFence fence{VK_NULL_HANDLE};

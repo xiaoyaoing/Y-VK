@@ -11,7 +11,7 @@ class SgImage;
 
 class RenderGraph;
 
-#define SWAPCHAIN_IMAGE_NAME "_swapchain_image"
+#define RENDER_VIEW_PORT_IMAGE_NAME "_RENDER_VIEW_PORT_IMAGE_NAME_"
 
 class Blackboard {
     using Container = std::unordered_map<

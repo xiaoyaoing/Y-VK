@@ -29,7 +29,7 @@ void Example::drawFrame(RenderGraph& rg) {
     rg.addGraphicPass(
         "",
         [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
-            auto swapchainImage = rg.getBlackBoard().getHandle(SWAPCHAIN_IMAGE_NAME);
+            auto swapchainImage = rg.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
             builder.writeTexture(swapchainImage);
             RenderGraphPassDescriptor descriptor;
             descriptor.textures = {swapchainImage};

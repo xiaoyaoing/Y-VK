@@ -208,6 +208,12 @@ void Gui::prepareResoucrces(Application* app) {
     colorBlendAttachmentState.alphaBlendOp        = VK_BLEND_OP_ADD;
 
     colorBlendState.attachments = {colorBlendAttachmentState};
+
+    ImGui::GetIO().Fonts->SetTexID(&fontTexture->getImage().getVkImageView());
+
+    std::string iniPath = FileUtils::getResourcePath() + "imgui.ini";
+    ImGui::GetIO().IniFilename = iniPath.c_str();
+    ImGui::LoadIniSettingsFromDisk(iniPath.c_str());
 }
 
 bool Gui::update() {
@@ -250,10 +256,11 @@ void Gui::addGuiPass(RenderGraph& graph) {
     graph.addGraphicPass(
         "Gui Pass",
         [&graph](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
-            auto output = graph.getBlackBoard()[SWAPCHAIN_IMAGE_NAME];
-            builder.readTexture(output);
-            builder.writeTexture(output);
-            builder.declare(RenderGraphPassDescriptor({output}, RenderGraphSubpassInfo{.outputAttachments = {output}}));
+            auto renderOutput = graph.getBlackBoard()[RENDER_VIEW_PORT_IMAGE_NAME];
+            auto swapChain = graph.importTexture("swap_chain",&g_context->getSwapChainImage(),true);
+            builder.readTexture(renderOutput,RenderGraphTexture::Usage::SAMPLEABLE);
+            builder.writeTexture(swapChain);
+            builder.declare(RenderGraphPassDescriptor({swapChain,swapChain}, RenderGraphSubpassInfo{.outputAttachments = {swapChain}}));
         },
         [&renderContext, this](const RenderPassContext& context) {
             ImDrawData* imDrawData   = ImGui::GetDrawData();
@@ -272,7 +279,8 @@ void Gui::addGuiPass(RenderGraph& graph) {
 
             renderContext.bindPushConstants(pushConstBlock);
 
-            renderContext.bindImageSampler(0, fontTexture->getImage().getVkImageView(), fontTexture->getSampler());
+            // auto & renderOutput = context.renderGraph.getBlackBoard().getImageView(RENDER_VIEW_PORT_IMAGE_NAME);
+            
 
             std::vector<const Buffer*> vertexBuffers = {mvertexBuffer.buffer};
 
@@ -282,7 +290,13 @@ void Gui::addGuiPass(RenderGraph& graph) {
             for (int32_t i = 0; i < imDrawData->CmdListsCount; i++) {
                 const ImDrawList* cmd_list = imDrawData->CmdLists[i];
                 for (int32_t j = 0; j < cmd_list->CmdBuffer.Size; j++) {
+
                     const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[j];
+
+                    auto texture = static_cast<ImageView *>(pcmd->GetTexID());
+                    renderContext.bindImageSampler(0, *texture, fontTexture->getSampler());
+
+
                     VkRect2D         scissorRect;
                     scissorRect.offset.x      = std::max((int32_t)(pcmd->ClipRect.x), 0);
                     scissorRect.offset.y      = std::max((int32_t)(pcmd->ClipRect.y), 0);

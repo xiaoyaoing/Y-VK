@@ -88,7 +88,7 @@ void VisualizeVoxelPass::visualize3DClipmapGS(RenderGraph& rg, RenderGraphHandle
     rg.addGraphicPass(
         "VisualizeVoxelPass", [&](auto& builder, auto& settings) {
         RenderGraphPassDescriptor desc{};
-            auto output = rg.getBlackBoard().getHandle(SWAPCHAIN_IMAGE_NAME);
+            auto output = rg.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
             auto depth  = rg.getBlackBoard().getHandle("depth");
         desc.textures = {texture, output,depth};
         desc.addSubpass({.inputAttachments =  {},.outputAttachments = {output,depth}});

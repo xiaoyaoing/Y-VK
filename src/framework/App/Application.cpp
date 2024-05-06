@@ -71,6 +71,8 @@ void Application::updateScene() {
 void Application::updateGUI() {
     if (!gui)
         return;
+
+
     ImGuiIO& io = ImGui::GetIO();
 
     io.DisplaySize = ImVec2(static_cast<float>(mWidth), static_cast<float>(mHeight));
@@ -78,38 +80,105 @@ void Application::updateGUI() {
 
     gui->newFrame();
 
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
-    ImGui::SetNextWindowPos(ImVec2(50 * gui->scale, 50 * gui->scale));
-    // ImGui::SetNextWindowSize(ImVec2(0, 0), ImGuiSetCond_FirstUseEver);
-    ImGui::Begin("Y-Vulkan", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
-    ImGui::PushItemWidth(200.0f * gui->scale);
+    // static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+    //
+				// // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
+				// // because it would be confusing to have two docking targets within each others.
+				// ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
+    //
+				// const ImGuiViewport* viewport = ImGui::GetMainViewport();
+				// ImGui::SetNextWindowPos(viewport->WorkPos);
+				// ImGui::SetNextWindowSize(viewport->WorkSize);
+				// ImGui::SetNextWindowViewport(viewport->ID);
+				// ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+				// ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+				// window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+				// window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+    //
+				// // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
+				// // and handle the pass-thru hole, so we ask Begin() to not render a background.
+				// if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
+				// 	window_flags |= ImGuiWindowFlags_NoBackground;
+    //
+				// // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
+				// // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
+				// // all active windows docked into it will lose their parent and become undocked.
+				// // We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
+				// // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
+				// ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+				// ImGui::Begin("DockSpace Demo", nullptr, window_flags);
+				// ImGui::PopStyleVar();
+    //
+				// ImGui::PopStyleVar(2);
+    //
+				// // Submit the DockSpace
+				// if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
+				// {
+				// 	ImGuiID dockspace_id = ImGui::GetID("VulkanAppDockspace");
+				// 	ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+				// }
+
+    // auto extent = renderContext->getSwapChainExtent();  
+    // ImGui::SetNextWindowSize(ImVec2(extent.width,extent.height), ImGuiCond_FirstUseEver);
+    // ImGui::Begin("Y-Vulkan", nullptr, ImGuiWindowFlags_MenuBar);
+
+    // ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{10.f,10.f});
+    // ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,      ImVec2{1.0f, 1.0f});
+    // ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2{3.0f, 3.0f});
+    //
+    // ImGui::SetNextWindowPos(ImVec2(0,0));
+    ImGui::Begin("Basic",nullptr,ImGuiWindowFlags_NoMove);
+    // ImGui::SetWindowSize(ImVec2(300,0));
+    //ImGui::PushItemWidth(200.0f * gui->scale);
     ImGui::Text("%.2f ms/frame ", 1000.f * deltaTime);
     ImGui::NextColumn();
     ImGui::Text(" %d fps", toUint32(1.f / deltaTime));
-
-
-    //ImGui::BeginGroup();
-    camera->onShowInEditor();
-    
-
     ImGui::Checkbox("save png", &imageSave.savePng);
     ImGui::Checkbox("save exr", &imageSave.saveExr);
 
-    onUpdateGUI();
-
     auto itemIter    = std::ranges::find(mCurrentTextures.begin(), mCurrentTextures.end(), mPresentTexture);
     int  itemCurrent = itemIter - mCurrentTextures.begin();
-
     std::vector<const char*> currentTexturesCStr;
     std::ranges::transform(mCurrentTextures.begin(), mCurrentTextures.end(), std::back_inserter(currentTexturesCStr), [](const std::string& str) { return str.c_str(); });
     ImGui::Combo("RenderGraphTextures", &itemCurrent, currentTexturesCStr.data(), currentTexturesCStr.size());
     mPresentTexture = mCurrentTextures[itemCurrent];
-
     ImGui::End();
-    ImGui::PopStyleVar();
+    ImGui::Separator();
 
-    bool showDeomWindow = true;
-    // ImGui::ShowDemoWindow(&showDeomWindow);
+
+    ImGui::Begin("camera",nullptr,ImGuiWindowFlags_NoMove);
+    camera->onShowInEditor();
+    ImGui::End();
+    ImGui::Separator();
+
+    
+    ImGui::Begin("app sepcify",nullptr,ImGuiWindowFlags_NoMove);
+    onUpdateGUI();
+    ImGui::End();
+    ImGui::Separator();
+
+    
+    auto & texture = g_context->getCurHwtexture();
+    
+  //  ImGui::PopStyleVar();
+  //  ImGui::End();
+    ImGui::SameLine();
+
+    ImGui::Begin("Render view port",nullptr,ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoMouseInputs); // Leave room for 1 line below us
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,      ImVec2{0.f,0.f});
+
+    ImVec2 size;
+    auto p = ImGui::GetWindowPos();
+    size.x = ImGui::GetWindowWidth();
+    size.y = ImGui::GetWindowHeight();
+    
+    ImGui::Image(&texture.getVkImageView(),size, ImVec2(0, 0), ImVec2(1, 1));
+    ImGui::PopStyleVar();
+    ImGui::End();
+
+    // ImGui::End();
+
+  //  ImGui::End();
 
     ImGui::Render();
     ImGui::EndFrame();
@@ -139,13 +208,13 @@ void Application::update() {
     vkResetFences(device->getHandle(), 1, &fence);
 
     RenderGraph graph(*device);
-    auto        handle = graph.importTexture(SWAPCHAIN_IMAGE_NAME, &renderContext->getCurHwtexture());
-    graph.getBlackBoard().put(SWAPCHAIN_IMAGE_NAME, handle);
+    auto        handle = graph.importTexture(RENDER_VIEW_PORT_IMAGE_NAME, &renderContext->getCurHwtexture());
+    graph.getBlackBoard().put(RENDER_VIEW_PORT_IMAGE_NAME, handle);
 
     drawFrame(graph);
 
     mCurrentTextures = graph.getResourceNames(RENDER_GRAPH_RESOURCE_TYPE::ETexture);
-    graph.addImageCopyPass(graph.getBlackBoard().getHandle(mPresentTexture), graph.getBlackBoard().getHandle(SWAPCHAIN_IMAGE_NAME));
+    graph.addImageCopyPass(graph.getBlackBoard().getHandle(mPresentTexture), graph.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME));
 
     handleSaveImage();
     
@@ -171,8 +240,8 @@ void Application::createRenderContext() {
 void Application::resetImageSave() {
     if (imageSave.savePng | imageSave.saveExr) {
 
-        auto width  = g_context->getSwapChainExtent().width;
-        auto height = g_context->getSwapChainExtent().height;
+        auto width  = g_context->getViewPortExtent().width;
+        auto height = g_context->getViewPortExtent().height;
 
         std::shared_ptr<std::vector<uint8_t>> data   = std::make_shared<std::vector<uint8_t>>(width * height * 4);
         auto                                  mapped = imageSave.buffer->map();
@@ -216,7 +285,7 @@ void Application::prepare() {
     initGUI();
 }
 
-Application::Application(const char* name, uint32_t width, uint32_t height) : mWidth(width), mHeight(height) {
+Application::Application(const char* name, uint32_t width, uint32_t height) : mWidth(width), mHeight(height),mAppName(name) {
     initWindow(name, width, height);
 }
 

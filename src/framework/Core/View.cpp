@@ -59,7 +59,7 @@ View& View::bindViewBuffer() {
 
     //  assert(glm::vec4(position,1) * perViewUnifom.view_proj * perViewUnifom.inv_view_proj == glm::vec4(position,1));
 
-    perViewUnifom.resolution     = glm::ivec2(g_context->getSwapChainExtent().width, g_context->getSwapChainExtent().height);
+    perViewUnifom.resolution     = glm::ivec2(g_context->getViewPortExtent().width, g_context->getViewPortExtent().height);
     perViewUnifom.inv_resolution = glm::vec2(1.0f / perViewUnifom.resolution.x, 1.0f / perViewUnifom.resolution.y);
     perViewUnifom.light_count    = mScene->getLights().size();
     perViewUnifom.camera_pos     = mCamera->getPosition();

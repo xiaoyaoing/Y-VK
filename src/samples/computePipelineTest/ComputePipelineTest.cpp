@@ -116,8 +116,8 @@ void Example::drawFrame(RenderGraph& rg) {
     rg.addGraphicPass(
         "Graphics Pass",
         [&](auto& builder, auto& settings) {
-            auto handle = rg.getBlackBoard().getHandle(SWAPCHAIN_IMAGE_NAME);
-            auto depth  = rg.createTexture("depth", {.extent = renderContext->getSwapChainExtent(), .useage = TextureUsage::SUBPASS_INPUT | TextureUsage::DEPTH_ATTACHMENT
+            auto handle = rg.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
+            auto depth  = rg.createTexture("depth", {.extent = renderContext->getViewPortExtent(), .useage = TextureUsage::SUBPASS_INPUT | TextureUsage::DEPTH_ATTACHMENT
 
                                                    });
             builder.writeTexture(handle);

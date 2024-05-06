@@ -19,7 +19,7 @@ void LightingPass::render(RenderGraph& rg) {
             auto  normal     = blackBoard["normal"];
             auto  diffuse    = blackBoard["diffuse"];
             auto  emission   = blackBoard["emission"];
-            auto  output     = blackBoard.getHandle(SWAPCHAIN_IMAGE_NAME);
+            auto  output     = blackBoard.getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
 
             builder.readTextures({depth, normal, diffuse, emission, output});
             builder.writeTexture(output);
@@ -66,7 +66,7 @@ void IBLLightingPass::render(RenderGraph& rg) {
             auto  normal         = blackBoard["normal"];
             auto  diffuse        = blackBoard["diffuse"];
             auto  emission       = blackBoard["emission"];
-            auto  output         = blackBoard.getHandle(SWAPCHAIN_IMAGE_NAME);
+            auto  output         = blackBoard.getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
             auto  irradianceCube = blackBoard.getHandle("irradianceCube");
             auto  prefilterCube  = blackBoard.getHandle("prefilterCube");
             auto  brdfLUT        = blackBoard.getHandle("brdfLUT");
@@ -135,23 +135,23 @@ void GBufferPass::render(RenderGraph& rg) {
     rg.addGraphicPass(
         "GBufferPass", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
             auto diffuse = rg.createTexture("diffuse",
-                                            {.extent = renderContext->getSwapChainExtent(),
+                                            {.extent = renderContext->getViewPortExtent(),
                                              .useage = TextureUsage::SUBPASS_INPUT |
                                                        TextureUsage::COLOR_ATTACHMENT});
             
             auto normal = rg.createTexture("normal",
-                                           {.extent = renderContext->getSwapChainExtent(),
+                                           {.extent = renderContext->getViewPortExtent(),
                                             .useage = TextureUsage::SUBPASS_INPUT |
                                                       TextureUsage::COLOR_ATTACHMENT
 
                                            });
 
             auto emission = rg.createTexture("emission",
-                                             {.extent = renderContext->getSwapChainExtent(),
+                                             {.extent = renderContext->getViewPortExtent(),
                                               .useage = TextureUsage::SUBPASS_INPUT |
                                                         TextureUsage::COLOR_ATTACHMENT});
 
-            auto depth = rg.createTexture("depth", {.extent = renderContext->getSwapChainExtent(), .useage = TextureUsage::SUBPASS_INPUT | TextureUsage::DEPTH_ATTACHMENT
+            auto depth = rg.createTexture("depth", {.extent = renderContext->getViewPortExtent(), .useage = TextureUsage::SUBPASS_INPUT | TextureUsage::DEPTH_ATTACHMENT
 
                                                    });
             

@@ -82,6 +82,7 @@ RenderContext::RenderContext(Device& device, VkSurfaceKHR surface, Window& windo
     }
 
     maxPushConstantSize = device.getProperties().limits.maxPushConstantsSize;
+    virtualViewport = std::make_unique<VirtualViewport>(device, VkExtent2D{1920,1080}, getSwapChainImageCount());
 }
 
 void RenderContext::beginFrame() {
@@ -99,8 +100,8 @@ void RenderContext::beginFrame() {
     auto& commandBuffer = getGraphicCommandBuffer();
     commandBuffer.beginRecord(0);
 
-    commandBuffer.setViewport(0, {vkCommon::initializers::viewport(float(getSwapChainExtent().width), float(getSwapChainExtent().height), 0.0f, 1.0f, flipViewport)});
-    commandBuffer.setScissor(0, {vkCommon::initializers::rect2D(float(getSwapChainExtent().width), float(getSwapChainExtent().height), 0, 0)});
+    commandBuffer.setViewport(0, {vkCommon::initializers::viewport(float(getViewPortExtent().width), float(getViewPortExtent().height), 0.0f, 1.0f, flipViewport)});
+    commandBuffer.setScissor(0, {vkCommon::initializers::rect2D(float(getViewPortExtent().width), float(getViewPortExtent().height), 0, 0)});
 
     // return commandBuffer;
 }
@@ -122,10 +123,9 @@ uint32_t RenderContext::getActiveFrameIndex() const {
 }
 
 void RenderContext::submitAndPresent(CommandBuffer& commandBuffer, VkFence fence) {
-    getCurHwtexture().getVkImage().transitionLayout(commandBuffer, VulkanLayout::PRESENT, getCurHwtexture().getVkImageView().getSubResourceRange());
+    getSwapChainImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::PRESENT, getSwapChainImage().getVkImageView().getSubResourceRange());
     commandBuffer.endRecord();
 
-    //  getComputeCommandBuffer().endRecord();
 
     auto queue = device.getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0);
 
@@ -207,14 +207,13 @@ void RenderContext::submit(CommandBuffer& commandBuffer, bool waiteFence) {
     }
 }
 
-VkFormat RenderContext::getSwapChainFormat() const {
-    return swapchain->getImageFormat();
+VkExtent2D RenderContext::getViewPortExtent() const {
+    return virtualViewport->getExtent();
 }
 
 VkExtent2D RenderContext::getSwapChainExtent() const {
-    return swapchain->getExtent();
+    return surfaceExtent;
 }
-
 uint32_t RenderContext::getSwapChainImageCount() const {
     return swapchain->getImageCount();
 }
@@ -232,6 +231,9 @@ PipelineState& RenderContext::getPipelineState() {
 }
 
 SgImage& RenderContext::getCurHwtexture() {
+    return virtualViewport->getImage(activeFrameIndex);
+}
+SgImage& RenderContext::getSwapChainImage() {
     return hwTextures[activeFrameIndex];
 }
 
@@ -583,7 +585,7 @@ void RenderContext::flushAndDraw(CommandBuffer& commandBuffer, uint32_t vertexCo
 void RenderContext::traceRay(CommandBuffer& commandBuffer, VkExtent3D dims) {
     CHECK_RESULT((getPipelineState().getPipelineType() == PIPELINE_TYPE::E_RAY_TRACING));
     if (dims.width == 0 || dims.height == 0 || dims.depth == 0) {
-        dims = {getSwapChainExtent().width, getSwapChainExtent().height, 1};
+        dims = {getViewPortExtent().width, getViewPortExtent().height, 1};
     }
     flush(commandBuffer);
     auto& pipeline           = device.getResourceCache().requestPipeline(this->getPipelineState());

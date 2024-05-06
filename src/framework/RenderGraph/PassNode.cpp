@@ -64,7 +64,7 @@ void RenderPassNode::RenderPassData::devirtualize(RenderGraph& renderGraph, cons
         attachments.push_back(attachment);
         attachment_textures[color] = index++;
     }
-    renderTarget = std::make_unique<RenderTarget>(images, attachments, g_context->getSwapChainExtent());
+    renderTarget = std::make_unique<RenderTarget>(images, attachments, g_context->getViewPortExtent());
 }
 
 RenderTarget& RenderPassNode::RenderPassData::getRenderTarget() {
@@ -113,7 +113,7 @@ void RenderPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuf
     g_context->beginRenderPass(commandBuffer, renderTarget, subpassInfos);
 
     RenderPassContext context = {
-        .commandBuffer = commandBuffer};
+        .commandBuffer = commandBuffer,.renderGraph =  renderGraph};
 
     auto passName = getPassName("Render Pass", getName());
     DebugUtils::CmdBeginLabel(context.commandBuffer.getHandle(), passName, {1, 0, 0, 1});
@@ -202,7 +202,7 @@ void ComputePassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBu
     if(mPass->getData().pipelineLayout)
     g_context->getPipelineState().setPipelineLayout(*mPass->getData().pipelineLayout);
 
-    RenderPassContext context{.commandBuffer = commandBuffer};
+    RenderPassContext context{.commandBuffer = commandBuffer,.renderGraph =  renderGraph};
 
     auto passName = getPassName("Compute Pass", getName());
     DebugUtils::CmdBeginLabel(commandBuffer.getHandle(), passName, {1, 0, 0, 1});
@@ -216,7 +216,7 @@ void RayTracingPassNode::execute(RenderGraph& renderGraph, CommandBuffer& comman
     auto& settings = mPass->getData();
     g_context->getPipelineState().setPipelineType(PIPELINE_TYPE::E_RAY_TRACING).setPipelineLayout(*settings.pipelineLayout).setrTPipelineSettings(settings.rTPipelineSettings);
     g_context->bindAcceleration(0, *settings.accel, 0, 0);
-    RenderPassContext context{.commandBuffer = commandBuffer};
+    RenderPassContext context{.commandBuffer = commandBuffer,.renderGraph =  renderGraph};
 
     auto passName = getPassName("RayTracing Pass", getName());
     DebugUtils::CmdBeginLabel(context.commandBuffer.getHandle(), passName, {1, 0, 0, 1});

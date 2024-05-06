@@ -10,6 +10,7 @@
 #include "ResourceBindingState.h"
 #include "Scene/Scene.h"
 #include "Core/BufferPool.h"
+#include "Images/VirtualViewport.h"
 
 class Device;
 
@@ -113,7 +114,8 @@ public:
 
     VkPipelineBindPoint getPipelineBindPoint() const;
 
-    VkFormat getSwapChainFormat() const;
+
+    VkExtent2D getViewPortExtent() const;
 
     VkExtent2D getSwapChainExtent() const;
 
@@ -137,7 +139,8 @@ public:
     PipelineState& getPipelineState();
 
     SgImage& getCurHwtexture();
-
+    SgImage& getSwapChainImage();
+    
     void flushDescriptorState(CommandBuffer& commandBuffer, VkPipelineBindPoint pipeline_bind_point);
 
     void flushAndDrawIndexed(CommandBuffer& commandBuffer, uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0);
@@ -185,6 +188,7 @@ private:
 
     Device&                    device;
     std::unique_ptr<SwapChain> swapchain;
+    std::unique_ptr<VirtualViewport> virtualViewport;
 
     uint32_t swapChainCount{0};
 

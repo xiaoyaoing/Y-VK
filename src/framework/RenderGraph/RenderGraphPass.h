@@ -10,6 +10,7 @@ class CommandBuffer;
 class RenderPass;
 class Accel;
 class PipelineLayout;
+class RenderGraph;
 
 enum class RENDER_GRAPH_PASS_TYPE : uint8_t {
     UNDEFINED  = 0,
@@ -45,6 +46,7 @@ struct RaytracingPassSettings {
 
 struct RenderPassContext {
     CommandBuffer& commandBuffer;
+    RenderGraph&   renderGraph;
 };
 
 using GraphicsExecute   = std::function<void(RenderPassContext& context)>;

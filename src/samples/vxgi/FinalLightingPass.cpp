@@ -43,7 +43,7 @@ void FinalLightingPass::render(RenderGraph& rg) {
             auto depth    = blackBoard.getHandle("depth");
             auto emission = blackBoard.getHandle("emission");
 
-            auto output = blackBoard.getHandle(SWAPCHAIN_IMAGE_NAME);
+            auto output = blackBoard.getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
 
             builder.readTextures({radiance, diffuse, normal, depth, emission}).writeTexture(output);
 

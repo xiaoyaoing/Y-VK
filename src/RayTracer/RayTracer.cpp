@@ -80,9 +80,8 @@ void RayTracer::drawFrame(RenderGraph& renderGraph) {
 
     integrator->render(renderGraph);
 
-    renderGraph.addImageCopyPass(renderGraph.getBlackBoard().getHandle("RT"), renderGraph.getBlackBoard().getHandle(SWAPCHAIN_IMAGE_NAME));
+    renderGraph.addImageCopyPass(renderGraph.getBlackBoard().getHandle("RT"), renderGraph.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME));
 
-    gui->addGuiPass(renderGraph);
 }
 
 void RayTracer::prepare() {
@@ -103,7 +102,7 @@ void RayTracer::prepare() {
     //scene                          = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"), sceneConfig);
   scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/cornell-box/cornellBox.gltf", sceneConfig);
     // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/cornell-box-json/scene.json", sceneConfig);
-    // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/veach-mis/scene.json", sceneConfig);
+    scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/veach-mis/scene.json", sceneConfig);
 
     camera        = scene->getCameras()[0];
     camera->flipY = true;

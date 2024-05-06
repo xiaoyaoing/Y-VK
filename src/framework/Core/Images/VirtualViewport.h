@@ -5,7 +5,7 @@
 
 class VirtualViewport {
 public:
-    VirtualViewport(VkExtent2D extent, uint32_t imageCount);
+    VirtualViewport(Device & device,VkExtent2D extent, uint32_t imageCount);
     SgImage & getImage(uint32_t index);
     VkExtent2D getExtent();
 protected:

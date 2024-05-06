@@ -38,27 +38,27 @@ void Example::drawFrame(RenderGraph& rg) {
             "gbuffer", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
             auto albedo = rg.createTexture("albedo",
                                                      {
-                                                             .extent = renderContext->getSwapChainExtent(),
+                                                             .extent = renderContext->getViewPortExtent(),
                                                              .useage = TextureUsage::SUBPASS_INPUT |
                                                                        TextureUsage::COLOR_ATTACHMENT
                                                      });
 
             auto normal = rg.createTexture("normal",
                                                      {
-                                                             .extent = renderContext->getSwapChainExtent(),
+                                                             .extent = renderContext->getViewPortExtent(),
                                                              .useage = TextureUsage::SUBPASS_INPUT |
                                                                        TextureUsage::COLOR_ATTACHMENT
 
                                                      });
 
             auto depth = rg.createTexture("depth", {
-                           .extent = renderContext->getSwapChainExtent(),
+                           .extent = renderContext->getViewPortExtent(),
                            .useage = TextureUsage::SUBPASS_INPUT |
                                      TextureUsage::DEPTH_ATTACHMENT
 
                    });
                     
-             auto output = rg.getBlackBoard().getHandle(SWAPCHAIN_IMAGE_NAME);
+             auto output = rg.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
 
             RenderGraphPassDescriptor desc;
             desc.setTextures({output, depth, albedo,normal}).addSubpass({.outputAttachments = {albedo, normal, depth}}).addSubpass({
@@ -72,7 +72,7 @@ void Example::drawFrame(RenderGraph& rg) {
             blackBoard.put("albedo", albedo);
             blackBoard.put("normal", normal);
             blackBoard.put("depth", depth);
-            blackBoard.put(SWAPCHAIN_IMAGE_NAME, output); }, [&](RenderPassContext& context) {
+            blackBoard.put(RENDER_VIEW_PORT_IMAGE_NAME, output); }, [&](RenderPassContext& context) {
 
             view->bindViewBuffer().bindViewShading();
 
@@ -102,21 +102,21 @@ void Example::drawFrame(RenderGraph& rg) {
             "GBufferPass", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
                     auto albedo = rg.createTexture("albedo",
                                                       {
-                                                              .extent = renderContext->getSwapChainExtent(),
+                                                              .extent = renderContext->getViewPortExtent(),
                                                               .useage = TextureUsage::SUBPASS_INPUT | 
                                                                         TextureUsage::COLOR_ATTACHMENT
                                                       });
 
                     auto normal = rg.createTexture("normal",
                                                       {
-                                                              .extent = renderContext->getSwapChainExtent(),
+                                                              .extent = renderContext->getViewPortExtent(),
                                                               .useage = TextureUsage::SUBPASS_INPUT |
                                                                         TextureUsage::COLOR_ATTACHMENT
 
                                                       });
                     
                     auto depth = rg.createTexture("depth", {
-                            .extent = renderContext->getSwapChainExtent(),
+                            .extent = renderContext->getViewPortExtent(),
                             .useage = TextureUsage::SUBPASS_INPUT |
                                       TextureUsage::DEPTH_ATTACHMENT
 
@@ -149,7 +149,7 @@ void Example::drawFrame(RenderGraph& rg) {
                 auto depth  = blackBoard["depth"];
                 auto normal = blackBoard["normal"];
                 auto albedo = blackBoard["albedo"];
-                auto output = blackBoard.getHandle(SWAPCHAIN_IMAGE_NAME);
+                auto output = blackBoard.getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
 
                 builder.readTextures({depth, normal, albedo});
                 builder.writeTexture(output);
@@ -195,11 +195,8 @@ void Example::prepare() {
     pipelineLayouts.lighting = std::make_unique<PipelineLayout>(*device, shaders1);
 
     SceneLoadingConfig config;
-
-    //scene = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("staircase2/scene.json"), {.bufferRate = BufferRate::PER_SCENE});
-    //scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/cornell-box/scene.json", {.bufferRate = BufferRate::PER_SCENE});
-    //scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/classroom/scene.json", {.bufferRate = BufferRate::PER_SCENE});
-    scene = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("sponza/sponza01.gltf"), {.bufferRate = BufferRate::PER_SCENE});
+    
+    scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf", {.bufferRate = BufferRate::PER_SCENE});
 
     SceneLoadingConfig sceneConfig = {.requiredVertexAttribute = {POSITION_ATTRIBUTE_NAME, INDEX_ATTRIBUTE_NAME, NORMAL_ATTRIBUTE_NAME, TEXCOORD_ATTRIBUTE_NAME},
                                       .indexType               = VK_INDEX_TYPE_UINT32,
@@ -208,13 +205,7 @@ void Example::prepare() {
                                       .bufferForStorage        = true,
                                       //.bufferRate              = BufferRate::PER_PRIMITIVE,
                                       .sceneScale = glm::vec3(0.1f)};
-
-    // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/classroom/scene.json", sceneConfig);
-
-    //  GlslCompiler::forceRecompile = true;
-    // scene = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));
-    // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/tungsten-original/cmake-build-release/data/example-scenes/cornell-box/scene.json");
-
+    
     auto light_pos   = glm::vec3(0.0f, 128.0f, -225.0f);
     auto light_color = glm::vec3(1.0, 1.0, 1.0);
 
@@ -260,7 +251,7 @@ void Example::prepare() {
     //std::unique_ptr<Texture> t = Texture::loadTextureFromFile(*device, "E:/DM/scenes/classroom/textures/blackboard.jpg");
 }
 
-Example::Example() : Application("Drawing Triangle", 1024, 1024) {
+Example::Example() : Application("Defered Rendering Sponza", 1920, 1080) {
     addDeviceExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     GlslCompiler::forceRecompile = true;
 }

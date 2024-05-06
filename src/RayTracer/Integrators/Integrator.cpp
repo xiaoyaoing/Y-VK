@@ -35,8 +35,8 @@ void Integrator::initScene(Scene& scene) {
     camera        = scene.getCameras()[0];
     camera->flipY = false;
 
-    width  = renderContext->getSwapChainExtent().width;
-    height = renderContext->getSwapChainExtent().height;
+    width  = renderContext->getViewPortExtent().width;
+    height = renderContext->getViewPortExtent().height;
 }
 
 void Integrator::init(Scene& scene_) {
