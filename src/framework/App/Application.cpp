@@ -87,14 +87,10 @@ void Application::updateGUI() {
     ImGui::NextColumn();
     ImGui::Text(" %d fps", toUint32(1.f / deltaTime));
 
-    vec3 pos = camera->getPosition();
-    ImGui::Text("Camera Position: %.2f %.2f %.2f", pos.x, pos.y, pos.z);
-    glm::quat rotat = camera->getTransform()->getRotation();
-    ImGui::Text("Camera Rotation: %.2f %.2f %.2f %.2f", rotat.x, rotat.y, rotat.z, rotat.w);
-    ImGui::PopItemWidth();
-    ImGui::NextColumn();
-    ImGui::InputFloat("Camera Move Speed", &camera->mMoveSpeed);
+
+    //ImGui::BeginGroup();
     camera->onShowInEditor();
+    
 
     ImGui::Checkbox("save png", &imageSave.savePng);
     ImGui::Checkbox("save exr", &imageSave.saveExr);
@@ -126,11 +122,6 @@ void Application::updateGUI() {
 void Application::update() {
 
     deltaTime = timer.tick<Timer::Seconds>();
-
-    //  camera->pitch(0.1f);
-    //  camera->roll(0.2f);
-    // camera->rotateY(0.3f);
-
     if (!m_focused)
         return;
 
@@ -154,44 +145,30 @@ void Application::update() {
     drawFrame(graph);
 
     mCurrentTextures = graph.getResourceNames(RENDER_GRAPH_RESOURCE_TYPE::ETexture);
-
     graph.addImageCopyPass(graph.getBlackBoard().getHandle(mPresentTexture), graph.getBlackBoard().getHandle(SWAPCHAIN_IMAGE_NAME));
 
-    if (imageSave.saveExr | imageSave.savePng) {
-        graph.addComputePass(
-            "image to file ",
-            [&](RenderGraph::Builder& builder, ComputePassSettings& settings) {
-                auto image = graph.getBlackBoard().getHandle(SWAPCHAIN_IMAGE_NAME);
-                builder.readTexture(image, TextureUsage::TRANSFER_SRC);
-
-                //Not really write to image. Avoid pass cut
-                builder.writeTexture(image, TextureUsage::TRANSFER_SRC);
-            },
-            [&](RenderPassContext& context) {
-                auto& swapchainImage = graph.getBlackBoard().getHwImage(SWAPCHAIN_IMAGE_NAME);
-                auto  width          = swapchainImage.getExtent2D().width;
-                auto  height         = swapchainImage.getExtent2D().height;
-                if (imageSave.buffer == nullptr || imageSave.buffer->getSize() < width * height * 4) {
-                    imageSave.buffer = std::make_unique<Buffer>(*device, swapchainImage.getExtent2D().width * swapchainImage.getExtent2D().height * 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-                }
-                VkBufferImageCopy region = {.bufferOffset      = 0,
-                                            .bufferRowLength   = 0,
-                                            .bufferImageHeight = 0,
-                                            .imageSubresource  = {.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
-                                                                  .mipLevel       = 0,
-                                                                  .baseArrayLayer = 0,
-                                                                  .layerCount     = 1},
-                                            .imageOffset       = {0, 0, 0},
-                                            .imageExtent       = {width, height, 1}};
-                vkCmdCopyImageToBuffer(context.commandBuffer.getHandle(), swapchainImage.getVkImage().getHandle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, imageSave.buffer->getHandle(), 1, &region);
-            });
-    }
+    handleSaveImage();
+    
     gui->addGuiPass(graph);
 
     graph.execute(renderContext->getGraphicCommandBuffer());
 
     renderContext->submitAndPresent(renderContext->getGraphicCommandBuffer(), fence);
 
+    resetImageSave();
+
+    camera->update(deltaTime);
+
+    if (camera->moving()) {
+        viewUpdated = true;
+    }
+}
+
+void Application::createRenderContext() {
+    renderContext = std::make_unique<RenderContext>(*device, surface, *window);
+    g_context     = renderContext.get();
+}
+void Application::resetImageSave() {
     if (imageSave.savePng | imageSave.saveExr) {
 
         auto width  = g_context->getSwapChainExtent().width;
@@ -206,18 +183,11 @@ void Application::update() {
         imageSave.saveExr = false;
         imageSave.savePng = false;
     }
-
-    camera->update(deltaTime);
-
-    if (camera->moving()) {
-        viewUpdated = true;
-    }
 }
 
-void Application::createRenderContext() {
-    renderContext = std::make_unique<RenderContext>(*device, surface, *window);
-    g_context     = renderContext.get();
+void Application::handleSaveImage() {
 }
+
 
 void Application::setFocused(bool focused) {
     //m_focused = focused;

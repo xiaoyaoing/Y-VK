@@ -14,10 +14,6 @@ SgImage* RenderGraphTexture::getHwTexture() const {
     return mHwTexture;
 }
 
-void RenderGraphTexture::create(const std::string& name, const Descriptor& descriptor) {
-    mHwTexture = &ResourceCache::getResourceCache().requestSgImage(
-        name, {descriptor.extent.width, descriptor.extent.height, 1}, ImageUtil::getFormat(descriptor.useage), ImageUtil::getUsageFlags(descriptor.useage), VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_VIEW_TYPE_2D);
-}
 
 void RenderGraphTexture::devirtualize() {
     if (imported)
@@ -25,9 +21,12 @@ void RenderGraphTexture::devirtualize() {
     if (mHwTexture != nullptr) {
         LOGE("Texture already devirtualized")
     }
+    
+    VkFormat format = mDescriptor.format == VK_FORMAT_UNDEFINED ? ImageUtil::getFormat(mDescriptor.useage) : mDescriptor.format;
+
     //2024 1 20 all renderGraph texture created with transfer_src usage for debug
     mHwTexture = &ResourceCache::getResourceCache().requestSgImage(
-        mName, {mDescriptor.extent.width, mDescriptor.extent.height, 1}, ImageUtil::getFormat(mDescriptor.useage), ImageUtil::getUsageFlags(mDescriptor.useage | TextureUsage::TRANSFER_SRC), VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_VIEW_TYPE_2D);
+        mName, {mDescriptor.extent.width, mDescriptor.extent.height, 1}, format, ImageUtil::getUsageFlags(mDescriptor.useage | TextureUsage::TRANSFER_SRC), VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_VIEW_TYPE_2D);
 }
 
 void RenderGraphTexture::destroy() {

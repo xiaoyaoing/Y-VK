@@ -166,6 +166,14 @@ void Camera::update(float deltaTime) {
 }
 
 void Camera::onShowInEditor() {
+    glm::vec3 pos = getPosition();
+    ImGui::Text("Camera Position: %.2f %.2f %.2f", pos.x, pos.y, pos.z);
+    glm::quat rotat = getTransform()->getRotation();
+    ImGui::Text("Camera Rotation: %.2f %.2f %.2f %.2f", rotat.x, rotat.y, rotat.z, rotat.w);
+    ImGui::PopItemWidth();
+    ImGui::NextColumn();
+    ImGui::InputFloat("Camera Move Speed", &mMoveSpeed);
+    
     const char* mode[]{
         "Perspective",
         "Orthographic"};

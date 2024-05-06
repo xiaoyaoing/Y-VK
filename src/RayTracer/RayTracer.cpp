@@ -101,13 +101,9 @@ void RayTracer::prepare() {
                                       .sceneScale = glm::vec3(0.1f)};
     camera                         = std::make_shared<Camera>();
     //scene                          = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"), sceneConfig);
-    scene = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("cornell-box/cornellBox.gltf"), sceneConfig);
-    //auto buffer = Buffer(*device, 8192, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-    // scene       = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/cornell-box/scene.json", sceneConfig);
-    // scene       = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/cornell-box/scene.json", sceneConfig);
-    //  scene       = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/cornell-box/scene.json", sceneConfig);
+  scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/cornell-box/cornellBox.gltf", sceneConfig);
     // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/cornell-box-json/scene.json", sceneConfig);
-    scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/veach-mis/scene.json", sceneConfig);
+    // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/veach-mis/scene.json", sceneConfig);
 
     camera        = scene->getCameras()[0];
     camera->flipY = true;

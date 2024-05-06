@@ -28,6 +28,7 @@ public:
     struct Descriptor {
         VkExtent2D extent{};
         Usage      useage;
+        VkFormat  format = VK_FORMAT_UNDEFINED;
     };
 
     static constexpr Usage DEFAULT_R_USAGE       = Usage::READ_ONLY;
@@ -48,9 +49,7 @@ public:
     SgImage* getHwTexture() const;
 
     // const HwTexture& getHandle() const;
-
-    void create(const std::string& name,
-                const Descriptor&  descriptor);
+    
 
     void devirtualize() override;
 

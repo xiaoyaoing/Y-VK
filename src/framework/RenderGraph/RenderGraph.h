@@ -1,7 +1,6 @@
 #pragma once
 
 #include "PassNode.h"
-#include "VirtualResource.h"
 #include "Core/RenderTarget.h"
 #include "RenderGraphId.h"
 #include "RenderGraphPass.h"

@@ -20,7 +20,7 @@ void ImageIO::saveLdr(const std::string& path, void* data, int width, int height
     std::vector<uint8_t> image_data;
     image_data.resize(width * height * channels);
     memcpy(image_data.data(), data, image_data.size());
-    LOGI("Saving image to %s", path.c_str());
+    LOGI("Saving image to {}", path.c_str());
     stbi_write_png(path.c_str(), width, height, channels, image_data.data(), width * channels);
 }
 

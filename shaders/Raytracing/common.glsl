@@ -334,6 +334,11 @@ LightSample sample_li(const RTLight light, const SurfaceScatterEvent event, cons
     //    return result;
 
     float cos_theta_light = dot(record.n, -wi);
+    
+//    if (cos_theta_light <= 0.0){
+//        record.n = -record.n;
+//        cos_theta_light = dot(record.n, -wi);
+//    }
 
     // if (abs(p.y - 2.f)>0.1f)
     //  debugPrintfEXT("record.n ,wi %f %f %f %f %f %f light_p p %f %f %f %f %f %f\n", record.n.x, record.n.y, record.n.z, wi.x, wi.y, wi.z, light_p.x, light_p.y, light_p.z, p.x, p.y, p.z);

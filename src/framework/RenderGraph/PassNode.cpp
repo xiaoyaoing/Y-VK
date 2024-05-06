@@ -4,7 +4,6 @@
 #include <Common/ResourceCache.h>
 
 #include "Core/RenderContext.h"
-#include "VirtualResource.h"
 #include "RenderGraph/RenderGraph.h"
 #include "Core/Images/ImageUtil.h"
 
@@ -168,7 +167,31 @@ void ImageCopyPassNode::execute(RenderGraph& renderGraph, CommandBuffer& command
     copy_region.dstOffset      = {0, 0, 0};
     copy_region.extent         = {srcVkImage.getExtent().width, srcVkImage.getExtent().height, 1};
 
-    vkCmdCopyImage(commandBuffer.getHandle(), srcVkImage.getHandle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstVkImage.getHandle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
+
+    VkImageBlit2 blitImageRegion{};
+    blitImageRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blitImageRegion.sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2;
+
+    VkOffset3D dstOffset = {static_cast<int32_t>(dstVkImage.getExtent().width), static_cast<int32_t>(dstVkImage.getExtent().height), 1};
+    VkOffset3D srcOffset = {static_cast<int32_t>(srcVkImage.getExtent().width), static_cast<int32_t>(srcVkImage.getExtent().height), 1};
+    
+    blitImageRegion.srcOffsets[0] = {0, 0, 0};
+    blitImageRegion.srcOffsets[1] = srcOffset;
+    blitImageRegion.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blitImageRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    blitImageRegion.dstOffsets[0] = {0, 0, 0};
+    blitImageRegion.dstOffsets[1] = dstOffset;
+    
+    VkBlitImageInfo2 blitImageInfo{};
+    blitImageInfo.srcImage      = srcVkImage.getHandle();
+    blitImageInfo.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    blitImageInfo.dstImage     = dstVkImage.getHandle();
+    blitImageInfo.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    blitImageInfo.regionCount = 1;
+    blitImageInfo.pRegions = &blitImageRegion;
+
+    vkCmdBlitImage2(commandBuffer.getHandle(), &blitImageInfo);
+    // vkCmdBlitImage(commandBuffer.getHandle(), srcVkImage.getHandle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstVkImage.getHandle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
 }
 
 ImageCopyPassNode::ImageCopyPassNode(RenderGraphHandle src, RenderGraphHandle dst) : PassNode("Image Copy"), src(src), dst(dst) {

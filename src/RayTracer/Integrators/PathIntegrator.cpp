@@ -80,12 +80,12 @@ void PathIntegrator::render(RenderGraph& renderGraph) {
         settings.rTPipelineSettings.maxDepth = 5;
     
     
-        auto output = renderGraph.createTexture("RT output",{width,height,TextureUsage::STORAGE | TextureUsage::TRANSFER_SRC});
+        auto output = renderGraph.createTexture("RT output",{width,height,TextureUsage::STORAGE | TextureUsage::TRANSFER_SRC,VK_FORMAT_R32G32B32A32_SFLOAT});
         builder.writeTexture(output,TextureUsage::STORAGE);
         renderGraph.getBlackBoard().put("RT",output); }, [&](RenderPassContext& context) {
             // auto buffer = renderContext->allocateBuffer(sizeof(cameraUbo),VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
             // cameraUbo.projInverse = glm::inverse(camera->matrices.perspective);
-            // cameraUbo.viewInverse = glm::inverse(camera->matrices.view);
+            // cameraUbo.viewInverse = glm::inverse(camera->matrices.view);F
             // buffer.buffer->uploadData(&cameraUbo,sizeof(cameraUbo));
             // renderContext->bindBuffer(2,*buffer.buffer,0,sizeof(cameraUbo));
             bindRaytracingResources(commandBuffer);
@@ -98,16 +98,6 @@ void PathIntegrator::render(RenderGraph& renderGraph) {
             pcPath.frame_num++; });
 }
 void PathIntegrator::initLightAreaDistribution(RenderGraph& graph_) {
-    uint32_t offset1 = OFFSET(RTPrimitive, area_distribution_buffer_addr);
-    uint32_t offset2 = OFFSET(RTPrimitive, area);
-    uint32_t offset3 = OFFSET(RTPrimitive, world_matrix);
-    uint32_t offset4 = OFFSET(RTPrimitive, index_offset);
-    uint32_t offset5 = OFFSET(RTPrimitive, index_count);
-    uint32_t offset6 = OFFSET(RTPrimitive, vertex_offset);
-    uint32_t offset7 = OFFSET(RTPrimitive, vertex_count);
-    uint32_t offset8 = OFFSET(RTPrimitive, material_index);
-
-    std::vector<uint32_t> offsets = {offset8, offset6, offset7, offset4, offset5, offset2, offset3, offset1};
 
     RenderGraph graph(device);
     // RenderGraph graph(device);
@@ -136,7 +126,7 @@ void PathIntegrator::initLightAreaDistribution(RenderGraph& graph_) {
                 graph.setOutput(areaBuffer);
                 builder.writeBuffer(areaBuffer, BufferUsage::STORAGE);
             },
-            [&, prim_idx](RenderPassContext& context) {
+            [this, prim_idx,&graph,tri_count](RenderPassContext& context) {
                 g_context->getPipelineState().setPipelineLayout(*computePrimAreaLayout);
                 PC pc{primitives[prim_idx].index_offset, primitives[prim_idx].vertex_offset, primitives[prim_idx].index_count, 0, vertexBuffer->getDeviceAddress(), indexBuffer->getDeviceAddress(), primitives[prim_idx].world_matrix};
                 g_context->bindBuffer(0, graph.getBlackBoard().getBuffer("area_distribution" + std::to_string(prim_idx))).bindPushConstants(pc).flushAndDispatch(context.commandBuffer, ceil(float(tri_count) / 16), 1, 1);
@@ -153,6 +143,11 @@ void PathIntegrator::initLightAreaDistribution(RenderGraph& graph_) {
         primAreaDistributionBuffers[pair.first]              = (distribution1D.toGpuBuffer(device));
         primitives[pair.first].area_distribution_buffer_addr = primAreaDistributionBuffers[pair.first]->getDeviceAddress();
         primitives[pair.first].area                          = std::accumulate(data.begin(), data.end(), 0.0f);
+        for(auto & light : lights){
+            if(light.prim_idx == pair.first){
+                light.L /= primitives[pair.first].area;
+            }
+        }
     }
     primitiveMeshBuffer->uploadData(primitives.data());
     primAreaBuffersInitialized = true;

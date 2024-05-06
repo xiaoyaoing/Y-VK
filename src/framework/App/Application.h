@@ -91,6 +91,9 @@ protected:
 
     void updateGUI();
     void createRenderContext();
+
+    void handleSaveImage();
+    void resetImageSave();
     //void loadScene(const std::string & path);
 protected:
     VmaAllocator _allocator{};

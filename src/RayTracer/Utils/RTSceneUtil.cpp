@@ -106,9 +106,10 @@ void RTSceneEntryImpl::initScene(Scene& scene) {
         rtLight.L            = light.lightProperties.color;
         lights.push_back(rtLight);
 
-    primitiveMeshBuffer = std::make_unique<Buffer>(device, sizeof(RTPrimitive) * primitives.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, primitives.data());
-    materialsBuffer     = std::make_unique<Buffer>(device, sizeof(RTMaterial) * materials.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, materials.data());
-    rtLightBuffer       = std::make_unique<Buffer>(device, sizeof(RTLight) * lights.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, lights.data());
+        primitiveMeshBuffer = std::make_unique<Buffer>(device, sizeof(RTPrimitive) * primitives.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, primitives.data());
+        materialsBuffer     = std::make_unique<Buffer>(device, sizeof(RTMaterial) * materials.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, materials.data());
+        rtLightBuffer       = std::make_unique<Buffer>(device, sizeof(RTLight) * lights.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, lights.data());
+    }
 }
 void RTSceneEntryImpl::initBuffers(Scene& scene) {
     bool     useStagingBuffer   = true;
