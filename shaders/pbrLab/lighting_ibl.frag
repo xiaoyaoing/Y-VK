@@ -146,9 +146,6 @@ void main(){
     float perceptual_roughness = diffuse_roughness.a;
 
     vec3 view_dir = per_frame.camera_pos - world_pos;
-
-
-    //calcuate sppecular contribution
     vec3 color = vec3(0.0);
 
 
@@ -166,12 +163,6 @@ void main(){
 
         vec3 view_dir = normalize(per_frame.camera_pos - world_pos);
         vec3 R = -normalize(reflect(view_dir, normal));
-        //R.y = -R.y;
-        //   color = R;
-        //   out_color = vec4(color, 1);
-        //  return;
-        //  R = -R;
-
         PBRInfo pbr_info;
         // why use abs here?
         pbr_info.NdotV = clamp(abs(dot(normal, view_dir)), 0.001, 1.0);
@@ -180,21 +171,10 @@ void main(){
         pbr_info.F90 = vec3(1.0);
         pbr_info.alphaRoughness = perceptual_roughness * perceptual_roughness;
         pbr_info.perceptualRoughness = perceptual_roughness;
-        //  pbr_info.alphaRoughness = 0.01f;
         pbr_info.diffuseColor = diffuse_color * (1- metallic) * (1-0.04);
-
-
-
+        
         color += ibl_fragment_shader(pbr_info, normal, R);
-        //        color = pbr_info.F0;
-        //        color = diffuse_color;
-        //  out_color = vec4(view_dir,1);
-        //return ;
     }
-
-    //  if (debugMode == 7)
-    //    {
-    //        color = vec3(perceptual_roughness);
-    //    }
+    
     out_color = vec4(color, 1);
 }

@@ -52,8 +52,6 @@ void main(){
             sampleCount++;
         }
     }
-    //color = N;
     imageStore(irradiance_map, ivec3(storePos), vec4(color * PI / float(sampleCount), 1.0));
-    //   imageStore(irradiance_map, ivec3(storePos), vec4(N, 1.0));
-    //  imageStore(irradiance_map, vec4(N, 1.0));
+
 }
