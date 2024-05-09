@@ -141,29 +141,32 @@ void Example::prepare() {
     auto light_color = glm::vec3(1.0, 1.0, 1.0);
 
     // Magic numbers used to offset lights in the Sponza scene
-    for (int i = -4; i < 4; ++i) {
-        for (int j = 0; j < 2; ++j) {
-            glm::vec3 pos = light_pos;
-            pos.x += i * 400;
-            pos.z += j * (225 + 140);
-            pos.y = 8;
+    // for (int i = -4; i < 4; ++i) {
+    //     for (int j = 0; j < 2; ++j) {
+    //         glm::vec3 pos = light_pos;
+    //         pos.x += i * 400;
+    //         pos.z += j * (225 + 140);
+    //         pos.y = 8;
+    //
+    //         for (int k = 0; k < 3; ++k) {
+    //             pos.y = pos.y + (k * 100);
+    //
+    //             light_color.x = static_cast<float>(rand()) / (RAND_MAX);
+    //             light_color.y = static_cast<float>(rand()) / (RAND_MAX);
+    //             light_color.z = static_cast<float>(rand()) / (RAND_MAX);
+    //
+    //             LightProperties props;
+    //             props.color     = light_color;
+    //             props.intensity = 0.2f;
+    //             props.position  = pos;
+    //
+    //             scene->addLight(SgLight{.type = LIGHT_TYPE::Point, .lightProperties = props});
+    //         }
+    //     }
+    // }
+    scene->addDirectionalLight({0, -0.95f, 0.3f}, glm::vec3(1.0f), 1.5f);
 
-            for (int k = 0; k < 3; ++k) {
-                pos.y = pos.y + (k * 100);
-
-                light_color.x = static_cast<float>(rand()) / (RAND_MAX);
-                light_color.y = static_cast<float>(rand()) / (RAND_MAX);
-                light_color.z = static_cast<float>(rand()) / (RAND_MAX);
-
-                LightProperties props;
-                props.color     = light_color;
-                props.intensity = 0.2f;
-                props.position  = pos;
-
-                scene->addLight(SgLight{.type = LIGHT_TYPE::Point, .lightProperties = props});
-            }
-        }
-    }
+    
     camera = scene->getCameras()[0];
     camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
     camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 1.f, 4000.f);

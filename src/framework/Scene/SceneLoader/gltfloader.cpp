@@ -792,7 +792,6 @@ std::unique_ptr<Scene> GltfLoading::LoadSceneFromGLTFFile(Device& device, const 
     scene->sceneUniformBuffer = std::move(model->sceneUniformBuffer);
     scene->indexType          = model->indexType;
     scene->primitiveIdBuffer  = std::move(model->scenePrimitiveIdBuffer);
-
     return scene;
 }
 

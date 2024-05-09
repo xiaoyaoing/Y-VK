@@ -118,19 +118,20 @@ VkImageType GetImageType(VkImageViewType viewType) {
     }
 }
 
-void SgImage::createVkImage(Device& device, VkImageViewType imageViewType, VkImageCreateFlags flags) {
+void SgImage::createVkImage(Device& device,uint32_t mipLevels, VkImageViewType imageViewType, VkImageCreateFlags flags) {
     assert(vkImage == nullptr && "Image has been created");
-    //   assert(vkImageView == nullptr && "ImageView has been created");
     setIsCubeMap(imageViewType == VK_IMAGE_VIEW_TYPE_CUBE | isCubeMap());
     if (isCubeMap())
         flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
-    vkImage = std::make_unique<Image>(device, mExtent3D, format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_SAMPLE_COUNT_1_BIT, toUint32(getMipLevelCount()), layers, flags);
+    mipLevels = getMipLevelCount() == 1 ? std::log2(std::max(mExtent3D.width, mExtent3D.height)) +1 : getMipLevelCount();
+    vkImage = std::make_unique<Image>(device, mExtent3D, format,
+        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_SAMPLE_COUNT_1_BIT,
+        mipLevels, layers, flags);
     createImageView();
 }
 
 SgImage::SgImage(Device& device, const std::string& path) : device(device) {
     loadResources(path);
-    //createVkImage(device, viewType);
 }
 SgImage::SgImage(Device& device, const std::vector<uint8_t>& data, VkExtent3D extent, VkImageViewType viewType, VkFormat format) : device(device), mData(data), format(format) {
     setIsCubeMap(viewType == VK_IMAGE_VIEW_TYPE_CUBE);
@@ -252,7 +253,7 @@ void SgImage::createImageView(VkImageViewType view_type, VkFormat format, uint32
         format = vkImage->getFormat();
     }
     if (n_mip_levels == 0)
-        n_mip_levels = getMipLevelCount();
+        n_mip_levels = vkImage->getMipLevelCount();
     if (n_array_layers == 0)
         n_array_layers = layers;
     size_t hashValue = ImageViewHash(view_type, format, mip_level, base_array_layer, n_mip_levels, n_array_layers);
@@ -402,7 +403,7 @@ void SgImage::loadResources(const std::string& path) {
         if (layers > 1) {
             for (uint32_t layer = 0; layer < layers; layer++) {
                 std::vector<VkDeviceSize> layerOffsets{};
-                for (uint32_t level = 0; level < getMipLevelCount(); level++) {
+                for (uint32_t level = 0; level < ktxTexture->numLevels; level++) {
                     ktx_size_t offset;
 
                     if (ktxTexture->isCubemap)

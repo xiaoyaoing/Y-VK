@@ -63,8 +63,11 @@ const Sampler& Texture::getSampler() const {
 // }
 
 static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture, CommandBuffer& commandBuffer, std::vector<std::unique_ptr<Buffer>>& buffers) {
-    texture->image->generateMipMapOnCpu();
+ //  texture->image->generateMipMapOnCpu();
+
     texture->image->createVkImage(device);
+
+    
 
     buffers.emplace_back(std::make_unique<Buffer>(device, texture->image->getBufferSize(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY));
     auto& imageBuffer = *buffers.back();
@@ -87,8 +90,9 @@ static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture, Com
         imageCopy.imageExtent                     = texture->image->getMipMaps()[i].extent;
         imageCopyRegions.push_back(imageCopy);
     }
-    //LOGI("imageCopyRegions.size() = {}", imageCopyRegions.size());
-    // imageCopyRegions.resize(0);
+
+    
+    
     VkImageSubresourceRange subresourceRange{};
     subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
     subresourceRange.baseMipLevel   = 0;
@@ -101,6 +105,45 @@ static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture, Com
     commandBuffer.copyBufferToImage(imageBuffer, texture->image->getVkImage(), imageCopyRegions);
 
     texture->getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY, subresourceRange);
+
+    if(texture->image->getMipMaps().size() == 1 )
+    {
+        std::vector<VkImageBlit2> blits;
+        int mipWidth  = texture->image->getExtent().width;
+        int mipHeight = texture->image->getExtent().height;
+
+        int i = 0;
+        while(true) {
+            VkImageBlit2 blit{};
+            blit.srcOffsets[0] = { 0, 0, 0 };
+            blit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
+            blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            blit.srcSubresource.mipLevel = i;
+            blit.srcSubresource.baseArrayLayer = 0;
+            blit.srcSubresource.layerCount = 1;
+            blit.dstOffsets[0] = { 0, 0, 0 };
+            blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 };
+            blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            blit.dstSubresource.mipLevel = i+1;
+            blit.dstSubresource.baseArrayLayer = 0;
+            blit.dstSubresource.layerCount = 1;
+            blits.push_back(blit);
+
+            mipWidth = std::max(1, mipWidth / 2);
+            mipHeight = std::max(1, mipHeight / 2);
+            i++;
+            if(mipWidth <= 1 && mipHeight <= 1)
+                break;
+        }
+        VkBlitImageInfo2 blitInfo{};
+        blitInfo.srcImage = texture->image->getVkImage().getHandle();
+        blitInfo.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        blitInfo.dstImage = texture->image->getVkImage().getHandle();
+        blitInfo.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        blitInfo.regionCount = blits.size()  ;
+        blitInfo.pRegions = blits.data();
+        vkCmdBlitImage2(commandBuffer.getHandle(), &blitInfo);//
+    }
 
     texture->sampler = std::make_unique<Sampler>(device, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, texture->image->getMipLevelCount());
 }
@@ -123,6 +166,18 @@ std::unique_ptr<Texture> Texture::loadTextureFromMemory(Device& device, const st
     g_context->submit(commandBuffer);
     return texture;
 }
+
+// void GenerateTextureMipmaps(Device& device, std::vector<std::unique_ptr<Texture>> & textures) {
+//     // CommandBuffer                        commandBuffer = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+//     // std::vector<std::unique_ptr<Buffer>> buffers;
+//     // initVKTexture(device, texture, commandBuffer, buffers);
+//     // g_context->submit(commandBuffer);
+//     CommandBuffer                       commandBuffer = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+//     for(int i= 0 ;i< textures.size(); i++){
+//         std::vector<std::unique_ptr<Buffer>> buffers;
+//         initVKTexture(device, textures[i], commandBuffer, buffers);
+//     }
+// }
 
 std::unique_ptr<Texture> Texture::loadTextureArrayFromFile(Device& device, const std::string& path) {
     std::unique_ptr<Texture> texture{};
@@ -157,7 +212,6 @@ std::unique_ptr<Texture> Texture::loadTextureArrayFromFile(Device& device, const
 
         imageCopyRegions.push_back(imageCopy);
     }
-    //    }
 
     auto                    commandBuffer = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
     VkImageSubresourceRange subresourceRange{};

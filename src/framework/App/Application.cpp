@@ -247,6 +247,8 @@ Application::Application(const char* name, uint32_t width, uint32_t height) : mW
     initWindow(name, width, height);
 }
 
+
+
 void Application::inputEvent(const InputEvent& inputEvent) {
     if (gui) {
         if (gui->inputEvent(inputEvent))
@@ -411,6 +413,12 @@ void Application::initView() {
 
     RenderPtrManangr::init();
     g_manager->putPtr("view", view.get());
+}
+void Application::loadScene(const std::string& path) {
+    scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath(path));
+    camera = scene->getCameras()[0];
+    view->setScene(scene.get());
+    view->setCamera(camera.get());
 }
 
 Application::~Application() {

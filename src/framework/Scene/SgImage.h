@@ -69,7 +69,7 @@ public:
 
     SgImage(SgImage& other) = delete;
 
-    void createVkImage(Device& device, VkImageViewType imageViewType = VK_IMAGE_VIEW_TYPE_2D, VkImageCreateFlags flags = 0);
+    void createVkImage(Device& device, uint32_t mipLevels =  0,VkImageViewType imageViewType = VK_IMAGE_VIEW_TYPE_2D, VkImageCreateFlags flags = 0);
 
     std::vector<uint8_t>& getData();
 

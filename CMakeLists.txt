@@ -25,7 +25,6 @@ file(GLOB_RECURSE shaders_src CONFIGURE_DEPENDS
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ext/tinygltf)
 
-
 add_subdirectory(ext)
 add_subdirectory(src/framework)
 
@@ -34,6 +33,7 @@ add_subdirectory(src/samples/renderGraphTest)
 add_subdirectory(src/samples/computePipelineTest)
 add_subdirectory(src/samples/vxgi)
 add_subdirectory(src/samples/pbrLab)
+add_subdirectory(src/samples/ssgi)
 
 # add_subdirectory(src/samples/vxgiapp)
 file(COPY shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
