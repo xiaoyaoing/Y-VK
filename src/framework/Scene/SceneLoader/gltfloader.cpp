@@ -282,8 +282,10 @@ struct GLTFLoadingImpl {
 
     std::vector<std::unique_ptr<Texture>> textures;
     std::vector<SgLight>                  lights;
-    // std::vector<Material>                 materials;
     std::vector<GltfMaterial> materials;
+
+    std::unordered_map<int,int> texIndexRemap;
+    int cur_tex_index{0};
 
     std::vector<std::shared_ptr<Camera>> cameras;
 
@@ -298,6 +300,7 @@ struct GLTFLoadingImpl {
     void           loadFromFile(const std::string& path);
     void           loadMaterials(tinygltf::Model& gltfModel);
     void           loadCameras(const tinygltf::Model& model);
+    int requestTexture(int tex);
 
     void      process(const tinygltf::Model& model);
     void      processNode(const tinygltf::Node& node, const tinygltf::Model& model);
@@ -347,6 +350,14 @@ void GLTFLoadingImpl::loadCameras(const tinygltf::Model& model) {
         camera->setPerspective(gltfCamera.perspective.yfov, gltfCamera.perspective.aspectRatio, gltfCamera.perspective.znear, gltfCamera.perspective.zfar);
         cameras.push_back(camera);
     }
+}
+int  GLTFLoadingImpl::requestTexture(int tex) {
+    if(tex ==-1)
+        return -1;
+    if(texIndexRemap.contains(tex))
+        return texIndexRemap[tex];
+    texIndexRemap[tex] = cur_tex_index++;
+    return texIndexRemap[tex];
 }
 void GLTFLoadingImpl::process(const tinygltf::Model& model) {
 
@@ -546,9 +557,8 @@ void GLTFLoadingImpl::loadFromFile(const std::string& path) {
     }
 
     std::vector<uint32_t> indexData;
-
-    loadImages(path, gltfModel);
     loadMaterials(gltfModel);
+    loadImages(path, gltfModel);
     loadCameras(gltfModel);
     const tinygltf::Scene& scene = gltfModel.scenes[gltfModel.defaultScene > -1 ? gltfModel.defaultScene : 0];
 
@@ -586,17 +596,17 @@ void GLTFLoadingImpl::loadMaterials(tinygltf::Model& gltfModel) {
         material.alphaMode                = mat.alphaMode == "MASK" ? 1 : (mat.alphaMode == "BLEND" ? 2 : 0);
         material.doubleSided              = mat.doubleSided ? 1 : 0;
         material.emissiveFactor           = glm::vec3(mat.emissiveFactor[0], mat.emissiveFactor[1], mat.emissiveFactor[2]);
-        material.emissiveTexture          = mat.emissiveTexture.index;
-        material.normalTexture            = mat.normalTexture.index;
+        material.emissiveTexture          = requestTexture(mat.emissiveTexture.index);
+        material.normalTexture            = requestTexture(mat.normalTexture.index);
         material.normalTextureScale       = static_cast<float>(mat.normalTexture.scale);
         material.occlusionTexture         = mat.occlusionTexture.index;
         material.occlusionTextureStrength = static_cast<float>(mat.occlusionTexture.strength);
 
         auto& pbr                            = mat.pbrMetallicRoughness;
         material.pbrBaseColorFactor          = glm::vec4(pbr.baseColorFactor[0], pbr.baseColorFactor[1], pbr.baseColorFactor[2], pbr.baseColorFactor[3]);
-        material.pbrBaseColorTexture         = pbr.baseColorTexture.index;
+        material.pbrBaseColorTexture         = requestTexture(pbr.baseColorTexture.index);
         material.pbrMetallicFactor           = static_cast<float>(pbr.metallicFactor);
-        material.pbrMetallicRoughnessTexture = pbr.metallicRoughnessTexture.index;
+        material.pbrMetallicRoughnessTexture = requestTexture(pbr.metallicRoughnessTexture.index);
         material.pbrRoughnessFactor          = static_cast<float>(pbr.roughnessFactor);
         materials.emplace_back(material);
     }
@@ -620,9 +630,12 @@ void GLTFLoadingImpl::loadImages(const std::filesystem::path& modelPath, const t
 
     std::vector<TextureFuture>* futures = new std::vector<TextureFuture>();
 
-    for (const auto& image : gltfModel.images) {
+    std::vector<int> texIndexVec(texIndexRemap.size());
+    for(auto & remap:texIndexRemap)
+        texIndexVec[remap.second] = remap.first;
+    for (const auto& remap : texIndexVec) {
         auto fut = thread_pool.push(
-            [this, parentDir, image](size_t) {
+            [this, parentDir,&image = gltfModel.images[remap]](size_t) {
                 if (image.uri.empty() && image.image.size() > 0)
                     return Texture::loadTextureFromMemory(device, image.image, VkExtent3D{static_cast<uint32_t>(image.width), static_cast<uint32_t>(image.height), 1});
                 else if (!image.uri.empty())
@@ -638,7 +651,7 @@ void GLTFLoadingImpl::loadImages(const std::filesystem::path& modelPath, const t
         for (int i = 0; i < futures->size(); i++) {
             futures->operator[](i).wait();
         }
-        Texture::initTexturesInOneSubmit(textures);
+      //Texture::initTexturesInOneSubmit(textures);
         delete futures;
     });
 }
