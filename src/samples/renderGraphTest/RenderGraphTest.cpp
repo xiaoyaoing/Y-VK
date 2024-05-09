@@ -9,31 +9,38 @@
 #include "Core/View.h"
 #include "Core/math.h"
 #include "Core/Shader/GlslCompiler.h"
+#include "RenderPasses/GBufferPass.h"
 #include "Scene/SceneLoader/SceneLoaderInterface.h"
 #include "Scene/SceneLoader/gltfloader.h"
 
 void Example::drawFrame(RenderGraph& rg) {
+    
+    for(auto & pass : passes) {
+        pass->render(rg);
+    }
+    
+    return ;
 
     auto& commandBuffer = renderContext->getGraphicCommandBuffer();
-
+    
     auto& blackBoard = rg.getBlackBoard();
-
+    
     //ON PASS TWO SUBPASS
     struct OnePassTwoSubPassDeferedShadingData {
-
+    
         RenderGraphHandle albedo;
-
+    
         RenderGraphHandle normal;
-
+    
         RenderGraphHandle depth;
-
+    
         RenderGraphHandle output;
-
+    
         RENDER_GRAPH_PASS_TYPE type = RENDER_GRAPH_PASS_TYPE::GRAPHICS;
     };
-
+    
     if (useSubpass) {
-
+    
         rg.addGraphicPass(
             "gbuffer", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
             auto albedo = rg.createTexture("albedo",
@@ -42,24 +49,24 @@ void Example::drawFrame(RenderGraph& rg) {
                                                              .useage = TextureUsage::SUBPASS_INPUT |
                                                                        TextureUsage::COLOR_ATTACHMENT
                                                      });
-
+    
             auto normal = rg.createTexture("normal",
                                                      {
                                                              .extent = renderContext->getViewPortExtent(),
                                                              .useage = TextureUsage::SUBPASS_INPUT |
                                                                        TextureUsage::COLOR_ATTACHMENT
-
+    
                                                      });
-
+    
             auto depth = rg.createTexture("depth", {
                            .extent = renderContext->getViewPortExtent(),
                            .useage = TextureUsage::SUBPASS_INPUT |
                                      TextureUsage::DEPTH_ATTACHMENT
-
+    
                    });
                     
              auto output = rg.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
-
+    
             RenderGraphPassDescriptor desc;
             desc.setTextures({output, depth, albedo,normal}).addSubpass({.outputAttachments = {albedo, normal, depth}}).addSubpass({
                                             .inputAttachments = {
@@ -73,11 +80,11 @@ void Example::drawFrame(RenderGraph& rg) {
             blackBoard.put("normal", normal);
             blackBoard.put("depth", depth);
             blackBoard.put(RENDER_VIEW_PORT_IMAGE_NAME, output); }, [&](RenderPassContext& context) {
-
+    
             view->bindViewBuffer().bindViewShading();
-
+    
             renderContext->bindScene(commandBuffer,*scene).getPipelineState().setPipelineLayout(*pipelineLayouts.gBuffer).setDepthStencilState({.depthCompareOp =  VK_COMPARE_OP_GREATER});
-
+    
             uint32_t instance_count= 0;    
             for(const auto & primitive : view->getMVisiblePrimitives()) {
                 renderContext->flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, primitive->firstIndex, primitive->firstVertex,instance_count++);
@@ -85,7 +92,7 @@ void Example::drawFrame(RenderGraph& rg) {
             renderContext->nextSubpass(commandBuffer);
             renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.lighting);
             renderContext->getPipelineState().setDepthStencilState({.depthTestEnable = false});
-
+    
                 
             renderContext->bindImage(0, blackBoard.getImageView("albedo")).bindImage(1, blackBoard.getImageView("depth")).bindImage(2, blackBoard.getImageView("normal"));
                 
@@ -95,115 +102,39 @@ void Example::drawFrame(RenderGraph& rg) {
             renderContext->flushAndDraw(commandBuffer, 3, 1, 0, 0); });
     }
 
-    //Two RenderPass
-    else {
-        view->bindViewBuffer();
-        rg.addGraphicPass(
-            "GBufferPass", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
-                    auto albedo = rg.createTexture("albedo",
-                                                      {
-                                                              .extent = renderContext->getViewPortExtent(),
-                                                              .useage = TextureUsage::SUBPASS_INPUT | 
-                                                                        TextureUsage::COLOR_ATTACHMENT
-                                                      });
-
-                    auto normal = rg.createTexture("normal",
-                                                      {
-                                                              .extent = renderContext->getViewPortExtent(),
-                                                              .useage = TextureUsage::SUBPASS_INPUT |
-                                                                        TextureUsage::COLOR_ATTACHMENT
-
-                                                      });
-                    
-                    auto depth = rg.createTexture("depth", {
-                            .extent = renderContext->getViewPortExtent(),
-                            .useage = TextureUsage::SUBPASS_INPUT |
-                                      TextureUsage::DEPTH_ATTACHMENT
-
-                    });
-
-                    RenderGraphPassDescriptor desc;
-                    desc.setTextures({depth, albedo,  normal}).addSubpass(RenderGraphSubpassInfo{.outputAttachments = {albedo, normal, depth}});
-                    builder.declare( desc);
- 
-
-                    builder.writeTextures({albedo, normal, depth});
-                    
-
-                    blackBoard.put("albedo", albedo);
-                    blackBoard.put("normal", normal);
-                    blackBoard.put("depth", depth); }, [&](RenderPassContext& context) {
-                    //   renderContext->beginRenderPass(commandBuffer, context.renderTarget, {});
-                        view->bindViewBuffer().bindViewShading();
-
-                renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.gBuffer).setDepthStencilState({.depthCompareOp =  VK_COMPARE_OP_GREATER});
-                 renderContext->bindScene(commandBuffer,*scene);
-
-                uint32_t instance_count= 0;    
-                for(const auto & primitive : view->getMVisiblePrimitives()) {
-                    renderContext->flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, primitive->firstIndex, primitive->firstVertex,instance_count++);
-                } });
-
-        rg.addGraphicPass(
-            "LightingPass", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
-                auto depth  = blackBoard["depth"];
-                auto normal = blackBoard["normal"];
-                auto albedo = blackBoard["albedo"];
-                auto output = blackBoard.getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
-
-                builder.readTextures({depth, normal, albedo});
-                builder.writeTexture(output);
-
-                RenderGraphPassDescriptor desc{};
-                desc.setTextures({output, albedo, depth, normal}).addSubpass({.inputAttachments = {albedo, depth, normal}, .outputAttachments = {output}, .disableDepthTest = true});
-                builder.declare(desc);
-                // builder.addSubPass();
-            },
-            [&](RenderPassContext& context) {
-                renderContext->getPipelineState().setPipelineLayout(*pipelineLayouts.lighting).setRasterizationState({.cullMode = VK_CULL_MODE_NONE}).setDepthStencilState({.depthTestEnable = false});
-                view->bindViewBuffer();
-                renderContext->bindImage(0, blackBoard.getImageView("albedo"))
-                    .bindImage(1, blackBoard.getImageView("depth"))
-                    .bindImage(2, blackBoard.getImageView("normal"))
-                    .flushAndDraw(commandBuffer, 3, 1, 0, 0);
-            });
-    }
-
-    //rg.clearPass();
-
-    //   mCurrentTextures = rg.getResourceNames(RENDER_GRAPH_RESOURCE_TYPE::ETexture);
-
-    //  rg.addImageCopyPass(blackBoard.getHandle(mPresentTexture), blackBoard.getHandle(SWAPCHAIN_IMAGE_NAME));
-    // rg.addImageCopyPass(blackBoard.getHandle("normal"), blackBoard.getHandle(SWAPCHAIN_IMAGE_NAME));
-
-    //  gui->addGuiPass(rg);
-
-    // rg.execute(commandBuffer);
+  
 }
 
 void Example::prepare() {
     Application::prepare();
 
-    std::vector<Shader> shaders{
-        Shader(*device, FileUtils::getShaderPath("defered_one_scene_buffer.vert")),
-        Shader(*device, FileUtils::getShaderPath("defered.frag"))};
-    pipelineLayouts.gBuffer = std::make_unique<PipelineLayout>(*device, shaders);
+    // std::vector<Shader> shaders{
+    //     Shader(*device, FileUtils::getShaderPath("defered_one_scene_buffer.vert")),
+    //     Shader(*device, FileUtils::getShaderPath("defered.frag"))};
+    // pipelineLayouts.gBuffer = std::make_unique<PipelineLayout>(*device, shaders);
+    //
+    // std::vector<Shader> shaders1{
+    //     Shader(*device, FileUtils::getShaderPath("lighting.vert")),
+    //     Shader(*device, FileUtils::getShaderPath("lighting.frag"))};
+    // pipelineLayouts.lighting = std::make_unique<PipelineLayout>(*device, shaders1);
 
-    std::vector<Shader> shaders1{
-        Shader(*device, FileUtils::getShaderPath("lighting.vert")),
-        Shader(*device, FileUtils::getShaderPath("lighting.frag"))};
-    pipelineLayouts.lighting = std::make_unique<PipelineLayout>(*device, shaders1);
+    passes.emplace_back(std::make_unique<GBufferPass>());
+    passes.emplace_back(std::make_unique<LightingPass>());
+
+    for(auto & pass : passes) {
+        pass->init();
+    }
 
     SceneLoadingConfig config;
     
-    scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf", {.bufferRate = BufferRate::PER_SCENE});
+    // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf", {.bufferRate = BufferRate::PER_SCENE});
+    scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/MoerEngineScenes/Sponza/pbr/sponza2.gltf", {.bufferRate = BufferRate::PER_SCENE});
 
     SceneLoadingConfig sceneConfig = {.requiredVertexAttribute = {POSITION_ATTRIBUTE_NAME, INDEX_ATTRIBUTE_NAME, NORMAL_ATTRIBUTE_NAME, TEXCOORD_ATTRIBUTE_NAME},
                                       .indexType               = VK_INDEX_TYPE_UINT32,
                                       .bufferAddressAble       = true,
                                       .bufferForAccel          = true,
                                       .bufferForStorage        = true,
-                                      //.bufferRate              = BufferRate::PER_PRIMITIVE,
                                       .sceneScale = glm::vec3(0.1f)};
     
     auto light_pos   = glm::vec3(0.0f, 128.0f, -225.0f);
@@ -234,13 +165,10 @@ void Example::prepare() {
         }
     }
     camera = scene->getCameras()[0];
-    //camera->flipY = true;
-    // camera->setTranslation(glm::vec3(-494.f, -116.f, 99.f));
     camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
     camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 1.f, 4000.f);
     camera->setMoveSpeed(0.0005f);
 
-    // camera->setPerspective(45.0f, float(mWidth), float(mHeight), 0.3f, 30.0f);
     camera->getTransform()->setPosition(glm::vec3(0, 1, 4));
     camera->getTransform()->setRotation(glm::quat(1, 0, 0, 0));
 
@@ -248,7 +176,9 @@ void Example::prepare() {
     view->setScene(scene.get());
     view->setCamera(camera.get());
 
-    //std::unique_ptr<Texture> t = Texture::loadTextureFromFile(*device, "E:/DM/scenes/classroom/textures/blackboard.jpg");
+    RenderPtrManangr::init();
+    g_manager->putPtr("view", view.get());
+
 }
 
 Example::Example() : Application("Defered Rendering Sponza", 1920, 1080) {

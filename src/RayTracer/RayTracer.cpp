@@ -99,10 +99,9 @@ void RayTracer::prepare() {
                                       //.bufferRate              = BufferRate::PER_PRIMITIVE,
                                       .sceneScale = glm::vec3(0.1f)};
     camera                         = std::make_shared<Camera>();
-    //scene                          = SceneLoaderInterface::LoadSceneFromFile(*device, FileUtils::getResourcePath("sponza/Sponza01.gltf"), sceneConfig);
-  scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/cornell-box/cornellBox.gltf", sceneConfig);
-    // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/cornell-box-json/scene.json", sceneConfig);
     scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/veach-mis/scene.json", sceneConfig);
+    // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf", sceneConfig);
+
 
     camera        = scene->getCameras()[0];
     camera->flipY = true;

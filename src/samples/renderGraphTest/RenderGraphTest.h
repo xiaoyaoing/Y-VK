@@ -4,6 +4,7 @@
 #pragma once
 
 #include "App/Application.h"
+#include "RenderPasses/RenderPassBase.h"
 
 class Example : public Application {
 public:
@@ -21,5 +22,6 @@ protected:
 
     void                     onUpdateGUI() override;
     void                     drawFrame(RenderGraph& renderGraph) override;
+    std::vector<std::unique_ptr<PassBase>> passes;
     
 };

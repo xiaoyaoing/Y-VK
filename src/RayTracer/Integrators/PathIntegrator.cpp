@@ -149,6 +149,7 @@ void PathIntegrator::initLightAreaDistribution(RenderGraph& graph_) {
             }
         }
     }
+    rtLightBuffer->uploadData(lights.data());
     primitiveMeshBuffer->uploadData(primitives.data());
     primAreaBuffersInitialized = true;
 }

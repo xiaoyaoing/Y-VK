@@ -99,6 +99,7 @@ void VoxelizationPass::render(RenderGraph& rg) {
                     mVoxelParamBuffers[i]->uploadData(&mVoxelParam, sizeof(VoxelizationParamater));
                     g_context->bindBuffer(5, *mVoxelParamBuffers[i], 0, sizeof(VoxelizationParamater), 3);
                     g_manager->fetchPtr<View>("view")->drawPrimitives(commandBuffer, [&](const Primitive& primitive) {
+                        return true;
                         if(i==0)
                             return clipRegion.getBoundingBox().overlaps(primitive.getDimensions());
                         else {
@@ -198,5 +199,8 @@ void VoxelizationPass::updateVoxelization() {
 }
 void VoxelizationPass::updateGui() {
     ImGui::Text("clip region 0 min coord: %d %d %d", mClipRegions[0].minCoord.x, mClipRegions[0].minCoord.y, mClipRegions[0].minCoord.z);
+    ImGui::Text("clip region 1 min coord: %d %d %d", mClipRegions[1].minCoord.x, mClipRegions[1].minCoord.y, mClipRegions[1].minCoord.z);
+    ImGui::Text("clip region 2 min coord: %d %d %d", mClipRegions[2].minCoord.x, mClipRegions[2].minCoord.y, mClipRegions[2].minCoord.z);
+    ImGui::Text("clip region 3 min coord: %d %d %d", mClipRegions[3].minCoord.x, mClipRegions[3].minCoord.y, mClipRegions[3].minCoord.z);
     ImGui::Checkbox("Full Revoxelization", &mFullRevoxelization);
 }

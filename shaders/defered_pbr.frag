@@ -54,6 +54,7 @@ vec3 getNormal(int texture_idx)
 void main(void)
 {
 
+//    return;
     uint material_index = primitive_infos[in_primitive_index].material_index;
     GltfMaterial material = scene_materials[material_index];
 
@@ -98,11 +99,5 @@ void main(void)
         emissionColor *= SRGBtoLinear(texture(scene_textures[material.emissiveTexture], in_uv), 2.2).rgb;
     }
     o_emssion = vec4(emissionColor, 1.0);
-
-    //o_diffuse_roughness.xyz  =  in_world_pos / 200.f;
-
-    //  o_diffuse_roughness.a = 1;
-
-    // o_diffuse_roughness.xy = in_uv;
-
+    
 }

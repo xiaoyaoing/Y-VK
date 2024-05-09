@@ -94,5 +94,5 @@ void LightInjectionPass::updateGui() {
     ImGui::Checkbox("L5", &injectLight[4]);
     ImGui::SameLine();
     ImGui::Checkbox("L6", &injectLight[5]);
-    ImGui::SameLine();
+    // ImGui::SameLine();
 }

@@ -20,5 +20,4 @@ void main(void)
     vec4 pos = (matrix * vec4(position, 1.0f));
     gl_Position = (per_frame.view_proj * pos);
     o_position = pos.xyz;
-    //gl_Position.z = 1.f / gl_Position.z;
 }

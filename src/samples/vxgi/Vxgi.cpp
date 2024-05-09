@@ -90,17 +90,16 @@ void Example::prepare() {
 
     camera        = scene->getCameras()[0];
     camera->flipY = false;
-    camera->setTranslation(glm::vec3(-2.69, 6.69, 1.5f));
-    camera->setRotation(glm::vec3(-4.f, -269, 0.0f));
+    //camera->setTranslation(glm::vec3(-2.69, 6.69, 1.5f));
+  //  camera->setRotation(glm::vec3(-4.f, -269, 0.0f));
     camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 0.1f, 4000.f);
     camera->setMoveSpeed(0.05f);
 
     camera->setPerspective(45.0f, float(mWidth), float(mHeight), 0.1f, 4000.f);
     glm::vec3 cameraPositionOffset(0.46, 8.27, -1.54);
-    cameraPositionOffset = glm::vec3(0.29, 6, 11);
-    camera->getTransform()->setPosition(cameraPositionOffset);
-    // camera->getTransform()->setPosition(glm::vec3(-33, 70, 3));
-    camera->getTransform()->setRotation(glm::quat(0.95, -0.29, 0, -0.01));
+    cameraPositionOffset = glm::vec3(0.89,0.11,15);
+   camera->getTransform()->setPosition(cameraPositionOffset);
+   camera->getTransform()->setRotation(glm::quat(1,0, 0, 0));
 
     view = std::make_unique<View>(*device);
     view->setScene(scene.get());
@@ -133,7 +132,7 @@ void Example::prepare() {
     mVisualizeVoxelPass.init();
 }
 
-Example::Example() : Application("VXGI", 1024, 1024) {
+Example::Example() : Application("VXGI", 1920, 1080) {
     // addDeviceExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     addDeviceExtension(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
     addInstanceExtension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);

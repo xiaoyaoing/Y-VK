@@ -21,7 +21,7 @@ void LightingPass::render(RenderGraph& rg) {
             auto  emission   = blackBoard["emission"];
             auto  output     = blackBoard.getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
 
-            builder.readTextures({depth, normal, diffuse, emission, output});
+            builder.readTextures({depth, normal, diffuse, emission});
             builder.writeTexture(output);
 
             RenderGraphPassDescriptor desc{};

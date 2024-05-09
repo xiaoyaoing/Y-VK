@@ -25,7 +25,7 @@ void main(){
         discard;
     }
     ivec3 image_coords = computeImageCoords(world_pos);
-
+        
     for (int i = 0;i<6;i++){
         imageStore(opacity_image, image_coords, vec4(1.0));
         image_coords.x += int(clip_map_resoultion);

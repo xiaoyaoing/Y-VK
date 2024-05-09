@@ -183,40 +183,25 @@ void main()
 
         hitPayload.material_idx = -1;
 
-        //        return;
         traceRayEXT(tlas, rayFlags, cullMask, 0, 0, 0, origin.xyz, tmin, direction.xyz, tmax, 0);
 
         bool found_intersect = hitPayload.material_idx != -1;
-
-        //        found_intersect  = any_hit_payload.hit == 1;
         if (!found_intersect) {
             break;
         }
 
-        //   return;
 
 
         SurfaceScatterEvent event = make_surface_scatter_event(hitPayload, -direction.xyz);
-
-        //        imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(pseudocolor(hitPayload.material_idx), 1));
-        //        return;
-
-        //        break;
+        
 
         uint light_idx = prim_infos.p[hitPayload.prim_idx].light_index;
         RTPrimitive prim = prim_infos.p[hitPayload.prim_idx];
-        //  if (light_idx!=-1)
-        //  debugPrintfEXT("light_idx %d primidx %d %f %d %d\n", light_idx, hitPayload.prim_idx, prim.area, prim.index_count, prim.index_offset);
-        //        light_idx = uint(light_idx == -1);
-        //        imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(pseudocolor(light_idx), 1));
-        //        return;
-        // break;
+        
         if (specular_bounce){
             color += throughput *  Le(direction.xyz);;
         }
-
-        //        break;
-
+        
         if (depth >= pc_ray.min_depth)
         color +=  throughput *  uniform_sample_one_light(seed, event, pc_ray.light_num);
 

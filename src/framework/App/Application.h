@@ -70,7 +70,7 @@ public:
     void mainloop();
     void onResize(uint32_t width, uint32_t height);
     void initView();
-
+    void loadScene();
 protected:
     inline void addDeviceExtension(const char* extension, bool optional = true) {
         deviceExtensions[extension] = optional;

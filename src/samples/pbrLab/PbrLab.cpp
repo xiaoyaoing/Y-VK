@@ -54,15 +54,9 @@ void Example::prepare() {
 
     g_context->setFlipViewport(true);
     mRenderPasses.push_back(std::make_unique<GBufferPass>());
-    //  mRenderPasses.push_back(std::make_unique<LightingPass>());
     mRenderPasses.push_back(std::make_unique<IBLLightingPass>());
-
-    float              matrix[9] = {1, 0, 0, 0, -1, 0, 0, 0, 1};
-    glm::mat3          rotate    = glm::make_mat3(matrix);
-    SceneLoadingConfig config{.sceneRotation = glm::quat_cast(rotate)};
-    config = {};
-    auto m = glm::toMat3(config.sceneRotation);
-    // config.sceneRotation = glm::quat(0, 0, 0, 1);
+    
+    SceneLoadingConfig config{};
     scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Vulkan-glTF-PBR/data/models/DamagedHelmet/glTF-Embedded/DamagedHelmet.gltf", config);
 
     scene->addDirectionalLight({0, -0.95f, 0.3f}, glm::vec3(1.0f), 1.5f);
@@ -70,7 +64,6 @@ void Example::prepare() {
 
     camera        = scene->getCameras()[0];
     camera->flipY = true;
-    // camera->setTranslation(glm::vec3(0, 1.35, -5));
     camera->setTranslation(glm::vec3(0, 0, 4));
     camera->setRotation(glm::vec3(0.0f, 0, 0.0f));
     camera->getTransform()->setRotation(glm::quat(1, 0, 0, 0));
@@ -90,14 +83,12 @@ void Example::prepare() {
 
     cube             = SceneLoaderInterface::loadSpecifyTypePrimitive(*device, "cube");
     std::string path = "E:/code/Vulkan-glTF-PBR/data/environments/papermill.ktx";
-    //  path             = "E:/code/Vulkan-Samples/assets/textures/uffizi_rgba16f_cube_inverse.ktx";
     environmentCube = Texture::loadTextureFromFile(g_context->getDevice(), path);
     ibl             = std::make_unique<IBL>(*device, environmentCube.get());
 }
 
-Example::Example() : Application("Pbr Lab", 1920, 1024) {
+Example::Example() : Application("Pbr Lab", 1920, 1080) {
     addDeviceExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    // GlslCompiler::forceRecompile = true;
 }
 
 void Example::onUpdateGUI() {

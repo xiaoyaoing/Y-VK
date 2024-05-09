@@ -31,6 +31,8 @@ layout(input_attachment_index = 3, binding = 3, set=2) uniform subpassInput gbuf
 
 
 void main(){
+  //  return ;
+
     vec4  diffuse_roughness  = subpassLoad(gbuffer_diffuse_roughness);
     vec4  normal_metalic    = subpassLoad(gbuffer_normal_metalic);
     vec3 normal      = normalize(2.0 * normal_metalic.xyz - 1.0);
@@ -44,12 +46,14 @@ void main(){
     }
 
     vec3 world_pos = worldPosFromDepth(in_uv, depth);
+   // return;
 
 
     vec3 diffuse_color = diffuse_roughness.xyz;
     float perceptual_roughness = diffuse_roughness.a;
 
     vec3 view_dir = per_frame.camera_pos - world_pos;
+    
 
 
     //calcuate sppecular contribution
