@@ -154,6 +154,7 @@ vec3 Le(vec3 dir_to_light){
 
 void main()
 {
+//    return ;
     const vec2 pixelCenter = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
     const vec2 inUV = pixelCenter/vec2(gl_LaunchSizeEXT.xy);
     vec2 d = inUV * 2.0 - 1.0;
@@ -205,9 +206,9 @@ void main()
         if (depth >= pc_ray.min_depth)
         color +=  throughput *  uniform_sample_one_light(seed, event, pc_ray.light_num);
 
-        //        color = visualize_normal(hitPayload.n_g);
+               // color = visualize_normal(hitPayload.n_g);
 
-      //  break;
+//        break;
 
 
         BsdfSampleRecord record = sample_bsdf(materials.m[event.material_idx], event, rand2(seed));

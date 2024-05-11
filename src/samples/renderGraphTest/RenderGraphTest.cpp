@@ -125,45 +125,13 @@ void Example::prepare() {
         pass->init();
     }
 
-    SceneLoadingConfig config;
+    SceneLoadingConfig config{.indexType =  VK_INDEX_TYPE_UINT32};
     
-    // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf", {.bufferRate = BufferRate::PER_SCENE});
-    scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/MoerEngineScenes/Sponza/pbr/sponza2.gltf", {.bufferRate = BufferRate::PER_SCENE});
-
-    SceneLoadingConfig sceneConfig = {.requiredVertexAttribute = {POSITION_ATTRIBUTE_NAME, INDEX_ATTRIBUTE_NAME, NORMAL_ATTRIBUTE_NAME, TEXCOORD_ATTRIBUTE_NAME},
-                                      .indexType               = VK_INDEX_TYPE_UINT32,
-                                      .bufferAddressAble       = true,
-                                      .bufferForAccel          = true,
-                                      .bufferForStorage        = true,
-                                      .sceneScale = glm::vec3(0.1f)};
+  scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/moerengine2/target/bin/RelWithDebInfo/resource/scenes/sponza/Sponza01.gltf",config);
+ // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/MoerEngineScenes/Sponza/pbr/sponza2.gltf");
+  RuntimeSceneManager::addSponzaRestirLight(*scene);
     
-    auto light_pos   = glm::vec3(0.0f, 128.0f, -225.0f);
-    auto light_color = glm::vec3(1.0, 1.0, 1.0);
-
-    // Magic numbers used to offset lights in the Sponza scene
-    // for (int i = -4; i < 4; ++i) {
-    //     for (int j = 0; j < 2; ++j) {
-    //         glm::vec3 pos = light_pos;
-    //         pos.x += i * 400;
-    //         pos.z += j * (225 + 140);
-    //         pos.y = 8;
-    //
-    //         for (int k = 0; k < 3; ++k) {
-    //             pos.y = pos.y + (k * 100);
-    //
-    //             light_color.x = static_cast<float>(rand()) / (RAND_MAX);
-    //             light_color.y = static_cast<float>(rand()) / (RAND_MAX);
-    //             light_color.z = static_cast<float>(rand()) / (RAND_MAX);
-    //
-    //             LightProperties props;
-    //             props.color     = light_color;
-    //             props.intensity = 0.2f;
-    //             props.position  = pos;
-    //
-    //             scene->addLight(SgLight{.type = LIGHT_TYPE::Point, .lightProperties = props});
-    //         }
-    //     }
-    // }
+    
     scene->addDirectionalLight({0, -0.95f, 0.3f}, glm::vec3(1.0f), 1.5f);
 
     

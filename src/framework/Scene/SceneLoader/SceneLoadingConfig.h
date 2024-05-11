@@ -9,8 +9,8 @@ struct SceneLoadingConfig {
     VkIndexType                     indexType{VK_INDEX_TYPE_NONE_KHR};
     bool                            bufferAddressAble{false};
     bool                            bufferForAccel{false};
-    bool                            bufferForTransferSrc{false};
-    bool                            bufferForTransferDst{false};
+    bool                            bufferForTransferSrc{true};
+    bool                            bufferForTransferDst{true};
     bool                            bufferForStorage{false};
     BufferRate                      bufferRate{BufferRate::PER_SCENE};
     glm::vec3                       sceneTranslation{0.0f};

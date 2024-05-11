@@ -79,8 +79,9 @@ void RTSceneEntryImpl::initScene(Scene& scene) {
         }
     }
 
-    buildBLAS();
-    buildTLAS();
+   // primitives.resize(1);
+
+    buildBLAS();buildTLAS();
 
     std::vector<Shader>                                   shaders        = {Shader(device, FileUtils::getShaderPath("Raytracing/compute_triangle_area.comp"))};
     std::unique_ptr<PipelineLayout>                       pipelineLayout = std::make_unique<PipelineLayout>(device, shaders);
@@ -181,8 +182,6 @@ void RTSceneEntryImpl::buildBLAS() {
         accelerationStructureGeometry.geometry.triangles.vertexStride            = sizeof(glm::vec3);
         accelerationStructureGeometry.geometry.triangles.indexType               = VK_INDEX_TYPE_UINT32;
         accelerationStructureGeometry.geometry.triangles.indexData.deviceAddress = indexBuffer->getDeviceAddress() + primitive.index_offset * sizeof(uint32_t);
-        //   accelerationStructureGeometry.geometry.triangles.indexData.deviceAddress = scene_->getPrimitives()[i]->indexBuffer->getDeviceAddress();
-        // accelerationStructureGeometry.geometry.triangles.transformData.deviceAddress = transformBuffers[i].getDeviceAddress();
         accelerationStructureGeometry.geometry.triangles.transformData.hostAddress = nullptr;
 
         VkAccelerationStructureBuildRangeInfoKHR accelerationStructureBuildRangeInfo{};

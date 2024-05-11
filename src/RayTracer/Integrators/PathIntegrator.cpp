@@ -93,7 +93,7 @@ void PathIntegrator::render(RenderGraph& renderGraph) {
             auto pushConstant = toBytes(pcPath);
             renderContext->bindPushConstants(pushConstant);
             renderContext->bindImage(0, renderGraph.getBlackBoard().getImageView("RT"));
-            renderContext->traceRay(commandBuffer, {width, height, 1});
+         renderContext->traceRay(commandBuffer, {width, height, 1});
     
             pcPath.frame_num++; });
 }
@@ -143,11 +143,11 @@ void PathIntegrator::initLightAreaDistribution(RenderGraph& graph_) {
         primAreaDistributionBuffers[pair.first]              = (distribution1D.toGpuBuffer(device));
         primitives[pair.first].area_distribution_buffer_addr = primAreaDistributionBuffers[pair.first]->getDeviceAddress();
         primitives[pair.first].area                          = std::accumulate(data.begin(), data.end(), 0.0f);
-        for(auto & light : lights){
-            if(light.prim_idx == pair.first){
-                light.L /= primitives[pair.first].area;
-            }
-        }
+        // for(auto & light : lights){
+        //     if(light.prim_idx == pair.first){
+        //         light.L /= primitives[pair.first].area;
+        //     }
+        // }
     }
     rtLightBuffer->uploadData(lights.data());
     primitiveMeshBuffer->uploadData(primitives.data());

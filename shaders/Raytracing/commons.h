@@ -20,6 +20,9 @@ using uvec2 = glm::uvec2;
 #define ALIGN16
 #endif
 
+#define LIGHT_TYPE_AREA 1
+#define LIGHT_TYPE_INFINITE 2
+
 //For code used in shader,use "_" code style
 
 struct SceneDesc {
@@ -32,6 +35,8 @@ struct SceneDesc {
 
     // NEE
     uint64_t mesh_lights_addr;
+
+    uint64_t infnite_light_distribution_addr;
     // uint64_t light_vis_addr;
 };
 
@@ -57,9 +62,6 @@ struct RTLight {
     uint prim_idx;
     vec3 unused;
     uint light_type;
-
-    // vec3 to_use;
-    // uint light_flags;
 };
 
 struct RTPrimitive {

@@ -1,6 +1,7 @@
 //
 // Created by pc on 2023/12/1.
 //
+#include "Scene/RuntimeSceneManager.h"
 
 #include "RayTracer.h"
 
@@ -96,12 +97,13 @@ void RayTracer::prepare() {
                                       .bufferAddressAble       = true,
                                       .bufferForAccel          = true,
                                       .bufferForStorage        = true,
-                                      //.bufferRate              = BufferRate::PER_PRIMITIVE,
                                       .sceneScale = glm::vec3(0.1f)};
     camera                         = std::make_shared<Camera>();
-    scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/veach-mis/scene.json", sceneConfig);
-    // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf", sceneConfig);
 
+   // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf", sceneConfig);
+    scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf", sceneConfig);
+
+    RuntimeSceneManager::addSponzaRestirLight(*scene);
 
     camera        = scene->getCameras()[0];
     camera->flipY = true;
@@ -110,6 +112,7 @@ void RayTracer::prepare() {
     camera->getTransform()->setRotation(glm::quat(0.7, 0, 0.7, 0));
     camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 0.1f, 4000.f);
 
+    
     //  camera->
     initView();
     integrator->init(*scene);

@@ -19,12 +19,9 @@ public:
     virtual void updateGui();
     virtual void destroy();
     virtual void update();
-    virtual void buildBLAS();
-    virtual void buildTLAS();
 
     virtual void bindRaytracingResources(CommandBuffer& commandBuffer);
 
-    Accel createAccel(VkAccelerationStructureCreateInfoKHR& accel);
 
     virtual void onUpdateGUI(){};
 

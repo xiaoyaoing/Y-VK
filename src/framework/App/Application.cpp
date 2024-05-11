@@ -174,7 +174,7 @@ void Application::update() {
     mCurrentTextures = graph.getResourceNames(RENDER_GRAPH_RESOURCE_TYPE::ETexture);
     graph.addImageCopyPass(graph.getBlackBoard().getHandle(mPresentTexture), graph.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME));
 
-    handleSaveImage();
+    handleSaveImage(graph);
     
     gui->addGuiPass(graph);
 
@@ -212,7 +212,36 @@ void Application::resetImageSave() {
     }
 }
 
-void Application::handleSaveImage() {
+void Application::handleSaveImage(RenderGraph & graph) {
+     if (imageSave.saveExr | imageSave.savePng) {
+        graph.addComputePass(
+            "image to file ",
+            [&](RenderGraph::Builder& builder, ComputePassSettings& settings) {
+                auto image = graph.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
+                builder.readTexture(image, TextureUsage::TRANSFER_SRC);
+
+                //Not really write to image. Avoid pass cut
+                builder.writeTexture(image, TextureUsage::TRANSFER_SRC);
+            },
+            [&](RenderPassContext& context) {
+                auto& swapchainImage = graph.getBlackBoard().getHwImage(RENDER_VIEW_PORT_IMAGE_NAME);
+                auto  width          = swapchainImage.getExtent2D().width;
+                auto  height         = swapchainImage.getExtent2D().height;
+                if (imageSave.buffer == nullptr || imageSave.buffer->getSize() < width * height * 4) {
+                    imageSave.buffer = std::make_unique<Buffer>(*device, swapchainImage.getExtent2D().width * swapchainImage.getExtent2D().height * 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+                }
+                VkBufferImageCopy region = {.bufferOffset      = 0,
+                                            .bufferRowLength   = 0,
+                                            .bufferImageHeight = 0,
+                                            .imageSubresource  = {.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
+                                                                  .mipLevel       = 0,
+                                                                  .baseArrayLayer = 0,
+                                                                  .layerCount     = 1},
+                                            .imageOffset       = {0, 0, 0},
+                                            .imageExtent       = {width, height, 1}};
+                vkCmdCopyImageToBuffer(context.commandBuffer.getHandle(), swapchainImage.getVkImage().getHandle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, imageSave.buffer->getHandle(), 1, &region);
+            });
+    }
 }
 
 

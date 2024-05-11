@@ -89,6 +89,9 @@ public:
 
     Primitive(uint32_t firstVertex, uint32_t vertexCount, uint32_t materialIndex) : firstVertex(firstVertex), vertexCount(vertexCount), materialIndex(materialIndex), dimensions({}) {
     }
+    PerPrimitiveUniform GetPerPrimitiveUniform() const {
+        return {transform.getLocalToWorldMatrix(), glm::transpose(glm::inverse(transform.getLocalToWorldMatrix())), materialIndex, 0, 0, 0};
+    } 
 };
 
 #endif//VULKANDEMO_RENDERPRIMITIVE_H

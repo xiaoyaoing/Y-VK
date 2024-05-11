@@ -56,7 +56,8 @@ void main() {
     vec3 p1 = world_pos1;
     vec3 p2 = world_pos2;
 
-    debugPrintfEXT("%d p0 %f %f %f p1 %f %f %f p2 %f %f %f %f\n", triangle_idx, p0.x, p0.y, p0.z, p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, area);
+    vec3 cross1 = cross(p1 - p0, p2 - p0);
+    debugPrintfEXT("%d p0 %f %f %f p1 %f %f %f p2 %f %f %f %f %f %f %f\n", triangle_idx, p0.x, p0.y, p0.z, p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, area, cross1.x, cross1.y, cross1.z);
 
     // areas[index] = 1.f;
 

@@ -90,6 +90,24 @@ Buffer& Scene::getPrimitiveIdBuffer() const {
 bool Scene::usePrimitiveIdBuffer() const {
     return usePrimitiveId;
 }
+void Scene::updateSceneUniformBuffer() {
+    std::vector<PerPrimitiveUniform> uniforms;
+    for (auto& prim : primitives) {
+        uniforms.push_back(prim->GetPerPrimitiveUniform());
+    }
+
+    if(sceneUniformBuffer->getSize() == primitives.size() * sizeof(PerPrimitiveUniform)) {
+        sceneUniformBuffer->uploadData(uniforms.data());
+    }
+    else {
+        sceneUniformBuffer = std::make_unique<Buffer>(sceneUniformBuffer->getDevice(), sizeof(PerPrimitiveUniform) * uniforms.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU,uniforms.data());
+    }}
+void Scene::addPrimitive(std::unique_ptr<Primitive> primitive) {
+    primitives.push_back(std::move(primitive));
+}
+void Scene::addPrimitives(std::vector<std::unique_ptr<Primitive>>&& _primitives) {
+    primitives.insert(primitives.end(), std::make_move_iterator(_primitives.begin()), std::make_move_iterator(_primitives.end()));
+}
 VkPrimitiveTopology GetVkPrimitiveTopology(PRIMITIVE_TYPE type) {
     switch (type) {
         case PRIMITIVE_TYPE::E_TRIANGLE_LIST:
