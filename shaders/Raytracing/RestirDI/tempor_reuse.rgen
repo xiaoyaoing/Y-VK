@@ -13,33 +13,96 @@
 #include "di_commons.h"
 #include "../common.glsl"
 #include  "../bsdf.glsl"
-#include "path_commons.h"
 #include "../util.glsl"
+
+#include "restir_di.glsl"
+
 
 layout(location = 0) rayPayloadEXT HitPayload hitPayload;
 layout(location = 1) rayPayloadEXT AnyHitPayload any_hit_payload;
-layout(push_constant) uniform _PushConstantRay { PCPath pc_ray; };;
 
+#include "../trace_common.glsl"
 
-#include "pt_commons.glsl"
-
-uvec4 seed = init_rng(gl_LaunchIDEXT.xy, gl_LaunchSizeEXT.xy, pc_ray.frame_num);
-
+layout(push_constant) uniform _PushConstantRay { RestirDIPC pc_ray; };
 
 
 void main()
 {
+    seed = init_rng(gl_LaunchIDEXT.xy, gl_LaunchSizeEXT.xy, pc_ray.frame_num);
+
     const vec2 pixelCenter = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
     const vec2 inUV = pixelCenter/vec2(gl_LaunchSizeEXT.xy);
     vec2 d = inUV * 2.0 - 1.0;
 
     vec3 origin = (scene_ubo.viewInverse * vec4(0, 0, 0, 1)).xyz;
     vec4 target = scene_ubo.projInverse * vec4(d.x, d.y, 1, 1);
+    vec4 direction = scene_ubo.viewInverse*vec4(normalize(target.xyz / target.w), 0);
 
-    Reservoir r_new = init_reservoir();
-    Reservoir r_prev;
-    Reservoir r;
+
+    RestirReservoir r_new = init_restir_reservoir();
+    RestirReservoir r_prev;
+    RestirReservoir r;
+
+
+    {  uint rayFlags = gl_RayFlagsOpaqueEXT;
+        uint cullMask = 0xff;
+        float tmin = 0.001;
+        float tmax = 10000.0;
+        traceRayEXT(tlas, rayFlags, cullMask, 0, 0, 0, origin.xyz, tmin, direction.xyz, tmax, 0);
+    }
+ 
+    bool found_intersect = hitPayload.material_idx != -1;
+    if (!found_intersect) {
+        return;
+    }
+
+
+    SurfaceScatterEvent  event = make_surface_scatter_event(hitPayload, -direction.xyz);
+     copy_event(event,g_event);
+
+    uint light_sample_count = 32;
+    for (int i = 0;i<light_sample_count;i++)
+    {
+        RestirData restir_data;
+        uint light_idx = uint(pc_ray.light_num * rand1(seed));
+        restir_data.light_idx = light_idx;
+        vec3 un_shadowed_light_contrib = restir_sample_light(event, restir_data.light_idx);
+        update_restir_reservoir(r_new, restir_data, length(un_shadowed_light_contrib));
+    }
+
+    {
+        vec4 prev_pos = scene_ubo.prev_proj * scene_ubo.prev_view * vec4(hitPayload.p, 1);
+        ivec2 prev_screen_pos = ivec2((prev_pos.xy / prev_pos.w + 1) * 0.5 * gl_LaunchSizeEXT.xy);
+        if (all(greaterThanEqual(prev_screen_pos, ivec2(0))) && all(lessThan(prev_screen_pos, ivec2(gl_LaunchSizeEXT.xy))))
+        {
+            uint pixel_index = prev_screen_pos.y * gl_LaunchSizeEXT.x + prev_screen_pos.x;
+            r_prev = temporal_reservoir.r[pixel_index];
+        }
+    }
+    vec3 color = vec3(0);
+    if (r_new.w_sum > 0)
+    {
+       // debugPrintfEXT("r_new.light_idx: %d\n", r_new.s.light_idx);
+
+        color = sample_specify_light(r_new.s.light_idx, event, true, false,seed) * 48;
+        float p_hat = length(color);
+        if (p_hat > 0)
+        {
+            r_new.W = 0;
+        }
+        else
+        {
+            r_new.W = r_new.w_sum  / (p_hat * r_new.m);
+        }
+
+      //  color *= r_new.W;
+    }
+    combine_reservoir(r,r_new);
     
-    
-    
+    if(pc_ray.do_spatial_reuse>1){
+        combine_reservoir(r,r_prev);
+    }
+
+    imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(color, 1.f));
+    pass_reservoir.r[gl_LaunchIDEXT.y * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.x] = r_new;
 }

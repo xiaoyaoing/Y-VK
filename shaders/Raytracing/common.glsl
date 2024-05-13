@@ -2,7 +2,6 @@
 #define COMMONS_DEVICE
 
 #include "commons.h"
-#include "PT/pt_commons.glsl"
 #include "util.glsl"
 
 
@@ -56,6 +55,8 @@ struct MeshSampleRecord{
 uvec4 init_rng(uvec2 pixel_coords, uvec2 resolution, uint frame_num) {
     return uvec4(pixel_coords.xy, frame_num, 0);
 }
+
+
 
 float uint_to_float(uint x) {
     return uintBitsToFloat(0x3f800000 | (x >> 9)) - 1.0f;
@@ -141,6 +142,10 @@ uint binary_search(float u, const float[5] cdf, uint cdf_begin, uint cdf_end) {
     return left;
 }
 
+bool isBlack(vec3 v){
+    return v.x == 0 && v.y == 0 && v.z == 0;
+}
+
 
 
 
@@ -210,6 +215,20 @@ MeshSampleRecord uniform_sample_on_mesh(uint mesh_idx, vec3 rands, in mat4 world
     result.triangle_idx = triangle_idx;
 
     return result;
+}
+
+
+//Param p: the point on the light source
+//Param n_s: the normal of the light source
+//Param w: the direction from the point to the light source
+//Return: the radiance of the light source
+vec3 eval_light(const RTLight light, const vec3 p, const vec3 n_g, const vec3 w){
+
+    // return light.L;
+    if (dot(n_g, -w) > 0){
+        return light.L;
+    }
+    return vec3(0);
 }
 
 
@@ -294,8 +313,6 @@ float get_triangle_area(const uint prim_idx, const uint triangle_idx){
     p2 = (world_matrix * vec4(p2, 1.f)).xyz;
 
     return 0.5f * cross(p1 - p0, p2 - p0).length();
-
-    return 0.5f * cross(p1 - p0, p2 - p0).length();
 }
 
 float get_primitive_area(const uint prim_idx){
@@ -305,7 +322,8 @@ float get_primitive_area(const uint prim_idx){
     return mesh_info.area;
 }
 
-LightSample sample_li(const RTLight light, const SurfaceScatterEvent event, const vec3 rand){
+
+LightSample sample_li_area_light(const RTLight light, const SurfaceScatterEvent event, const vec3 rand){
 
     LightSample result;
 
@@ -329,19 +347,10 @@ LightSample sample_li(const RTLight light, const SurfaceScatterEvent event, cons
     wi /= dist;
 
     dist -=  EPS;
-
-    //    result.indensity = abs( record.n);
-    //    return result;
-
+    
     float cos_theta_light = dot(record.n, -wi);
     
-//    if (cos_theta_light <= 0.0){
-//        record.n = -record.n;
-//        cos_theta_light = dot(record.n, -wi);
-//    }
 
-    // if (abs(p.y - 2.f)>0.1f)
-    //  debugPrintfEXT("record.n ,wi %f %f %f %f %f %f light_p p %f %f %f %f %f %f\n", record.n.x, record.n.y, record.n.z, wi.x, wi.y, wi.z, light_p.x, light_p.y, light_p.z, p.x, p.y, p.z);
     if (cos_theta_light <= 0.0){
         result.n = record.n;
         result.wi = wi;
@@ -349,11 +358,9 @@ LightSample sample_li(const RTLight light, const SurfaceScatterEvent event, cons
         result.pdf = 0;
         return result;
     }
-    //convert pdf
     pdf = record.pdf * dist * dist  / abs(cos_theta_light);
 
     result.wi = wi;
-    //   debugPrintfEXT("wi %f %f %f\n", wi.x, wi.y, wi.z);
     result.n = record.n;
     result.pdf = pdf;
     result.p = light_p;
@@ -364,6 +371,41 @@ LightSample sample_li(const RTLight light, const SurfaceScatterEvent event, cons
     return result;
 }
 
+LightSample sample_li_infinite_light(const RTLight light, const SurfaceScatterEvent event, const vec3 rand){
+    LightSample result;
+//    result.indensity = light.L;
+//    result.wi = -event.wo;
+//    result.pdf = 1.f;
+//    result.p = event.p;
+//    result.dist = 1000000.f;
+    return result;
+}
+
+LightSample sample_li_point_light(const RTLight light, const SurfaceScatterEvent event, const vec3 rand){
+    LightSample result;
+//    result.indensity = light.L;
+//    result.wi = normalize(light.position - event.p);
+//    result.pdf = 1.f;
+//    result.p = event.p;
+//    result.dist = length(light.position - event.p);
+    return result;
+}   
+
+
+LightSample sample_li(const RTLight light, const SurfaceScatterEvent event, const vec3 rand){
+    uint light_type = light.light_type;
+    if(light_type == RT_LIGHT_TYPE_AREA){
+        return sample_li_area_light(light, event, rand);
+    }
+    if(light_type == RT_LIGHT_TYPE_INFINITE){
+        return sample_li_infinite_light(light, event, rand);
+    }
+    if(light_type == RT_LIGHT_TYPE_POINT){
+        return sample_li_point_light(light, event, rand);
+    }
+    LightSample result;
+    return result;
+}
 
 
 

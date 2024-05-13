@@ -89,11 +89,11 @@ void RuntimeSceneManager::addSponzaRestirLight(Scene& scene) {
     uint originalSize = scene.getPrimitives().size();
 
     {
-        std::vector<std::string> types(72,"sphere");
-        auto primitives = SceneLoaderInterface::loadSpecifyTypePrimitives(g_context->getDevice(), types);
+        std::vector<std::string> types(48, "sphere");
+        auto                     primitives = SceneLoaderInterface::loadSpecifyTypePrimitives(g_context->getDevice(), types);
         addPrimitives(scene, std::move(primitives));
     }
-  //  scene.primitives.reserve(scene.primitives.size() + 72);
+    //  scene.primitives.reserve(scene.primitives.size() + 48);
     // auto & sphere = scene.primitives[scene.primitives.size()-1];
 
     // for(int i = 0;i<71;i++){
@@ -101,9 +101,7 @@ void RuntimeSceneManager::addSponzaRestirLight(Scene& scene) {
     //     scene.addPrimitive(std::move(prim));
     // }
 
-    GltfMaterial material = InitGltfMaterial();
-    material.pbrBaseColorFactor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-    scene.materials.push_back(material);
+   
 
     uint32_t idx = 0;
     for (int i = -4; i < 4; ++i) {
@@ -112,23 +110,28 @@ void RuntimeSceneManager::addSponzaRestirLight(Scene& scene) {
             pos.x += i * 400;
             pos.z += j * (225 + 140);
             pos.y = 8;
-    
+
             for (int k = 0; k < 3; ++k) {
                 pos.y = pos.y + (k * 100);
-    
+
                 light_color.x = static_cast<float>(rand()) / (RAND_MAX);
                 light_color.y = static_cast<float>(rand()) / (RAND_MAX);
                 light_color.z = static_cast<float>(rand()) / (RAND_MAX);
-    
-                LightProperties props;
-                props.color     = light_color;
-                props.intensity = 1.f;
-                props.position  = pos;
-                props.prim_index = idx + originalSize;
-                scene.addLight(SgLight{.type = LIGHT_TYPE::Area, .lightProperties = props});
+
+                // LightProperties props;
+                // props.color      = light_color * 100.f;
+                // props.intensity  = 1.f;
+                // props.prim_index = idx + originalSize;
+                // scene.addLight(SgLight{.type = LIGHT_TYPE::Area, .lightProperties = props});
+
+                GltfMaterial material       = InitGltfMaterial();
+                material.pbrBaseColorFactor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+                material.emissiveFactor = light_color * 10.f;
+                scene.materials.push_back(material);
                 
-                scene.primitives[originalSize+idx]->transform.setPosition(pos);
-                scene.primitives[originalSize+idx]->materialIndex = scene.materials.size() - 1;
+                scene.primitives[originalSize + idx]->transform.setPosition(pos);
+                scene.primitives[originalSize + idx]->transform.setLocalScale(glm::vec3(10.f));
+                scene.primitives[originalSize + idx]->materialIndex = scene.materials.size() - 1;
 
                 idx++;
             }
@@ -136,7 +139,22 @@ void RuntimeSceneManager::addSponzaRestirLight(Scene& scene) {
     }
 
     scene.updateSceneUniformBuffer();
-    
+}
+void RuntimeSceneManager::addSponzaRestirPointLight(Scene& scene) {
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            glm::vec3 pos = glm::vec3(-100.0f, 128.0f, -225.0f);
+            pos.x += i * 400;
+            pos.z += j * 140;
+            pos.y = 8;
 
+            LightProperties props;
+            props.color      = glm::vec3(1.0f, 1.0f, 1.0f) * 100.f;
+            props.intensity  = 1.f;
+            props.position   = pos / 10.f;
+            props.prim_index = 0;
+            scene.addLight(SgLight{.type = LIGHT_TYPE::Point, .lightProperties = props});
+        }
+    }
 }
 

@@ -1,4 +1,4 @@
-#ifdefine DI_COMMONS_H
+#ifndef DI_COMMONS_H
 #define DI_COMMONS_H
 #ifdef __cplusplus
 using vec2  = glm::vec2;
@@ -27,6 +27,8 @@ struct RestirDIPC {
     uint min_depth;
     uint enable_sample_bsdf;
     uint enable_sample_light;
+    uint do_temporal_reuse;
+    uint do_spatial_reuse;
 };
 
 struct RestirReservoir {

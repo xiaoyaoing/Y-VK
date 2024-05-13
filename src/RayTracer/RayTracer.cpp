@@ -9,6 +9,7 @@
 #include "Common/VkCommon.h"
 #include "Core/Shader/GlslCompiler.h"
 #include "Integrators/PathIntegrator.h"
+#include "Integrators/RestirIntegrator.h"
 #include "Integrators/SimpleIntegrator.h"
 #include "Scene/SceneLoader/SceneLoaderInterface.h"
 #include "Scene/SceneLoader/gltfloader.h"
@@ -88,16 +89,17 @@ void RayTracer::drawFrame(RenderGraph& renderGraph) {
 void RayTracer::prepare() {
     Application::prepare();
     GlslCompiler::setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_5);
-    GlslCompiler::forceRecompile = true;
+    // GlslCompiler::forceRecompile = true;
 
-    integrator = std::make_unique<PathIntegrator>(*device);
+    // integrator = std::make_unique<PathIntegrator>(*device);
+    integrator = std::make_unique<RestirIntegrator>(*device);
 
     SceneLoadingConfig sceneConfig = {.requiredVertexAttribute = {POSITION_ATTRIBUTE_NAME, INDEX_ATTRIBUTE_NAME, NORMAL_ATTRIBUTE_NAME, TEXCOORD_ATTRIBUTE_NAME},
                                       .indexType               = VK_INDEX_TYPE_UINT32,
                                       .bufferAddressAble       = true,
                                       .bufferForAccel          = true,
                                       .bufferForStorage        = true,
-                                      .sceneScale = glm::vec3(0.1f)};
+                                      .sceneScale = glm::vec3(1.f)};
     camera                         = std::make_shared<Camera>();
 
    // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf", sceneConfig);

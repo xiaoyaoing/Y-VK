@@ -105,6 +105,16 @@ SurfaceScatterEvent make_surface_scatter_event(HitPayload hit_pay_load, const ve
     return event;
 }
 
+void copy_event(in SurfaceScatterEvent src, out SurfaceScatterEvent dst){
+    dst.wo = src.wo;
+    dst.wi = src.wi;
+    dst.p = src.p;
+    dst.uv = src.uv;
+    dst.frame = src.frame;
+    dst.material_idx = src.material_idx;
+    dst.triangle_idx = src.triangle_idx;
+}
+
 float get_cos_theta(const vec3 v){
     return v.z;
 }

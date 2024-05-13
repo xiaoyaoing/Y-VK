@@ -19,6 +19,7 @@ public:
     virtual void updateGui();
     virtual void destroy();
     virtual void update();
+    void initLightAreaDistribution(RenderGraph& graph);
 
     virtual void bindRaytracingResources(CommandBuffer& commandBuffer);
 

@@ -7,7 +7,6 @@
 class PathIntegrator : public Integrator {
 public:
     void render(RenderGraph& renderGraph) override;
-    void initLightAreaDistribution(RenderGraph& graph);
     void initScene(Scene& scene) override;
     void onUpdateGUI() override;
 

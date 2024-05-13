@@ -27,7 +27,7 @@ struct RTSceneEntry {
     std::vector<Accel> blases;
     Accel              tlas;
 
-    std::vector<RTLight>     lights;
+    std::vector<RTLight>      lights;
     std::vector<RTPrimitive> primitives;
     std::vector<RTMaterial>  materials;
 

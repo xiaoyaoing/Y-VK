@@ -40,6 +40,25 @@ Accel RTSceneEntryImpl::createAccel(VkAccelerationStructureCreateInfoKHR& accel)
     return result_accel;
 }
 
+RTLight toRTLight(Scene & scene,const SgLight& light) {
+    RTLight rtLight{};
+
+    if (light.type == LIGHT_TYPE::Area) {
+        uint32_t prim_idx = light.lightProperties.prim_index;
+        rtLight.world_matrix = scene.getPrimitives()[prim_idx]->transform.getLocalToWorldMatrix();
+        rtLight.prim_idx     = prim_idx;
+        rtLight.L            = light.lightProperties.color;
+        rtLight.light_type = RT_LIGHT_TYPE_AREA;
+    }
+    else if(light.type == LIGHT_TYPE::Point) {
+        rtLight.position = light.lightProperties.position;
+        rtLight.L        = light.lightProperties.color;
+        rtLight.light_type = RT_LIGHT_TYPE_POINT;
+    }
+
+    return rtLight;
+}
+
 void RTSceneEntryImpl::initScene(Scene& scene) {
     indexBuffer  = &scene.getIndexBuffer();
     uvBuffer     = &scene.getVertexBuffer(TEXCOORD_ATTRIBUTE_NAME);
@@ -98,14 +117,8 @@ void RTSceneEntryImpl::initScene(Scene& scene) {
     //  RenderGraph graph(device);
 
     for (auto light : scene.getLights()) {
-        if (light.type != LIGHT_TYPE::Area)
-            continue;
-        uint32_t prim_idx = light.lightProperties.prim_index;
-        RTLight  rtLight{};
-        rtLight.world_matrix = scene.getPrimitives()[prim_idx]->transform.getLocalToWorldMatrix();
-        rtLight.prim_idx     = prim_idx;
-        rtLight.L            = light.lightProperties.color;
-        lights.push_back(rtLight);
+        
+        lights.push_back(toRTLight(scene,light));
 
         primitiveMeshBuffer = std::make_unique<Buffer>(device, sizeof(RTPrimitive) * primitives.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, primitives.data());
         materialsBuffer     = std::make_unique<Buffer>(device, sizeof(RTMaterial) * materials.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, materials.data());

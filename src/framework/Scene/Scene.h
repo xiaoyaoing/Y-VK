@@ -51,6 +51,7 @@ public:
     Buffer &                                  getPrimitiveIdBuffer() const;
     bool                                           usePrimitiveIdBuffer() const;
     void updateSceneUniformBuffer();
+    void updateScenePrimitiveIdBuffer();
 
     void addPrimitive(std::unique_ptr<Primitive> primitive);
     void addPrimitives(std::vector<std::unique_ptr<Primitive>>&& primitives);

@@ -37,6 +37,11 @@ struct SceneDesc {
     uint64_t mesh_lights_addr;
 
     uint64_t infnite_light_distribution_addr;
+
+    
+    uint64_t restir_temporal_reservoir_addr;
+    uint64_t restir_spatial_reservoir_addr;
+    uint64_t restir_pass_reservoir_addr;
     // uint64_t light_vis_addr;
 };
 
@@ -44,6 +49,8 @@ struct SceneUbo {
     mat4 viewInverse;
     mat4 projInverse;
     vec4 lightPos;
+    mat4 prev_view;
+    mat4 prev_proj;
 };
 
 struct RTMaterial {
@@ -60,7 +67,7 @@ struct RTLight {
     mat4 world_matrix;
     vec3 L;
     uint prim_idx;
-    vec3 unused;
+    vec3 position;
     uint light_type;
 };
 
@@ -91,6 +98,7 @@ struct RTPrimitive {
 
 #define RT_LIGHT_TYPE_AREA     0
 #define RT_LIGHT_TYPE_INFINITE 1
+#define RT_LIGHT_TYPE_POINT    2
 
 #define RT_BSDF_LOBE_DIFFUSE    1u
 #define RT_BSDF_LOBE_SPECULAR   1u << 1
