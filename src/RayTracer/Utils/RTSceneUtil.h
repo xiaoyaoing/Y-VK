@@ -11,18 +11,23 @@ struct BlasInput {
 using TlasInput = VkAccelerationStructureInstanceKHR;
 
 struct RTSceneEntry {
+    Scene *scene{nullptr};
     Buffer* vertexBuffer{nullptr};
     Buffer* normalBuffer{nullptr};
     Buffer* uvBuffer{nullptr};
     Buffer* indexBuffer{nullptr};
 
-    std::unique_ptr<Buffer> materialsBuffer{nullptr};
-    std::unique_ptr<Buffer> sceneDescBuffer{nullptr};
-    std::unique_ptr<Buffer> primitiveMeshBuffer{nullptr};
-    std::unique_ptr<Buffer> rtLightBuffer{nullptr};
+    std::shared_ptr<Buffer> materialsBuffer{nullptr};
+    std::shared_ptr<Buffer> sceneDescBuffer{nullptr};
+    std::shared_ptr<Buffer> primitiveMeshBuffer{nullptr};
+    std::shared_ptr<Buffer> rtLightBuffer{nullptr};
 
     std::vector<Buffer>                  transformBuffers{};
-    std::vector<std::unique_ptr<Buffer>> primAreaDistributionBuffers{};
+
+    std::unordered_map<std::uint32_t,std::unique_ptr<Buffer>> primAreaBuffers{};
+
+    // std::shared_ptr<Buffer> sceneDescBuffer{nullptr};
+    std::shared_ptr<Buffer> sceneUboBuffer{nullptr};
 
     std::vector<Accel> blases;
     Accel              tlas;
@@ -30,8 +35,11 @@ struct RTSceneEntry {
     std::vector<RTLight>      lights;
     std::vector<RTPrimitive> primitives;
     std::vector<RTMaterial>  materials;
-
     std::vector<Texture*> textures{};
+
+    SceneDesc sceneDesc;
+
+    bool primAreaBuffersInitialized{false};
 };
 
 class RTSceneUtil {

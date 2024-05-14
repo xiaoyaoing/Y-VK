@@ -1,4 +1,5 @@
 #pragma once
+#include "../Utils/RTSceneUtil.h"
 #include "Core/RenderContext.h"
 #include <Raytracing/commons.h>
 
@@ -13,8 +14,8 @@ public:
     Integrator(Device& device);
     virtual ~Integrator();
 
-    virtual void init(Scene& scene);
-    virtual void initScene(Scene& scene);
+    virtual void init();
+    virtual void initScene(RTSceneEntry & entry);
     virtual void render(RenderGraph& renderGraph) = 0;
     virtual void updateGui();
     virtual void destroy();
@@ -27,36 +28,35 @@ public:
     virtual void onUpdateGUI(){};
 
 protected:
-    SceneUbo sceneUbo;
 
-    Buffer* vertexBuffer{nullptr};
-    Buffer* normalBuffer{nullptr};
-    Buffer* uvBuffer{nullptr};
-    Buffer* indexBuffer{nullptr};
+    // Buffer* vertexBuffer{nullptr};
+    // Buffer* normalBuffer{nullptr};
+    // Buffer* uvBuffer{nullptr};
+    // Buffer* indexBuffer{nullptr};
+    //
+    // std::shared_ptr<Buffer> materialsBuffer{nullptr};
+    // std::shared_ptr<Buffer> primitiveMeshBuffer{nullptr};
+    // std::shared_ptr<Buffer> rtLightBuffer{nullptr};
+    // std::vector<Buffer>     transformBuffers{};
+    //
 
-    std::unique_ptr<Buffer> materialsBuffer{nullptr};
-    std::unique_ptr<Buffer> primitiveMeshBuffer{nullptr};
-    std::unique_ptr<Buffer> rtLightBuffer{nullptr};
-    std::vector<Buffer>     transformBuffers{};
+    //
+    // const std::vector<Accel> * blases;
+    // const Accel *             tlas;
+    //
+    // const std::vector<RTLight> *    lights;
+    // const std::vector<RTPrimitive> * primitives;
+    // const std::vector<RTMaterial> * materials;
 
-    std::unique_ptr<Buffer> sceneDescBuffer{nullptr};
-    std::unique_ptr<Buffer> sceneUboBuffer{nullptr};
-
-    std::vector<Accel> blases;
-    Accel              tlas;
-
-    std::vector<RTLight>     lights;
-    std::vector<RTPrimitive> primitives;
-    std::vector<RTMaterial>  materials;
+    RTSceneEntry * entry_;
 
     const Scene* mScene{nullptr};
 
-    std::unordered_map<uint32_t, std::unique_ptr<Buffer>> primAreaBuffers{};
-    std::unordered_map<uint32_t, std::unique_ptr<Buffer>> primAreaDistributionBuffers{};
-    std::unique_ptr<PipelineLayout>                       computePrimAreaLayout;
-    bool                                                  primAreaBuffersInitialized{false};
+    // std::unordered_map<uint32_t, std::shared_ptr<Buffer>> primAreaBuffers{};
+    // std::unordered_map<uint32_t, std::shared_ptr<Buffer>> primAreaDistributionBuffers{};
+    PipelineLayout *                   computePrimAreaLayout;
 
-    std::unique_ptr<SgImage> storageImage;
+    std::shared_ptr<SgImage> storageImage;
 
     uint32_t                width, height;
     std::shared_ptr<Camera> camera{nullptr};

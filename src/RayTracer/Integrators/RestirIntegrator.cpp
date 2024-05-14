@@ -35,7 +35,7 @@ RestirIntegrator::RestirIntegrator(Device& device) : Integrator(device) {
 }
 
 void RestirIntegrator::render(RenderGraph& renderGraph) {
-    if (!primAreaBuffersInitialized) {
+    if (!entry_->primAreaBuffersInitialized) {
         initLightAreaDistribution(renderGraph);
     }
 
@@ -46,7 +46,7 @@ void RestirIntegrator::render(RenderGraph& renderGraph) {
 
     renderGraph.addRaytracingPass(
         "Restir temporal pass", [&](RenderGraph::Builder& builder, RaytracingPassSettings& settings) {
-        settings.accel = &tlas;
+        settings.accel = &entry_->tlas;
         settings.pipelineLayout = temporalLayout.get();
         settings.rTPipelineSettings.dims = {width,height,1};
         settings.rTPipelineSettings.maxDepth = 5;
@@ -65,7 +65,7 @@ void RestirIntegrator::render(RenderGraph& renderGraph) {
     return;
     renderGraph.addRaytracingPass(
        "Restir spatial pass", [&](RenderGraph::Builder& builder, RaytracingPassSettings& settings) {
-       settings.accel = &tlas;
+        settings.accel = &entry_->tlas;
        settings.pipelineLayout = spatialLayout.get();
        settings.rTPipelineSettings.dims = {width,height,1};
        settings.rTPipelineSettings.maxDepth = 5;
@@ -82,7 +82,7 @@ void RestirIntegrator::render(RenderGraph& renderGraph) {
 
     renderGraph.addRaytracingPass(
        "Restir output pass", [&](RenderGraph::Builder& builder, RaytracingPassSettings& settings) {
-       settings.accel = &tlas;
+        settings.accel = &entry_->tlas;
        settings.pipelineLayout = outputLayout.get();
        settings.rTPipelineSettings.dims = {width,height,1};
        settings.rTPipelineSettings.maxDepth = 5;
@@ -94,27 +94,21 @@ void RestirIntegrator::render(RenderGraph& renderGraph) {
     
            pcPath.frame_num++; });
 }
-void RestirIntegrator::initScene(Scene& scene) {
-    Integrator::initScene(scene);
+void RestirIntegrator::initScene(RTSceneEntry & entry) {
+    Integrator::initScene(entry);
 
     temporReservoirBuffer  = std::make_unique<Buffer>(device, sizeof(RestirReservoir) * width * height, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
     spatialReservoirBuffer = std::make_unique<Buffer>(device, sizeof(RestirReservoir) * width * height, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
     passReservoirBuffer    = std::make_unique<Buffer>(device, sizeof(RestirReservoir) * width * height, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
 
-    SceneDesc desc{
-        .vertex_addr                    = vertexBuffer->getDeviceAddress(),
-        .index_addr                     = indexBuffer->getDeviceAddress(),
-        .normal_addr                    = normalBuffer->getDeviceAddress(),
-        .uv_addr                        = uvBuffer->getDeviceAddress(),
-        .material_addr                  = materialsBuffer->getDeviceAddress(),
-        .prim_info_addr                 = primitiveMeshBuffer->getDeviceAddress(),
-        .restir_temporal_reservoir_addr = temporReservoirBuffer->getDeviceAddress(),
-        .restir_spatial_reservoir_addr  = spatialReservoirBuffer->getDeviceAddress(),
-        .restir_pass_reservoir_addr     = passReservoirBuffer->getDeviceAddress(),
-    };
-    sceneDescBuffer = std::make_unique<Buffer>(device, sizeof(SceneDesc), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, &desc);
 
-    pcPath.light_num = lights.size();
+
+    entry.sceneDesc.restir_temporal_reservoir_addr = temporReservoirBuffer->getDeviceAddress();
+    entry.sceneDesc.restir_spatial_reservoir_addr  = spatialReservoirBuffer->getDeviceAddress();
+    entry.sceneDesc.restir_pass_reservoir_addr     = passReservoirBuffer->getDeviceAddress();
+    entry.sceneDescBuffer->uploadData(&entry.sceneDesc, sizeof(SceneDesc));
+    
+    pcPath.light_num = entry.lights.size();
     pcPath.max_depth = 1;
     pcPath.min_depth = 0;
     pcPath.do_spatial_reuse = false;

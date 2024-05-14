@@ -125,7 +125,7 @@ void main()
     if (isnan(color.x) || isnan(color.y) || isnan(color.z)){
         debugPrintfEXT("nan %f %f %f\n", color.x, color.y, color.z);
     }
-    if (pc_ray.frame_num > 0) {
+    if (pc_ray.frame_num > 0 && pc_ray.enable_accumulation>0) {
 
         float w = 1. / float(pc_ray.frame_num + 1);
         vec3 old_color = imageLoad(image, ivec2(gl_LaunchIDEXT.xy)).xyz;

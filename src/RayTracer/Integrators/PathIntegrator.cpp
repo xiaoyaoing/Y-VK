@@ -12,7 +12,7 @@
 #define OFFSET(structure, member) ((int64_t) & ((structure*)0)->member)// 64位系统
 
 void PathIntegrator::render(RenderGraph& renderGraph) {
-    if (!primAreaBuffersInitialized) {
+    if (!entry_->primAreaBuffersInitialized) {
         initLightAreaDistribution(renderGraph);
     }
 
@@ -24,7 +24,7 @@ void PathIntegrator::render(RenderGraph& renderGraph) {
 
     renderGraph.addRaytracingPass(
         "PT pass", [&](RenderGraph::Builder& builder, RaytracingPassSettings& settings) {
-        settings.accel = &tlas;
+        settings.accel = &entry_->tlas;
         settings.pipelineLayout = layout.get();
         settings.rTPipelineSettings.dims = {width,height,1};
         settings.rTPipelineSettings.maxDepth = 5;
@@ -43,22 +43,22 @@ void PathIntegrator::render(RenderGraph& renderGraph) {
             pcPath.frame_num++; });
 }
 
-void PathIntegrator::initScene(Scene& scene) {
-    Integrator::initScene(scene);
+void PathIntegrator::initScene(RTSceneEntry & entry) {
+    Integrator::initScene(entry);
 
     //  return;
 
-    SceneDesc desc{
-        .vertex_addr    = vertexBuffer->getDeviceAddress(),
-        .index_addr     = indexBuffer->getDeviceAddress(),
-        .normal_addr    = normalBuffer->getDeviceAddress(),
-        .uv_addr        = uvBuffer->getDeviceAddress(),
-        .material_addr  = materialsBuffer->getDeviceAddress(),
-        .prim_info_addr = primitiveMeshBuffer->getDeviceAddress(),
-    };
-    sceneDescBuffer = std::make_unique<Buffer>(device, sizeof(SceneDesc), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, &desc);
+    // SceneDesc desc{
+    //     .vertex_addr    = vertexBuffer->getDeviceAddress(),
+    //     .index_addr     = indexBuffer->getDeviceAddress(),
+    //     .normal_addr    = normalBuffer->getDeviceAddress(),
+    //     .uv_addr        = uvBuffer->getDeviceAddress(),
+    //     .material_addr  = materialsBuffer->getDeviceAddress(),
+    //     .prim_info_addr = primitiveMeshBuffer->getDeviceAddress(),
+    // };
+    // sceneDescBuffer = std::make_unique<Buffer>(device, sizeof(SceneDesc), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, &desc);
 
-    pcPath.light_num = lights.size();
+    pcPath.light_num = entry_->lights.size();
     pcPath.max_depth = 1;
     pcPath.min_depth = 0;
     
@@ -81,6 +81,7 @@ void PathIntegrator::onUpdateGUI() {
     ImGui::Checkbox("Sample BSDF", reinterpret_cast<bool*>(&pcPath.enable_sample_bsdf));
     ImGui::SameLine();
     ImGui::Checkbox("Sample Light", reinterpret_cast<bool*>(&pcPath.enable_sample_light));
+    ImGui::Checkbox("Enable Accumulation", reinterpret_cast<bool*>(&pcPath.enable_accumulation));
 }
 
 PathIntegrator::PathIntegrator(Device& device_) : Integrator(device_) {

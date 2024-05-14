@@ -79,8 +79,12 @@ RayTracer::RayTracer(const RayTracerSettings& settings) {
 }
 
 void RayTracer::drawFrame(RenderGraph& renderGraph) {
+    sceneUbo.projInverse = camera->projInverse();
+    sceneUbo.viewInverse = camera->viewInverse();
+    rtSceneEntry->sceneUboBuffer->uploadData(&sceneUbo, sizeof(sceneUbo));
 
-    integrator->render(renderGraph);
+    
+    integrators[currentIntegrator]->render(renderGraph);
 
     renderGraph.addImageCopyPass(renderGraph.getBlackBoard().getHandle("RT"), renderGraph.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME));
 
@@ -91,8 +95,9 @@ void RayTracer::prepare() {
     GlslCompiler::setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_5);
     // GlslCompiler::forceRecompile = true;
 
-    // integrator = std::make_unique<PathIntegrator>(*device);
-    integrator = std::make_unique<RestirIntegrator>(*device);
+    integrators["path"] = std::make_unique<PathIntegrator>(*device);
+    integrators["restir"] = std::make_unique<RestirIntegrator>(*device);
+    integratorNames = {"path", "restir"};
 
     SceneLoadingConfig sceneConfig = {.requiredVertexAttribute = {POSITION_ATTRIBUTE_NAME, INDEX_ATTRIBUTE_NAME, NORMAL_ATTRIBUTE_NAME, TEXCOORD_ATTRIBUTE_NAME},
                                       .indexType               = VK_INDEX_TYPE_UINT32,
@@ -117,12 +122,25 @@ void RayTracer::prepare() {
     
     //  camera->
     initView();
-    integrator->init(*scene);
+
+    rtSceneEntry = RTSceneUtil::convertScene(*device, *scene);
+    for (auto& integrator : integrators) {
+        integrator.second->initScene(*rtSceneEntry);
+        integrator.second->init();
+    }
 }
 
 void RayTracer::onUpdateGUI() {
     Application::onUpdateGUI();
-    integrator->onUpdateGUI();
+
+    auto itemIter    = std::ranges::find(integratorNames.begin(), integratorNames.end(), currentIntegrator);
+
+    int itemCurrent = std::distance(integratorNames.begin(), itemIter);
+    ImGui::Combo("Integrators", &itemCurrent, integratorNames.data(), integratorNames.size());
+
+    currentIntegrator = integratorNames[itemCurrent];
+
+    integrators[currentIntegrator]->onUpdateGUI();
 }
 
 // void RayTracer::buildBLAS()

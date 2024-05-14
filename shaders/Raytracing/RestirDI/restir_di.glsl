@@ -13,7 +13,7 @@ RestirReservoir_ pass_reservoir = RestirReservoir_(scene_desc.restir_pass_reserv
 
 RestirReservoir init_restir_reservoir(){
     RestirReservoir reservoir;
-    reservoir.w_sum = 0;
+    reservoir.W = 0;
     reservoir.m = 0;
     reservoir.w_sum = 0;
     

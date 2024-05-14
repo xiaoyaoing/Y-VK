@@ -84,9 +84,9 @@ void main()
     {
        // debugPrintfEXT("r_new.light_idx: %d\n", r_new.s.light_idx);
 
-        color = sample_specify_light(r_new.s.light_idx, event, true, false,seed) * 48;
+        color = sample_specify_light(r_new.s.light_idx, event, true, false,seed);
         float p_hat = length(color);
-        if (p_hat > 0)
+        if (p_hat == 0)
         {
             r_new.W = 0;
         }
@@ -94,8 +94,8 @@ void main()
         {
             r_new.W = r_new.w_sum  / (p_hat * r_new.m);
         }
-
-      //  color *= r_new.W;
+       // debugPrintfEXT("r_new.w_sum , p_hat, r_new.m, r_new.W: %f, %f, %d, %f\n", r_new.w_sum, p_hat, r_new.m, r_new.W);
+        color *= r_new.W * 48;
     }
     combine_reservoir(r,r_new);
     

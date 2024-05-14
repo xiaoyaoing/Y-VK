@@ -5,7 +5,7 @@ class RestirIntegrator : public Integrator {
 public:
     RestirIntegrator(Device& device);
     void render(RenderGraph& renderGraph) override;
-    void initScene(Scene& scene) override;
+    void initScene(RTSceneEntry & entry) override;
     void onUpdateGUI() override;
 protected:
     RestirDIPC pcPath{};

@@ -7,7 +7,7 @@
 class PathIntegrator : public Integrator {
 public:
     void render(RenderGraph& renderGraph) override;
-    void initScene(Scene& scene) override;
+    void initScene(RTSceneEntry & entry) override;
     void onUpdateGUI() override;
 
     PathIntegrator(Device& device);
