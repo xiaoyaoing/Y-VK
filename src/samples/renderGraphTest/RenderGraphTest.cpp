@@ -10,37 +10,38 @@
 #include "Core/math.h"
 #include "Core/Shader/GlslCompiler.h"
 #include "RenderPasses/GBufferPass.h"
+#include "RenderPasses/SSGIPass.h"
 #include "Scene/SceneLoader/SceneLoaderInterface.h"
 #include "Scene/SceneLoader/gltfloader.h"
 
 void Example::drawFrame(RenderGraph& rg) {
-    
-    for(auto & pass : passes) {
+
+    for (auto& pass : passes) {
         pass->render(rg);
     }
-    
-    return ;
+
+    return;
 
     auto& commandBuffer = renderContext->getGraphicCommandBuffer();
-    
+
     auto& blackBoard = rg.getBlackBoard();
-    
+
     //ON PASS TWO SUBPASS
     struct OnePassTwoSubPassDeferedShadingData {
-    
+
         RenderGraphHandle albedo;
-    
+
         RenderGraphHandle normal;
-    
+
         RenderGraphHandle depth;
-    
+
         RenderGraphHandle output;
-    
+
         RENDER_GRAPH_PASS_TYPE type = RENDER_GRAPH_PASS_TYPE::GRAPHICS;
     };
-    
+
     if (useSubpass) {
-    
+
         rg.addGraphicPass(
             "gbuffer", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
             auto albedo = rg.createTexture("albedo",
@@ -101,8 +102,6 @@ void Example::drawFrame(RenderGraph& rg) {
                                                                     });
             renderContext->flushAndDraw(commandBuffer, 3, 1, 0, 0); });
     }
-
-  
 }
 
 void Example::prepare() {
@@ -120,13 +119,14 @@ void Example::prepare() {
 
     passes.emplace_back(std::make_unique<GBufferPass>());
     passes.emplace_back(std::make_unique<LightingPass>());
+    passes.emplace_back(std::make_unique<SSGIPass>());
 
-    for(auto & pass : passes) {
+    for (auto& pass : passes) {
         pass->init();
     }
 
     SceneLoadingConfig config;
-    
+
     // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf", {.bufferRate = BufferRate::PER_SCENE});
     scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/MoerEngineScenes/Sponza/pbr/sponza2.gltf", {.bufferRate = BufferRate::PER_SCENE});
 
@@ -135,8 +135,8 @@ void Example::prepare() {
                                       .bufferAddressAble       = true,
                                       .bufferForAccel          = true,
                                       .bufferForStorage        = true,
-                                      .sceneScale = glm::vec3(0.1f)};
-    
+                                      .sceneScale              = glm::vec3(0.1f)};
+
     auto light_pos   = glm::vec3(0.0f, 128.0f, -225.0f);
     auto light_color = glm::vec3(1.0, 1.0, 1.0);
 
@@ -166,7 +166,6 @@ void Example::prepare() {
     // }
     scene->addDirectionalLight({0, -0.95f, 0.3f}, glm::vec3(1.0f), 1.5f);
 
-    
     camera = scene->getCameras()[0];
     camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
     camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 1.f, 4000.f);
@@ -181,7 +180,6 @@ void Example::prepare() {
 
     RenderPtrManangr::init();
     g_manager->putPtr("view", view.get());
-
 }
 
 Example::Example() : Application("Defered Rendering Sponza", 1920, 1080) {

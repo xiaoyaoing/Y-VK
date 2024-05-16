@@ -3,6 +3,8 @@
 
 #include "commons.h"
 #include "PT/pt_commons.glsl"
+#include "../common/sampling.glsl"
+
 #include "util.glsl"
 
 
@@ -53,54 +55,12 @@ struct MeshSampleRecord{
     uint triangle_idx;
 };
 
-uvec4 init_rng(uvec2 pixel_coords, uvec2 resolution, uint frame_num) {
-    return uvec4(pixel_coords.xy, frame_num, 0);
-}
 
-float uint_to_float(uint x) {
-    return uintBitsToFloat(0x3f800000 | (x >> 9)) - 1.0f;
-}
-
-uvec4 pcg4d(uvec4 v) {
-    v = v * 1664525u + 1013904223u;
-    v.x += v.y * v.w;
-    v.y += v.z * v.x;
-    v.z += v.x * v.y;
-    v.w += v.y * v.z;
-    v = v ^ (v >> 16u);
-    v.x += v.y * v.w;
-    v.y += v.z * v.x;
-    v.z += v.x * v.y;
-    v.w += v.y * v.z;
-    return v;
-}
 
 vec3 visualize_normal(vec3 n) {
     return (n+1.f)/2.f;
 }
 
-float rand1(inout uvec4 rng_state) {
-    rng_state.w++;
-    return uint_to_float(pcg4d(rng_state).x);
-}
-
-vec2 rand2(inout uvec4 rng_state) {
-    rng_state.w++;
-    uvec4 pcg = pcg4d(rng_state);
-    return vec2(uint_to_float(pcg.x), uint_to_float(pcg.y));
-}
-
-vec3 rand3(inout uvec4 rng_state) {
-    rng_state.w++;
-    uvec4 pcg = pcg4d(rng_state);
-    return vec3(uint_to_float(pcg.x), uint_to_float(pcg.y), uint_to_float(pcg.z));
-}
-
-vec4 rand4(inout uvec4 rng_state) {
-    rng_state.w++;
-    uvec4 pcg = pcg4d(rng_state);
-    return vec4(uint_to_float(pcg.x), uint_to_float(pcg.y), uint_to_float(pcg.z), uint_to_float(pcg.w));
-}
 
 
 
@@ -334,11 +294,11 @@ LightSample sample_li(const RTLight light, const SurfaceScatterEvent event, cons
     //    return result;
 
     float cos_theta_light = dot(record.n, -wi);
-    
-//    if (cos_theta_light <= 0.0){
-//        record.n = -record.n;
-//        cos_theta_light = dot(record.n, -wi);
-//    }
+
+    //    if (cos_theta_light <= 0.0){
+    //        record.n = -record.n;
+    //        cos_theta_light = dot(record.n, -wi);
+    //    }
 
     // if (abs(p.y - 2.f)>0.1f)
     //  debugPrintfEXT("record.n ,wi %f %f %f %f %f %f light_p p %f %f %f %f %f %f\n", record.n.x, record.n.y, record.n.z, wi.x, wi.y, wi.z, light_p.x, light_p.y, light_p.z, p.x, p.y, p.z);

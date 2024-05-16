@@ -44,7 +44,7 @@ void LightingPass::render(RenderGraph& rg) {
 }
 void LightingPass::init() {
     std::vector<Shader> shaders{
-        Shader(g_context->getDevice(), FileUtils::getShaderPath("lighting.vert")),
+        Shader(g_context->getDevice(), FileUtils::getShaderPath("full_screen.vert")),
         Shader(g_context->getDevice(), FileUtils::getShaderPath("lighting_pbr.frag"))};
     mPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), shaders);
 }

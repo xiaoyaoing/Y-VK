@@ -22,14 +22,11 @@ layout(binding = 4) uniform LightsInfo
     Light lights[MAX_LIGHTS];
 }lights_info;
 
-// layout(constant_id = 0) const uint DIRECTIONAL_LIGHT_COUNT = 0U;
-// layout(constant_id = 1) const uint POINT_LIGHT_COUNT       = 0U;
-// layout(constant_id = 2) const uint SPOT_LIGHT_COUNT        = 0U;
 
 void main()
 {
     //Retrieve position from depth
-    
+
 
     vec4  clip         = vec4(in_uv * 2.0 - 1.0, subpassLoad(i_depth).x, 1.0);
     vec4 world_w = per_frame.inv_view_proj * clip;
