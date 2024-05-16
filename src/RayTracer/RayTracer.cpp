@@ -79,10 +79,16 @@ RayTracer::RayTracer(const RayTracerSettings& settings) {
 }
 
 void RayTracer::drawFrame(RenderGraph& renderGraph) {
+    
     sceneUbo.projInverse = camera->projInverse();
     sceneUbo.viewInverse = camera->viewInverse();
+    sceneUbo.view = camera->view();
+    sceneUbo.proj = camera->proj();
+    sceneUbo.prev_view = lastFrameSceneUbo.view;
+    sceneUbo.prev_proj = lastFrameSceneUbo.proj;
     rtSceneEntry->sceneUboBuffer->uploadData(&sceneUbo, sizeof(sceneUbo));
 
+    lastFrameSceneUbo = sceneUbo;
     
     integrators[currentIntegrator]->render(renderGraph);
 
@@ -93,7 +99,7 @@ void RayTracer::drawFrame(RenderGraph& renderGraph) {
 void RayTracer::prepare() {
     Application::prepare();
     GlslCompiler::setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_5);
-    // GlslCompiler::forceRecompile = true;
+    //GlslCompiler::forceRecompile = true;
 
     integrators["path"] = std::make_unique<PathIntegrator>(*device);
     integrators["restir"] = std::make_unique<RestirIntegrator>(*device);

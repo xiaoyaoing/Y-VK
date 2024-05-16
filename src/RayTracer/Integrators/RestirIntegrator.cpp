@@ -31,6 +31,7 @@ RestirIntegrator::RestirIntegrator(Device& device) : Integrator(device) {
 
                                                             });
 
+
  
 }
 
@@ -43,6 +44,9 @@ void RestirIntegrator::render(RenderGraph& renderGraph) {
         pcPath.frame_num = 0;
 
     auto& commandBuffer = renderContext->getGraphicCommandBuffer();
+
+
+
 
     renderGraph.addRaytracingPass(
         "Restir temporal pass", [&](RenderGraph::Builder& builder, RaytracingPassSettings& settings) {
@@ -62,7 +66,6 @@ void RestirIntegrator::render(RenderGraph& renderGraph) {
     
             pcPath.frame_num++; });
 
-    return;
     renderGraph.addRaytracingPass(
        "Restir spatial pass", [&](RenderGraph::Builder& builder, RaytracingPassSettings& settings) {
         settings.accel = &entry_->tlas;
@@ -77,7 +80,7 @@ void RestirIntegrator::render(RenderGraph& renderGraph) {
            renderContext->bindImage(0, renderGraph.getBlackBoard().getImageView("RT"));
         renderContext->traceRay(commandBuffer, {width, height, 1});
     
-           pcPath.frame_num++; });
+      });
 
 
     renderGraph.addRaytracingPass(
@@ -92,7 +95,7 @@ void RestirIntegrator::render(RenderGraph& renderGraph) {
            renderContext->bindImage(0, renderGraph.getBlackBoard().getImageView("RT"));
         renderContext->traceRay(commandBuffer, {width, height, 1});
     
-           pcPath.frame_num++; });
+           });
 }
 void RestirIntegrator::initScene(RTSceneEntry & entry) {
     Integrator::initScene(entry);
@@ -100,19 +103,21 @@ void RestirIntegrator::initScene(RTSceneEntry & entry) {
     temporReservoirBuffer  = std::make_unique<Buffer>(device, sizeof(RestirReservoir) * width * height, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
     spatialReservoirBuffer = std::make_unique<Buffer>(device, sizeof(RestirReservoir) * width * height, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
     passReservoirBuffer    = std::make_unique<Buffer>(device, sizeof(RestirReservoir) * width * height, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-
+    gBuffer                = std::make_unique<Buffer>(device, sizeof(GBuffer) * width * height, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
 
 
     entry.sceneDesc.restir_temporal_reservoir_addr = temporReservoirBuffer->getDeviceAddress();
     entry.sceneDesc.restir_spatial_reservoir_addr  = spatialReservoirBuffer->getDeviceAddress();
     entry.sceneDesc.restir_pass_reservoir_addr     = passReservoirBuffer->getDeviceAddress();
+    entry.sceneDesc.gbuffer_addr                  = gBuffer->getDeviceAddress();
     entry.sceneDescBuffer->uploadData(&entry.sceneDesc, sizeof(SceneDesc));
     
     pcPath.light_num = entry.lights.size();
     pcPath.max_depth = 1;
     pcPath.min_depth = 0;
+    pcPath.frame_num = 0;
     pcPath.do_spatial_reuse = false;
-    pcPath.do_temporal_reuse = false;
+    pcPath.do_temporal_reuse = true;
 }
 void RestirIntegrator::onUpdateGUI() {
     Integrator::onUpdateGUI();

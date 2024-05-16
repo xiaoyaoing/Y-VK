@@ -105,6 +105,16 @@ SurfaceScatterEvent make_surface_scatter_event(HitPayload hit_pay_load, const ve
     return event;
 }
 
+SurfaceScatterEvent make_surface_scatter_event(vec3 wo, vec3 n, vec3 p, vec2 uv, uint material_idx){
+    SurfaceScatterEvent event;
+    event.frame = make_frame(n);
+    event.wi = to_local(event.frame, wo);
+    event.p = p;
+    event.material_idx = material_idx;
+    event.uv = uv;
+    return event;
+}
+
 void copy_event(in SurfaceScatterEvent src, out SurfaceScatterEvent dst){
     dst.wo = src.wo;
     dst.wi = src.wi;

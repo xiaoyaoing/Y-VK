@@ -38,6 +38,7 @@ public:
     } cameraUbo;
     
     SceneUbo sceneUbo;
+    SceneUbo lastFrameSceneUbo;
     std::shared_ptr<RTSceneEntry> rtSceneEntry;
 };
 

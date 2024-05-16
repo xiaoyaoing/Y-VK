@@ -39,4 +39,14 @@ struct RestirReservoir {
     float p_hat;
     float pdf;
 };
+
+struct GBuffer {
+    vec3 position;
+    uint material_idx;
+    vec2 uv;
+    vec2 pad;
+    vec3 normal;
+    uint pad2;
+};
+
 #endif

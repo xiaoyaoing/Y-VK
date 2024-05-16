@@ -16,4 +16,5 @@ protected:
     std::unique_ptr<Buffer> temporReservoirBuffer{nullptr};
     std::unique_ptr<Buffer> spatialReservoirBuffer{nullptr};
     std::unique_ptr<Buffer> passReservoirBuffer{nullptr};
+    std::unique_ptr<Buffer> gBuffer{nullptr};
 };

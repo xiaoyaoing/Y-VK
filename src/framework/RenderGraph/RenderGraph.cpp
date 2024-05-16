@@ -240,6 +240,7 @@ void RenderGraph::addRaytracingPass(const std::string& name, const RayTracingSet
     auto                       node = new RayTracingPassNode(*this, name, pass);
     mPassNodes.emplace_back(node);
     Builder builder(node, *this);
+    node->addRef();
     setup(builder, pass->getData());
 }
 

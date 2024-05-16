@@ -42,10 +42,14 @@ struct SceneDesc {
     uint64_t restir_temporal_reservoir_addr;
     uint64_t restir_spatial_reservoir_addr;
     uint64_t restir_pass_reservoir_addr;
-    // uint64_t light_vis_addr;
+    uint64_t restir_color_storage_addr;
+    
+    uint64_t gbuffer_addr;
 };
 
 struct SceneUbo {
+    mat4 view;
+    mat4 proj;
     mat4 viewInverse;
     mat4 projInverse;
     vec4 lightPos;

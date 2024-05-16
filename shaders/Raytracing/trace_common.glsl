@@ -4,6 +4,10 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
     
     vec3 light_sample_rand = rand3(seed);
 
+    if(light_idx>=48){
+        debugPrintfEXT("light_idx %d\n", light_idx);
+    }
+   // return result;
     const RTLight light = lights[light_idx];
 
 
@@ -17,6 +21,7 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
             //  return light_sample.indensity / light_sample.pdf;
             any_hit_payload.hit = 1;
 
+         //   return vec3(0);
             traceRayEXT(tlas,
             gl_RayFlagsTerminateOnFirstHitEXT |
             gl_RayFlagsSkipClosestHitShaderEXT,
