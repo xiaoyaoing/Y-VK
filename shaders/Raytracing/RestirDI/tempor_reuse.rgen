@@ -15,12 +15,11 @@
 #include  "../bsdf.glsl"
 #include "../util.glsl"
 
-#include "restir_di.glsl"
 
 
 layout(location = 0) rayPayloadEXT HitPayload hitPayload;
 layout(location = 1) rayPayloadEXT AnyHitPayload any_hit_payload;
-
+#include "restir_di.glsl"
 #include "../trace_common.glsl"
 
 layout(push_constant) uniform _PushConstantRay { RestirDIPC pc_ray; };
@@ -59,18 +58,22 @@ void main()
         uint light_sample_count = 32;
         for (int i = 0;i<light_sample_count;i++)
         {
+            const uvec4 light_seed = seed;
             RestirData restir_data;
-            uint light_idx = uint(pc_ray.light_num * rand1(seed));
+            LightSample light_sample;
+            uint light_idx;
+            vec3 un_shadowed_light_contrib = restir_sample_light(event,rand4(seed),pc_ray.light_num,light_idx,light_sample);
             restir_data.light_idx = light_idx;
-            vec3 un_shadowed_light_contrib = restir_sample_light(event, restir_data.light_idx);
+            restir_data.triangle_idx = light_sample.triangle_idx;
+            restir_data.seed = light_seed;
             update_restir_reservoir(r_new, restir_data, length(un_shadowed_light_contrib));
         }
 
             vec3 color = vec3(0);
             if (r_new.w_sum > 0)
             {
-
-                color = sample_specify_light(r_new.s.light_idx, event, true, false,seed);
+             //   debugPrintfEXT("r_new.w_sum: %f\n", r_new.w_sum);
+                color = calc_L_vis(r_new);
                 float p_hat = length(color);
                 if (p_hat == 0)
                 {
@@ -80,9 +83,11 @@ void main()
                 {
                     r_new.W = r_new.w_sum  / (p_hat * r_new.m);
                 }
+                color = color * 48;
+                imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(color, 1.f));
+                return;
             }
     
-//        debugPrintfEXT("frame_num: %d\n", pc_ray.frame_num);
         if(pc_ray.do_temporal_reuse>0 && pc_ray.frame_num>0)
         {
             vec4 prev_pos = scene_ubo.prev_proj * scene_ubo.prev_view * vec4(hitPayload.p, 1);         
@@ -90,13 +95,6 @@ void main()
             if (all(greaterThanEqual(prev_screen_pos, ivec2(0))) && all(lessThan(prev_screen_pos, ivec2(gl_LaunchSizeEXT.xy))))
             {
                 uint prev_pixel_index = prev_screen_pos.y * gl_LaunchSizeEXT.x + prev_screen_pos.x;
-                
-                
-               // debugPrintfEXT("prev_screen_pos: %d %d launchid: %d %d\n", prev_screen_pos.x, prev_screen_pos.y, gl_LaunchIDEXT.x, gl_LaunchIDEXT.y);
-                
-              //  imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(inUV, 0, 1));
-              //  return;
-                
                 r_prev = temporal_reservoirs.r[pixel_idx];
             }
             
@@ -124,6 +122,7 @@ void main()
          
         const float phat = calc_p_hat(r) * r.m;
         r.W = phat == 0 ? 0 : r.w_sum / (phat);
+            r.W = phat == 0 ? 0 : phat / r.w_sum;
         }
         
         else {
@@ -137,7 +136,7 @@ void main()
 
 
 
-    //imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(color, 1.f));
+    imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(0,0,0, 1.f));
     pass_reservoir.r[pixel_idx] = r;
     gbuffer.r[pixel_idx].normal = hitPayload.n_s;
     gbuffer.r[pixel_idx].position = hitPayload.p;

@@ -117,7 +117,7 @@ void RestirIntegrator::initScene(RTSceneEntry & entry) {
     pcPath.min_depth = 0;
     pcPath.frame_num = 0;
     pcPath.do_spatial_reuse = false;
-    pcPath.do_temporal_reuse = true;
+    pcPath.do_temporal_reuse = false;
 }
 void RestirIntegrator::onUpdateGUI() {
     Integrator::onUpdateGUI();

@@ -1,6 +1,6 @@
 #include "di_commons.h"
 
-uvec4 seed ;
+uvec4 seed;
 
 SurfaceScatterEvent g_event;
 
@@ -17,7 +17,7 @@ uint pixel_idx = gl_LaunchIDEXT.x * gl_LaunchSizeEXT.y + gl_LaunchIDEXT.y;
 vec3 gBuffer_normal;
 vec3 gBuffer_position;
 uint gBuffer_material_idx;
-vec2 gBuffer_uv; 
+vec2 gBuffer_uv;
 
 void load_gbuffer(){
     gBuffer_normal = gbuffer.r[pixel_idx].normal;
@@ -33,7 +33,7 @@ RestirReservoir init_restir_reservoir(){
     reservoir.m = 0;
     reservoir.w_sum = 0;
     reservoir.s.light_idx = -1;
-    
+
     return reservoir;
 }
 
@@ -47,23 +47,79 @@ void update_restir_reservoir(inout RestirReservoir  r_new, RestirData s, float w
 }
 
 
-
-
-vec3  restir_sample_light(inout SurfaceScatterEvent event, in uint light_idx){
+vec3 calc_L(const RestirReservoir r){
     vec3 result = vec3(0);
 
-    float light_choose_rand = rand1(seed);
-    
-    vec3 light_sample_rand = rand3(seed);
-    
-    if(light_idx>48){
-        return result;
-    }
+
+    uint light_idx = r.s.light_idx;
+    uint triangle_idx = r.s.triangle_idx;
+    uvec4 r_seed = r.s.seed;
     
     const RTLight light = lights[light_idx];
-
-    LightSample light_sample = sample_li(light, event, light_sample_rand);
     
+    
+
+    LightSample   light_sample = sample_li_area_light_with_idx(light, g_event, rand3(r_seed), triangle_idx);
+
+    uint material_idx = g_event.material_idx;
+    g_event.wo = to_local(g_event.frame, light_sample.wi);
+
+    vec3 bsdf =eval_bsdf(materials.m[material_idx], g_event);
+
+    if (light_sample.pdf >0) {
+        result = light_sample.indensity * bsdf  / light_sample.pdf;
+    }
+    return result;
+}
+
+vec3 calc_L_vis(const RestirReservoir r){
+    vec3 result = vec3(0);
+
+
+    uint light_idx = r.s.light_idx;
+    uint triangle_idx = r.s.triangle_idx;
+    uvec4 r_seed = r.s.seed;
+
+    const RTLight light = lights[light_idx];
+
+    LightSample   light_sample = sample_li_area_light_with_idx(light, g_event, rand3(r_seed), triangle_idx);
+    if (!isBlack(light_sample.indensity) && light_sample.pdf != 0){
+
+        traceRayEXT(tlas,
+        gl_RayFlagsTerminateOnFirstHitEXT |
+        gl_RayFlagsSkipClosestHitShaderEXT,
+        0xFF, 1, 0, 1, g_event.p, EPS, light_sample.wi, light_sample.dist - EPS, 1);
+        bool  visible = any_hit_payload.hit == 0;
+        visible = true;
+        if (!visible){
+            return vec3(0);
+        }
+
+        uint material_idx = g_event.material_idx;
+        debugPrintfEXT("material_idx %d\n", material_idx);
+        g_event.wo = to_local(g_event.frame, light_sample.wi);
+
+        vec3 bsdf =eval_bsdf(materials.m[material_idx], g_event);
+
+        result = light_sample.indensity * bsdf  / light_sample.pdf;
+    }
+    return result;
+}
+
+
+vec3 restir_sample_light(inout SurfaceScatterEvent event,const vec4 rand, const uint light_num, out uint light_idx, out LightSample light_sample){
+    vec3 result = vec3(0);
+
+    float light_choose_rand =rand.x;
+
+    light_idx = uint(light_choose_rand * light_num);
+
+    vec3 light_sample_rand = rand.yzw;
+
+    const RTLight light = lights[light_idx];
+
+    light_sample = sample_li(light, event, light_sample_rand);
+
     uint material_idx = event.material_idx;
     event.wo = to_local(event.frame, light_sample.wi);
 
@@ -73,11 +129,39 @@ vec3  restir_sample_light(inout SurfaceScatterEvent event, in uint light_idx){
         result = light_sample.indensity * bsdf  / light_sample.pdf;
     }
     return result;
-    
 }
 
+vec3 restir_sample_light(in SurfaceScatterEvent event,const vec4 rand,const uint light_num){
+    vec3 result = vec3(0);
+
+    float light_choose_rand =rand.x;
+
+    light_idx = uint(light_choose_rand * light_num);
+
+    vec3 light_sample_rand = rand.yzw;
+
+    const RTLight light = lights[light_idx];
+
+    light_sample = sample_li(light, event, light_sample_rand);
+
+    uint material_idx = event.material_idx;
+    event.wo = to_local(event.frame, light_sample.wi);
+
+    vec3 bsdf =eval_bsdf(materials.m[material_idx], event);
+
+    if (light_sample.pdf >0) {
+        result = light_sample.indensity * bsdf  / light_sample.pdf;
+    }
+    return result;
+
+}
+
+
+
+
+
 float calc_p_hat(const RestirReservoir r) {
-    return length(restir_sample_light(g_event,r.s.light_idx));
+    return length(calc_L(r));
 }
 
 void combine_reservoir(inout RestirReservoir r1, const RestirReservoir r2) {

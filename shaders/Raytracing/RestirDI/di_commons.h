@@ -16,7 +16,8 @@ using uvec2 = glm::uvec2;
 
 struct RestirData {
     uint light_idx;
-    
+    uint triangle_idx;
+    uvec4 seed;
 };
 
 struct RestirDIPC {

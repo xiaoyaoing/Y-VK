@@ -15,11 +15,11 @@
 #include  "../bsdf.glsl"
 #include "../util.glsl"
 
-#include "restir_di.glsl"
 
 
 layout(location = 0) rayPayloadEXT HitPayload hitPayload;
 layout(location = 1) rayPayloadEXT AnyHitPayload any_hit_payload;
+#include "restir_di.glsl"
 
 #include "../trace_common.glsl"
 
@@ -28,7 +28,7 @@ layout(push_constant) uniform _PushConstantRay { RestirDIPC pc_ray; };
 
 void main()
 {
-    
+    return ;
     load_gbuffer();
     uint light_idx = spatial_reservoirs.r[pixel_idx].s.light_idx;
     
@@ -46,24 +46,15 @@ void main()
     vec4 target = scene_ubo.projInverse * vec4(d.x, d.y, 1, 1);
     vec4 direction = scene_ubo.viewInverse*vec4(normalize(target.xyz / target.w), 0);
     
-   // vec3 color = gBuffer_normal;
 
     SurfaceScatterEvent event = make_surface_scatter_event(direction.xyz,gBuffer_normal, gBuffer_position, gBuffer_uv,gBuffer_material_idx);
+    copy_event(event,g_event);
     vec3 color = vec3(0);
-
-
-    //   // debugPrintfEXT("light_idx: %d\n", light_idx);
-    color += sample_specify_light(light_idx,event,true,false,seed);
-
-
-    //  color = vec3(gBuffer_uv,0);
-//
-//
+    
+    
     RestirReservoir spatial_reservoir = spatial_reservoirs.r[pixel_idx];
-
-
-    // debugPrintfEXT("spatial_reservoir.w_sum m light_num: %f %f %f\n", spatial_reservoir.w_sum, spatial_reservoir.m, pc_ray.light_num);
-//   / color *= spatial_reservoir.w_sum/(length(color) * spatial_reservoir.m) * pc_ray.light_num;
+    color += calc_L_vis(spatial_reservoir);
+    
     color *= spatial_reservoir.W * pc_ray.light_num;
 
     temporal_reservoirs.r[pixel_idx] = spatial_reservoir;

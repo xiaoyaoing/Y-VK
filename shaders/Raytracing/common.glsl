@@ -105,28 +105,10 @@ bool isBlack(vec3 v){
     return v.x == 0 && v.y == 0 && v.z == 0;
 }
 
-
-
-
-MeshSampleRecord uniform_sample_on_mesh(uint mesh_idx, vec3 rands, in mat4 world_matrix){
-
+MeshSampleRecord uniform_sample_on_mesh(uint mesh_idx, vec3 rands, in mat4 world_matrix,const uint triangle_idx){
     MeshSampleRecord result;
-
-    //first choose one triangle
-
+    
     RTPrimitive mesh_info = prim_infos.p[mesh_idx];
-
-    uint triangle_idx = sample_distribution(rands.x, mesh_info.area_distribution_buffer_addr, result.pdf);
-
-    //    debugPrintfEXT("triangle_idx %d\n", triangle_idx);
-
-    uint triangle_count = mesh_info.index_count / 3;
-
-    //   triangle_idx = uint(rands.x * triangle_count);
-
-    //    debugPrintfEXT("triangle_idx %d\n", triangle_idx);
-
-
     uint index_offset = mesh_info.index_offset + triangle_idx * 3;
 
     ivec3 ind = ivec3(indices.i[index_offset + 0], indices.i[index_offset + 1],
@@ -158,22 +140,31 @@ MeshSampleRecord uniform_sample_on_mesh(uint mesh_idx, vec3 rands, in mat4 world
     const vec4 nrm = normalize(n0 * barycentrics.x + n1 * barycentrics.y +
     n2 * barycentrics.z);
 
-    result.pdf = 1.f / mesh_info.area;
+    result.pdf = 2.f / length(cross(p1 - p0, p2 - p0));
 
-    // float area = 0.5f * length(cross(p1 - p0, p2 - p0));
-    // result.pdf  = 1.f / float(triangle_count) / area;
 
     result.n = normalize(vec3(inv_tr_mat * nrm));
-    result.p = barycentrics.x * p0 + p1 * barycentrics.y + p2 * barycentrics.z;
+//    result.p = barycentrics.x * p0 + p1 * barycentrics.y + p2 * barycentrics.z;
 
     vec3 pos =  p0_ * barycentrics.x + p1_ * barycentrics.y + p2_ * barycentrics.z;
     result.p = (world_matrix * vec4(pos, 1.f)).xyz;
 
-
-
     result.triangle_idx = triangle_idx;
 
     return result;
+}
+
+
+MeshSampleRecord uniform_sample_on_mesh(uint mesh_idx, vec3 rands, in mat4 world_matrix){
+    
+    RTPrimitive mesh_info = prim_infos.p[mesh_idx];
+    float pdf;
+    uint triangle_idx = sample_distribution(rands.x, mesh_info.area_distribution_buffer_addr, pdf);
+
+    MeshSampleRecord record = uniform_sample_on_mesh(mesh_idx, rands, world_matrix, triangle_idx);
+    record.pdf = 1.f/mesh_info.area;
+    
+    return record;
 }
 
 
@@ -189,62 +180,6 @@ vec3 eval_light(const RTLight light, const vec3 p, const vec3 n_g, const vec3 w)
     }
     return vec3(0);
 }
-
-
-//return sample position,pdf,normal
-//MeshSampleRecord uniform_sample_on_mesh(uint mesh_idx, vec3 rands, in mat4 world_matrix){
-//
-//    MeshSampleRecord result;
-//
-//    //first choose one triangle
-//
-//    RTPrimitive mesh_info = prim_infos.p[mesh_idx];
-//
-//    uint triangle_count = mesh_info.index_count / 3;
-//
-//    uint triangle_idx = uint(rands.x * triangle_count);
-//
-//    uint index_offset = mesh_info.index_offset + triangle_idx * 3;
-//
-//    ivec3 ind = ivec3(indices.i[index_offset + 0], indices.i[index_offset + 1],
-//    indices.i[index_offset + 2]);
-//
-//    uint vertex_offset = mesh_info.vertex_offset;
-//
-//    ind += ivec3(vertex_offset);
-//
-//    const vec3 p0 = vertices.v[ind.x];
-//    const vec3 p1 = vertices.v[ind.y];
-//    const vec3 p2 = vertices.v[ind.z];
-//
-//    const vec3 n0 = normals.n[ind.x];
-//    const vec3 n1 = normals.n[ind.y];
-//    const vec3 n2 = normals.n[ind.z];
-//
-//    float u = 1 - sqrt(rands.y);
-//    float v = rands.z * sqrt(rands.y);
-//    const vec3 barycentrics = vec3(1.0 - u - v, u, v);
-//
-//    mat4x4 inv_tr_mat = transpose(inverse(world_matrix));
-//
-//    vec4 n = inv_tr_mat * vec4(normalize(n0 * barycentrics.x + n1 * barycentrics.y + n2 * barycentrics.z), 0.0);
-//
-//
-//    float area = 0.5f * cross(p1 - p0, p2 - p0).length();
-//
-//    result.pdf  = 1.f / float(triangle_count) / area;
-//    result.n =  normalize(vec3(inv_tr_mat * n));
-//
-//
-//    vec3 pos =  p0 * barycentrics.x + p1 * barycentrics.y + p2 * barycentrics.z;
-//    result.p = (world_matrix * vec4(pos, 1.f)).xyz;
-//
-//    //result.n = normalize(n.xyz);
-//
-//    result.triangle_idx = triangle_idx;
-//
-//    return result;
-//}
 
 
 float get_triangle_area(const uint prim_idx, const uint triangle_idx){
@@ -285,17 +220,53 @@ float get_primitive_area(const uint prim_idx){
 LightSample sample_li_area_light(const RTLight light, const SurfaceScatterEvent event, const vec3 rand){
 
     LightSample result;
-
-
-    //  result.indensity = light_idx == 0 ? vec3(1.f) : vec3(0.f);
+    
     result.indensity = light.L;
-    //return result;
 
     float pdf;
     //sample one point on primitive 
     MeshSampleRecord record  = uniform_sample_on_mesh(light.prim_idx, rand, light.world_matrix);
+    
+    vec3 light_p = record.p;
+    vec3 p = event.p;
 
-    //    record.n = -record.n;
+    vec3 wi = light_p - p;
+    float dist = length(wi);
+
+    wi /= dist;
+
+    dist -=  EPS;
+
+    float cos_theta_light = dot(record.n, -wi);
+    if (cos_theta_light <= 0.0){
+        result.n = record.n;
+        result.wi = wi;
+        result.indensity  = vec3(0);
+        result.pdf = 0;
+        return result;
+    }
+    pdf = record.pdf * dist * dist  / abs(cos_theta_light);
+
+    result.wi = wi;
+    result.n = record.n;
+    result.pdf = pdf;
+    result.p = light_p;
+    result.indensity = light.L;
+    result.dist = dist;
+    result.triangle_idx = record.triangle_idx;
+
+    return result;
+}
+
+LightSample sample_li_area_light_with_idx(const RTLight light, const SurfaceScatterEvent event, const vec3 rand,const uint triangle_index){
+
+    LightSample result;
+
+    result.indensity = light.L;
+
+    float pdf;
+    //sample one point on primitive 
+    MeshSampleRecord record  = uniform_sample_on_mesh(light.prim_idx, rand, light.world_matrix,triangle_index);
 
     vec3 light_p = record.p;
     vec3 p = event.p;
@@ -308,8 +279,6 @@ LightSample sample_li_area_light(const RTLight light, const SurfaceScatterEvent 
     dist -=  EPS;
 
     float cos_theta_light = dot(record.n, -wi);
-
-
     if (cos_theta_light <= 0.0){
         result.n = record.n;
         result.wi = wi;
@@ -332,11 +301,6 @@ LightSample sample_li_area_light(const RTLight light, const SurfaceScatterEvent 
 
 LightSample sample_li_infinite_light(const RTLight light, const SurfaceScatterEvent event, const vec3 rand){
     LightSample result;
-    //    result.indensity = light.L;
-    //    result.wi = -event.wo;
-    //    result.pdf = 1.f;
-    //    result.p = event.p;
-    //    result.dist = 1000000.f;
     return result;
 }
 
@@ -365,6 +329,11 @@ LightSample sample_li(const RTLight light, const SurfaceScatterEvent event, cons
     LightSample result;
     return result;
 }
+
+//LightSample sample_li_with_triangle_idx(const RTLight light, const SurfaceScatterEvent event, const vec3 rand, const uint triangle_idx){
+//    LightSample result;
+//    
+//}
 
 
 
