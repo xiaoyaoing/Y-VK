@@ -224,7 +224,7 @@ public:
     float mMoveSpeed{1};
     bool  flipY{false};
     bool  flipYTemp{false};
-    bool  useInverseDepth{true};
+    bool  useInverseDepth{false};
 
 protected:
     bool m_perspective{true};

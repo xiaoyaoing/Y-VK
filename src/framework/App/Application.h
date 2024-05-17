@@ -92,7 +92,7 @@ protected:
     void updateGUI();
     void createRenderContext();
 
-    void handleSaveImage();
+    void handleSaveImage(RenderGraph & graph);
     void resetImageSave();
     //void loadScene(const std::string & path);
 protected:

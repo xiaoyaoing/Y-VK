@@ -125,17 +125,11 @@ void Example::prepare() {
         pass->init();
     }
 
-    SceneLoadingConfig config;
+    SceneLoadingConfig sceneConfig;
 
     // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf", {.bufferRate = BufferRate::PER_SCENE});
-    scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/MoerEngineScenes/Sponza/pbr/sponza2.gltf", {.bufferRate = BufferRate::PER_SCENE});
-
-    SceneLoadingConfig sceneConfig = {.requiredVertexAttribute = {POSITION_ATTRIBUTE_NAME, INDEX_ATTRIBUTE_NAME, NORMAL_ATTRIBUTE_NAME, TEXCOORD_ATTRIBUTE_NAME},
-                                      .indexType               = VK_INDEX_TYPE_UINT32,
-                                      .bufferAddressAble       = true,
-                                      .bufferForAccel          = true,
-                                      .bufferForStorage        = true,
-                                      .sceneScale              = glm::vec3(0.1f)};
+    // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/MoerEngineScenes/Sponza/pbr/sponza2.gltf", {.bufferRate = BufferRate::PER_SCENE});
+    scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf", sceneConfig);
 
     auto light_pos   = glm::vec3(0.0f, 128.0f, -225.0f);
     auto light_color = glm::vec3(1.0, 1.0, 1.0);

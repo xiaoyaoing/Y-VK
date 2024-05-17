@@ -1,0 +1,146 @@
+#version 460
+#extension GL_EXT_ray_tracing : require
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_scalar_block_layout : enable
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_debug_printf : enable
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
+#extension GL_EXT_buffer_reference2 : require
+#extension GL_EXT_shader_atomic_float : require
+
+
+
+#include "di_commons.h"
+#include "../common.glsl"
+#include  "../bsdf.glsl"
+#include "../util.glsl"
+
+#include "restir_di.glsl"
+
+
+layout(location = 0) rayPayloadEXT HitPayload hitPayload;
+layout(location = 1) rayPayloadEXT AnyHitPayload any_hit_payload;
+
+#include "../trace_common.glsl"
+
+layout(push_constant) uniform _PushConstantRay { RestirDIPC pc_ray; };
+
+
+void main()
+{
+    seed = init_rng(gl_LaunchIDEXT.xy, gl_LaunchSizeEXT.xy, pc_ray.frame_num);
+
+    const vec2 pixelCenter = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
+    const vec2 inUV = pixelCenter/vec2(gl_LaunchSizeEXT.xy);
+    vec2 d = inUV * 2.0 - 1.0;
+
+    vec3 origin = (scene_ubo.viewInverse * vec4(0, 0, 0, 1)).xyz;
+    vec4 target = scene_ubo.projInverse * vec4(d.x, d.y, 1, 1);
+    vec4 direction = scene_ubo.viewInverse*vec4(normalize(target.xyz / target.w), 0);
+
+
+    RestirReservoir r_new = init_restir_reservoir();
+    RestirReservoir r_prev = init_restir_reservoir();
+    RestirReservoir r = init_restir_reservoir();
+
+
+    {  uint rayFlags = gl_RayFlagsOpaqueEXT;
+        uint cullMask = 0xff;
+        float tmin = 0.001;
+        float tmax = 10000.0;
+        traceRayEXT(tlas, rayFlags, cullMask, 0, 0, 0, origin.xyz, tmin, direction.xyz, tmax, 0);
+    }
+ 
+    bool found_intersect = hitPayload.material_idx != -1;
+    if (found_intersect) {
+        SurfaceScatterEvent  event = make_surface_scatter_event(hitPayload, -direction.xyz);
+        copy_event(event,g_event);
+
+        uint light_sample_count = 32;
+        for (int i = 0;i<light_sample_count;i++)
+        {
+            RestirData restir_data;
+            uint light_idx = uint(pc_ray.light_num * rand1(seed));
+            restir_data.light_idx = light_idx;
+            vec3 un_shadowed_light_contrib = restir_sample_light(event, restir_data.light_idx);
+            update_restir_reservoir(r_new, restir_data, length(un_shadowed_light_contrib));
+        }
+
+            vec3 color = vec3(0);
+            if (r_new.w_sum > 0)
+            {
+
+                color = sample_specify_light(r_new.s.light_idx, event, true, false,seed);
+                float p_hat = length(color);
+                if (p_hat == 0)
+                {
+                    r_new.W = 0;
+                }
+                else
+                {
+                    r_new.W = r_new.w_sum  / (p_hat * r_new.m);
+                }
+            }
+    
+//        debugPrintfEXT("frame_num: %d\n", pc_ray.frame_num);
+        if(pc_ray.do_temporal_reuse>0 && pc_ray.frame_num>0)
+        {
+            vec4 prev_pos = scene_ubo.prev_proj * scene_ubo.prev_view * vec4(hitPayload.p, 1);         
+            ivec2 prev_screen_pos = ivec2((prev_pos.xy/prev_pos.w  + 1) * 0.5 * gl_LaunchSizeEXT.xy);
+            if (all(greaterThanEqual(prev_screen_pos, ivec2(0))) && all(lessThan(prev_screen_pos, ivec2(gl_LaunchSizeEXT.xy))))
+            {
+                uint prev_pixel_index = prev_screen_pos.y * gl_LaunchSizeEXT.x + prev_screen_pos.x;
+                
+                
+               // debugPrintfEXT("prev_screen_pos: %d %d launchid: %d %d\n", prev_screen_pos.x, prev_screen_pos.y, gl_LaunchIDEXT.x, gl_LaunchIDEXT.y);
+                
+              //  imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(inUV, 0, 1));
+              //  return;
+                
+                r_prev = temporal_reservoirs.r[pixel_idx];
+            }
+            
+        }
+        combine_reservoir(r,r_new);
+    }
+    
+    uint num_samples = r_new.m;
+    if(pc_ray.do_temporal_reuse>0 && pc_ray.frame_num>0){
+        num_samples += r_prev.m;
+        combine_reservoir(r,r_prev);
+    }
+
+ 
+    r.m = num_samples;
+    
+    if (r_new.W > 0  || r_prev.W > 0) {
+        if(r_prev.W>0){
+           // debugPrintfEXT("r_prev.W: light_idx %f %d %f\n", r_prev.W,r_prev.s.light_idx,r_new.W);
+        }
+        if(r.s.light_idx>=48){
+           // debugPrintfEXT("light_idx %d %d %f %f %f\n", r_prev.s.light_idx,r_new.s.light_idx,r_new.W,r_prev.W,calc_p_hat(r_prev));
+        }
+        if(r.s.light_idx!=-1){
+         
+        const float phat = calc_p_hat(r) * r.m;
+        r.W = phat == 0 ? 0 : r.w_sum / (phat);
+        }
+        
+        else {
+            r.W = 0;
+        }
+        
+    } else {
+        r.W = 0;
+    }
+
+
+
+
+    //imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(color, 1.f));
+    pass_reservoir.r[pixel_idx] = r;
+    gbuffer.r[pixel_idx].normal = hitPayload.n_s;
+    gbuffer.r[pixel_idx].position = hitPayload.p;
+    gbuffer.r[pixel_idx].uv = hitPayload.uv;
+    gbuffer.r[pixel_idx].material_idx = hitPayload.material_idx;
+}

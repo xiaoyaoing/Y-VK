@@ -49,7 +49,8 @@ Buffer::Buffer(Device& device, uint64_t bufferSize, VkBufferUsageFlags bufferUsa
     if (data) {
         uploadData(data, bufferSize);
     }
-
+    _usageFlags  = bufferUsage;
+    _memoryUsage = memoryUsage;
     //LOGI("Buffer created: %d bytes, usage %d, memory usage %d", bufferSize, bufferUsage, memoryUsage);
 }
 
@@ -65,9 +66,9 @@ Buffer::~Buffer() {
         vmaDestroyBuffer(_allocator, _buffer, _bufferAllocation);
     }
 }
-std::unique_ptr<Buffer> Buffer::FromBuffer(Device& device, CommandBuffer& commandBuffer, const Buffer& srcBuffer, VkBufferUsageFlags usageFlags, VkDeviceSize offset) {
-    std::unique_ptr<Buffer> dstBuffer = std::make_unique<Buffer>(device, srcBuffer.getSize(), usageFlags | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-    VkBufferCopy            copy{.srcOffset = 0, .size = srcBuffer.getSize()};
+std::unique_ptr<Buffer> Buffer::FromBuffer(Device& device, CommandBuffer& commandBuffer, const Buffer& srcBuffer, VkBufferUsageFlags usageFlags, VkDeviceSize offset,VkDeviceSize size) {
+    std::unique_ptr<Buffer> dstBuffer = std::make_unique<Buffer>(device,  size == -1?srcBuffer.getSize():size, usageFlags | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+    VkBufferCopy            copy{.srcOffset = offset, .size = srcBuffer.getSize()};
     vkCmdCopyBuffer(commandBuffer.getHandle(), srcBuffer.getHandle(), dstBuffer->getHandle(), 1, &copy);
     return dstBuffer;
 }

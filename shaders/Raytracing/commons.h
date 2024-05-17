@@ -20,6 +20,9 @@ using uvec2 = glm::uvec2;
 #define ALIGN16
 #endif
 
+#define LIGHT_TYPE_AREA 1
+#define LIGHT_TYPE_INFINITE 2
+
 //For code used in shader,use "_" code style
 
 struct SceneDesc {
@@ -32,13 +35,26 @@ struct SceneDesc {
 
     // NEE
     uint64_t mesh_lights_addr;
-    // uint64_t light_vis_addr;
+
+    uint64_t infnite_light_distribution_addr;
+
+    
+    uint64_t restir_temporal_reservoir_addr;
+    uint64_t restir_spatial_reservoir_addr;
+    uint64_t restir_pass_reservoir_addr;
+    uint64_t restir_color_storage_addr;
+    
+    uint64_t gbuffer_addr;
 };
 
 struct SceneUbo {
+    mat4 view;
+    mat4 proj;
     mat4 viewInverse;
     mat4 projInverse;
     vec4 lightPos;
+    mat4 prev_view;
+    mat4 prev_proj;
 };
 
 struct RTMaterial {
@@ -55,11 +71,8 @@ struct RTLight {
     mat4 world_matrix;
     vec3 L;
     uint prim_idx;
-    vec3 unused;
+    vec3 position;
     uint light_type;
-
-    // vec3 to_use;
-    // uint light_flags;
 };
 
 struct RTPrimitive {
@@ -89,6 +102,7 @@ struct RTPrimitive {
 
 #define RT_LIGHT_TYPE_AREA     0
 #define RT_LIGHT_TYPE_INFINITE 1
+#define RT_LIGHT_TYPE_POINT    2
 
 #define RT_BSDF_LOBE_DIFFUSE    1u
 #define RT_BSDF_LOBE_SPECULAR   1u << 1

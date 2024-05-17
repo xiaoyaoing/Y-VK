@@ -11,5 +11,6 @@ struct PCPath
     uint min_depth;
     uint enable_sample_bsdf;
     uint enable_sample_light;
+    uint enable_accumulation;
 };
 #endif

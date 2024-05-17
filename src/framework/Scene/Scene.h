@@ -13,27 +13,10 @@
 
 class Camera;
 
-// struct Material {
-//     enum AlphaMode {
-//         ALPHAMODE_OPAQUE,
-//         ALPHAMODE_MASK,
-//         ALPHAMODE_BLEND
-//     };
-//
-//     AlphaMode alphaMode       = ALPHAMODE_OPAQUE;
-//     float     alphaCutoff     = 1.0f;
-//     float     metallicFactor  = 1.0f;
-//     float     roughnessFactor = 1.0f;
-//     glm::vec4 baseColorFactor = glm::vec4(1.0f);
-//     glm::vec3 emissiveFactor  = glm::vec3(0.0f);
-//
-//     std::unordered_map<std::string, const Texture&> textures{};
-//
-//     static Material getDefaultMaterial();
-// };
 
 class GltfLoading;
 class Jsonloader;
+class RuntimeSceneManager;
 
 enum class BufferRate {
     PER_PRIMITIVE,
@@ -67,10 +50,15 @@ public:
     Buffer &                                  getUniformBuffer() const;
     Buffer &                                  getPrimitiveIdBuffer() const;
     bool                                           usePrimitiveIdBuffer() const;
+    void updateSceneUniformBuffer();
+    void updateScenePrimitiveIdBuffer();
 
+    void addPrimitive(std::unique_ptr<Primitive> primitive);
+    void addPrimitives(std::vector<std::unique_ptr<Primitive>>&& primitives);
 protected:
     friend GltfLoading;
     friend Jsonloader;
+    friend RuntimeSceneManager;
     std::vector<GltfMaterial> materials;
     std::vector<RTMaterial>  rtMaterials;
 

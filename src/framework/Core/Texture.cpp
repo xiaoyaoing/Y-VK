@@ -63,8 +63,7 @@ const Sampler& Texture::getSampler() const {
 // }
 
 static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture, CommandBuffer& commandBuffer, std::vector<std::unique_ptr<Buffer>>& buffers) {
- //  texture->image->generateMipMapOnCpu();
-
+    texture->image->generateMipMapOnCpu();
     texture->image->createVkImage(device);
 
     

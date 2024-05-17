@@ -21,6 +21,35 @@ layout(input_attachment_index = 2, binding = 2, set=2) uniform subpassInput gbuf
 layout(binding = 3, set=1) uniform sampler2D  gbuffer_depth;
 layout(binding = 4, set=1) uniform sampler2D frame_color;
 
+uint jenkinsHash(uint a)
+{
+    a = (a + 0x7ed55d16) + (a << 12);
+    a = (a ^ 0xc761c23cu) ^ (a >> 19);
+    a = (a + 0x165667b1) + (a << 5);
+    a = (a + 0xd3a2646c) ^ (a << 9);
+    a = (a + 0xfd7046c5) + (a << 3);
+    a = (a ^ 0xb55a4f09u) ^ (a >> 16);
+    return a;
+}
+
+vec3 pseudocolor(uint value)
+{
+    if (value == 0)
+    return vec3(1, 0, 0);
+    if (value == 1)
+    return vec3(0, 1, 0);
+    if (value == 2)
+    return vec3(0, 0, 1);
+    if (value == 3)
+    return vec3(1, 1, 0);
+    if (value == 4)
+    return vec3(1, 0, 1);
+    uint h = jenkinsHash(value);
+    return (uvec3(h, h >> 8, h >> 16) & 0xffu) / 255.f;
+}
+
+
+
 
 
 vec2 get_screen_coordinate(vec3 world_pos){
@@ -36,19 +65,29 @@ float get_depth(vec3 world_pos){
 
 
 vec3 ssr(vec3 ori, vec3 dir) {
+    dir = normalize(vec3(1, 1, 0));
     vec3 hitPos;
-    float step = 1.0;
+    float step = 2.0;
     vec3 lastPoint = ori;
-    for (int i=0;i<10;++i){
+    //
+    //  step = 0;
+
+    for (int i=0;i<64;++i){
         // 往射线方向走一步得到测试点深度
         vec3 testPoint = lastPoint + step * dir;
         float testDepth = get_depth(testPoint);
         // 测试点的uv位置对应在depth buffer的深度
         vec2 testScreenUV = get_screen_coordinate(testPoint);
+        testScreenUV.y = 1.0 - testScreenUV.y;
         float bufferDepth = texture(gbuffer_depth, testScreenUV).x;
+
+        //   return texture(frame_color, testScreenUV).rgb;
+
         // 若测试点深度 > depth buffer深度，则说明光线相交于该测试点位置所在的像素柱条
-        if (testDepth-bufferDepth > -1e-6){
+        if (testDepth - bufferDepth > 1e-4){
             hitPos = testPoint;
+            //  return vec3(testDepth - bufferDepth);
+            // return pseudocolor(i);
             return texture(frame_color, testScreenUV).rgb;
         }
         // 继续下一次 March
@@ -68,11 +107,16 @@ void main(){
     float metallic    = normal_metalic.w;
 
     vec3  emission = subpassLoad(gbuffer_emission).rgb;
-    float depth    = texture(gbuffer_depth, in_uv).x;
+    float depth    = texture(gbuffer_depth, vec2(in_uv.x, 1-in_uv.y)).x;
+    //    //
+    //    if (depth == 0.0){
+    //        discard;
+    //    }
 
-    if (depth == 0.0){
-        discard;
-    }
+    //    out_color = texture(frame_color, in_uv);
+    //    out_color = vec4(1, 0.0, 0.0, 1.0);
+    // out_color = vec4(depth, 0.0, 0.0, 1.0);
+    //    return;
 
     vec3 world_pos = worldPosFromDepth(in_uv, depth);
     // return;
@@ -85,11 +129,26 @@ void main(){
 
     vec3 color = vec3(0.0);
     //unifrom sample 
+
+    vec3 view_dir = per_frame.camera_pos - world_pos;
+    vec3 reflect_dir = reflect(-view_dir, normal);
+
+    vec3 L = reflect(-view_dir, normal);
+
+    vec2 ray_end_screen = get_screen_coordinate(world_pos + L);
+
     for (int i = 0; i < 10; ++i){
         vec2 rand = rand2(seed);
         vec3 local_dir = square_to_uniform_hemisphere(rand);
-        vec3 dir = to_local(frame, local_dir);
-        color += diffuse_color * ssr(world_pos + 0.001 * dir, dir);
+        vec3 dir = reflect_dir;
+        //        dir = local_dir;
+        //  color = dir;
+        //  break;
+        color += ssr(world_pos + 0.001 * dir, dir);
+        // out_color = vec4(color, 1.0);
+        //return;
     }
-    out_color = vec4(color / 10.0, 1.0);
+    // color = world_pos/10.f;
+    //    color = reflect_dir * 10.f;
+    out_color = vec4(color/10.f, 1.0);
 }

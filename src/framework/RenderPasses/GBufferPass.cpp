@@ -149,9 +149,10 @@ void GBufferPass::render(RenderGraph& rg) {
             auto emission = rg.createTexture("emission",
                                              {.extent = renderContext->getViewPortExtent(),
                                               .useage = TextureUsage::SUBPASS_INPUT |
-                                                        TextureUsage::COLOR_ATTACHMENT});
+                                                        TextureUsage::COLOR_ATTACHMENT});   
 
-            auto depth = rg.createTexture("depth", {.extent = renderContext->getViewPortExtent(), .useage = TextureUsage::SUBPASS_INPUT | TextureUsage::DEPTH_ATTACHMENT
+            auto depth = rg.createTexture("depth", {.extent = renderContext->getViewPortExtent(),
+                .useage = TextureUsage::SUBPASS_INPUT | TextureUsage::DEPTH_ATTACHMENT | TextureUsage::SAMPLEABLE
 
                                                    });
             
@@ -159,6 +160,6 @@ void GBufferPass::render(RenderGraph& rg) {
             builder.declare(desc);
 
             builder.writeTextures({diffuse,  emission, depth}, TextureUsage::COLOR_ATTACHMENT).writeTexture(depth, TextureUsage::DEPTH_ATTACHMENT); }, [&](RenderPassContext& context) {
-            renderContext->getPipelineState().setPipelineLayout(*mPipelineLayout).setDepthStencilState({.depthCompareOp = VK_COMPARE_OP_GREATER});
+            renderContext->getPipelineState().setPipelineLayout(*mPipelineLayout).setDepthStencilState({.depthCompareOp = VK_COMPARE_OP_LESS});
             g_manager->fetchPtr<View>("view")->bindViewBuffer().bindViewShading().bindViewGeom(context.commandBuffer).drawPrimitives(context.commandBuffer); });
 }

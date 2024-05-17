@@ -24,14 +24,22 @@ public:
     void drawFrame(RenderGraph &renderGraph) override;
     // virtual void update() override;
     
-    std::unique_ptr<Integrator> integrator{};
+    // std::unique_ptr<Integrator> path,restirDI{};
+
+    std::unordered_map<const char *,std::unique_ptr<Integrator>> integrators;
+    const char * currentIntegrator = "restir";
+    std::vector<const char*> integratorNames;
+
     
     struct 
     {
         glm::mat4 viewInverse;
         glm::mat4 projInverse;
     } cameraUbo;
-
+    
+    SceneUbo sceneUbo;
+    SceneUbo lastFrameSceneUbo;
+    std::shared_ptr<RTSceneEntry> rtSceneEntry;
 };
 
 

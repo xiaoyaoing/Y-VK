@@ -32,6 +32,7 @@ struct PerPrimitive {
 
 
 vec3  worldPosFromDepth    (vec2 uv, float depth){
+    //  uv.y = 1.0 - uv.y;
     vec4  clip         = vec4(uv * 2.0 - 1.0, depth, 1.0);
     vec4 world_w = per_frame.inv_view_proj * clip;
     vec3 pos     = world_w.xyz / world_w.w;

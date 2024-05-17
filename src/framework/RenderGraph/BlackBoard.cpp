@@ -20,6 +20,8 @@ void Blackboard::remove(const std::string& name) noexcept {
 }
 
 RenderGraphHandle Blackboard::getHandle(const std::string& name) const noexcept {
+    if(!mMap.contains(name))
+        LOGE("Blackboard does not contain resource: {}", name);
     return mMap.at(name);
 }
 
@@ -36,6 +38,7 @@ const SgImage& Blackboard::getHwImage(const std::string& name) const noexcept {
 }
 
 const Buffer& Blackboard::getBuffer(const std::string& name) const noexcept {
+    LOGI("Blackboard::getBuffer {}", name);
     return *graph.getBuffer(getHandle(name))->getHwBuffer();
 }
 

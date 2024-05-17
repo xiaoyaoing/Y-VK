@@ -5,7 +5,7 @@
 #include "RenderGraph/RenderGraph.h"
 void SSGIPass::render(RenderGraph& rg) {
     rg.addGraphicPass(
-        "LightingPass", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
+        "ssgi", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
             auto& blackBoard = rg.getBlackBoard();
             auto  depth      = blackBoard["depth"];
             auto  normal     = blackBoard["normal"];
@@ -18,12 +18,12 @@ void SSGIPass::render(RenderGraph& rg) {
                                                            TextureUsage::COLOR_ATTACHMENT
 
                                          });
-            builder.readTextures({depth, normal, diffuse, emission});
-            builder.readTexture(output, RenderGraphTexture::Usage::SAMPLEABLE);
+            builder.readTextures({normal, diffuse, emission});
+            builder.readTextures({output, depth}, RenderGraphTexture::Usage::SAMPLEABLE);
             builder.writeTexture(ssgi);
 
             RenderGraphPassDescriptor desc{};
-            desc.setTextures({output, diffuse, depth, normal, emission}).addSubpass({.inputAttachments = {diffuse, depth, normal, emission}, .outputAttachments = {ssgi}, .disableDepthTest = true});
+            desc.setTextures({diffuse, normal, emission, ssgi}).addSubpass({.inputAttachments = {diffuse, normal, emission}, .outputAttachments = {ssgi}, .disableDepthTest = true});
             builder.declare(desc);
             // builder.addSubPass();
         },

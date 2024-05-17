@@ -1,6 +1,7 @@
 //
 // Created by pc on 2023/12/1.
 //
+#include "Scene/RuntimeSceneManager.h"
 
 #include "RayTracer.h"
 
@@ -8,6 +9,7 @@
 #include "Common/VkCommon.h"
 #include "Core/Shader/GlslCompiler.h"
 #include "Integrators/PathIntegrator.h"
+#include "Integrators/RestirIntegrator.h"
 #include "Integrators/SimpleIntegrator.h"
 #include "Scene/SceneLoader/SceneLoaderInterface.h"
 #include "Scene/SceneLoader/gltfloader.h"
@@ -77,8 +79,18 @@ RayTracer::RayTracer(const RayTracerSettings& settings) {
 }
 
 void RayTracer::drawFrame(RenderGraph& renderGraph) {
+    
+    sceneUbo.projInverse = camera->projInverse();
+    sceneUbo.viewInverse = camera->viewInverse();
+    sceneUbo.view = camera->view();
+    sceneUbo.proj = camera->proj();
+    sceneUbo.prev_view = lastFrameSceneUbo.view;
+    sceneUbo.prev_proj = lastFrameSceneUbo.proj;
+    rtSceneEntry->sceneUboBuffer->uploadData(&sceneUbo, sizeof(sceneUbo));
 
-    integrator->render(renderGraph);
+    lastFrameSceneUbo = sceneUbo;
+    
+    integrators[currentIntegrator]->render(renderGraph);
 
     renderGraph.addImageCopyPass(renderGraph.getBlackBoard().getHandle("RT"), renderGraph.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME));
 
@@ -87,21 +99,24 @@ void RayTracer::drawFrame(RenderGraph& renderGraph) {
 void RayTracer::prepare() {
     Application::prepare();
     GlslCompiler::setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_5);
-    GlslCompiler::forceRecompile = true;
+    //GlslCompiler::forceRecompile = true;
 
-    integrator = std::make_unique<PathIntegrator>(*device);
+    integrators["path"] = std::make_unique<PathIntegrator>(*device);
+    integrators["restir"] = std::make_unique<RestirIntegrator>(*device);
+    integratorNames = {"path", "restir"};
 
     SceneLoadingConfig sceneConfig = {.requiredVertexAttribute = {POSITION_ATTRIBUTE_NAME, INDEX_ATTRIBUTE_NAME, NORMAL_ATTRIBUTE_NAME, TEXCOORD_ATTRIBUTE_NAME},
                                       .indexType               = VK_INDEX_TYPE_UINT32,
                                       .bufferAddressAble       = true,
                                       .bufferForAccel          = true,
                                       .bufferForStorage        = true,
-                                      //.bufferRate              = BufferRate::PER_PRIMITIVE,
-                                      .sceneScale = glm::vec3(0.1f)};
+                                      .sceneScale = glm::vec3(1.f)};
     camera                         = std::make_shared<Camera>();
-    scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/veach-mis/scene.json", sceneConfig);
-    // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf", sceneConfig);
 
+   // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf", sceneConfig);
+    scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf", sceneConfig);
+
+    RuntimeSceneManager::addSponzaRestirLight(*scene);
 
     camera        = scene->getCameras()[0];
     camera->flipY = true;
@@ -110,14 +125,28 @@ void RayTracer::prepare() {
     camera->getTransform()->setRotation(glm::quat(0.7, 0, 0.7, 0));
     camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 0.1f, 4000.f);
 
+    
     //  camera->
     initView();
-    integrator->init(*scene);
+
+    rtSceneEntry = RTSceneUtil::convertScene(*device, *scene);
+    for (auto& integrator : integrators) {
+        integrator.second->initScene(*rtSceneEntry);
+        integrator.second->init();
+    }
 }
 
 void RayTracer::onUpdateGUI() {
     Application::onUpdateGUI();
-    integrator->onUpdateGUI();
+
+    auto itemIter    = std::ranges::find(integratorNames.begin(), integratorNames.end(), currentIntegrator);
+
+    int itemCurrent = std::distance(integratorNames.begin(), itemIter);
+    ImGui::Combo("Integrators", &itemCurrent, integratorNames.data(), integratorNames.size());
+
+    currentIntegrator = integratorNames[itemCurrent];
+
+    integrators[currentIntegrator]->onUpdateGUI();
 }
 
 // void RayTracer::buildBLAS()

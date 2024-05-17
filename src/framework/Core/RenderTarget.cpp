@@ -113,7 +113,7 @@ std::vector<VkClearValue> RenderTarget::getDefaultClearValues() const {
     std::vector<VkClearValue> clearValues;
     for (int i = 0; i < mHwTextures.size(); i++) {
         if (isDepthOrStencilFormat(mHwTextures[i]->getFormat()))
-            clearValues.emplace_back(VkClearValue{.depthStencil = {0.f}});
+            clearValues.emplace_back(VkClearValue{.depthStencil = {1.f}});
         else
             clearValues.emplace_back(VkClearValue{.color = {0.f, 0.f, 0.f, 0.f}});
     }
