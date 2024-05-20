@@ -1,7 +1,7 @@
 #ifndef UTILS_DEVICE
 #define UTILS_DEVICE
 
-
+#include "../common/sampling.glsl"
 
 
 struct HitPayload{

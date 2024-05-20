@@ -34,9 +34,6 @@ vec3 warp(vec3 v){
 
 
 
-
-
-
 vec3 Le(vec3 dir_to_light){
     uint light_idx = prim_infos.p[hitPayload.prim_idx].light_index;
     //debugPrintfEXT("light_idx %d\n", light_idx);
@@ -44,6 +41,19 @@ vec3 Le(vec3 dir_to_light){
         return vec3(0);
     }
     return eval_light(lights[light_idx], hitPayload.p, hitPayload.n_g, dir_to_light);
+}
+
+
+
+vec3 eval_env(vec3 dir){
+    dir = normalize(dir);
+    if(scene_desc.envmap_idx == -1){
+        return vec3(0);
+    }
+//    debugPrintfEXT("envmap_idx %d\n", scene_desc.envmap_idx);
+    mat4  m = transpose(lights[scene_desc.envmap_idx].world_matrix);
+    vec2 dir_uv = envdir_to_uv(m, dir);
+    return texture(scene_textures[lights[scene_desc.envmap_idx].light_texture_id], dir_uv).xyz;
 }
 
 void main()
@@ -70,8 +80,14 @@ void main()
 
     bool specular_bounce = true;
 
+    
 
     for (depth = 0; depth<pc_ray.max_depth; depth++){
+        
+        //color =eval_env(direction.xyz);
+       // break;
+        
+        
         uint prev_material_idx = hitPayload.material_idx;
 
         hitPayload.material_idx = -1;
@@ -80,9 +96,14 @@ void main()
 
         bool found_intersect = hitPayload.material_idx != -1;
         if (!found_intersect) {
+            if(specular_bounce){
+                color += throughput * eval_env(direction.xyz);
+            }
             break;
         }
 
+        
+      //  break;
 
 
         SurfaceScatterEvent event = make_surface_scatter_event(hitPayload, -direction.xyz);

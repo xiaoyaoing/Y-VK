@@ -13,7 +13,8 @@
 
 struct RayTracerSettings{};
 
-
+#define RESTIR_INTEGRATOR_NAME "restir"
+#define PATH_INTEGRATOR_NAME "path"
 
 
 class RayTracer : public Application {
@@ -27,7 +28,7 @@ public:
     // std::unique_ptr<Integrator> path,restirDI{};
 
     std::unordered_map<const char *,std::unique_ptr<Integrator>> integrators;
-    const char * currentIntegrator = "restir";
+    const char * currentIntegrator = PATH_INTEGRATOR_NAME;
     std::vector<const char*> integratorNames;
 
     

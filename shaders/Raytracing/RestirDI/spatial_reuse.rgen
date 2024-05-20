@@ -15,11 +15,11 @@
 #include  "../bsdf.glsl"
 #include "../util.glsl"
 
-#include "restir_di.glsl"
 
 
 layout(location = 0) rayPayloadEXT HitPayload hitPayload;
 layout(location = 1) rayPayloadEXT AnyHitPayload any_hit_payload;
+#include "restir_di.glsl"
 
 #include "../trace_common.glsl"
 

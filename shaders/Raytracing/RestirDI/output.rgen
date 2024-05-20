@@ -28,13 +28,14 @@ layout(push_constant) uniform _PushConstantRay { RestirDIPC pc_ray; };
 
 void main()
 {
-    return ;
+//    return ;
+    pixel_idx =  gl_LaunchIDEXT.y * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.x;
     load_gbuffer();
     uint light_idx = spatial_reservoirs.r[pixel_idx].s.light_idx;
     
-    if(light_idx == -1)
+    if(light_idx == -1 || gBuffer_material_idx == -1)
     {
-        imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(0, 0, 0, 1));
+        imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(1, 0, 0, 1));
         temporal_reservoirs.r[pixel_idx] = init_restir_reservoir();
         return;
     }
@@ -54,14 +55,15 @@ void main()
     
     RestirReservoir spatial_reservoir = spatial_reservoirs.r[pixel_idx];
     color += calc_L_vis(spatial_reservoir);
-    
-    color *= spatial_reservoir.W * pc_ray.light_num;
+//    if(!isBlack(color)){
+//        debugPrintfEXT("color: %f %f %f\n", color.x, color.y, color.z);
+//    }
+    color *= 48;
 
     temporal_reservoirs.r[pixel_idx] = spatial_reservoir;
-    //return ;
 
 
-    //color =gBuffer_normal;
+    color =  vec3(gBuffer_uv, 0);
     imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(color, 1.f));
 
 }

@@ -10,6 +10,7 @@
 #include <Core/Images/Sampler.h>
 
 #include "RenderContext.h"
+#include "Common/ResourceCache.h"
 
 const SgImage& Texture::getImage() const {
     return *image;
@@ -63,7 +64,7 @@ const Sampler& Texture::getSampler() const {
 // }
 
 static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture, CommandBuffer& commandBuffer, std::vector<std::unique_ptr<Buffer>>& buffers) {
-    texture->image->generateMipMapOnCpu();
+    // texture->image->generateMipMapOnCpu();
     texture->image->createVkImage(device);
 
     
@@ -105,7 +106,7 @@ static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture, Com
 
     texture->getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY, subresourceRange);
 
-    if(texture->image->getMipMaps().size() == 1 )
+    if(texture->image->getMipMaps().size() == 1 && texture->image->needGenerateMipMapOnGpu())
     {
         std::vector<VkImageBlit2> blits;
         int mipWidth  = texture->image->getExtent().width;
@@ -143,8 +144,9 @@ static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture, Com
         blitInfo.pRegions = blits.data();
         vkCmdBlitImage2(commandBuffer.getHandle(), &blitInfo);//
     }
-
-    texture->sampler = std::make_unique<Sampler>(device, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, texture->image->getMipLevelCount());
+    VkSamplerAddressMode addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    VkSamplerAddressMode addressModeV = texture->image->getFormat() == VK_FORMAT_R32G32B32A32_SFLOAT ? VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE : VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    texture->sampler = &device.getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, texture->image->getMipLevelCount(),addressModeU,addressModeV);
 }
 
 std::unique_ptr<Texture> Texture::loadTextureFromFile(Device& device, const std::string& path) {
@@ -236,7 +238,7 @@ std::unique_ptr<Texture> Texture::loadTextureArrayFromFile(Device& device, const
     submitInfo.pCommandBuffers = &vkCmdBuffer;
 
     queue.submit({submitInfo}, VK_NULL_HANDLE);
-    texture->sampler = std::make_unique<Sampler>(device, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, levelCount);
+    texture->sampler = &device.getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, mipmaps.size());
     queue.wait();
     return texture;
 }

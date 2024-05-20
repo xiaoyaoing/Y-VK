@@ -79,7 +79,7 @@ RayTracer::RayTracer(const RayTracerSettings& settings) {
 }
 
 void RayTracer::drawFrame(RenderGraph& renderGraph) {
-    
+
     sceneUbo.projInverse = camera->projInverse();
     sceneUbo.viewInverse = camera->viewInverse();
     sceneUbo.view = camera->view();
@@ -99,13 +99,13 @@ void RayTracer::drawFrame(RenderGraph& renderGraph) {
 void RayTracer::prepare() {
     Application::prepare();
     GlslCompiler::setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_5);
-    //GlslCompiler::forceRecompile = true;
+// GlslCompiler::forceRecompile = true;
 
     integrators["path"] = std::make_unique<PathIntegrator>(*device);
     integrators["restir"] = std::make_unique<RestirIntegrator>(*device);
     integratorNames = {"path", "restir"};
 
-    SceneLoadingConfig sceneConfig = {.requiredVertexAttribute = {POSITION_ATTRIBUTE_NAME, INDEX_ATTRIBUTE_NAME, NORMAL_ATTRIBUTE_NAME, TEXCOORD_ATTRIBUTE_NAME},
+    sceneLoadingConfig = {.requiredVertexAttribute = {POSITION_ATTRIBUTE_NAME, INDEX_ATTRIBUTE_NAME, NORMAL_ATTRIBUTE_NAME, TEXCOORD_ATTRIBUTE_NAME},
                                       .indexType               = VK_INDEX_TYPE_UINT32,
                                       .bufferAddressAble       = true,
                                       .bufferForAccel          = true,
@@ -113,10 +113,11 @@ void RayTracer::prepare() {
                                       .sceneScale = glm::vec3(1.f)};
     camera                         = std::make_shared<Camera>();
 
-   // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf", sceneConfig);
-    scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf", sceneConfig);
 
-    RuntimeSceneManager::addSponzaRestirLight(*scene);
+    //scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/vk-raytracing-demo/resources/classroom/scene.json", sceneLoadingConfig);
+    scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/test-ball/scene.json", sceneLoadingConfig);
+
+    //RuntimeSceneManager::addSponzaRestirLight(*scene);
 
     camera        = scene->getCameras()[0];
     camera->flipY = true;

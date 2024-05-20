@@ -2,8 +2,6 @@
 #define COMMONS_DEVICE
 
 #include "commons.h"
-#include "PT/pt_commons.glsl"
-#include "../common/sampling.glsl"
 
 #include "util.glsl"
 
@@ -25,6 +23,7 @@ layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer Nor
 layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer TexCoords { vec2 t[]; };
 layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer Materials { RTMaterial m[]; };
 layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer Distribution1D { float m[]; };
+layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer EnvSampling { EnvAccel e[]; };
 
 
 Indices indices = Indices(scene_desc.index_addr);
@@ -33,8 +32,7 @@ Normals normals = Normals(scene_desc.normal_addr);
 Materials materials = Materials(scene_desc.material_addr);
 InstanceInfo prim_infos = InstanceInfo(scene_desc.prim_info_addr);
 TexCoords tex_coords = TexCoords(scene_desc.uv_addr);
-
-
+EnvSampling envSamplingData = EnvSampling(scene_desc.env_sampling_addr);
 
 struct LightSample{
     vec3 indensity;
@@ -46,6 +44,7 @@ struct LightSample{
     vec3 p;
     vec3 n;
     float dist;
+    bool is_infinite;
 };
 
 struct MeshSampleRecord{
@@ -101,8 +100,12 @@ uint binary_search(float u, const float[5] cdf, uint cdf_begin, uint cdf_end) {
     return left;
 }
 
+float luminance(vec3 v) {
+    return 0.2126 * v.x + 0.7152 * v.y + 0.0722 * v.z;
+}
+
 bool isBlack(vec3 v){
-    return v.x == 0 && v.y == 0 && v.z == 0;
+    return luminance(v) < 1e-6f;
 }
 
 MeshSampleRecord uniform_sample_on_mesh(uint mesh_idx, vec3 rands, in mat4 world_matrix,const uint triangle_idx){
@@ -254,8 +257,38 @@ LightSample sample_li_area_light(const RTLight light, const SurfaceScatterEvent 
     result.indensity = light.L;
     result.dist = dist;
     result.triangle_idx = record.triangle_idx;
-
     return result;
+}
+
+vec2 envdir_to_uv(mat4 toLocal, vec3 wi) {
+    vec3 wLocal = (toLocal * vec4(wi, 0)).xyz;
+    float uv_x = atan(wLocal.z, wLocal.x) * INV_TWO_PI + 0.5f;
+    float uv_y = acos(clamp(-wLocal.y, -1.0, 1.0)) * INV_PI;
+    return vec2(uv_x, uv_y);
+}
+
+
+
+
+float eval_light_pdf(const RTLight light, const vec3 p,const vec3 light_p, const vec3 n_g){
+    if(light.light_type == RT_LIGHT_TYPE_AREA){
+        vec3 wi = normalize(light_p - p);
+        float cos_theta_light = dot(n_g, -wi);
+        if (cos_theta_light <= 0.0){
+            return 0;
+        }
+        float dist = length(light_p - p);
+        dist -=  EPS;
+        return 1/get_primitive_area(light.prim_idx) * abs(cos_theta_light) / (dist * dist);
+    }
+    else if(light.light_type == RT_LIGHT_TYPE_INFINITE){
+        vec2 uv = envdir_to_uv(light.world_matrix, normalize(light_p - p));
+        
+    }
+    else if(light.light_type == RT_LIGHT_TYPE_POINT){
+        return 1.f / (4.f * PI);
+    }
+    return 0;
 }
 
 LightSample sample_li_area_light_with_idx(const RTLight light, const SurfaceScatterEvent event, const vec3 rand,const uint triangle_index){
@@ -299,9 +332,85 @@ LightSample sample_li_area_light_with_idx(const RTLight light, const SurfaceScat
     return result;
 }
 
+vec3 Environment_sample(sampler2D lat_long_tex, in vec3 randVal, out vec3 to_light, out float pdf)
+{
+
+    // Uniformly pick a texel index idx in the environment map
+    vec3  xi     = randVal;
+    uvec2 tsize  = textureSize(lat_long_tex, 0);
+    uint  width  = tsize.x;
+    uint  height = tsize.y;
+
+    const uint size = width * height;
+    const uint idx  = min(uint(xi.x * float(size)), size - 1);
+
+    // Fetch the sampling data for that texel, containing the ratio q between its
+    // emitted radiance and the average of the environment map, the texel alias,
+    // the probability distribution function (PDF) values for that texel and its
+    // alias
+    EnvAccel sample_data = envSamplingData.e[idx];
+
+    uint env_idx;
+
+    if(xi.y < sample_data.q)
+    {
+        // If the random variable is lower than the intensity ratio q, we directly pick
+        // this texel, and renormalize the random variable for later use. The PDF is the
+        // one of the texel itself
+        env_idx = idx;
+        xi.y /= sample_data.q;
+        pdf = sample_data.pdf;
+    }
+    else
+    {
+        // Otherwise we pick the alias of the texel, renormalize the random variable and use
+        // the PDF of the alias
+        env_idx = sample_data.alias;
+        xi.y    = (xi.y - sample_data.q) / (1.0f - sample_data.q);
+        pdf     = sample_data.aliasPdf;
+    }
+
+    // Compute the 2D integer coordinates of the texel
+    const uint px = env_idx % width;
+    uint       py = env_idx / width;
+
+    // Uniformly sample the solid angle subtended by the pixel.
+    // Generate both the UV for texture lookup and a direction in spherical coordinates
+    const float u       = float(px + xi.y) / float(width);
+    const float phi     = u * (2.0f * PI) - PI;
+    float       sin_phi = sin(phi);
+    float       cos_phi = cos(phi);
+
+    const float step_theta = PI / float(height);
+    const float theta0     = float(py) * step_theta;
+    const float cos_theta  = cos(theta0) * (1.0f - xi.z) + cos(theta0 + step_theta) * xi.z;
+    const float theta      = acos(cos_theta);
+    const float sin_theta  = sin(theta);
+    const float v          = theta * INV_PI;
+
+    // Convert to a light direction vector in Cartesian coordinates
+    to_light = vec3(cos_phi * sin_theta, cos_theta, sin_phi * sin_theta);
+
+    // Lookup the environment value using bilinear filtering
+    return texture(lat_long_tex, vec2(u, v)).xyz;
+} 
+
 LightSample sample_li_infinite_light(const RTLight light, const SurfaceScatterEvent event, const vec3 rand){
+   
+{
+    float pdf;
     LightSample result;
+    vec3 radiance = Environment_sample( scene_textures[light.light_texture_id], rand, result.wi, pdf);
+    result.wi = normalize(mat3(light.world_matrix) * result.wi);
+    // Uniformly pick a texel index idx in the environment map
+    result.pdf = pdf;
+    result.indensity = radiance;
+    result.is_infinite = true;
+    result.p = event.p + result.wi * 1000.f;
+    result.dist = 1000.f;
     return result;
+}
+
 }
 
 LightSample sample_li_point_light(const RTLight light, const SurfaceScatterEvent event, const vec3 rand){

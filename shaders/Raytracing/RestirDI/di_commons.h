@@ -15,9 +15,11 @@ using uvec2 = glm::uvec2;
 #endif
 
 struct RestirData {
+    uvec4 seed;
     uint light_idx;
     uint triangle_idx;
-    uvec4 seed;
+    uint padding;
+    uint padding2;
 };
 
 struct RestirDIPC {
@@ -36,9 +38,9 @@ struct RestirReservoir {
     float w_sum;
     float W;
     uint m;
-    RestirData s;
-    float p_hat;
     float pdf;
+   // float p_hat;
+    RestirData s;
 };
 
 struct GBuffer {

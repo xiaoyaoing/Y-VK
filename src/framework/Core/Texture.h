@@ -10,7 +10,7 @@
 
 struct Texture {
     std::unique_ptr<SgImage> image{nullptr};
-    std::unique_ptr<Sampler> sampler{nullptr};
+    const Sampler * sampler{nullptr};
     std::string              name;
 
     const Sampler& getSampler() const;

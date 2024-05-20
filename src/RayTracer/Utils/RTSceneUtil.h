@@ -21,6 +21,7 @@ struct RTSceneEntry {
     std::shared_ptr<Buffer> sceneDescBuffer{nullptr};
     std::shared_ptr<Buffer> primitiveMeshBuffer{nullptr};
     std::shared_ptr<Buffer> rtLightBuffer{nullptr};
+    std::shared_ptr<Buffer> infiniteSamplingBuffer{nullptr};
 
     std::vector<Buffer>                  transformBuffers{};
 

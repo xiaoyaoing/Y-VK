@@ -1,6 +1,9 @@
+#ifndef SAMPLING
+#define SAMPLING
 #define PI 3.14159265359
 #define PI2 6.28318530718
-#define INV_PI (1. / PI)
+#define INV_PI 0.3183098861837697
+#define INV_TWO_PI 0.1591549430918953
 #define INF 1e10
 #define EPS 0.001
 #define SHADOW_EPS 2 / 65536.
@@ -104,3 +107,5 @@ Frame make_frame(const vec3 n){
     frame.bitTangent = normalize(cross(n, frame.tangent));
     return frame;
 }
+
+#endif

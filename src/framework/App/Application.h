@@ -37,6 +37,7 @@
 
 #include "Common/Timer.h"
 #include "Core/View.h"
+#include "Scene/SceneLoader/SceneLoadingConfig.h"
 
 // #ifdef _WIN32
 // #include <minwindef.h>
@@ -131,6 +132,7 @@ protected:
 
     bool     enableGui{true};
     uint32_t frameCounter{0};
+    SceneLoadingConfig sceneLoadingConfig;
 
     struct ImageSave {
         bool                    savePng = false;

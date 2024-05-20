@@ -23,10 +23,11 @@ layout(location = 1) rayPayloadEXT AnyHitPayload any_hit_payload;
 #include "../trace_common.glsl"
 
 layout(push_constant) uniform _PushConstantRay { RestirDIPC pc_ray; };
-
+layout(binding = 4,set = 2) buffer _Buffer { RestirReservoir r[]; } temporal_reservoirs1;
 
 void main()
 {
+   // return ;
     seed = init_rng(gl_LaunchIDEXT.xy, gl_LaunchSizeEXT.xy, pc_ray.frame_num);
 
     const vec2 pixelCenter = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
@@ -49,6 +50,7 @@ void main()
         float tmax = 10000.0;
         traceRayEXT(tlas, rayFlags, cullMask, 0, 0, 0, origin.xyz, tmin, direction.xyz, tmax, 0);
     }
+    
  
     bool found_intersect = hitPayload.material_idx != -1;
     if (found_intersect) {
@@ -72,8 +74,8 @@ void main()
             vec3 color = vec3(0);
             if (r_new.w_sum > 0)
             {
-             //   debugPrintfEXT("r_new.w_sum: %f\n", r_new.w_sum);
-                color = calc_L_vis(r_new);
+                uvec4 r_seed = r_new.s.seed;
+                color = restir_sample_light(event,rand4(r_seed),pc_ray.light_num);
                 float p_hat = length(color);
                 if (p_hat == 0)
                 {
@@ -81,13 +83,15 @@ void main()
                 }
                 else
                 {
-                    r_new.W = r_new.w_sum  / (p_hat * r_new.m);
+                    r_new.W = r_new.w_sum  / (p_hat);
                 }
-                color = color * 48;
+                color *= r_new.W;
                 imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(color, 1.f));
-                return;
+
+                combine_reservoir(r,r_new);
+
             }
-    
+
         if(pc_ray.do_temporal_reuse>0 && pc_ray.frame_num>0)
         {
             vec4 prev_pos = scene_ubo.prev_proj * scene_ubo.prev_view * vec4(hitPayload.p, 1);         
@@ -99,9 +103,11 @@ void main()
             }
             
         }
-        combine_reservoir(r,r_new);
+
+
     }
     
+
     uint num_samples = r_new.m;
     if(pc_ray.do_temporal_reuse>0 && pc_ray.frame_num>0){
         num_samples += r_prev.m;
@@ -111,20 +117,12 @@ void main()
  
     r.m = num_samples;
     
-    if (r_new.W > 0  || r_prev.W > 0) {
-        if(r_prev.W>0){
-           // debugPrintfEXT("r_prev.W: light_idx %f %d %f\n", r_prev.W,r_prev.s.light_idx,r_new.W);
-        }
-        if(r.s.light_idx>=48){
-           // debugPrintfEXT("light_idx %d %d %f %f %f\n", r_prev.s.light_idx,r_new.s.light_idx,r_new.W,r_prev.W,calc_p_hat(r_prev));
-        }
+    if (r_new.W > 0  ) {
         if(r.s.light_idx!=-1){
-         
-        const float phat = calc_p_hat(r) * r.m;
-        r.W = phat == 0 ? 0 : r.w_sum / (phat);
-            r.W = phat == 0 ? 0 : phat / r.w_sum;
+
+            const float phat = calc_p_hat(r);
+            r.W = phat == 0 ? 0 : r.w_sum / (phat);
         }
-        
         else {
             r.W = 0;
         }
@@ -134,12 +132,21 @@ void main()
     }
 
 
-
-
+ //   return ;
+    
+    pixel_idx =  gl_LaunchIDEXT.y * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.x;
     imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(0,0,0, 1.f));
-    pass_reservoir.r[pixel_idx] = r;
-    gbuffer.r[pixel_idx].normal = hitPayload.n_s;
+
+
+    temporal_reservoirs.r[pixel_idx] = init_restir_reservoir();
+    
+    if(found_intersect){
+    gbuffer.r[pixel_idx].normal = hitPayload.n_g;
     gbuffer.r[pixel_idx].position = hitPayload.p;
     gbuffer.r[pixel_idx].uv = hitPayload.uv;
-    gbuffer.r[pixel_idx].material_idx = hitPayload.material_idx;
+    gbuffer.r[pixel_idx].material_idx = hitPayload.material_idx;}
+    else {
+        gbuffer.r[pixel_idx].material_idx = -1;
+        gbuffer.r[pixel_idx].uv = vec2(1,1);
+    }
 }

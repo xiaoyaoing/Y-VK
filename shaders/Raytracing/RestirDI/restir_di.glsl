@@ -47,64 +47,7 @@ void update_restir_reservoir(inout RestirReservoir  r_new, RestirData s, float w
 }
 
 
-vec3 calc_L(const RestirReservoir r){
-    vec3 result = vec3(0);
 
-
-    uint light_idx = r.s.light_idx;
-    uint triangle_idx = r.s.triangle_idx;
-    uvec4 r_seed = r.s.seed;
-    
-    const RTLight light = lights[light_idx];
-    
-    
-
-    LightSample   light_sample = sample_li_area_light_with_idx(light, g_event, rand3(r_seed), triangle_idx);
-
-    uint material_idx = g_event.material_idx;
-    g_event.wo = to_local(g_event.frame, light_sample.wi);
-
-    vec3 bsdf =eval_bsdf(materials.m[material_idx], g_event);
-
-    if (light_sample.pdf >0) {
-        result = light_sample.indensity * bsdf  / light_sample.pdf;
-    }
-    return result;
-}
-
-vec3 calc_L_vis(const RestirReservoir r){
-    vec3 result = vec3(0);
-
-
-    uint light_idx = r.s.light_idx;
-    uint triangle_idx = r.s.triangle_idx;
-    uvec4 r_seed = r.s.seed;
-
-    const RTLight light = lights[light_idx];
-
-    LightSample   light_sample = sample_li_area_light_with_idx(light, g_event, rand3(r_seed), triangle_idx);
-    if (!isBlack(light_sample.indensity) && light_sample.pdf != 0){
-
-        traceRayEXT(tlas,
-        gl_RayFlagsTerminateOnFirstHitEXT |
-        gl_RayFlagsSkipClosestHitShaderEXT,
-        0xFF, 1, 0, 1, g_event.p, EPS, light_sample.wi, light_sample.dist - EPS, 1);
-        bool  visible = any_hit_payload.hit == 0;
-        visible = true;
-        if (!visible){
-            return vec3(0);
-        }
-
-        uint material_idx = g_event.material_idx;
-        debugPrintfEXT("material_idx %d\n", material_idx);
-        g_event.wo = to_local(g_event.frame, light_sample.wi);
-
-        vec3 bsdf =eval_bsdf(materials.m[material_idx], g_event);
-
-        result = light_sample.indensity * bsdf  / light_sample.pdf;
-    }
-    return result;
-}
 
 
 vec3 restir_sample_light(inout SurfaceScatterEvent event,const vec4 rand, const uint light_num, out uint light_idx, out LightSample light_sample){
@@ -134,15 +77,55 @@ vec3 restir_sample_light(inout SurfaceScatterEvent event,const vec4 rand, const 
 vec3 restir_sample_light(in SurfaceScatterEvent event,const vec4 rand,const uint light_num){
     vec3 result = vec3(0);
 
-    float light_choose_rand =rand.x;
+    float light_choose_rand = rand.x;
 
-    light_idx = uint(light_choose_rand * light_num);
+    uint light_idx = uint(light_choose_rand * light_num);
 
     vec3 light_sample_rand = rand.yzw;
 
     const RTLight light = lights[light_idx];
 
-    light_sample = sample_li(light, event, light_sample_rand);
+    LightSample light_sample = sample_li(light, event, light_sample_rand);
+
+    uint material_idx = event.material_idx;
+    event.wo = to_local(event.frame, light_sample.wi);
+
+    vec3 bsdf =eval_bsdf(materials.m[material_idx], event);
+
+    if (light_sample.pdf >0) {
+        result = light_sample.indensity * bsdf  / light_sample.pdf;
+    }
+    return result;
+}
+
+vec3 restir_sample_light_with_vis(in SurfaceScatterEvent event,const vec4 rand,const uint light_num){
+    vec3 result = vec3(0);
+
+    float light_choose_rand = rand.x;
+
+    uint light_idx = uint(light_choose_rand * light_num);
+
+    vec3 light_sample_rand = rand.yzw;
+
+    const RTLight light = lights[light_idx];
+
+    LightSample light_sample = sample_li(light, event, light_sample_rand);
+    
+    if(light_sample.pdf ==0 || isBlack(light_sample.indensity)){
+        return vec3(0);
+    }
+    
+    bool visible = true;
+    if (light_sample.pdf >0) {
+        traceRayEXT(tlas,
+        gl_RayFlagsTerminateOnFirstHitEXT |
+        gl_RayFlagsSkipClosestHitShaderEXT,
+        0xFF, 1, 0, 1, event.p, EPS, light_sample.wi, light_sample.dist - EPS, 1);
+        visible = any_hit_payload.hit == 0;
+    }
+    if(!visible){
+        return vec3(0);
+    }
 
     uint material_idx = event.material_idx;
     event.wo = to_local(event.frame, light_sample.wi);
@@ -156,6 +139,69 @@ vec3 restir_sample_light(in SurfaceScatterEvent event,const vec4 rand,const uint
 
 }
 
+
+vec3 calc_L(const RestirReservoir r){
+    uvec4 seed = r.s.seed;
+    return restir_sample_light(g_event,rand4(seed),48);
+
+    vec3 result = vec3(0);
+
+
+    uint light_idx = r.s.light_idx;
+    uint triangle_idx = r.s.triangle_idx;
+    uvec4 r_seed = r.s.seed;
+
+    const RTLight light = lights[light_idx];
+
+
+
+    LightSample   light_sample = sample_li_area_light_with_idx(light, g_event, rand3(r_seed), triangle_idx);
+
+    uint material_idx = g_event.material_idx;
+    g_event.wo = to_local(g_event.frame, light_sample.wi);
+
+    vec3 bsdf =eval_bsdf(materials.m[material_idx], g_event);
+
+    if (light_sample.pdf >0) {
+        result = light_sample.indensity * bsdf  / light_sample.pdf;
+    }
+    return result;
+}
+
+vec3 calc_L_vis(const RestirReservoir r){
+    uvec4 r_seed = r.s.seed;
+    return restir_sample_light_with_vis(g_event,r_seed,48);
+    vec3 result = vec3(0);
+
+
+    uint light_idx = r.s.light_idx;
+    uint triangle_idx = r.s.triangle_idx;
+    
+    const RTLight light = lights[light_idx];
+
+    LightSample   light_sample = sample_li_area_light_with_idx(light, g_event, rand3(r_seed), triangle_idx);
+    if (!isBlack(light_sample.indensity) && light_sample.pdf != 0){
+
+        traceRayEXT(tlas,
+        gl_RayFlagsTerminateOnFirstHitEXT |
+        gl_RayFlagsSkipClosestHitShaderEXT,
+        0xFF, 1, 0, 1, g_event.p, EPS, light_sample.wi, light_sample.dist - EPS, 1);
+        bool  visible = any_hit_payload.hit == 0;
+        //  visible = true;
+        if (!visible){
+            return vec3(0);
+        }
+
+        uint material_idx = g_event.material_idx;
+        // debugPrintfEXT("material_idx %d\n", material_idx);
+        g_event.wo = to_local(g_event.frame, light_sample.wi);
+
+        vec3 bsdf =eval_bsdf(materials.m[material_idx], g_event);
+
+        result = light_sample.indensity * bsdf  / light_sample.pdf;
+    }
+    return result;
+}
 
 
 
@@ -171,4 +217,7 @@ void combine_reservoir(inout RestirReservoir r1, const RestirReservoir r2) {
     }
     update_restir_reservoir(r1, r2.s, fac);
 }
+
+
+
 

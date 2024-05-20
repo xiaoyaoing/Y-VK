@@ -5,6 +5,7 @@ enum class LIGHT_TYPE : uint8_t {
     Point       = 1,
     Spot        = 2,
     Area        = 3,
+    Sky         = 4,
     // Insert new light type here
     Max
 };
@@ -26,6 +27,9 @@ struct LightProperties {
     float outer_cone_angle{0.0f};
 
     uint32_t prim_index{0};
+    uint32_t texture_index{0};
+    glm::mat4 world_matrix{1.0f};
+    
 };
 
 struct SgLight {

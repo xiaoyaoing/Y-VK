@@ -12,7 +12,7 @@ ImageView::ImageView(Image& image, VkImageViewType view_type, VkFormat format, u
                                                                                                                                                                                 _device(image.getDevice()),
                                                                                                                                                                                 _format{format} {
     if (format == VK_FORMAT_UNDEFINED) {
-        _format = format = image.getFormat();
+        _format = format;
     }
     //
 

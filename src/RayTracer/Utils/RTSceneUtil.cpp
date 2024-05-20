@@ -3,6 +3,7 @@
 #include "Common/Distrib.hpp"
 #include "Core/RenderContext.h"
 #include "Raytracing/commons.h"
+#include "Scene/SceneLoader/HDRSampling.h"
 
 #include <numeric>
 
@@ -15,6 +16,7 @@ struct RTSceneEntryImpl : public RTSceneEntry {
     void           buildBLAS();
     void           buildTLAS();
     Accel          createAccel(VkAccelerationStructureCreateInfoKHR& accel);
+    RTLight        toRTLight(Scene& scene,const SgLight& light);
     Device&        device;
     RenderContext* renderContext{nullptr};
 };
@@ -40,7 +42,7 @@ Accel RTSceneEntryImpl::createAccel(VkAccelerationStructureCreateInfoKHR& accel)
     return result_accel;
 }
 
-RTLight toRTLight(Scene & scene,const SgLight& light) {
+RTLight RTSceneEntryImpl::toRTLight(Scene & scene,const SgLight& light) {
     RTLight rtLight{};
 
     if (light.type == LIGHT_TYPE::Area) {
@@ -54,6 +56,18 @@ RTLight toRTLight(Scene & scene,const SgLight& light) {
         rtLight.position = light.lightProperties.position;
         rtLight.L        = light.lightProperties.color;
         rtLight.light_type = RT_LIGHT_TYPE_POINT;
+    }
+    else if(light.type == LIGHT_TYPE::Sky) {
+        HDRSampling hdrSampling;
+        rtLight.L = light.lightProperties.color;
+        rtLight.world_matrix = light.lightProperties.world_matrix;
+        rtLight.light_texture_id = light.lightProperties.texture_index;
+        rtLight.light_type = RT_LIGHT_TYPE_INFINITE;
+        Texture * tex = scene.getTextures().operator[](rtLight.light_texture_id).get();
+        auto aceel = hdrSampling.createEnvironmentAccel(reinterpret_cast<const float*>(tex->image->getData().data()),tex->image->getExtent2D());
+        infiniteSamplingBuffer = std::make_unique<Buffer>(device, sizeof(EnvAccel) * aceel.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, aceel.data());
+        sceneDesc.env_sampling_addr = infiniteSamplingBuffer->getDeviceAddress();
+        sceneDesc.envmap_idx = lights.size();
     }
 
     return rtLight;
@@ -121,23 +135,19 @@ void RTSceneEntryImpl::initScene(Scene& scene_) {
     //  RenderGraph graph(device);
 
     for (auto light : scene->getLights()) {
-        
         lights.push_back(toRTLight(*scene,light));
-
-        primitiveMeshBuffer = std::make_unique<Buffer>(device, sizeof(RTPrimitive) * primitives.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, primitives.data());
-        materialsBuffer     = std::make_unique<Buffer>(device, sizeof(RTMaterial) * materials.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, materials.data());
-        rtLightBuffer       = std::make_unique<Buffer>(device, sizeof(RTLight) * lights.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, lights.data());
     }
+    primitiveMeshBuffer = std::make_unique<Buffer>(device, sizeof(RTPrimitive) * primitives.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, primitives.data());
+    materialsBuffer     = std::make_unique<Buffer>(device, sizeof(RTMaterial) * materials.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, materials.data());
+    rtLightBuffer       = std::make_unique<Buffer>(device, sizeof(RTLight) * lights.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, lights.data());
 
     sceneUboBuffer = std::make_unique<Buffer>(device, sizeof(SceneUbo), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-    sceneDesc = {
-        .vertex_addr    = vertexBuffer->getDeviceAddress(),
-        .index_addr     = indexBuffer->getDeviceAddress(),
-        .normal_addr    = normalBuffer->getDeviceAddress(),
-        .uv_addr        = uvBuffer->getDeviceAddress(),
-        .material_addr  = materialsBuffer->getDeviceAddress(),
-        .prim_info_addr = primitiveMeshBuffer->getDeviceAddress(),
-    };
+    sceneDesc.vertex_addr    = vertexBuffer->getDeviceAddress();
+        sceneDesc.index_addr     = indexBuffer->getDeviceAddress(),
+        sceneDesc.normal_addr    = normalBuffer->getDeviceAddress(),
+        sceneDesc.uv_addr        = uvBuffer->getDeviceAddress(),
+        sceneDesc.material_addr  = materialsBuffer->getDeviceAddress(),
+        sceneDesc.prim_info_addr = primitiveMeshBuffer->getDeviceAddress();
     sceneDescBuffer = std::make_unique<Buffer>(device, sizeof(SceneDesc), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, &sceneDesc);
     
 }
@@ -175,7 +185,7 @@ void RTSceneEntryImpl::initBuffers(Scene& scene) {
     };
 
     for (auto& primitive : scene.getPrimitives()) {
-
+ 
         primitives.emplace_back(RTPrimitive{.material_index = primitive->materialIndex, .vertex_offset = vertexOffset, .vertex_count = primitive->vertexCount, .index_offset = indexOffset, .index_count = primitive->indexCount, .world_matrix = primitive->getTransformMatrix()});
 
         copyBuffer(*vertexBuffer, primitive->getVertexBuffer(POSITION_ATTRIBUTE_NAME), vertexBufferOffset);

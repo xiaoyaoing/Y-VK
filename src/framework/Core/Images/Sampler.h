@@ -9,7 +9,7 @@ public:
         return _sampler;
     }
 
-    Sampler(Device& device, VkSamplerAddressMode sampleMode, VkFilter filter, float maxLod);
+    Sampler(Device& device, VkSamplerAddressMode sampleMode, VkFilter filter, float maxLod,VkSamplerAddressMode addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkSamplerAddressMode addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkSamplerAddressMode addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT);
     ~Sampler();
     Sampler(Sampler&&);
 

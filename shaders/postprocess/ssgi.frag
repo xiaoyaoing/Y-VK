@@ -133,9 +133,8 @@ void main(){
     vec3 view_dir = per_frame.camera_pos - world_pos;
     vec3 reflect_dir = reflect(-view_dir, normal);
 
-    vec3 L = reflect(-view_dir, normal);
 
-    vec2 ray_end_screen = get_screen_coordinate(world_pos + L);
+    vec2 ray_end_screen = get_screen_coordinate(world_pos + reflect_dir);
 
     for (int i = 0; i < 10; ++i){
         vec2 rand = rand2(seed);

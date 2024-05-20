@@ -60,6 +60,7 @@ void RestirIntegrator::render(RenderGraph& renderGraph) {
         builder.writeTexture(output,TextureUsage::STORAGE);
         renderGraph.getBlackBoard().put("RT",output); }, [&](RenderPassContext& context) {
             bindRaytracingResources(commandBuffer);
+            renderContext->bindBuffer(4,*temporReservoirBuffer,0,temporReservoirBuffer->getSize(),2);
             renderContext->bindPushConstants(pcPath);
             renderContext->bindImage(0, renderGraph.getBlackBoard().getImageView("RT"));
          renderContext->traceRay(commandBuffer, {width, height, 1});
@@ -81,8 +82,8 @@ void RestirIntegrator::render(RenderGraph& renderGraph) {
         renderContext->traceRay(commandBuffer, {width, height, 1});
     
       });
-
-
+    
+    
     renderGraph.addRaytracingPass(
        "Restir output pass", [&](RenderGraph::Builder& builder, RaytracingPassSettings& settings) {
         settings.accel = &entry_->tlas;
@@ -99,7 +100,7 @@ void RestirIntegrator::render(RenderGraph& renderGraph) {
 }
 void RestirIntegrator::initScene(RTSceneEntry & entry) {
     Integrator::initScene(entry);
-
+    
     temporReservoirBuffer  = std::make_unique<Buffer>(device, sizeof(RestirReservoir) * width * height, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
     spatialReservoirBuffer = std::make_unique<Buffer>(device, sizeof(RestirReservoir) * width * height, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
     passReservoirBuffer    = std::make_unique<Buffer>(device, sizeof(RestirReservoir) * width * height, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_GPU_ONLY);

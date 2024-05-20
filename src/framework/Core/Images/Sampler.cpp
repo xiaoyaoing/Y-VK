@@ -4,16 +4,16 @@
 
 #include "Sampler.h"
 
-Sampler::Sampler(Device& device, VkSamplerAddressMode sampleMode, VkFilter filter, float maxLod) : device(device) {
+Sampler::Sampler(Device& device, VkSamplerAddressMode sampleMode, VkFilter filter, float maxLod,VkSamplerAddressMode addressModeU,VkSamplerAddressMode addressModeV,VkSamplerAddressMode addressModeW) : device(device) {
     VkPhysicalDeviceProperties properties{};
     vkGetPhysicalDeviceProperties(device.getPhysicalDevice(), &properties);
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     samplerInfo.magFilter               = VK_FILTER_LINEAR;
     samplerInfo.minFilter               = VK_FILTER_LINEAR;
-    samplerInfo.addressModeU            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.addressModeV            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.addressModeW            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeU            = addressModeU;
+    samplerInfo.addressModeV            = addressModeV;
+    samplerInfo.addressModeW            = addressModeW;
     samplerInfo.anisotropyEnable        = VK_FALSE;
     samplerInfo.maxAnisotropy           = properties.limits.maxSamplerAnisotropy;
     samplerInfo.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK;

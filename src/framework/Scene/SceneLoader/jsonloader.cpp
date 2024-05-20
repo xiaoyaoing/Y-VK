@@ -125,12 +125,68 @@ std::unordered_map<std::string, uint32_t> type2RTBSDFTYPE = {
     {"diffuse", RT_BSDF_TYPE_DIFFUSE},
     {"specular", RT_BSDF_TYPE_MIRROR},
     {"conductor", RT_BSDF_TYPE_CONDUCTOR},
-    {"rough_conductor", RT_BSDF_TYPE_CONDUCTOR}};
+    {"rough_conductor", RT_BSDF_TYPE_CONDUCTOR},
+    {"plastic", RT_BSDF_TYPE_PLASTIC},
+    {"rough_plastic", RT_BSDF_TYPE_PLASTIC},
+    {"principle", RT_BSDF_TYPE_PRINCIPLE},
+    {"dielectric", RT_BSDF_TYPE_DIELCTRIC},
+    {"rough_dielectric", RT_BSDF_TYPE_DIELCTRIC},
+};
+
+static inline float dielectricReflectance(float eta, float cosThetaI, float& cosThetaT) {
+    if (cosThetaI < 0.0) {
+        eta       = 1.0 / eta;
+        cosThetaI = -cosThetaI;
+    }
+    float sinThetaTSq = eta * eta * (1.0f - cosThetaI * cosThetaI);
+    if (sinThetaTSq > 1.0) {
+        cosThetaT = 0.0;
+        return 1.0;
+    }
+    cosThetaT = std::sqrt(std::max(1.0 - sinThetaTSq, 0.0));
+
+    float Rs = (eta * cosThetaI - cosThetaT) / (eta * cosThetaI + cosThetaT);
+    float Rp = (eta * cosThetaT - cosThetaI) / (eta * cosThetaT + cosThetaI);
+
+    return (Rs * Rs + Rp * Rp) * 0.5;
+}
+
+static inline float dielectricReflectance(float eta, float cosThetaI) {
+    float cosThetaT;
+    return dielectricReflectance(eta, cosThetaI, cosThetaT);
+}
+
+static inline float diffuseReflectance(float eta, float sampleCount) {
+    double diffuseFresnel = 0.0;
+    float  fb             = dielectricReflectance(eta, 0.0f);
+    for (int i = 1; i <= sampleCount; ++i) {
+        float cosThetaSq = float(i) / sampleCount;
+        float fa         = dielectricReflectance(eta, std::min(std::sqrt(cosThetaSq), 1.0f));
+        diffuseFresnel += double(fa + fb) * (0.5 / sampleCount);
+        fb = fa;
+    }
+
+    return float(diffuseFresnel);
+}
+    
 
 void handleSpecifyMaterialAttribute(RTMaterial& rtMaterial, const Json& materialJson) {
     if (rtMaterial.bsdf_type == RT_BSDF_TYPE_CONDUCTOR) {
         auto material = GetOptional<std::string>(materialJson, "material", "Cu");
         ComplexIorList::lookup(material, rtMaterial.eta, rtMaterial.k);
+    }
+    if(rtMaterial.bsdf_type == RT_BSDF_TYPE_PLASTIC) {
+        float m_ior              = GetOptional(materialJson, "ior", 1.3);
+        float    thickness = GetOptional(materialJson, "thickness", 1);
+        vec3 sigmaA    = GetOptional(materialJson, "sigma_a", vec3(0.f));
+        vec3 _scaledSigmaA      = thickness * sigmaA;
+
+        float avgSigmaA = (_scaledSigmaA.x + _scaledSigmaA.y + _scaledSigmaA.z) / 3.0f;
+        rtMaterial._avgTransmittance                                 = std::exp(-2.0f * avgSigmaA);
+        rtMaterial._diffuseFresnel                                 = diffuseReflectance(m_ior, 10000);
+    }
+    if(rtMaterial.bsdf_type == RT_BSDF_TYPE_DIELCTRIC) {
+       rtMaterial.ior = GetOptional(materialJson, "ior", 1.3);
     }
 }
 void JsonLoader::loadMaterials() {
@@ -167,12 +223,11 @@ void JsonLoader::loadMaterials() {
             rtMaterial.texture_id = texture_index.contains(textureName) ? texture_index[textureName] : -1;
         } else {
             rtMaterial.texture_id = -1;
-            rtMaterial.albedo     = materialJson["albedo"];
+            rtMaterial.albedo     = GetOptional(materialJson, "albedo", vec3(0.5f));
         }
         rtMaterial.texture_id     = -1;
         rtMaterial.emissiveFactor = vec3(0);
         rtMaterial.bsdf_type      = type2RTBSDFTYPE[materialJson["type"].get<std::string>()];
-        // rtMaterial.bsdf_type = RT_BSDF_TYPE_DIFFUSE;
         rtMaterial.roughness = GetOptional(materialJson, "roughness", 0.0f);
         handleSpecifyMaterialAttribute(rtMaterial, materialJson);
         rtMaterials.push_back(rtMaterial);
@@ -295,11 +350,17 @@ void JsonLoader::loadPrimitives() {
 
     for (auto& primitiveJson : primitivesJson) {
 
-        std::unique_ptr<PrimitiveData> primitiveData;
+        std::unique_ptr<PrimitiveData> primitiveData = nullptr;
         if (primitiveJson.contains("file")) {
             primitiveData = PrimitiveLoader::loadPrimitive(rootPath.string() + "/" + primitiveJson["file"].get<std::string>());
         } else if (primitiveJson.contains("type")) {
             std::string type = primitiveJson["type"];
+            if(type == "infinite_sphere") {
+                mat4 matrix = mat4FromJson(primitiveJson["transform"]);
+                lights.push_back(SgLight{.type = LIGHT_TYPE::Sky, .lightProperties = {.texture_index = static_cast<uint32_t>(textures.size()),.world_matrix =matrix}});
+                textures.push_back(Texture::loadTextureFromFile(device, rootPath.string() + "/" + primitiveJson["emission"].get<std::string>()));
+            }
+            else 
             primitiveData    = PrimitiveLoader::loadPrimitiveFromType(type);
         } else {
             LOGE("Primitive must have a type or a file")

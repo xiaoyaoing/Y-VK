@@ -12,6 +12,7 @@ PipelineLayout::PipelineLayout(Device& device, std::vector<Shader>& shaders_) : 
 PipelineLayout::PipelineLayout(Device& device, const std::vector<std::string>& shaderPaths) : device(device) {
     shaders.reserve(shaderPaths.size());
     for (auto& shaderPath : shaderPaths) {
+        //shaders.emplace_back(device.getResourceCache().requestShaderModule(shaderPath));
         shaders.emplace_back(device, FileUtils::getShaderPath(shaderPath));
     }
 

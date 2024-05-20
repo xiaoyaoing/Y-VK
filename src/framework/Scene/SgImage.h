@@ -62,12 +62,14 @@ public:
             VkImageUsageFlags     image_usage,
             VkSampleCountFlagBits sample_count = VK_SAMPLE_COUNT_1_BIT,
             VkImageViewType       viewType     = VK_IMAGE_VIEW_TYPE_2D);
-
+    
     ~SgImage();
 
     SgImage(SgImage&& other);
 
     SgImage(SgImage& other) = delete;
+
+    void freeImageCpuData();
 
     void createVkImage(Device& device, uint32_t mipLevels =  0,VkImageViewType imageViewType = VK_IMAGE_VIEW_TYPE_2D, VkImageCreateFlags flags = 0);
 
@@ -80,6 +82,8 @@ public:
     VkExtent2D getExtent2D() const;
 
     Image& getVkImage() const;
+
+    
 
     // ImageView &getVkImageView() const;
 
@@ -107,6 +111,8 @@ public:
 
     bool isCubeMap() const;
 
+    bool needGenerateMipMapOnGpu() const;
+
 private:
 protected:
     void setIsCubeMap(bool _isCube);
@@ -121,13 +127,14 @@ protected:
     //Attributes to init when load resources
     std::vector<uint8_t> mData;
     VkFormat             format;
-    VkExtent3D           mExtent3D;
+    VkExtent3D           mExtent3D{0,0,1};
 
     //Attention: size = layer * level
     //layer 0 mipmap 0, layer1 mipmap0 layer2 mipmap0 ...
     std::vector<Mipmap>                    mipMaps{{}};
     std::vector<std::vector<VkDeviceSize>> offsets;
     bool                                   mIsCubeMap{false};
+    bool needGenerateMipMap{true};
 
     std::string name;
 

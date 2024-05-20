@@ -103,8 +103,8 @@ Buffer& ResourceCache::requestNamedBuffer(const std::string& name, uint64_t buff
 PipelineLayout& ResourceCache::requestPipelineLayout(const std::vector<std::string>& shaderPaths) {
     return requestResource(device, pipelineLayoutMutex, state.pipeline_layouts, shaderPaths);
 }
-Sampler& ResourceCache::requestSampler(VkSamplerAddressMode sampleMode, VkFilter filter, float maxLod) {
-    return requestResource(device, samplerMutex, state.samplers, sampleMode, filter, maxLod);
+Sampler& ResourceCache::requestSampler(VkSamplerAddressMode sampleMode, VkFilter filter, float maxLod,VkSamplerAddressMode addressModeU, VkSamplerAddressMode addressModeV, VkSamplerAddressMode addressModeW) {
+    return requestResource(device, samplerMutex, state.samplers, sampleMode, filter, maxLod, addressModeU, addressModeV, addressModeW);
 }
 
 Shader& ResourceCache::requestShaderModule(const std::string& path, VkShaderStageFlagBits stage) {

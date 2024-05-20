@@ -26,6 +26,9 @@ using uvec2 = glm::uvec2;
 //For code used in shader,use "_" code style
 
 struct SceneDesc {
+    uint envmap_idx;
+    uint padding;
+    
     uint64_t vertex_addr;
     uint64_t index_addr;
     uint64_t normal_addr;
@@ -36,7 +39,7 @@ struct SceneDesc {
     // NEE
     uint64_t mesh_lights_addr;
 
-    uint64_t infnite_light_distribution_addr;
+    uint64_t env_sampling_addr;
 
     
     uint64_t restir_temporal_reservoir_addr;
@@ -62,9 +65,18 @@ struct RTMaterial {
     vec3  albedo;
     int   texture_id;
     uint  bsdf_type;
-    float roughness;
+
     vec3  eta;
+    float roughness;
+    
     vec3  k;
+    float _diffuseFresnel;
+
+    vec3  _scaledSigmaA;
+    float _avgTransmittance;
+
+    float ior;
+    vec3 padding;
 };
 
 struct RTLight {
@@ -73,6 +85,8 @@ struct RTLight {
     uint prim_idx;
     vec3 position;
     uint light_type;
+    vec3 padding;
+    uint light_texture_id;
 };
 
 struct RTPrimitive {
@@ -91,6 +105,14 @@ struct RTPrimitive {
     uint     padding3;
     uint     padding4;
     //  uint64_t padding_64;
+};
+
+struct EnvAccel
+{
+    uint  alias;
+    float q;
+    float pdf;
+    float aliasPdf;
 };
 
 #define RT_BSDF_TYPE_DIFFUSE   0
