@@ -10,6 +10,8 @@
 #include <Core/RayTracing/Accel.h>
 
 #include "Integrators/Integrator.h"
+#include "PostProcess/PostProcess.h"
+#include "RenderPasses/RenderPassBase.h"
 
 struct RayTracerSettings{};
 
@@ -27,9 +29,9 @@ public:
     
     // std::unique_ptr<Integrator> path,restirDI{};
 
-    std::unordered_map<const char *,std::unique_ptr<Integrator>> integrators;
-    const char * currentIntegrator = PATH_INTEGRATOR_NAME;
-    std::vector<const char*> integratorNames;
+    std::unordered_map<std::string_view,std::unique_ptr<Integrator>> integrators;
+    std::string_view currentIntegrator = PATH_INTEGRATOR_NAME;
+    std::vector<std::string_view> integratorNames;
 
     
     struct 
@@ -41,6 +43,8 @@ public:
     SceneUbo sceneUbo;
     SceneUbo lastFrameSceneUbo;
     std::shared_ptr<RTSceneEntry> rtSceneEntry;
+    std::unique_ptr<PostProcess> postProcess;
+
 };
 
 

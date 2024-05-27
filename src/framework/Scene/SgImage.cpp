@@ -296,6 +296,7 @@ void SgImage::setArrayLevelCount(uint32_t layers) {
 void SgImage::generateMipMapOnCpu() {
     if (mipMaps.size() > 1 && mipMaps[0].isInitialized())
         return;
+    if(!needGenerateMipMap) return;
     assert(mipMaps.size() == 1 && "Mipmaps already generated");
 
     for (int i = 0; i < layers; i++) {

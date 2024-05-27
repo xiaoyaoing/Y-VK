@@ -82,11 +82,10 @@ Gui::Gui(Device& device) : device(device) {
     bool   show_demo_window    = true;
     bool   show_another_window = false;
     ImVec4 clear_color         = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    
 
-    std::vector<Shader> shaders{};
-    shaders.emplace_back(device, FileUtils::getShaderPath("gui.vert"));
-    shaders.emplace_back(device, FileUtils::getShaderPath("gui.frag"));
-    pipelineLayout = &device.getResourceCache().requestPipelineLayout(shaders);
+    std::vector<std::string> paths{"gui.vert", "gui.frag"};
+    pipelineLayout = &device.getResourceCache().requestPipelineLayout(paths);
 }
 
 bool Gui::inputEvent(const InputEvent& input_event) {

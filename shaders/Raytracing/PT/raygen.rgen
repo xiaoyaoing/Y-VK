@@ -27,13 +27,13 @@ uvec4 seed = init_rng(gl_LaunchIDEXT.xy, gl_LaunchSizeEXT.xy, pc_ray.frame_num);
 
 
 vec3 warp(vec3 v){
-    return (v + 1.0f) / 2.f;
+    return (v + 1.0f) / 2.f; 
 }
 
+  
 
 
-
-
+  
 vec3 Le(vec3 dir_to_light){
     uint light_idx = prim_infos.p[hitPayload.prim_idx].light_index;
     //debugPrintfEXT("light_idx %d\n", light_idx);
@@ -50,7 +50,6 @@ vec3 eval_env(vec3 dir){
     if(scene_desc.envmap_idx == -1){
         return vec3(0);
     }
-//    debugPrintfEXT("envmap_idx %d\n", scene_desc.envmap_idx);
     mat4  m = transpose(lights[scene_desc.envmap_idx].world_matrix);
     vec2 dir_uv = envdir_to_uv(m, dir);
     return texture(scene_textures[lights[scene_desc.envmap_idx].light_texture_id], dir_uv).xyz;
@@ -84,10 +83,6 @@ void main()
 
     for (depth = 0; depth<pc_ray.max_depth; depth++){
         
-        //color =eval_env(direction.xyz);
-       // break;
-        
-        
         uint prev_material_idx = hitPayload.material_idx;
 
         hitPayload.material_idx = -1;
@@ -101,11 +96,7 @@ void main()
             }
             break;
         }
-
         
-      //  break;
-
-
         SurfaceScatterEvent event = make_surface_scatter_event(hitPayload, -direction.xyz);
         
 
@@ -118,28 +109,55 @@ void main()
         
         if (depth >= pc_ray.min_depth)
         color +=  throughput *  uniform_sample_one_light(seed, event, pc_ray.light_num,pc_ray.enable_sample_light>0,pc_ray.enable_sample_bsdf>0);
-
-               // color = visualize_normal(hitPayload.n_g);
-
-//        break;
+        
 
 
         BsdfSampleRecord record = sample_bsdf(materials.m[event.material_idx], event, rand2(seed));
 
-        specular_bounce = false;
+        specular_bounce = (record.sample_flags & RT_BSDF_LOBE_SPECULAR)!=0;
 
+//        color = record.f;
+//        break;
+        
+        
         if (record.f == vec3(0) || record.pdf ==0){
+           // color = vec3(0,1,0);
+            break;
+        } 
+        vec3 wi_world = to_world(event.frame, event.wi);
+        throughput *= record.f / record.pdf;
+        
+        if(pc_ray.visual_throughput>0){
+            color = throughput;
             break;
         }
-        vec3 wi_world = to_world(event.frame, event.wo);
-        throughput *= record.f / record.pdf;
+        if (pc_ray.visual_normal>0){
+            color = hitPayload.n_g;
+            break;
+        }
+        
+        if(pc_ray.visual_albedo>0){
+            color = get_albedo(materials.m[event.material_idx], event.uv);
+            break;
+        }
+        
+        if(pc_ray.visual_material_type>0){
+            uint bsdf_type = materials.m[event.material_idx].bsdf_type;
+            color = pseudocolor(bsdf_type);
+            break;
+        }
+
+        
+        if(isnan(throughput.x) || isnan(throughput.y) || isnan(throughput.z)){
+            debugPrintfEXT("nan throughput %f %f %f\n", throughput.x, throughput.y, throughput.z);
+        }
         
 
         direction = vec4(wi_world, 0);
         origin = event.p + direction.xyz * EPS;
         //origin = offset_ray_origin(event.p,  , direction);
     }
-
+ 
     if (isnan(color.x) || isnan(color.y) || isnan(color.z)){
         debugPrintfEXT("nan %f %f %f\n", color.x, color.y, color.z);
     }

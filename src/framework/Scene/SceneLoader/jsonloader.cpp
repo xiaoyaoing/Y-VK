@@ -126,7 +126,7 @@ std::unordered_map<std::string, uint32_t> type2RTBSDFTYPE = {
     {"specular", RT_BSDF_TYPE_MIRROR},
     {"conductor", RT_BSDF_TYPE_CONDUCTOR},
     {"rough_conductor", RT_BSDF_TYPE_CONDUCTOR},
-    {"plastic", RT_BSDF_TYPE_PLASTIC},
+    {"plastic", RT_BSDF_TYPE_DIFFUSE},
     {"rough_plastic", RT_BSDF_TYPE_PLASTIC},
     {"principle", RT_BSDF_TYPE_PRINCIPLE},
     {"dielectric", RT_BSDF_TYPE_DIELCTRIC},
@@ -182,8 +182,10 @@ void handleSpecifyMaterialAttribute(RTMaterial& rtMaterial, const Json& material
         vec3 _scaledSigmaA      = thickness * sigmaA;
 
         float avgSigmaA = (_scaledSigmaA.x + _scaledSigmaA.y + _scaledSigmaA.z) / 3.0f;
-        rtMaterial._avgTransmittance                                 = std::exp(-2.0f * avgSigmaA);
-        rtMaterial._diffuseFresnel                                 = diffuseReflectance(m_ior, 10000);
+        rtMaterial.scaledSigmaA = _scaledSigmaA;
+        rtMaterial.ior = m_ior;
+        rtMaterial.avgTransmittance                                 = std::exp(-2.0f * avgSigmaA);
+        rtMaterial.diffuseFresnel                                 = diffuseReflectance(m_ior, 10000);
     }
     if(rtMaterial.bsdf_type == RT_BSDF_TYPE_DIELCTRIC) {
        rtMaterial.ior = GetOptional(materialJson, "ior", 1.3);
@@ -225,7 +227,6 @@ void JsonLoader::loadMaterials() {
             rtMaterial.texture_id = -1;
             rtMaterial.albedo     = GetOptional(materialJson, "albedo", vec3(0.5f));
         }
-        rtMaterial.texture_id     = -1;
         rtMaterial.emissiveFactor = vec3(0);
         rtMaterial.bsdf_type      = type2RTBSDFTYPE[materialJson["type"].get<std::string>()];
         rtMaterial.roughness = GetOptional(materialJson, "roughness", 0.0f);

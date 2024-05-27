@@ -107,12 +107,14 @@ std::vector<EnvAccel> HDRSampling::createEnvironmentAccel(const float* pixels, V
     const float area      = (cosTheta0 - cosTheta1) * stepPhi;  // solid angle
     cosTheta0             = cosTheta1;
 
+      float                 rowWeight = std::sin((y * M_PI) / ry);
+
     for(uint32_t x = 0; x < rx; ++x)
     {
       const uint32_t idx          = y * rx + x;
       const uint32_t idx4         = idx * 4;
       float          cieLuminance = luminance(&pixels[idx4]);
-      importanceData[idx]         = area * std::max(pixels[idx4], std::max(pixels[idx4 + 1], pixels[idx4 + 2]));
+      importanceData[idx]         = rowWeight * std::max(pixels[idx4], std::max(pixels[idx4 + 1], pixels[idx4 + 2]));
       total += cieLuminance;
     }
   }
@@ -125,12 +127,15 @@ std::vector<EnvAccel> HDRSampling::createEnvironmentAccel(const float* pixels, V
   // As a byproduct this function also returns the integral of the radiance emitted by the environment
   m_integral = buildAliasmap(importanceData, envAccel);
 
+    std::vector<float> pixelPdf(rx * ry,0);
+
   // We deduce the PDF of each texel by normalizing its emitted radiance by the radiance integral
   const float invEnvIntegral = 1.0f / m_integral;
   for(uint32_t i = 0; i < rx * ry; ++i)
   {
     const uint32_t idx4 = i * 4;
-    envAccel[i].pdf     = std::max(pixels[idx4], std::max(pixels[idx4 + 1], pixels[idx4 + 2])) * invEnvIntegral;
+    envAccel[i].pdf     = importanceData[i] * invEnvIntegral;
+    pixelPdf[i]         += envAccel[i].pdf;  
   }
 
   // At runtime a texel will be uniformly chosen. Whether that texel or its alias is
@@ -141,6 +146,7 @@ std::vector<EnvAccel> HDRSampling::createEnvironmentAccel(const float* pixels, V
   {
     const uint32_t aliasIdx = envAccel[i].alias;
     envAccel[i].aliasPdf    = envAccel[aliasIdx].pdf;
+    pixelPdf[aliasIdx]      += envAccel[aliasIdx].pdf;
   }
 
   return envAccel;

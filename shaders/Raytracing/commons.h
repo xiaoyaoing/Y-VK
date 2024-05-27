@@ -70,10 +70,10 @@ struct RTMaterial {
     float roughness;
     
     vec3  k;
-    float _diffuseFresnel;
+    float diffuseFresnel;
 
-    vec3  _scaledSigmaA;
-    float _avgTransmittance;
+    vec3  scaledSigmaA;
+    float avgTransmittance;
 
     float ior;
     vec3 padding;

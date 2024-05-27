@@ -6,14 +6,13 @@ class DescriptorLayout;
 
 class PipelineLayout {
 public:
-    PipelineLayout(Device& device, std::vector<Shader>& shaders);
     PipelineLayout(Device& device, const std::vector<std::string>& shaderPaths);
 
     DescriptorLayout& getDescriptorSetLayout(std::size_t setIdx);
 
     VkPipelineLayout getHandle() const;
 
-    const std::vector<Shader>& getShaders() const;
+    const std::vector<const Shader *>& getShaders() const;
 
     const Shader& getShader(VkShaderStageFlagBits stage) const;
 
@@ -34,6 +33,6 @@ private:
     VkPipelineLayout                                     layout;
     Device&                                              device;
     std::map<uint32_t, DescriptorLayout*>                descriptorLayouts;
-    std::vector<Shader>                                  shaders;
+    std::vector<const Shader *>                                  shaders;
     std::map<std::uint32_t, std::vector<ShaderResource>> shaderSets;
 };

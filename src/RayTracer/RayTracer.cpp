@@ -11,6 +11,7 @@
 #include "Integrators/PathIntegrator.h"
 #include "Integrators/RestirIntegrator.h"
 #include "Integrators/SimpleIntegrator.h"
+#include "PostProcess/PostProcess.h"
 #include "Scene/SceneLoader/SceneLoaderInterface.h"
 #include "Scene/SceneLoader/gltfloader.h"
 
@@ -89,17 +90,17 @@ void RayTracer::drawFrame(RenderGraph& renderGraph) {
     rtSceneEntry->sceneUboBuffer->uploadData(&sceneUbo, sizeof(sceneUbo));
 
     lastFrameSceneUbo = sceneUbo;
-    
     integrators[currentIntegrator]->render(renderGraph);
+    postProcess->render(renderGraph);
 
-    renderGraph.addImageCopyPass(renderGraph.getBlackBoard().getHandle("RT"), renderGraph.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME));
+    // renderGraph.addImageCopyPass(renderGraph.getBlackBoard().getHandle("RT"), renderGraph.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME));
 
 }
 
 void RayTracer::prepare() {
     Application::prepare();
     GlslCompiler::setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_5);
-// GlslCompiler::forceRecompile = true;
+  GlslCompiler::forceRecompile = true;
 
     integrators["path"] = std::make_unique<PathIntegrator>(*device);
     integrators["restir"] = std::make_unique<RestirIntegrator>(*device);
@@ -114,8 +115,9 @@ void RayTracer::prepare() {
     camera                         = std::make_shared<Camera>();
 
 
-    //scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/vk-raytracing-demo/resources/classroom/scene.json", sceneLoadingConfig);
-    scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/test-ball/scene.json", sceneLoadingConfig);
+   // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/vk-raytracing-demo/resources/classroom/scene.json", sceneLoadingConfig);
+   scene = SceneLoaderInterface::LoadSceneFromFile(*device, "C:/Users/pc/Downloads/bedroom/scene.json", sceneLoadingConfig);
+   // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/test-ball/scene.json", sceneLoadingConfig);
 
     //RuntimeSceneManager::addSponzaRestirLight(*scene);
 
@@ -135,19 +137,33 @@ void RayTracer::prepare() {
         integrator.second->initScene(*rtSceneEntry);
         integrator.second->init();
     }
+
+    postProcess = std::make_unique<PostProcess>();
+    postProcess->init();
 }
 
 void RayTracer::onUpdateGUI() {
     Application::onUpdateGUI();
 
-    auto itemIter    = std::ranges::find(integratorNames.begin(), integratorNames.end(), currentIntegrator);
+    
 
-    int itemCurrent = std::distance(integratorNames.begin(), itemIter);
-    ImGui::Combo("Integrators", &itemCurrent, integratorNames.data(), integratorNames.size());
+    int itemCurrent = 0;
+    for (int i = 0; i < integratorNames.size(); i++) {
+        if (integratorNames[i] == currentIntegrator) {
+            itemCurrent = i;
+            break;
+        }
+    }
+    std::vector<const char *> integratorNamesCStr;
+    for (auto& integratorName : integratorNames) {
+        integratorNamesCStr.push_back(integratorName.data());
+    }
+    ImGui::Combo("Integrators", &itemCurrent, integratorNamesCStr.data(), integratorNames.size());
 
     currentIntegrator = integratorNames[itemCurrent];
 
     integrators[currentIntegrator]->onUpdateGUI();
+    postProcess->updateGui();
 }
 
 // void RayTracer::buildBLAS()

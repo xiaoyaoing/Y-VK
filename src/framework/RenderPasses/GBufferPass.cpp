@@ -6,10 +6,7 @@
 void GBufferPass::init() {
     // mNormal = std::make_unique<SgImage>(device,"normal",VKExt, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
     Device&             device = g_context->getDevice();
-    std::vector<Shader> shaders{
-        Shader(device, FileUtils::getShaderPath("defered_one_scene_buffer.vert")),
-        Shader(device, FileUtils::getShaderPath("defered_pbr.frag"))};
-    mPipelineLayout = std::make_unique<PipelineLayout>(device, shaders);
+    mPipelineLayout = std::make_unique<PipelineLayout>(device, std::vector<std::string>{"defered_one_scene_buffer.vert", "defered_pbr.frag"});
 }
 void LightingPass::render(RenderGraph& rg) {
     rg.addGraphicPass(
@@ -43,10 +40,8 @@ void LightingPass::render(RenderGraph& rg) {
         });
 }
 void LightingPass::init() {
-    std::vector<Shader> shaders{
-        Shader(g_context->getDevice(), FileUtils::getShaderPath("full_screen.vert")),
-        Shader(g_context->getDevice(), FileUtils::getShaderPath("lighting_pbr.frag"))};
-    mPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), shaders);
+    std::vector<std::string> shadersPath{"full_screen.vert", "lighting_pbr.frag"};
+    mPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), shadersPath);
 }
 
 struct IBLLightingPassPushConstant {

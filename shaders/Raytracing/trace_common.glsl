@@ -4,10 +4,9 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
     
     vec3 light_sample_rand = rand3(seed);
 
-    if(light_idx>=48){
-        debugPrintfEXT("light_idx %d\n", light_idx);
+    if(is_specular_material(materials.m[event.material_idx])){
+        return vec3(0,0,0);
     }
-   // return result;
     const RTLight light = lights[light_idx];
 
 
@@ -15,25 +14,32 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
 
 
     if (enable_sample_light)
-    {
+    { 
         if (!isBlack(light_sample.indensity) && light_sample.pdf != 0){
 
-            //  return light_sample.indensity / light_sample.pdf;
             any_hit_payload.hit = 1;
 
-         //   return vec3(0);
             traceRayEXT(tlas,
             gl_RayFlagsTerminateOnFirstHitEXT |
             gl_RayFlagsSkipClosestHitShaderEXT,
             0xFF, 1, 0, 1, event.p, EPS, light_sample.wi, light_sample.dist - EPS, 1);
             bool  visible = any_hit_payload.hit == 0;
+            visible = true;
             if (visible){
                 uint material_idx = event.material_idx;
-                event.wo = to_local(event.frame, light_sample.wi);
+                event.wi = to_local(event.frame, light_sample.wi);
                 float bsdf_pdf = pdf_bsdf(materials.m[material_idx], event);
                 float light_mis_weight =enable_sample_bsdf? power_heuristic(light_sample.pdf, bsdf_pdf):1;
                 vec3 bsdf =eval_bsdf(materials.m[material_idx], event);
                 result += light_sample.indensity  * bsdf * light_mis_weight / light_sample.pdf;
+                if(luminance(result) > 1000){
+                //    debugPrintfEXT("light_sample.indensity %f %f %f\n", light_sample.indensity.x, light_sample.indensity.y, light_sample.indensity.z);
+                  //  debugPrintfEXT("bsdf %f %f %f\n", bsdf.x, bsdf.y, bsdf.z);
+//                    debugPrintfEXT("light_mis_weight %f\n", light_mis_weight);
+//                    debugPrintfEXT("light_sample.pdf %f\n", light_sample.pdf);
+//                    debugPrintfEXT("bsdf_pdf %f\n", bsdf_pdf);
+//                    debugPrintfEXT("result %f %f %f\n", result.x, result.y, result.z);
+                }
             }
         }
     }
@@ -47,14 +53,14 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
         if (f != vec3(0) && bsdf_pdf != 0){
 
 
-            vec3 world_wi = to_world(event.frame, event.wo);
+            vec3 world_wi = to_world(event.frame, event.wi);
             //trace ray 
             hitPayload.prim_idx = -1;
             traceRayEXT(tlas,
             gl_RayFlagsOpaqueEXT,
             0xFF, 0, 0, 0, event.p, EPS, world_wi, 10000, 0);
 
-            bool same_light = hitPayload.prim_idx == light.prim_idx;
+            bool same_light = light_sample.is_infinite? hitPayload.prim_idx == -1: hitPayload.prim_idx == light.prim_idx;
 
             //return visualize_normal(world_wi);
 
@@ -63,7 +69,8 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
 
                 uint material_idx = event.material_idx;
 
-                float light_pdf = 1.f/get_primitive_area(light.prim_idx) *  length(hitPayload.p-event.p) * length(hitPayload.p-event.p) / abs(dot(hitPayload.n_g, world_wi));
+                float light_pdf = eval_light_pdf(light, event.p, hitPayload.p, hitPayload.n_g,world_wi);
+              
 
                 float bsdf_mis_weight = enable_sample_light?power_heuristic(bsdf_pdf, light_pdf):1;
 
@@ -77,9 +84,17 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
     return result;
 }
 
+bool is_delta_material(const uint material_idx){
+    return materials.m[material_idx].roughness < EPS;
+}
+
 
 vec3   uniform_sample_one_light(inout uvec4 seed, inout SurfaceScatterEvent event, const uint light_num,bool enable_sample_light, bool enable_sample_bsdf){
 
+//    bool is_delta_material = is_delta_material(event.material_idx);
+//    if (is_delta_material){
+//        return vec3(0);
+//    }
     float light_choose_rand = rand1(seed);
 
     uint light_idx = uint(light_choose_rand * light_num);

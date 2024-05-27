@@ -129,7 +129,7 @@ void PipelineState::reset() {
     subpassIndex = {0U};
 }
 
-PipelineState& PipelineState::setPipelineLayout(PipelineLayout& newPipelineLayout) {
+PipelineState& PipelineState::setPipelineLayout(const PipelineLayout& newPipelineLayout) {
     if (pipelineLayout && pipelineLayout->getHandle() != newPipelineLayout.getHandle()) {
         pipelineLayout = &newPipelineLayout;
         dirty          = true;

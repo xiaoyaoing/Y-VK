@@ -30,14 +30,14 @@ void PathIntegrator::render(RenderGraph& renderGraph) {
         settings.rTPipelineSettings.maxDepth = 5;
     
     
-        auto output = renderGraph.createTexture("RT output",{width,height,TextureUsage::STORAGE | TextureUsage::TRANSFER_SRC,VK_FORMAT_R32G32B32A32_SFLOAT});
+        auto output = renderGraph.createTexture(RT_IMAGE_NAME,{width,height,TextureUsage::STORAGE | TextureUsage::TRANSFER_SRC | TextureUsage::SAMPLEABLE,VK_FORMAT_R32G32B32A32_SFLOAT});
         builder.writeTexture(output,TextureUsage::STORAGE);
-        renderGraph.getBlackBoard().put("RT",output); }, [&](RenderPassContext& context) {
+         }, [&](RenderPassContext& context) {
             bindRaytracingResources(commandBuffer);
     
             auto pushConstant = toBytes(pcPath);
             renderContext->bindPushConstants(pushConstant);
-            renderContext->bindImage(0, renderGraph.getBlackBoard().getImageView("RT"));
+            renderContext->bindImage(0, renderGraph.getBlackBoard().getImageView(RT_IMAGE_NAME));
          renderContext->traceRay(commandBuffer, {width, height, 1});
     
             pcPath.frame_num++; });
@@ -82,6 +82,10 @@ void PathIntegrator::onUpdateGUI() {
     ImGui::SameLine();
     ImGui::Checkbox("Sample Light", reinterpret_cast<bool*>(&pcPath.enable_sample_light));
     ImGui::Checkbox("Enable Accumulation", reinterpret_cast<bool*>(&pcPath.enable_accumulation));
+    ImGui::Checkbox("Visual Throughput", reinterpret_cast<bool*>(&pcPath.visual_throughput));
+    ImGui::Checkbox("Visual Normal", reinterpret_cast<bool*>(&pcPath.visual_normal));
+    ImGui::Checkbox("Visual Material Type", reinterpret_cast<bool*>(&pcPath.visual_material_type));
+    ImGui::Checkbox("Visual Albedo", reinterpret_cast<bool*>(&pcPath.visual_albedo));
 }
 
 PathIntegrator::PathIntegrator(Device& device_) : Integrator(device_) {
@@ -94,8 +98,7 @@ PathIntegrator::PathIntegrator(Device& device_) : Integrator(device_) {
 
                                                       });
 
-    std::vector<Shader> shaders = {Shader(device, FileUtils::getShaderPath("Raytracing/compute_triangle_area.comp"))};
-    tem_layout                  = std::make_unique<PipelineLayout>(device, shaders);
+    tem_layout                  = std::make_unique<PipelineLayout>(device, std::vector<std::string>({"Raytracing/compute_triangle_area.comp"}))  ;
 
     pcPath.enable_sample_bsdf  = 0;
     pcPath.enable_sample_light = 1;

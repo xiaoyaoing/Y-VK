@@ -55,6 +55,14 @@ vec3 pseudocolor(uint value)
     return (uvec3(h, h >> 8, h >> 16) & 0xffu) / 255.f;
 }
 
+float luminance(vec3 v) {
+    return 0.2126 * v.x + 0.7152 * v.y + 0.0722 * v.z;
+}
+
+bool isBlack(vec3 v){
+    return luminance(v) < 1e-6f;
+}
+
 
 
 SurfaceScatterEvent make_surface_scatter_event(HitPayload hit_pay_load, const vec3 wo){
@@ -67,7 +75,7 @@ SurfaceScatterEvent make_surface_scatter_event(HitPayload hit_pay_load, const ve
     }
 
     event.frame = make_frame(hit_pay_load.n_s);
-    event.wi = to_local(event.frame, wo);
+    event.wo = to_local(event.frame, wo);
     event.p = hit_pay_load.p;
     event.material_idx = hit_pay_load.material_idx;
     event.uv = hit_pay_load.uv;
@@ -77,7 +85,7 @@ SurfaceScatterEvent make_surface_scatter_event(HitPayload hit_pay_load, const ve
 SurfaceScatterEvent make_surface_scatter_event(vec3 wo, vec3 n, vec3 p, vec2 uv, uint material_idx){
     SurfaceScatterEvent event;
     event.frame = make_frame(n);
-    event.wi = to_local(event.frame, wo);
+    event.wo = to_local(event.frame, wo);
     event.p = p;
     event.material_idx = material_idx;
     event.uv = uv;

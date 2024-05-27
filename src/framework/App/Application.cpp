@@ -100,6 +100,7 @@ void Application::updateGUI() {
     std::ranges::transform(mCurrentTextures.begin(), mCurrentTextures.end(), std::back_inserter(currentTexturesCStr), [](const std::string& str) { return str.c_str(); });
     ImGui::Combo("RenderGraphTextures", &itemCurrent, currentTexturesCStr.data(), currentTexturesCStr.size());
     mPresentTexture = mCurrentTextures[itemCurrent];
+    
     ImGui::End();
     ImGui::Separator();
 

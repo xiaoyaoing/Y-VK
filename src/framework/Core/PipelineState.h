@@ -151,7 +151,7 @@ struct PipelineState {
 public:
     void reset();
 
-    PipelineState& setPipelineLayout(PipelineLayout& pipelineLayout);
+    PipelineState& setPipelineLayout(const PipelineLayout& pipelineLayout);
 
     PipelineState& setRenderPass(const RenderPass& renderPass);
 
@@ -206,7 +206,7 @@ public:
     PipelineState& clearDirty();
 
 private:
-    PipelineLayout* pipelineLayout{nullptr};
+    const PipelineLayout* pipelineLayout{nullptr};
 
     const RenderPass* renderPass{nullptr};
 

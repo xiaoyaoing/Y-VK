@@ -159,14 +159,7 @@ void ImageCopyPassNode::execute(RenderGraph& renderGraph, CommandBuffer& command
 
     auto& srcVkImage = renderGraph.getTexture(src)->getHwTexture()->getVkImage();
     auto& dstVkImage = renderGraph.getTexture(dst)->getHwTexture()->getVkImage();
-
-    VkImageCopy copy_region{};
-    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    copy_region.srcOffset      = {0, 0, 0};
-    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    copy_region.dstOffset      = {0, 0, 0};
-    copy_region.extent         = {srcVkImage.getExtent().width, srcVkImage.getExtent().height, 1};
-
+    
 
     VkImageBlit2 blitImageRegion{};
     blitImageRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -191,7 +184,6 @@ void ImageCopyPassNode::execute(RenderGraph& renderGraph, CommandBuffer& command
     blitImageInfo.pRegions = &blitImageRegion;
 
     vkCmdBlitImage2(commandBuffer.getHandle(), &blitImageInfo);
-    // vkCmdBlitImage(commandBuffer.getHandle(), srcVkImage.getHandle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstVkImage.getHandle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
 }
 
 ImageCopyPassNode::ImageCopyPassNode(RenderGraphHandle src, RenderGraphHandle dst) : PassNode("Image Copy"), src(src), dst(dst) {

@@ -406,7 +406,7 @@ namespace std {
             hash_combine(result, pipelineState.getSubpassIndex());
 
             for (auto& shaderModule : pipelineState.getPipelineLayout().getShaders()) {
-                hash_combine(result, shaderModule.getId());
+                hash_combine(result, shaderModule->getId());
             }
 
             // VkPipelineVertexInputStateCreateInfo

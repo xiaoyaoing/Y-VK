@@ -118,6 +118,3 @@ Pipeline& ResourceCache::requestPipeline(const PipelineState& pipelineState) {
     return requestResource(device, pipelineMutex, state.pipelines, pipelineState);
 }
 
-PipelineLayout& ResourceCache::requestPipelineLayout(std::vector<Shader>& shaders) {
-    return requestResource(device, pipelineLayoutMutex, state.pipeline_layouts, shaders);
-}

@@ -64,7 +64,7 @@ const Sampler& Texture::getSampler() const {
 // }
 
 static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture, CommandBuffer& commandBuffer, std::vector<std::unique_ptr<Buffer>>& buffers) {
-    // texture->image->generateMipMapOnCpu();
+    texture->image->generateMipMapOnCpu();
     texture->image->createVkImage(device);
 
     
@@ -115,6 +115,7 @@ static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture, Com
         int i = 0;
         while(true) {
             VkImageBlit2 blit{};
+            blit.sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2;
             blit.srcOffsets[0] = { 0, 0, 0 };
             blit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
             blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -127,22 +128,28 @@ static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture, Com
             blit.dstSubresource.mipLevel = i+1;
             blit.dstSubresource.baseArrayLayer = 0;
             blit.dstSubresource.layerCount = 1;
-            blits.push_back(blit);
+            blits = {blit};
 
             mipWidth = std::max(1, mipWidth / 2);
             mipHeight = std::max(1, mipHeight / 2);
-            i++;
             if(mipWidth <= 1 && mipHeight <= 1)
                 break;
+
+            VkBlitImageInfo2 blitInfo{};
+            texture->image->getVkImage().transitionLayout(commandBuffer, VulkanLayout::TRANSFER_SRC,{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,.baseMipLevel = static_cast<uint32_t>(i),.levelCount = 1,.baseArrayLayer = 0,.layerCount = 1});
+            texture->image->getVkImage().transitionLayout(commandBuffer, VulkanLayout::TRANSFER_DST,{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,.baseMipLevel = static_cast<uint32_t>(i+1),.levelCount = 1,.baseArrayLayer = 0,.layerCount = 1});
+            blitInfo.srcImage = texture->image->getVkImage().getHandle();
+            blitInfo.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            blitInfo.dstImage = texture->image->getVkImage().getHandle();
+            blitInfo.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            blitInfo.regionCount = blits.size()  ;
+            blitInfo.pRegions = blits.data();
+            vkCmdBlitImage2(commandBuffer.getHandle(), &blitInfo);//
+
+            i++;
+
         }
-        VkBlitImageInfo2 blitInfo{};
-        blitInfo.srcImage = texture->image->getVkImage().getHandle();
-        blitInfo.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-        blitInfo.dstImage = texture->image->getVkImage().getHandle();
-        blitInfo.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        blitInfo.regionCount = blits.size()  ;
-        blitInfo.pRegions = blits.data();
-        vkCmdBlitImage2(commandBuffer.getHandle(), &blitInfo);//
+        
     }
     VkSamplerAddressMode addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     VkSamplerAddressMode addressModeV = texture->image->getFormat() == VK_FORMAT_R32G32B32A32_SFLOAT ? VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE : VK_SAMPLER_ADDRESS_MODE_REPEAT;

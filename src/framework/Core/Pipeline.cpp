@@ -11,28 +11,30 @@ Pipeline::Pipeline(Device& device, const PipelineState& pipelineState) : device(
     auto&                                        shaders = pipelineState.getPipelineLayout().getShaders();
     std::vector<VkPipelineShaderStageCreateInfo> stageCreateInfos;
 
-    std::ranges::transform(shaders.begin(), shaders.end(), std::back_inserter(stageCreateInfos), [](const Shader& shader) {
-        return shader.PipelineShaderStageCreateInfo();
+    std::ranges::transform(shaders.begin(), shaders.end(), std::back_inserter(stageCreateInfos), [](const Shader * shader) {
+        return shader->PipelineShaderStageCreateInfo();
     });
 
-    std::array<VkDynamicState, 9> dynamicStates{
-        VK_DYNAMIC_STATE_VIEWPORT,
-        VK_DYNAMIC_STATE_SCISSOR,
-        VK_DYNAMIC_STATE_LINE_WIDTH,
-        VK_DYNAMIC_STATE_DEPTH_BIAS,
-        VK_DYNAMIC_STATE_BLEND_CONSTANTS,
-        VK_DYNAMIC_STATE_DEPTH_BOUNDS,
-        VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK,
-        VK_DYNAMIC_STATE_STENCIL_WRITE_MASK,
-        VK_DYNAMIC_STATE_STENCIL_REFERENCE,
-    };
-
-    VkPipelineDynamicStateCreateInfo dynamicState{VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};
-
-    dynamicState.pDynamicStates    = dynamicStates.data();
-    dynamicState.dynamicStateCount = toUint32(dynamicStates.size());
 
     if (type == PIPELINE_TYPE::E_GRAPHICS) {
+        
+        std::array<VkDynamicState, 9> dynamicStates{
+            VK_DYNAMIC_STATE_VIEWPORT,
+            VK_DYNAMIC_STATE_SCISSOR,
+            VK_DYNAMIC_STATE_LINE_WIDTH,
+            VK_DYNAMIC_STATE_DEPTH_BIAS,
+            VK_DYNAMIC_STATE_BLEND_CONSTANTS,
+            VK_DYNAMIC_STATE_DEPTH_BOUNDS,
+            VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK,
+            VK_DYNAMIC_STATE_STENCIL_WRITE_MASK,
+            VK_DYNAMIC_STATE_STENCIL_REFERENCE,
+        };
+
+        VkPipelineDynamicStateCreateInfo dynamicState{VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};
+
+        dynamicState.pDynamicStates    = dynamicStates.data();
+        dynamicState.dynamicStateCount = toUint32(dynamicStates.size());
+        
         VkGraphicsPipelineCreateInfo createInfo{.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
 
         createInfo.stageCount = toUint32(stageCreateInfos.size());
@@ -147,7 +149,7 @@ Pipeline::Pipeline(Device& device, const PipelineState& pipelineState) : device(
             group.generalShader      = VK_SHADER_UNUSED_KHR;
             group.intersectionShader = VK_SHADER_UNUSED_KHR;
 
-            switch (shader.getStage()) {
+            switch (shader->getStage()) {
                 case VK_SHADER_STAGE_RAYGEN_BIT_KHR:
                 case VK_SHADER_STAGE_MISS_BIT_KHR: {
                     group.type          = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
@@ -185,6 +187,13 @@ Pipeline::Pipeline(Device& device, const PipelineState& pipelineState) : device(
 
         VkRayTracingPipelineCreateInfoKHR pipeline_CI = {VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR};
 
+        std::vector<VkDynamicState> states = {
+           
+        };
+        VkPipelineDynamicStateCreateInfo dynamicState{VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};
+        dynamicState.dynamicStateCount = 0;
+        dynamicState.pDynamicStates    = states.data();
+        
         pipeline_CI.pDynamicState                = &dynamicState;
         pipeline_CI.stageCount                   = stageCreateInfos.size();
         pipeline_CI.pStages                      = stageCreateInfos.data();

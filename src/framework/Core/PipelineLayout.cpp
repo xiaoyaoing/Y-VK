@@ -5,15 +5,12 @@
 
 // PipelineLayout::PipelineLayout(Device& device, std::initializer_list<Shader> shaders): {
 // }
-PipelineLayout::PipelineLayout(Device& device, std::vector<Shader>& shaders_) : shaders(std::move(shaders_)), device(device) {
-    create();
-}
+
 
 PipelineLayout::PipelineLayout(Device& device, const std::vector<std::string>& shaderPaths) : device(device) {
     shaders.reserve(shaderPaths.size());
     for (auto& shaderPath : shaderPaths) {
-        //shaders.emplace_back(device.getResourceCache().requestShaderModule(shaderPath));
-        shaders.emplace_back(device, FileUtils::getShaderPath(shaderPath));
+        shaders.emplace_back(&device.getResourceCache().requestShaderModule(FileUtils::getShaderPath(shaderPath)));
     }
 
     create();
@@ -24,7 +21,7 @@ void PipelineLayout::create() {
     createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 
     for (auto& shader : shaders) {
-        for (const auto& shaderResource : shader.getShaderResources()) {
+        for (const auto& shaderResource : shader->getShaderResources()) {
 
             if (shaderResource.type == ShaderResourceType::Input ||
                 shaderResource.type == ShaderResourceType::Output ||
@@ -85,7 +82,7 @@ VkPipelineLayout PipelineLayout::getHandle() const {
     return layout;
 }
 
-const std::vector<Shader>& PipelineLayout::getShaders() const {
+const std::vector<const Shader *> & PipelineLayout::getShaders() const {
     return shaders;
 }
 
@@ -99,12 +96,12 @@ DescriptorLayout& PipelineLayout::getDescriptorLayout(const uint32_t setIndex) c
 
 const Shader& PipelineLayout::getShader(VkShaderStageFlagBits stage) const {
     for (const auto& shader : shaders) {
-        if (shader.getStage() == stage) {
-            return shader;
+        if (shader->getStage() == stage) {
+            return *shader;
         }
     }
     spdlog::error("No such shader stage");
-    return shaders[0];
+    return *shaders[0];
 }
 
 const std::vector<ShaderResource> PipelineLayout::getShaderResources(const ShaderResourceType& type,
@@ -112,8 +109,8 @@ const std::vector<ShaderResource> PipelineLayout::getShaderResources(const Shade
     std::vector<ShaderResource> found_resources;
 
     for (auto& shader : shaders) {
-        if (shader.getStage() == stage || stage == VK_SHADER_STAGE_ALL) {
-            for (const auto& shaderResource : shader.getShaderResources()) {
+        if (shader->getStage() == stage || stage == VK_SHADER_STAGE_ALL) {
+            for (const auto& shaderResource : shader->getShaderResources()) {
                 if (shaderResource.type == type || type == ShaderResourceType::All)
                     found_resources.push_back(shaderResource);
             }

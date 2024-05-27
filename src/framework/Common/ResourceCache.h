@@ -118,7 +118,6 @@ public:
     DescriptorLayout& requestDescriptorLayout(std::vector<Shader>& shaders);
     DescriptorLayout& requestDescriptorLayout(uint32_t setIdx, const std::vector<ShaderResource>& shaderResources);
 
-    PipelineLayout& requestPipelineLayout(std::vector<Shader>& shaders);
 
     FrameBuffer& requestFrameBuffer(RenderTarget& renderTarget, RenderPass& renderPass);
 

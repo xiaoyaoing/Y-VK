@@ -120,8 +120,6 @@ void RTSceneEntryImpl::initScene(Scene& scene_) {
 
     buildTLAS();
 
-    std::vector<Shader>                                   shaders        = {Shader(device, FileUtils::getShaderPath("Raytracing/compute_triangle_area.comp"))};
-    std::unique_ptr<PipelineLayout>                       pipelineLayout = std::make_unique<PipelineLayout>(device, shaders);
     std::unordered_map<uint32_t, std::unique_ptr<Buffer>> primAreaBuffers{};
 
     struct PC {
@@ -134,6 +132,7 @@ void RTSceneEntryImpl::initScene(Scene& scene_) {
 
     //  RenderGraph graph(device);
 
+    sceneDesc.envmap_idx = -1;
     for (auto light : scene->getLights()) {
         lights.push_back(toRTLight(*scene,light));
     }

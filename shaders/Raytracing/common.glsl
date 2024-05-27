@@ -100,13 +100,7 @@ uint binary_search(float u, const float[5] cdf, uint cdf_begin, uint cdf_end) {
     return left;
 }
 
-float luminance(vec3 v) {
-    return 0.2126 * v.x + 0.7152 * v.y + 0.0722 * v.z;
-}
 
-bool isBlack(vec3 v){
-    return luminance(v) < 1e-6f;
-}
 
 MeshSampleRecord uniform_sample_on_mesh(uint mesh_idx, vec3 rands, in mat4 world_matrix,const uint triangle_idx){
     MeshSampleRecord result;
@@ -170,6 +164,38 @@ MeshSampleRecord uniform_sample_on_mesh(uint mesh_idx, vec3 rands, in mat4 world
     return record;
 }
 
+vec2 envdir_to_uv(mat4 toLocal, vec3 wi) {
+    vec3 wLocal = (toLocal * vec4(wi, 0)).xyz;
+    float uv_x = atan(wLocal.z, wLocal.x) * INV_TWO_PI + 0.5f;
+    float uv_y = acos(clamp(-wLocal.y, -1.0, 1.0)) * INV_PI;
+    return vec2(uv_x, uv_y);
+}
+
+vec2 envdir_to_uv(mat4 toLocal, vec3 wi,out float sin_theta) {
+    vec3 wLocal = (toLocal * vec4(wi, 0)).xyz;
+    sin_theta = sqrt(1 - wLocal.y * wLocal.y);
+    if(isnan(sin_theta)){
+        debugPrintfEXT("sin_theta %f %f %f %f %f %f\n", wLocal.x, wLocal.y, wLocal.z, wi.x, wi.y, wi.z);
+    }
+    float uv_x = atan(wLocal.z, wLocal.x) * INV_TWO_PI + 0.5f;
+    float uv_y = acos(clamp(-wLocal.y, -1.0, 1.0)) * INV_PI;
+    return vec2(uv_x, uv_y);
+}
+
+
+vec3 uv_to_envdir(mat4 toLocal, vec2 uv,out float sin_theta) {
+    float phi   = (uv.x - 0.5f) * 2 * PI;
+    float theta = uv.y * PI;
+    sin_theta    = sin(theta);
+    vec3 wLocal = vec3(
+    cos(phi) * sin_theta,
+    -cos(theta),
+    sin(phi) * sin_theta);
+    return mat3(toLocal) * wLocal;
+}
+
+
+
 
 //Param p: the point on the light source
 //Param n_s: the normal of the light source
@@ -177,7 +203,19 @@ MeshSampleRecord uniform_sample_on_mesh(uint mesh_idx, vec3 rands, in mat4 world
 //Return: the radiance of the light source
 vec3 eval_light(const RTLight light, const vec3 p, const vec3 n_g, const vec3 w){
 
-    // return light.L;
+    if(light.light_type == RT_LIGHT_TYPE_AREA){
+        if (dot(n_g, -w) > 0){
+            return light.L;
+        }
+        return vec3(0);
+    }
+    else if(light.light_type == RT_LIGHT_TYPE_INFINITE){
+        vec2 uv = envdir_to_uv(transpose(light.world_matrix), normalize(w));
+        return texture(scene_textures[light.light_texture_id], uv).xyz;
+    }
+    else if(light.light_type == RT_LIGHT_TYPE_POINT){
+        return light.L;
+    }
     if (dot(n_g, -w) > 0){
         return light.L;
     }
@@ -260,17 +298,10 @@ LightSample sample_li_area_light(const RTLight light, const SurfaceScatterEvent 
     return result;
 }
 
-vec2 envdir_to_uv(mat4 toLocal, vec3 wi) {
-    vec3 wLocal = (toLocal * vec4(wi, 0)).xyz;
-    float uv_x = atan(wLocal.z, wLocal.x) * INV_TWO_PI + 0.5f;
-    float uv_y = acos(clamp(-wLocal.y, -1.0, 1.0)) * INV_PI;
-    return vec2(uv_x, uv_y);
-}
 
 
 
-
-float eval_light_pdf(const RTLight light, const vec3 p,const vec3 light_p, const vec3 n_g){
+float eval_light_pdf(const RTLight light, const vec3 p,const vec3 light_p, const vec3 n_g,const vec3 wi){
     if(light.light_type == RT_LIGHT_TYPE_AREA){
         vec3 wi = normalize(light_p - p);
         float cos_theta_light = dot(n_g, -wi);
@@ -282,8 +313,19 @@ float eval_light_pdf(const RTLight light, const vec3 p,const vec3 light_p, const
         return 1/get_primitive_area(light.prim_idx) * abs(cos_theta_light) / (dist * dist);
     }
     else if(light.light_type == RT_LIGHT_TYPE_INFINITE){
-        vec2 uv = envdir_to_uv(light.world_matrix, normalize(light_p - p));
-        
+        float sin_theta;
+        vec2 uv = envdir_to_uv(transpose(light.world_matrix), wi,sin_theta);
+        if(sin_theta <= 1e-4f){
+            return 0;
+        }
+        uvec2 texture_size = textureSize(scene_textures[light.light_texture_id], 0);
+        uvec2 texture_pos = uvec2(uint(texture_size.x * uv.x), uint(texture_size.y * uv.y));
+        uint pixel_index = texture_pos.y * texture_size.x + texture_pos.x;
+        float pdf = envSamplingData.e[pixel_index].pdf *  INV_PI * INV_TWO_PI/ sin_theta;
+        if(isnan(pdf)){
+           debugPrintfEXT("pdf sin_theta %f %f %d %d\n", envSamplingData.e[pixel_index].pdf, sin_theta,texture_pos.x, texture_pos.y);
+        }
+        return envSamplingData.e[pixel_index].pdf *  INV_PI * INV_TWO_PI/ sin_theta;
     }
     else if(light.light_type == RT_LIGHT_TYPE_POINT){
         return 1.f / (4.f * PI);
@@ -332,7 +374,7 @@ LightSample sample_li_area_light_with_idx(const RTLight light, const SurfaceScat
     return result;
 }
 
-vec3 Environment_sample(sampler2D lat_long_tex, in vec3 randVal, out vec3 to_light, out float pdf)
+vec3 Environment_sample(sampler2D lat_long_tex, mat4 matrix, in vec3 randVal, out vec3 to_light, out float pdf)
 {
 
     // Uniformly pick a texel index idx in the environment map
@@ -369,6 +411,8 @@ vec3 Environment_sample(sampler2D lat_long_tex, in vec3 randVal, out vec3 to_lig
         xi.y    = (xi.y - sample_data.q) / (1.0f - sample_data.q);
         pdf     = sample_data.aliasPdf;
     }
+    
+    
 
     // Compute the 2D integer coordinates of the texel
     const uint px = env_idx % width;
@@ -377,19 +421,22 @@ vec3 Environment_sample(sampler2D lat_long_tex, in vec3 randVal, out vec3 to_lig
     // Uniformly sample the solid angle subtended by the pixel.
     // Generate both the UV for texture lookup and a direction in spherical coordinates
     const float u       = float(px + xi.y) / float(width);
-    const float phi     = u * (2.0f * PI) - PI;
-    float       sin_phi = sin(phi);
-    float       cos_phi = cos(phi);
-
-    const float step_theta = PI / float(height);
-    const float theta0     = float(py) * step_theta;
-    const float cos_theta  = cos(theta0) * (1.0f - xi.z) + cos(theta0 + step_theta) * xi.z;
-    const float theta      = acos(cos_theta);
-    const float sin_theta  = sin(theta);
-    const float v          = theta * INV_PI;
-
+    const float v = float(py + xi.z) / float(height);
+    
+    
+    float sin_theta;
     // Convert to a light direction vector in Cartesian coordinates
-    to_light = vec3(cos_phi * sin_theta, cos_theta, sin_phi * sin_theta);
+    to_light = uv_to_envdir(matrix, vec2(u, v), sin_theta);
+    
+    if(sin_theta <= 1e-4f)
+    {
+        // If the sin_theta is zero, the PDF is zero
+        pdf = 0.0f;
+        return vec3(0.0f);
+    }
+    pdf = pdf * width * height / (2.0f * PI * PI * sin_theta );
+    
+//    debugPrintfEXT("pdf %f\n", pdf);
 
     // Lookup the environment value using bilinear filtering
     return texture(lat_long_tex, vec2(u, v)).xyz;
@@ -400,7 +447,7 @@ LightSample sample_li_infinite_light(const RTLight light, const SurfaceScatterEv
 {
     float pdf;
     LightSample result;
-    vec3 radiance = Environment_sample( scene_textures[light.light_texture_id], rand, result.wi, pdf);
+    vec3 radiance = Environment_sample( scene_textures[light.light_texture_id],light.world_matrix, rand, result.wi, pdf);
     result.wi = normalize(mat3(light.world_matrix) * result.wi);
     // Uniformly pick a texel index idx in the environment map
     result.pdf = pdf;
@@ -437,6 +484,13 @@ LightSample sample_li(const RTLight light, const SurfaceScatterEvent event, cons
     }
     LightSample result;
     return result;
+}
+
+bool is_specular_material(const RTMaterial material){
+   if(material.bsdf_type == RT_BSDF_TYPE_DIELCTRIC || material.bsdf_type == RT_BSDF_TYPE_CONDUCTOR || material.bsdf_type == RT_BSDF_TYPE_PLASTIC || material.bsdf_type == RT_BSDF_TYPE_MIRROR ){
+       return material.roughness < 1e-3;
+   }
+    return false;
 }
 
 //LightSample sample_li_with_triangle_idx(const RTLight light, const SurfaceScatterEvent event, const vec3 rand, const uint triangle_idx){
