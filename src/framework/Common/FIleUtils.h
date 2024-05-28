@@ -22,6 +22,8 @@ namespace FileUtils {
 
     std::string getFileTimeStr(const std::string &path,const std::string & format = "%Y-%m-%d %H:%M:%S");
 
+    bool fileExists(const std::string &path);
+
     template<typename T>
     static inline void streamRead(std::istream& in, T& dst) {
         in.read(reinterpret_cast<char*>(&dst), sizeof(T));

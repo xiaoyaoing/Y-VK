@@ -172,6 +172,8 @@ public:
 
     void setView(glm::mat4& view) { m_view = view; }
 
+    void setFlipY(bool flip) { flipY = flip; flipYTemp = flip; }
+
     /**
     * Flips y coordinate in screen space.
     */
@@ -181,6 +183,8 @@ public:
     * Screen point has 3 components where x, y are in screen space and z describes the position in world units relative to the camera.
     */
     glm::vec3 screenToWorldPoint(const glm::vec3& p) const noexcept;
+
+    glm::vec4 getPerspectiveParams() const noexcept { return glm::vec4(m_fovY, m_aspect, m_nearZ, m_farZ); }
 
     /**
     * Screen point has 3 components where x, y are in screen space and z describes the position in world units relative to the camera.

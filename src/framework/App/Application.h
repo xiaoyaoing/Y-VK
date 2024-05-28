@@ -140,6 +140,8 @@ protected:
         std::unique_ptr<Buffer> buffer{nullptr};
     } imageSave;
 
+    bool saveCamera{false};
+
     void handleMouseMove(float x, float y);
 
 

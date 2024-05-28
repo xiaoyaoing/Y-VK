@@ -50,6 +50,10 @@ namespace FileUtils {
 
         return tmp;
     }
+    bool fileExists(const std::string& path) {
+        struct stat buffer;
+        return (stat(path.c_str(), &buffer) == 0);
+    }
 
     std::vector<uint8_t> readShaderBinary(const std::string filename) {
         return read_binary_file(filename, 0);

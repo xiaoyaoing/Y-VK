@@ -24,7 +24,6 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
             gl_RayFlagsSkipClosestHitShaderEXT,
             0xFF, 1, 0, 1, event.p, EPS, light_sample.wi, light_sample.dist - EPS, 1);
             bool  visible = any_hit_payload.hit == 0;
-            visible = true;
             if (visible){
                 uint material_idx = event.material_idx;
                 event.wi = to_local(event.frame, light_sample.wi);
@@ -55,27 +54,32 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
 
             vec3 world_wi = to_world(event.frame, event.wi);
             //trace ray 
+            
             hitPayload.prim_idx = -1;
             traceRayEXT(tlas,
             gl_RayFlagsOpaqueEXT,
-            0xFF, 0, 0, 0, event.p, EPS, world_wi, 10000, 0);
+            0xFF, 0, 0, 0, event.p + EPS * world_wi, 0, world_wi, 10000, 0);
 
             bool same_light = light_sample.is_infinite? hitPayload.prim_idx == -1: hitPayload.prim_idx == light.prim_idx;
-
-            //return visualize_normal(world_wi);
-
-            // debugPrintfEXT("prim_idx %d %d\n", hitPayload.prim_idx, light.prim_idx);
             if (same_light){
 
+                
                 uint material_idx = event.material_idx;
 
                 float light_pdf = eval_light_pdf(light, event.p, hitPayload.p, hitPayload.n_g,world_wi);
-              
-
+                
                 float bsdf_mis_weight = enable_sample_light?power_heuristic(bsdf_pdf, light_pdf):1;
 
+                vec3 sample_bsdf_result = f * eval_light(light, hitPayload.p, hitPayload.n_g, world_wi) * bsdf_mis_weight / bsdf_pdf;
+                if(isnan(sample_bsdf_result.x) || isnan(sample_bsdf_result.y) || isnan(sample_bsdf_result.z)){
+                    debugPrintfEXT("f %f %f %f\n", f.x, f.y, f.z);
+                    debugPrintfEXT("eval_light %f %f %f\n", eval_light(light, hitPayload.p, hitPayload.n_g, world_wi).x, eval_light(light, hitPayload.p, hitPayload.n_g, world_wi).y, eval_light(light, hitPayload.p, hitPayload.n_g, world_wi).z);
+                    debugPrintfEXT("bsdf_mis_weight %f\n", bsdf_mis_weight);
+                    debugPrintfEXT("bsdf_pdf %f light_pdf %f\n", bsdf_pdf, light_pdf);
+                    debugPrintfEXT("sample_bsdf_result %f %f %f\n", sample_bsdf_result.x, sample_bsdf_result.y, sample_bsdf_result.z);
+                }
                 result += f * eval_light(light, hitPayload.p, hitPayload.n_g, world_wi) * bsdf_mis_weight / bsdf_pdf;
-
+                
             }
 
         }

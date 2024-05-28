@@ -303,14 +303,17 @@ LightSample sample_li_area_light(const RTLight light, const SurfaceScatterEvent 
 
 float eval_light_pdf(const RTLight light, const vec3 p,const vec3 light_p, const vec3 n_g,const vec3 wi){
     if(light.light_type == RT_LIGHT_TYPE_AREA){
-        vec3 wi = normalize(light_p - p);
         float cos_theta_light = dot(n_g, -wi);
         if (cos_theta_light <= 0.0){
             return 0;
         }
         float dist = length(light_p - p);
         dist -=  EPS;
-        return 1/get_primitive_area(light.prim_idx) * abs(cos_theta_light) / (dist * dist);
+        float pdf =  1/get_primitive_area(light.prim_idx) * dist * dist  / abs(cos_theta_light);
+        if(isnan(pdf)){
+            debugPrintfEXT("pdf %f %f %f %f %f %f %f %f %f\n", pdf, cos_theta_light, dist, light_p.x, light_p.y, light_p.z, p.x, p.y, p.z);
+        }
+        return pdf;
     }
     else if(light.light_type == RT_LIGHT_TYPE_INFINITE){
         float sin_theta;
@@ -473,16 +476,20 @@ LightSample sample_li_point_light(const RTLight light, const SurfaceScatterEvent
 
 LightSample sample_li(const RTLight light, const SurfaceScatterEvent event, const vec3 rand){
     uint light_type = light.light_type;
-    if (light_type == RT_LIGHT_TYPE_AREA){
-        return sample_li_area_light(light, event, rand);
-    }
-    if (light_type == RT_LIGHT_TYPE_INFINITE){
-        return sample_li_infinite_light(light, event, rand);
-    }
-    if (light_type == RT_LIGHT_TYPE_POINT){
-        return sample_li_point_light(light, event, rand);
-    }
     LightSample result;
+    if (light_type == RT_LIGHT_TYPE_AREA){
+        result =  sample_li_area_light(light, event, rand);
+        result.is_infinite = false;
+
+    }
+    else if (light_type == RT_LIGHT_TYPE_INFINITE){
+        result =  sample_li_infinite_light(light, event, rand);
+        result.is_infinite = true;
+    }
+    else  if (light_type == RT_LIGHT_TYPE_POINT){
+       result =  sample_li_point_light(light, event, rand);
+        result.is_infinite = false;
+    }
     return result;
 }
 

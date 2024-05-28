@@ -100,7 +100,7 @@ void RayTracer::drawFrame(RenderGraph& renderGraph) {
 void RayTracer::prepare() {
     Application::prepare();
     GlslCompiler::setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_5);
-  GlslCompiler::forceRecompile = true;
+    GlslCompiler::forceRecompile = true;
 
     integrators["path"] = std::make_unique<PathIntegrator>(*device);
     integrators["restir"] = std::make_unique<RestirIntegrator>(*device);
@@ -112,26 +112,17 @@ void RayTracer::prepare() {
                                       .bufferForAccel          = true,
                                       .bufferForStorage        = true,
                                       .sceneScale = glm::vec3(1.f)};
-    camera                         = std::make_shared<Camera>();
-
-
-   // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/vk-raytracing-demo/resources/classroom/scene.json", sceneLoadingConfig);
-   scene = SceneLoaderInterface::LoadSceneFromFile(*device, "C:/Users/pc/Downloads/bedroom/scene.json", sceneLoadingConfig);
-   // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Y-PBR/example-scenes/test-ball/scene.json", sceneLoadingConfig);
-
-    //RuntimeSceneManager::addSponzaRestirLight(*scene);
-
-    camera        = scene->getCameras()[0];
-    camera->flipY = true;
-    camera->getTransform()->setPosition(glm::vec3(0, 1, 4));
-    camera->getTransform()->setPosition(glm::vec3(15, 1, 0.27));
-    camera->getTransform()->setRotation(glm::quat(0.7, 0, 0.7, 0));
-    camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 0.1f, 4000.f);
 
     
-    //  camera->
-    initView();
-
+   // loadScene("C:/Users/pc/Downloads/bedroom/scene.json");
+    loadScene("C:/Users/pc/Downloads/bathroom/scene.json");
+   // loadScene("E:/code/vk-raytracing-demo/resources/classroom/scene.json");
+ // loadScene("E:/code/vk-raytracing-demo/resources/cornell-box-json/scene.json");
+    // loadScene("E:/code/Y-PBR/example-scenes/test-ball/scene.json");
+   // loadScene("C:/Users/pc/Downloads/house/scene.json");
+ //  loadScene("C:/Users/pc/Downloads/kitchen/scene.json");
+  // loadScene("C:/Users/pc/Downloads/living-room/living-room/living-room/scene.json");
+    
     rtSceneEntry = RTSceneUtil::convertScene(*device, *scene);
     for (auto& integrator : integrators) {
         integrator.second->initScene(*rtSceneEntry);

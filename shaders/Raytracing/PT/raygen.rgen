@@ -116,12 +116,9 @@ void main()
 
         specular_bounce = (record.sample_flags & RT_BSDF_LOBE_SPECULAR)!=0;
 
-//        color = record.f;
-//        break;
-        
+// 
         
         if (record.f == vec3(0) || record.pdf ==0){
-           // color = vec3(0,1,0);
             break;
         } 
         vec3 wi_world = to_world(event.frame, event.wi);

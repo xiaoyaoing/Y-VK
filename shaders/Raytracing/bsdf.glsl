@@ -70,7 +70,7 @@ float conductor_pdf(const RTMaterial mat, const SurfaceScatterEvent event){
     if (event.wi.z <= 0 || event.wo.z <= 0){
         return 0;
     }
-    if (mat.roughness == 0){
+    if (mat.roughness <1e-3f ){
         return 0;
     }
     else {
@@ -189,11 +189,11 @@ BsdfSampleRecord conductor_sample(const RTMaterial mat, const vec2 rand, inout S
     if (event.wo.z <= 0){
         return invalid_record();
     }
-    if (mat.roughness == 0){
+    if (mat.roughness <1e-3f){
         event.wi = reflect(event.wo);
         record.f = conductorReflectanceVec3(mat.eta, mat.k, event.wo.z) * get_albedo(mat, event.uv);
         record.pdf = 1;
-        record.sample_flags = RT_BSDF_LOBE_SPECULAR;
+        record.sample_flags = RT_BSDF_LOBE_SPECULAR | RT_BSDF_LOBE_REFLECTION;
         return record;
     }
     else {
@@ -216,7 +216,7 @@ vec3 conductor_f(const RTMaterial mat, const SurfaceScatterEvent event){
     if (event.wi.z <= 0 || event.wo.z <= 0){
         return vec3(0);
     }
-    if (mat.roughness == 0){
+    if (mat.roughness <= 1e-3f){
         return vec3(0);
     }
     else {

@@ -9,10 +9,9 @@
 #include "Raytracing/commons.h"
 #include <Scene/Compoments/Camera.h>
 
-#include <nlohmann/json.hpp>
+#include <Common/JsonUtil.h>
 #include <tiny_obj_loader.h>
 
-using Json = nlohmann::json;
 
 struct JsonLoader {
     JsonLoader(Device& device) : device(device) {}
@@ -57,6 +56,15 @@ namespace glm {
         v.y = j.at(1).get<float>();
         v.z = j.at(2).get<float>();
     }
+
+    void from_json(const Json& j, vec2& v) {
+        if (!j.is_array()) {
+            v = vec2(j.get<float>());
+            return;
+        }
+        v.x = j.at(0).get<float>();
+        v.y = j.at(1).get<float>();
+    }
 }// namespace glm
 
 VkBufferUsageFlags GetBufferUsageFlags(const SceneLoadingConfig& config, VkBufferUsageFlags flags) {
@@ -67,23 +75,6 @@ VkBufferUsageFlags GetBufferUsageFlags(const SceneLoadingConfig& config, VkBuffe
     if (config.bufferForTransferDst) vkBufferUsageFlags = vkBufferUsageFlags | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     if (config.bufferForStorage) vkBufferUsageFlags = vkBufferUsageFlags | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     return vkBufferUsageFlags;
-}
-
-template<typename T>
-T GetOptional(const Json& j, const std::string& key, const T& defaultValue) {
-    if (j.contains(key)) {
-        return j[key];
-    }
-    return defaultValue;
-}
-
-template<class T>
-inline bool ContainsAndGet(const Json& j, std::string field, T& value) {
-    if (j.find(field) != j.end()) {
-        value = j.at(field).get<T>();
-        return true;
-    }
-    return false;
 }
 
 void JsonLoader::LoadSceneFromGLTFFile(Device& device, const std::string& path, const SceneLoadingConfig& config) {
@@ -99,10 +90,16 @@ void JsonLoader::LoadSceneFromGLTFFile(Device& device, const std::string& path, 
 void JsonLoader::loadCamera() {
     std::shared_ptr<Camera> camera     = std::make_shared<Camera>();
     Json                    cameraJson = sceneJson["camera"];
-    camera->setTranslation(GetOptional(cameraJson, "translation", glm::vec3(12, -4, 2)));
-    camera->setRotation(GetOptional(cameraJson, "rotation", glm::vec3(0.0f)));
-    camera->setPerspective(GetOptional(cameraJson, "fov", 45.0f), GetOptional(cameraJson, "aspect", 1.0f), GetOptional(cameraJson, "zNear", 0.1f), GetOptional(cameraJson, "zFar", 4000.0f));
-    camera->flipY = true;
+    auto transform = GetOptional(cameraJson, "transform", Json());
+    vec3 lookAt   = GetOptional(transform, "look_at", vec3(0, 0, 0));
+    vec3 up       = GetOptional(transform, "up", vec3(0, 1, 0));
+    camera->setTranslation(GetOptional(transform, "position", glm::vec3(0,0,0)));
+    camera->lookAt(lookAt, up);
+    vec2 resolution = GetOptional(cameraJson, "resolution", vec2(1920,1080));
+    float aspect = resolution.x / resolution.y;
+  //  camera->setRotation(GetOptional(transform, "rotation", glm::vec3(0.0f)));
+    camera->setPerspective(GetOptional(transform, "fov", 45.0f), aspect, GetOptional(cameraJson, "zNear", 0.1f), GetOptional(cameraJson, "zFar", 4000.0f));
+    camera->setFlipY(true);
     cameras.push_back(camera);
 }
 void JsonLoader::PreprocessMaterials() {
@@ -110,7 +107,7 @@ void JsonLoader::PreprocessMaterials() {
     for (auto& materialJson : materialsJson) {
         materialJsons.push_back(materialJson);
         if (materialJson.contains("name")) {
-            materialIndexMap[materialJson["name"].get<std::string>()] = materialJsons.size() - 1;
+            materialIndexMap[materialJson["name"].get<std::string>()] = materialJsons.size()  - 1;
         }
     }
     // for(auto & primitiveJson : sceneJson["primitives"]) {
@@ -123,6 +120,7 @@ void JsonLoader::PreprocessMaterials() {
 
 std::unordered_map<std::string, uint32_t> type2RTBSDFTYPE = {
     {"diffuse", RT_BSDF_TYPE_DIFFUSE},
+    {"lambert", RT_BSDF_TYPE_DIFFUSE},
     {"specular", RT_BSDF_TYPE_MIRROR},
     {"conductor", RT_BSDF_TYPE_CONDUCTOR},
     {"rough_conductor", RT_BSDF_TYPE_CONDUCTOR},
@@ -327,6 +325,19 @@ glm::mat4 mat4FromJson(const Json& json) {
         x[0], y[0], z[0], pos[0], x[1], y[1], z[1], pos[1], x[2], y[2], z[2], pos[2], 0.0f, 0.0f, 0.0f, 1.0f);
 }
 
+float getArea(const PrimitiveData & primitiveData,const Transform & transform) {
+    const auto& position = primitiveData.buffers.at(POSITION_ATTRIBUTE_NAME);
+    const std::vector<uint32_t> & indexs = reinterpret_cast<const std::vector<uint32_t>&>(primitiveData.indexs);
+    float area = 0;
+    for (size_t i = 0; i < indexs.size(); i += 3) {
+        vec3 v0 = transform.getLocalToWorldMatrix() * vec4(reinterpret_cast<const glm::vec3*>(position.data())[indexs[i]], 1.0f);
+        vec3 v1 = transform.getLocalToWorldMatrix() * vec4(reinterpret_cast<const glm::vec3*>(position.data())[indexs[i + 1]], 1.0f);
+        vec3 v2 = transform.getLocalToWorldMatrix() * vec4(reinterpret_cast<const glm::vec3*>(position.data())[indexs[i + 2]], 1.0f);
+        area += 0.5f * length(cross(v1 - v0, v2 - v0));
+    }
+    return area;
+}
+
 //when load primitives from type
 //tlas build error
 //can't find bug now
@@ -371,6 +382,22 @@ void JsonLoader::loadPrimitives() {
             continue;
         }
 
+        Transform transform;
+        if (primitiveJson.contains("transform")) {
+            auto transformJson = primitiveJson["transform"];
+            auto position      = GetOptional(transformJson, "position", glm::vec3(0.0f));
+            transform.setPosition(position);
+
+            auto scale = GetOptional(transformJson, "scale", glm::vec3(1.0f));
+            transform.setLocalScale(scale);
+
+            auto rotation = GetOptional(transformJson, "rotation", glm::vec3(0.0f));
+            transform.setRotation(math::eulerYZXQuat(rotation));
+            transform.setRotation(transpose(rotYXZ(rotation)));
+
+            // transform.setLocalToWorldMatrix(transpose(mat4FromJson(transformJson)));
+        }
+
         uint32_t lightIndex = -1;
         if (primitiveJson.contains("emission")) {
             vec3 color = primitiveJson["emission"];
@@ -380,6 +407,7 @@ void JsonLoader::loadPrimitives() {
 
         if (primitiveJson.contains("power")) {
             vec3 color = primitiveJson["power"];
+            color /= getArea(*primitiveData,transform);
             //todo
             lights.push_back(SgLight{.type = LIGHT_TYPE::Area, .lightProperties = {.color = color, .prim_index = static_cast<uint32_t>(primitives.size())}});
             lightIndex = lights.size() - 1;
@@ -410,21 +438,7 @@ void JsonLoader::loadPrimitives() {
         vertexOffset += vertexCount;
         indexOffset += indexCount;
 
-        Transform transform;
-        if (primitiveJson.contains("transform")) {
-            auto transformJson = primitiveJson["transform"];
-            auto position      = GetOptional(transformJson, "position", glm::vec3(0.0f));
-            transform.setPosition(position);
-
-            auto scale = GetOptional(transformJson, "scale", glm::vec3(1.0f));
-            transform.setLocalScale(scale);
-
-            auto rotation = GetOptional(transformJson, "rotation", glm::vec3(0.0f));
-            transform.setRotation(math::eulerYZXQuat(rotation));
-            transform.setRotation(transpose(rotYXZ(rotation)));
-
-            // transform.setLocalToWorldMatrix(transpose(mat4FromJson(transformJson)));
-        }
+       
 
         indexBuffers.emplace_back(std::move(primitiveData->indexs));
         vertexDatas.push_back(std::move(primitiveData->buffers));

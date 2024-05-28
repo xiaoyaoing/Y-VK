@@ -3,8 +3,12 @@
 //
 
 #include "Application.h"
+
+#include "ctpl_stl.h"
+
 #include <Core/Device/Instance.h>
 #include "../Common/VkCommon.h"
+#include "Common/Config.h"
 #include "Gui/Gui.h"
 #include "Core/RenderTarget.h"
 #include "Core/Shader/Shader.h"
@@ -14,6 +18,7 @@
 #include "IO/ImageIO.h"
 #include "RenderPasses/RenderPassBase.h"
 #include "Scene/Compoments/Camera.h"
+#include "Scene/SceneLoader/SceneLoaderInterface.h"
 #include "Scene/SceneLoader/gltfloader.h"
 
 void Application::initVk() {
@@ -79,10 +84,7 @@ void Application::updateGUI() {
     io.DeltaTime   = 0;
 
     gui->newFrame();
-
-    // ImGui::BeginMenu(mAppName);
-    // ImGui::MenuItem("Load Scene");
-    // ImGui::EndMenu();
+    
     
     
     ImGui::Begin("Basic",nullptr,ImGuiWindowFlags_NoMove);
@@ -93,6 +95,7 @@ void Application::updateGUI() {
     ImGui::Text(" %d fps", toUint32(1.f / deltaTime));
     ImGui::Checkbox("save png", &imageSave.savePng);
     ImGui::Checkbox("save exr", &imageSave.saveExr);
+    ImGui::Checkbox("save camera config",&saveCamera);
 
     auto itemIter    = std::ranges::find(mCurrentTextures.begin(), mCurrentTextures.end(), mPresentTexture);
     int  itemCurrent = itemIter - mCurrentTextures.begin();
@@ -118,9 +121,7 @@ void Application::updateGUI() {
 
     
     auto & texture = g_context->getCurHwtexture();
-    
-  //  ImGui::PopStyleVar();
-  //  ImGui::End();
+
     ImGui::SameLine();
 
     ImGui::Begin("Render view port",nullptr,ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoMouseInputs); // Leave room for 1 line below us
@@ -210,6 +211,12 @@ void Application::resetImageSave() {
 
         imageSave.saveExr = false;
         imageSave.savePng = false;
+    }
+
+    if(saveCamera) {
+        Config::GetInstance().CameraToConfig(*camera);
+        Config::GetInstance().SaveConfig();
+        saveCamera = false;
     }
 }
 
@@ -445,10 +452,11 @@ void Application::initView() {
     g_manager->putPtr("view", view.get());
 }
 void Application::loadScene(const std::string& path) {
-    scene = GltfLoading::LoadSceneFromGLTFFile(*device, FileUtils::getResourcePath(path));
-    camera = scene->getCameras()[0];
-    view->setScene(scene.get());
-    view->setCamera(camera.get());
+    scene = SceneLoaderInterface::LoadSceneFromFile(*device, path);
+    camera        = scene->getCameras()[0];
+    initView();
+    Config::GetInstance();
+    Config::GetInstance().CameraFromConfig(*camera);
 }
 
 Application::~Application() {
