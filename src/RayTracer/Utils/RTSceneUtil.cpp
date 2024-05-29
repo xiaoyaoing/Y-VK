@@ -16,9 +16,10 @@ struct RTSceneEntryImpl : public RTSceneEntry {
     void           buildBLAS();
     void           buildTLAS();
     Accel          createAccel(VkAccelerationStructureCreateInfoKHR& accel);
-    RTLight        toRTLight(Scene& scene,const SgLight& light);
+    RTLight        toRTLight(Scene& scene, const SgLight& light);
     Device&        device;
     RenderContext* renderContext{nullptr};
+    ~RTSceneEntryImpl();
 };
 
 RTSceneEntryImpl::RTSceneEntryImpl(Device& device) : device(device) {
@@ -42,40 +43,54 @@ Accel RTSceneEntryImpl::createAccel(VkAccelerationStructureCreateInfoKHR& accel)
     return result_accel;
 }
 
-RTLight RTSceneEntryImpl::toRTLight(Scene & scene,const SgLight& light) {
+RTLight RTSceneEntryImpl::toRTLight(Scene& scene, const SgLight& light) {
+
     RTLight rtLight{};
 
     if (light.type == LIGHT_TYPE::Area) {
-        uint32_t prim_idx = light.lightProperties.prim_index;
+        uint32_t prim_idx    = light.lightProperties.prim_index;
         rtLight.world_matrix = scene.getPrimitives()[prim_idx]->transform.getLocalToWorldMatrix();
         rtLight.prim_idx     = prim_idx;
         rtLight.L            = light.lightProperties.color;
-        rtLight.light_type = RT_LIGHT_TYPE_AREA;
-    }
-    else if(light.type == LIGHT_TYPE::Point) {
-        rtLight.position = light.lightProperties.position;
-        rtLight.L        = light.lightProperties.color;
+        rtLight.light_type   = RT_LIGHT_TYPE_AREA;
+    } else if (light.type == LIGHT_TYPE::Point) {
+        rtLight.position   = light.lightProperties.position;
+        rtLight.L          = light.lightProperties.color;
         rtLight.light_type = RT_LIGHT_TYPE_POINT;
-    }
-    else if(light.type == LIGHT_TYPE::Sky) {
+    } else if (light.type == LIGHT_TYPE::Sky) {
         HDRSampling hdrSampling;
-        rtLight.L = light.lightProperties.color;
-        rtLight.world_matrix = light.lightProperties.world_matrix;
-        rtLight.light_texture_id = light.lightProperties.texture_index;
-        rtLight.light_type = RT_LIGHT_TYPE_INFINITE;
-        Texture * tex = scene.getTextures().operator[](rtLight.light_texture_id).get();
-        auto aceel = hdrSampling.createEnvironmentAccel(reinterpret_cast<const float*>(tex->image->getData().data()),tex->image->getExtent2D());
-        infiniteSamplingBuffer = std::make_unique<Buffer>(device, sizeof(EnvAccel) * aceel.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, aceel.data());
-        sceneDesc.env_sampling_addr = infiniteSamplingBuffer->getDeviceAddress();
-        sceneDesc.envmap_idx = lights.size();
+        rtLight.world_matrix                     = light.lightProperties.world_matrix;
+        rtLight.light_texture_id                 = light.lightProperties.texture_index;
+        rtLight.light_type                       = RT_LIGHT_TYPE_INFINITE;
+        Texture* tex                             = scene.getTextures().operator[](rtLight.light_texture_id).get();
+        auto                               aceel = hdrSampling.createEnvironmentAccel(reinterpret_cast<const float*>(tex->image->getData().data()), tex->image->getExtent2D());
+        infiniteSamplingBuffer                   = std::make_unique<Buffer>(device, sizeof(EnvAccel) * aceel.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, aceel.data());
+        sceneDesc.env_sampling_addr              = infiniteSamplingBuffer->getDeviceAddress();
+        sceneDesc.envmap_idx                     = lights.size();
     }
 
     return rtLight;
 }
+RTSceneEntryImpl::~RTSceneEntryImpl() {
+    for (auto& blas : blases) {
+        vkDestroyAccelerationStructureKHR(device.getHandle(), blas.accel, nullptr);
+    }
+    vkDestroyAccelerationStructureKHR(device.getHandle(), tlas.accel, nullptr);
+}
 
 void RTSceneEntryImpl::initScene(Scene& scene_) {
     scene = &scene_;
-    
+
+    if (scene_.getLights().empty()) {
+        LOGI("No lights in the scene Adding default light");
+        std::string envPath    = FileUtils::getResourcePath("default.hdr");
+        auto        envTexture = Texture::loadTextureFromFile(device, envPath);
+        scene->addTexture(std::move(envTexture));
+        scene->addLight(SgLight{.type = LIGHT_TYPE::Sky, .lightProperties = {
+                                                             .texture_index = static_cast<uint32_t>(scene_.getTextures().size()) - 1,
+                                                         }});
+    }
+
     indexBuffer  = &scene->getIndexBuffer();
     uvBuffer     = &scene->getVertexBuffer(TEXCOORD_ATTRIBUTE_NAME);
     normalBuffer = &scene->getVertexBuffer(NORMAL_ATTRIBUTE_NAME);
@@ -107,14 +122,14 @@ void RTSceneEntryImpl::initScene(Scene& scene_) {
         });
         if (materials[primitives.back().material_index].emissiveFactor != vec3(0.0f)) {
             scene->addLight(SgLight{.type = LIGHT_TYPE::Area, .lightProperties = {
-                                                                 .color      = materials[primitives.back().material_index].emissiveFactor,
-                                                                 .prim_index = toUint32(primitives.size()) - 1,
-                                                             }});
+                                                                  .color      = materials[primitives.back().material_index].emissiveFactor,
+                                                                  .prim_index = toUint32(primitives.size()) - 1,
+                                                              }});
             primitives.back().light_index = scene->getLights().size() - 1;
         }
     }
 
-   // primitives.resize(1);
+    // primitives.resize(1);
 
     buildBLAS();
 
@@ -134,21 +149,21 @@ void RTSceneEntryImpl::initScene(Scene& scene_) {
 
     sceneDesc.envmap_idx = -1;
     for (auto light : scene->getLights()) {
-        lights.push_back(toRTLight(*scene,light));
+        lights.push_back(toRTLight(*scene, light));
     }
+
     primitiveMeshBuffer = std::make_unique<Buffer>(device, sizeof(RTPrimitive) * primitives.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, primitives.data());
     materialsBuffer     = std::make_unique<Buffer>(device, sizeof(RTMaterial) * materials.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, materials.data());
     rtLightBuffer       = std::make_unique<Buffer>(device, sizeof(RTLight) * lights.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, lights.data());
 
-    sceneUboBuffer = std::make_unique<Buffer>(device, sizeof(SceneUbo), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+    sceneUboBuffer           = std::make_unique<Buffer>(device, sizeof(SceneUbo), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
     sceneDesc.vertex_addr    = vertexBuffer->getDeviceAddress();
-        sceneDesc.index_addr     = indexBuffer->getDeviceAddress(),
-        sceneDesc.normal_addr    = normalBuffer->getDeviceAddress(),
-        sceneDesc.uv_addr        = uvBuffer->getDeviceAddress(),
-        sceneDesc.material_addr  = materialsBuffer->getDeviceAddress(),
-        sceneDesc.prim_info_addr = primitiveMeshBuffer->getDeviceAddress();
-    sceneDescBuffer = std::make_unique<Buffer>(device, sizeof(SceneDesc), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, &sceneDesc);
-    
+    sceneDesc.index_addr     = indexBuffer->getDeviceAddress(),
+    sceneDesc.normal_addr    = normalBuffer->getDeviceAddress(),
+    sceneDesc.uv_addr        = uvBuffer->getDeviceAddress(),
+    sceneDesc.material_addr  = materialsBuffer->getDeviceAddress(),
+    sceneDesc.prim_info_addr = primitiveMeshBuffer->getDeviceAddress();
+    sceneDescBuffer          = std::make_unique<Buffer>(device, sizeof(SceneDesc), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, &sceneDesc);
 }
 void RTSceneEntryImpl::initBuffers(Scene& scene) {
     bool     useStagingBuffer   = true;
@@ -184,7 +199,7 @@ void RTSceneEntryImpl::initBuffers(Scene& scene) {
     };
 
     for (auto& primitive : scene.getPrimitives()) {
- 
+
         primitives.emplace_back(RTPrimitive{.material_index = primitive->materialIndex, .vertex_offset = vertexOffset, .vertex_count = primitive->vertexCount, .index_offset = indexOffset, .index_count = primitive->indexCount, .world_matrix = primitive->getTransformMatrix()});
 
         copyBuffer(*vertexBuffer, primitive->getVertexBuffer(POSITION_ATTRIBUTE_NAME), vertexBufferOffset);
@@ -216,10 +231,10 @@ void RTSceneEntryImpl::buildBLAS() {
         accelerationStructureGeometry.geometry.triangles.vertexFormat             = VK_FORMAT_R32G32B32_SFLOAT;
         accelerationStructureGeometry.geometry.triangles.vertexData.deviceAddress = vertexBuffer->getDeviceAddress() + primitive.vertex_offset * sizeof(glm::vec3);
         // accelerationStructureGeometry.geometry.triangles.vertexData.deviceAddress = scene_->getPrimitives()[i]->vertfexBuffers.at("position")->getDeviceAddress();
-        accelerationStructureGeometry.geometry.triangles.maxVertex               = primitive.vertex_count;
-        accelerationStructureGeometry.geometry.triangles.vertexStride            = sizeof(glm::vec3);
-        accelerationStructureGeometry.geometry.triangles.indexType               = VK_INDEX_TYPE_UINT32;
-        accelerationStructureGeometry.geometry.triangles.indexData.deviceAddress = indexBuffer->getDeviceAddress() + primitive.index_offset * sizeof(uint32_t);
+        accelerationStructureGeometry.geometry.triangles.maxVertex                 = primitive.vertex_count;
+        accelerationStructureGeometry.geometry.triangles.vertexStride              = sizeof(glm::vec3);
+        accelerationStructureGeometry.geometry.triangles.indexType                 = VK_INDEX_TYPE_UINT32;
+        accelerationStructureGeometry.geometry.triangles.indexData.deviceAddress   = indexBuffer->getDeviceAddress() + primitive.index_offset * sizeof(uint32_t);
         accelerationStructureGeometry.geometry.triangles.transformData.hostAddress = nullptr;
 
         VkAccelerationStructureBuildRangeInfoKHR accelerationStructureBuildRangeInfo{};

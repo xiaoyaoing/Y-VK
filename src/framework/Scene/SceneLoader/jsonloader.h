@@ -5,5 +5,5 @@
 
 class Jsonloader {
 public:
-    static std::unique_ptr<Scene> LoadSceneFromGLTFFile(Device& device, const std::string& path, const SceneLoadingConfig & config = {});
+    static std::unique_ptr<Scene> LoadSceneFromJsonFile(Device& device, const std::string& path, const SceneLoadingConfig& config = {});
 };

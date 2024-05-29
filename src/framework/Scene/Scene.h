@@ -13,7 +13,6 @@
 
 class Camera;
 
-
 class GltfLoading;
 class Jsonloader;
 class RuntimeSceneManager;
@@ -33,6 +32,7 @@ public:
     // Scene(std::vector<std::unique_ptr<Primitive>>&& primitives, std::vector<std::unique_ptr<Texture>>&& textures, std::vector<GltfMaterial>&& materials, std::vector<SgLight>&& lights, std::vector<std::shared_ptr<Camera>>&& cameras);
 
     void addLight(const SgLight& light);
+    void addTexture(std::unique_ptr<Texture> texture);
     void addDirectionalLight(vec3 direction, vec3 color, float intensity);
 
     const std::vector<SgLight>& getLights() const;
@@ -40,27 +40,28 @@ public:
     const std::vector<std::unique_ptr<Primitive>>& getPrimitives() const;
     const std::vector<std::unique_ptr<Texture>>&   getTextures() const;
     const std::vector<GltfMaterial>&               getGltfMaterials() const;
-    const std::vector<RTMaterial>&               getRTMaterials() const;
+    const std::vector<RTMaterial>&                 getRTMaterials() const;
     std::vector<std::shared_ptr<Camera>>&          getCameras();
     bool                                           getVertexAttribute(const std::string& name, VertexAttribute* attribute = nullptr) const;
     Buffer&                                        getVertexBuffer(const std::string& name) const;
     VkIndexType                                    getIndexType() const;
     bool                                           hasVertexBuffer(const std::string& name) const;
-    Buffer &                                  getIndexBuffer() const;
-    Buffer &                                  getUniformBuffer() const;
-    Buffer &                                  getPrimitiveIdBuffer() const;
+    Buffer&                                        getIndexBuffer() const;
+    Buffer&                                        getUniformBuffer() const;
+    Buffer&                                        getPrimitiveIdBuffer() const;
     bool                                           usePrimitiveIdBuffer() const;
-    void updateSceneUniformBuffer();
-    void updateScenePrimitiveIdBuffer();
+    void                                           updateSceneUniformBuffer();
+    void                                           updateScenePrimitiveIdBuffer();
 
     void addPrimitive(std::unique_ptr<Primitive> primitive);
     void addPrimitives(std::vector<std::unique_ptr<Primitive>>&& primitives);
+
 protected:
     friend GltfLoading;
     friend Jsonloader;
     friend RuntimeSceneManager;
     std::vector<GltfMaterial> materials;
-    std::vector<RTMaterial>  rtMaterials;
+    std::vector<RTMaterial>   rtMaterials;
 
     std::vector<SgLight> lights;
 
@@ -79,4 +80,4 @@ protected:
 };
 
 std::unique_ptr<Scene> loadDefaultTriangleScene(Device& device);
-GltfMaterial InitGltfMaterial();
+GltfMaterial           InitGltfMaterial();

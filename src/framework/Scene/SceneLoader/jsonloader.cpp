@@ -12,7 +12,6 @@
 #include <Common/JsonUtil.h>
 #include <tiny_obj_loader.h>
 
-
 struct JsonLoader {
     JsonLoader(Device& device) : device(device) {}
     void    LoadSceneFromGLTFFile(Device& device, const std::string& path, const SceneLoadingConfig& config);
@@ -90,14 +89,14 @@ void JsonLoader::LoadSceneFromGLTFFile(Device& device, const std::string& path, 
 void JsonLoader::loadCamera() {
     std::shared_ptr<Camera> camera     = std::make_shared<Camera>();
     Json                    cameraJson = sceneJson["camera"];
-    auto transform = GetOptional(cameraJson, "transform", Json());
-    vec3 lookAt   = GetOptional(transform, "look_at", vec3(0, 0, 0));
-    vec3 up       = GetOptional(transform, "up", vec3(0, 1, 0));
-    camera->setTranslation(GetOptional(transform, "position", glm::vec3(0,0,0)));
+    auto                    transform  = GetOptional(cameraJson, "transform", Json());
+    vec3                    lookAt     = GetOptional(transform, "look_at", vec3(0, 0, 0));
+    vec3                    up         = GetOptional(transform, "up", vec3(0, 1, 0));
+    camera->setTranslation(GetOptional(transform, "position", glm::vec3(0, 0, 0)));
     camera->lookAt(lookAt, up);
-    vec2 resolution = GetOptional(cameraJson, "resolution", vec2(1920,1080));
-    float aspect = resolution.x / resolution.y;
-  //  camera->setRotation(GetOptional(transform, "rotation", glm::vec3(0.0f)));
+    vec2  resolution = GetOptional(cameraJson, "resolution", vec2(1920, 1080));
+    float aspect     = resolution.x / resolution.y;
+    //  camera->setRotation(GetOptional(transform, "rotation", glm::vec3(0.0f)));
     camera->setPerspective(GetOptional(transform, "fov", 45.0f), aspect, GetOptional(cameraJson, "zNear", 0.1f), GetOptional(cameraJson, "zFar", 4000.0f));
     camera->setFlipY(true);
     cameras.push_back(camera);
@@ -107,7 +106,7 @@ void JsonLoader::PreprocessMaterials() {
     for (auto& materialJson : materialsJson) {
         materialJsons.push_back(materialJson);
         if (materialJson.contains("name")) {
-            materialIndexMap[materialJson["name"].get<std::string>()] = materialJsons.size()  - 1;
+            materialIndexMap[materialJson["name"].get<std::string>()] = materialJsons.size() - 1;
         }
     }
     // for(auto & primitiveJson : sceneJson["primitives"]) {
@@ -166,27 +165,26 @@ static inline float diffuseReflectance(float eta, float sampleCount) {
 
     return float(diffuseFresnel);
 }
-    
 
 void handleSpecifyMaterialAttribute(RTMaterial& rtMaterial, const Json& materialJson) {
     if (rtMaterial.bsdf_type == RT_BSDF_TYPE_CONDUCTOR) {
         auto material = GetOptional<std::string>(materialJson, "material", "Cu");
         ComplexIorList::lookup(material, rtMaterial.eta, rtMaterial.k);
     }
-    if(rtMaterial.bsdf_type == RT_BSDF_TYPE_PLASTIC) {
-        float m_ior              = GetOptional(materialJson, "ior", 1.3);
-        float    thickness = GetOptional(materialJson, "thickness", 1);
-        vec3 sigmaA    = GetOptional(materialJson, "sigma_a", vec3(0.f));
-        vec3 _scaledSigmaA      = thickness * sigmaA;
+    if (rtMaterial.bsdf_type == RT_BSDF_TYPE_PLASTIC) {
+        float m_ior         = GetOptional(materialJson, "ior", 1.3);
+        float thickness     = GetOptional(materialJson, "thickness", 1);
+        vec3  sigmaA        = GetOptional(materialJson, "sigma_a", vec3(0.f));
+        vec3  _scaledSigmaA = thickness * sigmaA;
 
-        float avgSigmaA = (_scaledSigmaA.x + _scaledSigmaA.y + _scaledSigmaA.z) / 3.0f;
-        rtMaterial.scaledSigmaA = _scaledSigmaA;
-        rtMaterial.ior = m_ior;
-        rtMaterial.avgTransmittance                                 = std::exp(-2.0f * avgSigmaA);
-        rtMaterial.diffuseFresnel                                 = diffuseReflectance(m_ior, 10000);
+        float avgSigmaA             = (_scaledSigmaA.x + _scaledSigmaA.y + _scaledSigmaA.z) / 3.0f;
+        rtMaterial.scaledSigmaA     = _scaledSigmaA;
+        rtMaterial.ior              = m_ior;
+        rtMaterial.avgTransmittance = std::exp(-2.0f * avgSigmaA);
+        rtMaterial.diffuseFresnel   = diffuseReflectance(m_ior, 10000);
     }
-    if(rtMaterial.bsdf_type == RT_BSDF_TYPE_DIELCTRIC) {
-       rtMaterial.ior = GetOptional(materialJson, "ior", 1.3);
+    if (rtMaterial.bsdf_type == RT_BSDF_TYPE_DIELCTRIC) {
+        rtMaterial.ior = GetOptional(materialJson, "ior", 1.3);
     }
 }
 void JsonLoader::loadMaterials() {
@@ -227,7 +225,7 @@ void JsonLoader::loadMaterials() {
         }
         rtMaterial.emissiveFactor = vec3(0);
         rtMaterial.bsdf_type      = type2RTBSDFTYPE[materialJson["type"].get<std::string>()];
-        rtMaterial.roughness = GetOptional(materialJson, "roughness", 0.0f);
+        rtMaterial.roughness      = GetOptional(materialJson, "roughness", 0.0f);
         handleSpecifyMaterialAttribute(rtMaterial, materialJson);
         rtMaterials.push_back(rtMaterial);
 
@@ -325,10 +323,10 @@ glm::mat4 mat4FromJson(const Json& json) {
         x[0], y[0], z[0], pos[0], x[1], y[1], z[1], pos[1], x[2], y[2], z[2], pos[2], 0.0f, 0.0f, 0.0f, 1.0f);
 }
 
-float getArea(const PrimitiveData & primitiveData,const Transform & transform) {
-    const auto& position = primitiveData.buffers.at(POSITION_ATTRIBUTE_NAME);
-    const std::vector<uint32_t> & indexs = reinterpret_cast<const std::vector<uint32_t>&>(primitiveData.indexs);
-    float area = 0;
+float getArea(const PrimitiveData& primitiveData, const Transform& transform) {
+    const auto&                  position = primitiveData.buffers.at(POSITION_ATTRIBUTE_NAME);
+    const std::vector<uint32_t>& indexs   = reinterpret_cast<const std::vector<uint32_t>&>(primitiveData.indexs);
+    float                        area     = 0;
     for (size_t i = 0; i < indexs.size(); i += 3) {
         vec3 v0 = transform.getLocalToWorldMatrix() * vec4(reinterpret_cast<const glm::vec3*>(position.data())[indexs[i]], 1.0f);
         vec3 v1 = transform.getLocalToWorldMatrix() * vec4(reinterpret_cast<const glm::vec3*>(position.data())[indexs[i + 1]], 1.0f);
@@ -367,13 +365,12 @@ void JsonLoader::loadPrimitives() {
             primitiveData = PrimitiveLoader::loadPrimitive(rootPath.string() + "/" + primitiveJson["file"].get<std::string>());
         } else if (primitiveJson.contains("type")) {
             std::string type = primitiveJson["type"];
-            if(type == "infinite_sphere") {
+            if (type == "infinite_sphere") {
                 mat4 matrix = mat4FromJson(primitiveJson["transform"]);
-                lights.push_back(SgLight{.type = LIGHT_TYPE::Sky, .lightProperties = {.texture_index = static_cast<uint32_t>(textures.size()),.world_matrix =matrix}});
+                lights.push_back(SgLight{.type = LIGHT_TYPE::Sky, .lightProperties = {.texture_index = static_cast<uint32_t>(textures.size()), .world_matrix = matrix}});
                 textures.push_back(Texture::loadTextureFromFile(device, rootPath.string() + "/" + primitiveJson["emission"].get<std::string>()));
-            }
-            else 
-            primitiveData    = PrimitiveLoader::loadPrimitiveFromType(type);
+            } else
+                primitiveData = PrimitiveLoader::loadPrimitiveFromType(type);
         } else {
             LOGE("Primitive must have a type or a file")
         }
@@ -407,7 +404,7 @@ void JsonLoader::loadPrimitives() {
 
         if (primitiveJson.contains("power")) {
             vec3 color = primitiveJson["power"];
-            color /= getArea(*primitiveData,transform);
+            color /= getArea(*primitiveData, transform);
             //todo
             lights.push_back(SgLight{.type = LIGHT_TYPE::Area, .lightProperties = {.color = color, .prim_index = static_cast<uint32_t>(primitives.size())}});
             lightIndex = lights.size() - 1;
@@ -437,8 +434,6 @@ void JsonLoader::loadPrimitives() {
 
         vertexOffset += vertexCount;
         indexOffset += indexCount;
-
-       
 
         indexBuffers.emplace_back(std::move(primitiveData->indexs));
         vertexDatas.push_back(std::move(primitiveData->buffers));
@@ -517,7 +512,7 @@ void JsonLoader::Valiation() {
     CHECK_RESULT(scenePrimitiveIdBuffer != nullptr);
 }
 
-std::unique_ptr<Scene> Jsonloader::LoadSceneFromGLTFFile(Device& device, const std::string& path, const SceneLoadingConfig& config) {
+std::unique_ptr<Scene> Jsonloader::LoadSceneFromJsonFile(Device& device, const std::string& path, const SceneLoadingConfig& config) {
     JsonLoader loader(device);
     loader.LoadSceneFromGLTFFile(device, path, config);
 

@@ -3,13 +3,15 @@
 //
 
 #include "Gui.h"
+#include <utility>
 #include "Common/VkCommon.h"
 #include "Core/Shader/Shader.h"
 #include "Core/Device/Device.h"
 #include "App/Application.h"
 #include "Common/ResourceCache.h"
-
+#include <algorithm>
 #include "imgui.h"
+#include "imfilebrowser.h"
 
 Gui::Gui(Device& device) : device(device) {
     // ImGui::CreateContext();
@@ -82,10 +84,14 @@ Gui::Gui(Device& device) : device(device) {
     bool   show_demo_window    = true;
     bool   show_another_window = false;
     ImVec4 clear_color         = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    
 
     std::vector<std::string> paths{"gui.vert", "gui.frag"};
     pipelineLayout = &device.getResourceCache().requestPipelineLayout(paths);
+
+    // (optional) set browser properties
+    fileDialog = new ImGui::FileBrowser();
+    fileDialog->SetTitle("title");
+    fileDialog->SetTypeFilters({".gltf", ".json"});
 }
 
 bool Gui::inputEvent(const InputEvent& input_event) {
@@ -179,6 +185,23 @@ bool Gui::inputEvent(const InputEvent& input_event) {
 
     return capture_move_event;
 }
+std::string Gui::showFileDialog() {
+    // if (ImGui::Begin("dummy window")) {
+    // open file dialog when user clicks this button
+    if (ImGui::Button("open file dialog"))
+        fileDialog->Open();
+    // }
+    // ImGui::End();
+
+    fileDialog->Display();
+
+    if (fileDialog->HasSelected()) {
+        std::string file = fileDialog->GetSelected().string();
+        fileDialog->ClearSelected();
+        return file;
+    }
+    return "no file selected";
+}
 
 void Gui::prepareResoucrces(Application* app) {
     fontTexture = Texture::loadTextureFromFile(device, FileUtils::getResourcePath() + "Roboto-Medium.ttf");
@@ -210,7 +233,7 @@ void Gui::prepareResoucrces(Application* app) {
 
     ImGui::GetIO().Fonts->SetTexID(&fontTexture->getImage().getVkImageView());
 
-    std::string iniPath = FileUtils::getResourcePath() + "imgui.ini";
+    std::string iniPath        = FileUtils::getResourcePath() + "imgui.ini";
     ImGui::GetIO().IniFilename = iniPath.c_str();
     ImGui::LoadIniSettingsFromDisk(iniPath.c_str());
 }
@@ -256,10 +279,10 @@ void Gui::addGuiPass(RenderGraph& graph) {
         "Gui Pass",
         [&graph](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
             auto renderOutput = graph.getBlackBoard()[RENDER_VIEW_PORT_IMAGE_NAME];
-            auto swapChain = graph.importTexture("swap_chain",&g_context->getSwapChainImage(),true);
-            builder.readTexture(renderOutput,RenderGraphTexture::Usage::SAMPLEABLE);
+            auto swapChain    = graph.importTexture("swap_chain", &g_context->getSwapChainImage(), true);
+            builder.readTexture(renderOutput, RenderGraphTexture::Usage::SAMPLEABLE);
             builder.writeTexture(swapChain);
-            builder.declare(RenderGraphPassDescriptor({swapChain,swapChain}, RenderGraphSubpassInfo{.outputAttachments = {swapChain}}));
+            builder.declare(RenderGraphPassDescriptor({swapChain, swapChain}, RenderGraphSubpassInfo{.outputAttachments = {swapChain}}));
         },
         [&renderContext, this](const RenderPassContext& context) {
             ImDrawData* imDrawData   = ImGui::GetDrawData();
@@ -279,7 +302,6 @@ void Gui::addGuiPass(RenderGraph& graph) {
             renderContext.bindPushConstants(pushConstBlock);
 
             // auto & renderOutput = context.renderGraph.getBlackBoard().getImageView(RENDER_VIEW_PORT_IMAGE_NAME);
-            
 
             std::vector<const Buffer*> vertexBuffers = {mvertexBuffer.buffer};
 
@@ -292,13 +314,12 @@ void Gui::addGuiPass(RenderGraph& graph) {
 
                     const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[j];
 
-                    auto texture = static_cast<ImageView *>(pcmd->GetTexID());
+                    auto texture = static_cast<ImageView*>(pcmd->GetTexID());
                     renderContext.bindImageSampler(0, *texture, fontTexture->getSampler());
 
-
-                    VkRect2D         scissorRect;
-                    scissorRect.offset.x      = std::max((int32_t)(pcmd->ClipRect.x), 0);
-                    scissorRect.offset.y      = std::max((int32_t)(pcmd->ClipRect.y), 0);
+                    VkRect2D scissorRect;
+                    scissorRect.offset.x      = max((int32_t)(pcmd->ClipRect.x), 0);
+                    scissorRect.offset.y      = max((int32_t)(pcmd->ClipRect.y), 0);
                     scissorRect.extent.width  = (uint32_t)(pcmd->ClipRect.z - pcmd->ClipRect.x);
                     scissorRect.extent.height = (uint32_t)(pcmd->ClipRect.w - pcmd->ClipRect.y);
                     //   context.commandBuffer.setScissor(0, {scissorRect});

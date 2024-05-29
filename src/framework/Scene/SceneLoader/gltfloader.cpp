@@ -11,6 +11,7 @@
 #include "Core/Descriptor/DescriptorSet.h"
 #include "Core/Buffer.h"
 #include "Core/RenderContext.h"
+#include "Core/math.h"
 
 #include <ctpl_stl.h>
 #include <set>
@@ -39,7 +40,7 @@ inline std::vector<uint8_t> convertIndexData(const std::vector<uint8_t>& src_dat
     if (targetType == VK_INDEX_TYPE_NONE_KHR) {
         switch (format) {
             case VK_FORMAT_R8_UINT: {
-                type = VK_INDEX_TYPE_UINT16; 
+                type = VK_INDEX_TYPE_UINT16;
                 return convertUnderlyingDataStride(src_data, 1, 2);
             }
             case VK_FORMAT_R16_UINT:
@@ -282,10 +283,10 @@ struct GLTFLoadingImpl {
 
     std::vector<std::unique_ptr<Texture>> textures;
     std::vector<SgLight>                  lights;
-    std::vector<GltfMaterial> materials;
+    std::vector<GltfMaterial>             materials;
 
-    std::unordered_map<int,int> texIndexRemap;
-    int cur_tex_index{0};
+    std::unordered_map<int, int> texIndexRemap;
+    int                          cur_tex_index{0};
 
     std::vector<std::shared_ptr<Camera>> cameras;
 
@@ -300,7 +301,7 @@ struct GLTFLoadingImpl {
     void           loadFromFile(const std::string& path);
     void           loadMaterials(tinygltf::Model& gltfModel);
     void           loadCameras(const tinygltf::Model& model);
-    int requestTexture(int tex);
+    int            requestTexture(int tex);
 
     void      process(const tinygltf::Model& model);
     void      processNode(const tinygltf::Node& node, const tinygltf::Model& model);
@@ -347,14 +348,21 @@ bool loadImageDataFunc(tinygltf::Image* image, const int imageIndex, std::string
 void GLTFLoadingImpl::loadCameras(const tinygltf::Model& model) {
     for (auto& gltfCamera : model.cameras) {
         auto camera = std::make_shared<Camera>();
-        camera->setPerspective(gltfCamera.perspective.yfov, gltfCamera.perspective.aspectRatio, gltfCamera.perspective.znear, gltfCamera.perspective.zfar);
+        camera->setPerspective(math::toDegrees(gltfCamera.perspective.yfov), gltfCamera.perspective.aspectRatio, gltfCamera.perspective.znear, gltfCamera.perspective.zfar);
+        cameras.push_back(camera);
+    }
+    if (model.cameras.empty()) {
+        LOGI("No camera found in gltf file, using default camera");
+        auto camera = std::make_shared<Camera>();
+        camera->setPerspective(45.0f, 16.0f / 9.0f, 0.1f, 100.0f);
+        camera->getTransform()->setPosition({0.0f, 0.0f, 5.0f});
         cameras.push_back(camera);
     }
 }
-int  GLTFLoadingImpl::requestTexture(int tex) {
-    if(tex ==-1)
+int GLTFLoadingImpl::requestTexture(int tex) {
+    if (tex == -1)
         return -1;
-    if(texIndexRemap.contains(tex))
+    if (texIndexRemap.contains(tex))
         return texIndexRemap[tex];
     texIndexRemap[tex] = cur_tex_index++;
     return texIndexRemap[tex];
@@ -382,7 +390,7 @@ void GLTFLoadingImpl::process(const tinygltf::Model& model) {
         sceneVertexBuffer[attribute.first] = std::move(stagingBuffer);
     }
 
-    auto size = mIndexCount * indexStrideMap.at(indexType);
+    auto                 size                    = mIndexCount * indexStrideMap.at(indexType);
     auto                 sceneIndexStagingBuffer = std::make_unique<Buffer>(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
     std::vector<uint8_t> indexData;
     for (auto accessor : gltfIndexAccessors) {
@@ -418,7 +426,6 @@ void GLTFLoadingImpl::process(const tinygltf::Model& model) {
 
     g_context->submit(commandBuffer);
 }
-
 
 Transform GLTFLoadingImpl::getTransform(const tinygltf::Node& node) {
     Transform transform;
@@ -475,7 +482,7 @@ void GLTFLoadingImpl::processNode(const tinygltf::Node& node, const tinygltf::Mo
                     vertexAttributes[attributeName] = attribute;
                 }
                 auto indexFormat = getAttributeFormat(&model, primitive.indices);
-                indexType        = config.indexType == VK_INDEX_TYPE_NONE_KHR?formatIndexTypeMap.at(indexFormat):config.indexType;
+                indexType        = config.indexType == VK_INDEX_TYPE_NONE_KHR ? formatIndexTypeMap.at(indexFormat) : config.indexType;
             }
             assert(primitive.attributes.find("POSITION") != primitive.attributes.end());
             const tinygltf::Accessor& posAccessor = model.accessors[primitive.attributes.find(
@@ -513,11 +520,11 @@ void GLTFLoadingImpl::processNode(const tinygltf::Node& node, const tinygltf::Mo
             if (loadNewVertex) mVertexCount += primVertexCount;
             if (loadNewIndex) mIndexCount += curPrimitiveIndexCount;
 
-            LOGI("Primitive {} has {} vertices and {} indices {}", j, primVertexCount, curPrimitiveIndexCount,mIndexCount)
+            LOGI("Primitive {} has {} vertices and {} indices {}", j, primVertexCount, curPrimitiveIndexCount, mIndexCount)
             newPrimitive->setDimensions(posMin, posMax);
-            auto transform             = getTransform(node);
-            newPrimitive->transform    = transform;
-            auto                matrix = transform.getLocalToWorldMatrix();
+            auto transform          = getTransform(node);
+            newPrimitive->transform = transform;
+            auto matrix             = transform.getLocalToWorldMatrix();
             primitiveUniforms.push_back(newPrimitive->GetPerPrimitiveUniform());
             primitives.push_back(std::move(newPrimitive));
             gltfPrimitives[primitive.indices].emplace_back(&primitive);
@@ -615,11 +622,11 @@ void GLTFLoadingImpl::loadImages(const std::filesystem::path& modelPath, const t
     std::vector<TextureFuture>* futures = new std::vector<TextureFuture>();
 
     std::vector<int> texIndexVec(texIndexRemap.size());
-    for(auto & remap:texIndexRemap)
+    for (auto& remap : texIndexRemap)
         texIndexVec[remap.second] = remap.first;
     for (const auto& remap : texIndexVec) {
         auto fut = thread_pool.push(
-            [this, parentDir,&image = gltfModel.images[remap]](size_t) {
+            [this, parentDir, &image = gltfModel.images[remap]](size_t) {
                 if (image.uri.empty() && image.image.size() > 0)
                     return Texture::loadTextureFromMemory(device, image.image, VkExtent3D{static_cast<uint32_t>(image.width), static_cast<uint32_t>(image.height), 1});
                 else if (!image.uri.empty())
@@ -635,7 +642,7 @@ void GLTFLoadingImpl::loadImages(const std::filesystem::path& modelPath, const t
         for (int i = 0; i < futures->size(); i++) {
             futures->operator[](i).wait();
         }
-      //Texture::initTexturesInOneSubmit(textures);
+        //Texture::initTexturesInOneSubmit(textures);
         delete futures;
     });
 }

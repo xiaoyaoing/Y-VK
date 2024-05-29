@@ -83,10 +83,10 @@ void RayTracer::drawFrame(RenderGraph& renderGraph) {
 
     sceneUbo.projInverse = camera->projInverse();
     sceneUbo.viewInverse = camera->viewInverse();
-    sceneUbo.view = camera->view();
-    sceneUbo.proj = camera->proj();
-    sceneUbo.prev_view = lastFrameSceneUbo.view;
-    sceneUbo.prev_proj = lastFrameSceneUbo.proj;
+    sceneUbo.view        = camera->view();
+    sceneUbo.proj        = camera->proj();
+    sceneUbo.prev_view   = lastFrameSceneUbo.view;
+    sceneUbo.prev_proj   = lastFrameSceneUbo.proj;
     rtSceneEntry->sceneUboBuffer->uploadData(&sceneUbo, sizeof(sceneUbo));
 
     lastFrameSceneUbo = sceneUbo;
@@ -94,7 +94,14 @@ void RayTracer::drawFrame(RenderGraph& renderGraph) {
     postProcess->render(renderGraph);
 
     // renderGraph.addImageCopyPass(renderGraph.getBlackBoard().getHandle("RT"), renderGraph.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME));
-
+}
+void RayTracer::onSceneLoaded() {
+    Application::onSceneLoaded();
+    rtSceneEntry = RTSceneUtil::convertScene(*device, *scene);
+    for (auto& integrator : integrators) {
+        integrator.second->initScene(*rtSceneEntry);
+        integrator.second->init();
+    }
 }
 
 void RayTracer::prepare() {
@@ -102,32 +109,30 @@ void RayTracer::prepare() {
     GlslCompiler::setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_5);
     GlslCompiler::forceRecompile = true;
 
-    integrators["path"] = std::make_unique<PathIntegrator>(*device);
+    integrators["path"]   = std::make_unique<PathIntegrator>(*device);
     integrators["restir"] = std::make_unique<RestirIntegrator>(*device);
-    integratorNames = {"path", "restir"};
+    integratorNames       = {"path", "restir"};
 
     sceneLoadingConfig = {.requiredVertexAttribute = {POSITION_ATTRIBUTE_NAME, INDEX_ATTRIBUTE_NAME, NORMAL_ATTRIBUTE_NAME, TEXCOORD_ATTRIBUTE_NAME},
-                                      .indexType               = VK_INDEX_TYPE_UINT32,
-                                      .bufferAddressAble       = true,
-                                      .bufferForAccel          = true,
-                                      .bufferForStorage        = true,
-                                      .sceneScale = glm::vec3(1.f)};
+                          .indexType               = VK_INDEX_TYPE_UINT32,
+                          .bufferAddressAble       = true,
+                          .bufferForAccel          = true,
+                          .bufferForStorage        = true,
+                          .sceneScale              = glm::vec3(1.f)};
 
-    
-   // loadScene("C:/Users/pc/Downloads/bedroom/scene.json");
-    loadScene("C:/Users/pc/Downloads/bathroom/scene.json");
-   // loadScene("E:/code/vk-raytracing-demo/resources/classroom/scene.json");
- // loadScene("E:/code/vk-raytracing-demo/resources/cornell-box-json/scene.json");
+    // loadScene("C:/Users/pc/Downloads/bedroom/scene.json");
+    // loadScene("C:/Users/pc/Downloads/bathroom/scene.json");
+    // loadScene("E:/code/vk-raytracing-demo/resources/classroom/scene.json");
+    // loadScene("E:/code/vk-raytracing-demo/resources/cornell-box-json/scene.json");
     // loadScene("E:/code/Y-PBR/example-scenes/test-ball/scene.json");
-   // loadScene("C:/Users/pc/Downloads/house/scene.json");
- //  loadScene("C:/Users/pc/Downloads/kitchen/scene.json");
-  // loadScene("C:/Users/pc/Downloads/living-room/living-room/living-room/scene.json");
-    
-    rtSceneEntry = RTSceneUtil::convertScene(*device, *scene);
-    for (auto& integrator : integrators) {
-        integrator.second->initScene(*rtSceneEntry);
-        integrator.second->init();
-    }
+    // loadScene("C:/Users/pc/Downloads/house/scene.json");
+    //  loadScene("C:/Users/pc/Downloads/kitchen/scene.json");
+    // loadScene("C:/Users/pc/Downloads/living-room/living-room/living-room/scene.json");
+    loadScene("E:/code/MoerEngine/target/bin/RelWithDebInfo/resource/default/scenes/sponza/Sponza01.gltf");
+    // loadScene(FileUtils::getResourcePath("sponza/Sponza01.gltf"));
+    // loadScene(FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));
+    camera->getTransform()->setPosition(glm::vec3(0.f, 0.f, 3.f));
+    camera->getTransform()->setRotation({1, 0, 0, 0});
 
     postProcess = std::make_unique<PostProcess>();
     postProcess->init();
@@ -136,8 +141,6 @@ void RayTracer::prepare() {
 void RayTracer::onUpdateGUI() {
     Application::onUpdateGUI();
 
-    
-
     int itemCurrent = 0;
     for (int i = 0; i < integratorNames.size(); i++) {
         if (integratorNames[i] == currentIntegrator) {
@@ -145,7 +148,7 @@ void RayTracer::onUpdateGUI() {
             break;
         }
     }
-    std::vector<const char *> integratorNamesCStr;
+    std::vector<const char*> integratorNamesCStr;
     for (auto& integratorName : integratorNames) {
         integratorNamesCStr.push_back(integratorName.data());
     }

@@ -71,12 +71,16 @@ void Application::getRequiredInstanceExtensions() {
 }
 
 void Application::updateScene() {
+    if (sceneAsync != nullptr) {
+        scene = std::move(sceneAsync);
+        onSceneLoaded();
+        sceneAsync = nullptr;
+    }
 }
 
 void Application::updateGUI() {
     if (!gui)
         return;
-
 
     ImGuiIO& io = ImGui::GetIO();
 
@@ -84,10 +88,19 @@ void Application::updateGUI() {
     io.DeltaTime   = 0;
 
     gui->newFrame();
-    
-    
-    
-    ImGui::Begin("Basic",nullptr,ImGuiWindowFlags_NoMove);
+
+    {
+
+        // mainloop
+        //  while(continueRendering)
+        {
+            //...do other stuff like ImGui::NewFrame();
+
+            //...do other stuff like ImGui::Render();
+        }
+    }
+
+    ImGui::Begin("Basic", nullptr, ImGuiWindowFlags_NoMove);
     // ImGui::SetWindowSize(ImVec2(300,0));
     //ImGui::PushItemWidth(200.0f * gui->scale);
     ImGui::Text("%.2f ms/frame ", 1000.f * deltaTime);
@@ -95,50 +108,57 @@ void Application::updateGUI() {
     ImGui::Text(" %d fps", toUint32(1.f / deltaTime));
     ImGui::Checkbox("save png", &imageSave.savePng);
     ImGui::Checkbox("save exr", &imageSave.saveExr);
-    ImGui::Checkbox("save camera config",&saveCamera);
+    ImGui::Checkbox("save camera config", &saveCamera);
 
-    auto itemIter    = std::ranges::find(mCurrentTextures.begin(), mCurrentTextures.end(), mPresentTexture);
-    int  itemCurrent = itemIter - mCurrentTextures.begin();
+    auto file = gui->showFileDialog();
+
+    if (file != "no file selected") {
+        ctpl::thread_pool pool(1);
+        pool.push([this, file](size_t) {
+            LOGI("file selected: {}", file);
+            sceneAsync = SceneLoaderInterface::LoadSceneFromFile(*device, file, sceneLoadingConfig);
+        });
+    }
+
+    auto                     itemIter    = std::ranges::find(mCurrentTextures.begin(), mCurrentTextures.end(), mPresentTexture);
+    int                      itemCurrent = itemIter - mCurrentTextures.begin();
     std::vector<const char*> currentTexturesCStr;
     std::ranges::transform(mCurrentTextures.begin(), mCurrentTextures.end(), std::back_inserter(currentTexturesCStr), [](const std::string& str) { return str.c_str(); });
     ImGui::Combo("RenderGraphTextures", &itemCurrent, currentTexturesCStr.data(), currentTexturesCStr.size());
     mPresentTexture = mCurrentTextures[itemCurrent];
-    
+
     ImGui::End();
     ImGui::Separator();
 
-
-    ImGui::Begin("camera",nullptr,ImGuiWindowFlags_NoMove);
+    ImGui::Begin("camera", nullptr, ImGuiWindowFlags_NoMove);
     camera->onShowInEditor();
     ImGui::End();
     ImGui::Separator();
 
-    
-    ImGui::Begin("app sepcify",nullptr,ImGuiWindowFlags_NoMove);
+    ImGui::Begin("app sepcify", nullptr, ImGuiWindowFlags_NoMove);
     onUpdateGUI();
     ImGui::End();
     ImGui::Separator();
 
-    
-    auto & texture = g_context->getCurHwtexture();
+    auto& texture = g_context->getCurHwtexture();
 
     ImGui::SameLine();
 
-    ImGui::Begin("Render view port",nullptr,ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoMouseInputs); // Leave room for 1 line below us
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,      ImVec2{0.f,0.f});
+    ImGui::Begin("Render view port", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoMouseInputs);// Leave room for 1 line below us
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0.f, 0.f});
 
     ImVec2 size;
-    auto p = ImGui::GetWindowPos();
-    size.x = ImGui::GetWindowWidth();
-    size.y = ImGui::GetWindowHeight();
-    
-    ImGui::Image(&texture.getVkImageView(),size, ImVec2(0, 0), ImVec2(1, 1));
+    auto   p = ImGui::GetWindowPos();
+    size.x   = ImGui::GetWindowWidth();
+    size.y   = ImGui::GetWindowHeight();
+
+    ImGui::Image(&texture.getVkImageView(), size, ImVec2(0, 0), ImVec2(1, 1));
     ImGui::PopStyleVar();
     ImGui::End();
 
     // ImGui::End();
 
-  //  ImGui::End();
+    //  ImGui::End();
 
     ImGui::Render();
     ImGui::EndFrame();
@@ -177,7 +197,7 @@ void Application::update() {
     graph.addImageCopyPass(graph.getBlackBoard().getHandle(mPresentTexture), graph.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME));
 
     handleSaveImage(graph);
-    
+
     gui->addGuiPass(graph);
 
     graph.execute(renderContext->getGraphicCommandBuffer());
@@ -213,15 +233,15 @@ void Application::resetImageSave() {
         imageSave.savePng = false;
     }
 
-    if(saveCamera) {
+    if (saveCamera) {
         Config::GetInstance().CameraToConfig(*camera);
         Config::GetInstance().SaveConfig();
         saveCamera = false;
     }
 }
 
-void Application::handleSaveImage(RenderGraph & graph) {
-     if (imageSave.saveExr | imageSave.savePng) {
+void Application::handleSaveImage(RenderGraph& graph) {
+    if (imageSave.saveExr | imageSave.savePng) {
         graph.addComputePass(
             "image to file ",
             [&](RenderGraph::Builder& builder, ComputePassSettings& settings) {
@@ -252,7 +272,6 @@ void Application::handleSaveImage(RenderGraph & graph) {
     }
 }
 
-
 void Application::setFocused(bool focused) {
     //m_focused = focused;
 }
@@ -280,11 +299,9 @@ void Application::prepare() {
     initGUI();
 }
 
-Application::Application(const char* name, uint32_t width, uint32_t height) : mWidth(width), mHeight(height),mAppName(name) {
+Application::Application(const char* name, uint32_t width, uint32_t height) : mWidth(width), mHeight(height), mAppName(name) {
     initWindow(name, width, height);
 }
-
-
 
 void Application::inputEvent(const InputEvent& inputEvent) {
     if (gui) {
@@ -452,8 +469,11 @@ void Application::initView() {
     g_manager->putPtr("view", view.get());
 }
 void Application::loadScene(const std::string& path) {
-    scene = SceneLoaderInterface::LoadSceneFromFile(*device, path);
-    camera        = scene->getCameras()[0];
+    scene = SceneLoaderInterface::LoadSceneFromFile(*device, path, sceneLoadingConfig);
+    onSceneLoaded();
+}
+void Application::onSceneLoaded() {
+    camera = scene->getCameras()[0];
     initView();
     Config::GetInstance();
     Config::GetInstance().CameraFromConfig(*camera);
