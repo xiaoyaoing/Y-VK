@@ -29,6 +29,9 @@ void Scene::IteratePrimitives(PrimitiveCallBack primitiveCallBack) const {
 void Scene::addLight(const SgLight& light) {
     lights.emplace_back(light);
 }
+void Scene::addTexture(std::unique_ptr<Texture> texture) {
+    textures.push_back(std::move(texture));
+}
 
 void Scene::addDirectionalLight(vec3 direction, vec3 color, float intensity) {
     SgLight light{};

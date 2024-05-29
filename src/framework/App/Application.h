@@ -67,11 +67,13 @@ public:
     virtual void inputEvent(const InputEvent& inputEvent);
     virtual ~Application();
 
-    void setFocused(bool focused);
-    void mainloop();
-    void onResize(uint32_t width, uint32_t height);
-    void initView();
-    void loadScene(const std::string & path);
+    void         setFocused(bool focused);
+    void         mainloop();
+    void         onResize(uint32_t width, uint32_t height);
+    void         initView();
+    void         loadScene(const std::string& path);
+    virtual void onSceneLoaded();
+
 protected:
     inline void addDeviceExtension(const char* extension, bool optional = true) {
         deviceExtensions[extension] = optional;
@@ -93,7 +95,7 @@ protected:
     void updateGUI();
     void createRenderContext();
 
-    void handleSaveImage(RenderGraph & graph);
+    void handleSaveImage(RenderGraph& graph);
     void resetImageSave();
     //void loadScene(const std::string & path);
 protected:
@@ -113,6 +115,7 @@ protected:
     std::shared_ptr<Camera>               camera;
 
     std::unique_ptr<Scene> scene;
+    std::unique_ptr<Scene> sceneAsync{nullptr};
     std::unique_ptr<View>  view;
     std::unique_ptr<Gui>   gui;
 
@@ -130,8 +133,8 @@ protected:
 
     float rotationSpeed{1};
 
-    bool     enableGui{true};
-    uint32_t frameCounter{0};
+    bool               enableGui{true};
+    uint32_t           frameCounter{0};
     SceneLoadingConfig sceneLoadingConfig;
 
     struct ImageSave {
@@ -144,11 +147,10 @@ protected:
 
     void handleMouseMove(float x, float y);
 
-
 private:
     std::string              mPresentTexture = RENDER_VIEW_PORT_IMAGE_NAME;
     std::vector<std::string> mCurrentTextures{RENDER_VIEW_PORT_IMAGE_NAME};
-    const char * mAppName;
+    const char*              mAppName;
 
     //Camera related  variable end
 

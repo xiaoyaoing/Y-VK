@@ -6,7 +6,7 @@
 #include "Core/RenderContext.h"
 
 static std::unordered_map<std::string, std::function<std::unique_ptr<Scene>(Device& device, const std::string& path, const SceneLoadingConfig& config)>> sceneLoaders = {
-    {"json", Jsonloader::LoadSceneFromGLTFFile},
+    {"json", Jsonloader::LoadSceneFromJsonFile},
     {"gltf", GltfLoading::LoadSceneFromGLTFFile}};
 std::unique_ptr<Scene> SceneLoaderInterface::LoadSceneFromFile(Device& device, const std::string& path, const SceneLoadingConfig& config) {
     std::string extension = path.substr(path.find_last_of(".") + 1);
@@ -19,9 +19,9 @@ std::unique_ptr<Primitive> SceneLoaderInterface::loadSpecifyTypePrimitive(Device
 }
 std::vector<std::unique_ptr<Primitive>> SceneLoaderInterface::loadSpecifyTypePrimitives(Device& device, const std::vector<std::string>& types) {
     std::vector<std::unique_ptr<Primitive>> primitives;
-    auto cmdBuffer          = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+    auto                                    cmdBuffer = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
-    for(auto & type:types) {
+    for (auto& type : types) {
         auto                                                     primitiveData = PrimitiveLoader::loadPrimitiveFromType(type);
         uint32_t                                                 vertexCount   = primitiveData->buffers.at(POSITION_ATTRIBUTE_NAME).size() / sizeof(glm::vec3);
         uint32_t                                                 indexCount    = primitiveData->indexs.size() / sizeof(uint32_t);

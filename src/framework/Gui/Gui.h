@@ -23,18 +23,23 @@ class CommandBuffer;
 
 class RenderGraph;
 
+namespace ImGui {
+    class FileBrowser;
+}
+
 class Gui {
 public:
     Gui(Device& device);
 
-    bool inputEvent(const InputEvent& event);
-    void prepareResoucrces(Application* app);
-    bool update();
-    void addGuiPass(RenderGraph& graph);
-    void setColorsDark();
-    bool checkBox(const char* caption, bool* value);
-    void text(const char* formatstr, ...);
-    void newFrame();
+    bool        inputEvent(const InputEvent& event);
+    std::string showFileDialog();
+    void        prepareResoucrces(Application* app);
+    bool        update();
+    void        addGuiPass(RenderGraph& graph);
+    void        setColorsDark();
+    bool        checkBox(const char* caption, bool* value);
+    void        text(const char* formatstr, ...);
+    void        newFrame();
 
     //是否有新的数据 需要更新
     bool  updated{false};
@@ -81,4 +86,6 @@ protected:
     std::unique_ptr<Texture> fontTexture;
     uint32                   subPass{0};
     double                   mTime{0};
+
+    ImGui::FileBrowser* fileDialog;
 };
