@@ -17,16 +17,16 @@ uint32_t getIndexStride(VkIndexType indexType) {
 }
 
 void RuntimeSceneManager::addPrimitives(Scene& scene, std::vector<std::unique_ptr<Primitive>>&& primitives) {
-    auto&    device                   = g_context->getDevice();
+    auto&    device                    = g_context->getDevice();
     uint32_t vertexBufferRequiredCount = scene.getVertexBuffer(POSITION_ATTRIBUTE_NAME).getSize() / scene.vertexAttributes.at(POSITION_ATTRIBUTE_NAME).stride;
-    uint32_t indexBufferRequiredSize  = scene.getIndexBuffer().getSize();
+    uint32_t indexBufferRequiredSize   = scene.getIndexBuffer().getSize();
     for (auto& prim : primitives) {
         prim->firstIndex += indexBufferRequiredSize / getIndexStride(scene.getIndexType());
         prim->firstVertex += vertexBufferRequiredCount;
 
         vertexBufferRequiredCount += prim->getVertexBuffer(POSITION_ATTRIBUTE_NAME).getSize() / scene.vertexAttributes.at(POSITION_ATTRIBUTE_NAME).stride;
         indexBufferRequiredSize += prim->getIndexBuffer().getSize();
-       // scene.primitives.push_back(std::move(prim));
+        // scene.primitives.push_back(std::move(prim));
     }
 
     std::unordered_map<std::string, std::unique_ptr<Buffer>> newVertexBuffers;
@@ -39,33 +39,32 @@ void RuntimeSceneManager::addPrimitives(Scene& scene, std::vector<std::unique_pt
     }
     newIndexBuffer = Buffer::FromBuffer(device, commandBuffer, scene.getIndexBuffer(), scene.getIndexBuffer().getUsageFlags(), 0, indexBufferRequiredSize);
 
-
     auto vertexCount = scene.getVertexBuffer(POSITION_ATTRIBUTE_NAME).getSize() / scene.vertexAttributes.at(POSITION_ATTRIBUTE_NAME).stride;
     auto indexCount  = scene.getIndexBuffer().getSize() / getIndexStride(scene.getIndexType());
-    for(auto& prim : primitives) {
-        prim->firstIndex = indexCount;
+    for (auto& prim : primitives) {
+        prim->firstIndex  = indexCount;
         prim->firstVertex = vertexCount;
         {
-            for(auto & attr: scene.vertexAttributes) {
-                VkBufferCopy2 bufferCopy = {.srcOffset = 0,.dstOffset = vertexCount * attr.second.stride,.size = prim->getVertexBuffer(attr.first).getSize()};
-                bufferCopy.sType = VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR;
+            for (auto& attr : scene.vertexAttributes) {
+                VkBufferCopy2 bufferCopy = {.srcOffset = 0, .dstOffset = vertexCount * attr.second.stride, .size = prim->getVertexBuffer(attr.first).getSize()};
+                bufferCopy.sType         = VK_STRUCTURE_TYPE_BUFFER_COPY_2_KHR;
                 VkCopyBufferInfo2 copyInfo{VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2_KHR};
-                copyInfo.srcBuffer = prim->getVertexBuffer(attr.first).getHandle();
-                copyInfo.dstBuffer = newVertexBuffers[attr.first]->getHandle();
+                copyInfo.srcBuffer   = prim->getVertexBuffer(attr.first).getHandle();
+                copyInfo.dstBuffer   = newVertexBuffers[attr.first]->getHandle();
                 copyInfo.regionCount = 1;
-                copyInfo.pRegions = &bufferCopy;
+                copyInfo.pRegions    = &bufferCopy;
                 vkCmdCopyBuffer2(commandBuffer.getHandle(), &copyInfo);
             }
             vertexCount += prim->getVertexBuffer(POSITION_ATTRIBUTE_NAME).getSize() / scene.vertexAttributes.at(POSITION_ATTRIBUTE_NAME).stride;
         }
 
         {
-            VkBufferCopy2 bufferCopy = {.srcOffset = 0,.dstOffset = indexCount * getIndexStride(scene.getIndexType()),.size = prim->getIndexBuffer().getSize()};
+            VkBufferCopy2     bufferCopy = {.srcOffset = 0, .dstOffset = indexCount * getIndexStride(scene.getIndexType()), .size = prim->getIndexBuffer().getSize()};
             VkCopyBufferInfo2 copyInfo{};
-            copyInfo.srcBuffer = prim->getIndexBuffer().getHandle();
-            copyInfo.dstBuffer = newIndexBuffer->getHandle();
+            copyInfo.srcBuffer   = prim->getIndexBuffer().getHandle();
+            copyInfo.dstBuffer   = newIndexBuffer->getHandle();
             copyInfo.regionCount = 1;
-            copyInfo.pRegions = &bufferCopy;
+            copyInfo.pRegions    = &bufferCopy;
             vkCmdCopyBuffer2(commandBuffer.getHandle(), &copyInfo);
             indexCount += prim->getIndexBuffer().getSize() / getIndexStride(scene.getIndexType());
         }
@@ -101,8 +100,6 @@ void RuntimeSceneManager::addSponzaRestirLight(Scene& scene) {
     //     scene.addPrimitive(std::move(prim));
     // }
 
-   
-
     uint32_t idx = 0;
     for (int i = -4; i < 4; ++i) {
         for (int j = 0; j < 2; ++j) {
@@ -118,7 +115,7 @@ void RuntimeSceneManager::addSponzaRestirLight(Scene& scene) {
                 light_color.y = static_cast<float>(rand()) / (RAND_MAX);
                 light_color.z = static_cast<float>(rand()) / (RAND_MAX);
 
-                // LightProperties props;
+                //  LightProperties props;
                 // props.color      = light_color * 100.f;
                 // props.intensity  = 1.f;
                 // props.prim_index = idx + originalSize;
@@ -126,9 +123,9 @@ void RuntimeSceneManager::addSponzaRestirLight(Scene& scene) {
 
                 GltfMaterial material       = InitGltfMaterial();
                 material.pbrBaseColorFactor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-                material.emissiveFactor = light_color * 10.f;
+                material.emissiveFactor     = light_color * 10.f;
                 scene.materials.push_back(material);
-                
+
                 scene.primitives[originalSize + idx]->transform.setPosition(pos);
                 scene.primitives[originalSize + idx]->transform.setLocalScale(glm::vec3(10.f));
                 scene.primitives[originalSize + idx]->materialIndex = scene.materials.size() - 1;
@@ -157,4 +154,3 @@ void RuntimeSceneManager::addSponzaRestirPointLight(Scene& scene) {
         }
     }
 }
-

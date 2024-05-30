@@ -30,8 +30,9 @@ public:
     // std::unique_ptr<Integrator> path,restirDI{};
 
     std::unordered_map<std::string_view, std::unique_ptr<Integrator>> integrators;
-    std::string_view                                                  currentIntegrator = PATH_INTEGRATOR_NAME;
-    std::vector<std::string_view>                                     integratorNames;
+    std::string_view                                                  currentIntegrator = RESTIR_INTEGRATOR_NAME;
+    std::vector<std::string_view>
+        integratorNames;
 
     struct
     {

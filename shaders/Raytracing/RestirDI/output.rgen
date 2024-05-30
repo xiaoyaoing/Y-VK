@@ -28,12 +28,12 @@ layout(push_constant) uniform _PushConstantRay { RestirDIPC pc_ray; };
 
 void main()
 {
-//    return ;
+    //    return ;
     pixel_idx =  gl_LaunchIDEXT.y * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.x;
     load_gbuffer();
     uint light_idx = spatial_reservoirs.r[pixel_idx].s.light_idx;
-    
-    if(light_idx == -1 || gBuffer_material_idx == -1)
+
+    if (light_idx == -1 || gBuffer_material_idx == -1)
     {
         imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(1, 0, 0, 1));
         temporal_reservoirs.r[pixel_idx] = init_restir_reservoir();
@@ -46,24 +46,26 @@ void main()
     vec3 origin = (scene_ubo.viewInverse * vec4(0, 0, 0, 1)).xyz;
     vec4 target = scene_ubo.projInverse * vec4(d.x, d.y, 1, 1);
     vec4 direction = scene_ubo.viewInverse*vec4(normalize(target.xyz / target.w), 0);
-    
 
-    SurfaceScatterEvent event = make_surface_scatter_event(direction.xyz,gBuffer_normal, gBuffer_position, gBuffer_uv,gBuffer_material_idx);
-    copy_event(event,g_event);
+
+    SurfaceScatterEvent event = make_surface_scatter_event(direction.xyz, gBuffer_normal, gBuffer_position, gBuffer_uv, gBuffer_material_idx);
+    copy_event(event, g_event);
     vec3 color = vec3(0);
-    
-    
-    RestirReservoir spatial_reservoir = spatial_reservoirs.r[pixel_idx];
-    color += calc_L_vis(spatial_reservoir);
-//    if(!isBlack(color)){
-//        debugPrintfEXT("color: %f %f %f\n", color.x, color.y, color.z);
-//    }
-    color *= 48;
 
+    RestirReservoir spatial_reservoir = spatial_reservoirs.r[pixel_idx];
+
+    color += calc_L(spatial_reservoir);
+    //    if(!isBlack(color)){
+    //        debugPrintfEXT("color: %f %f %f\n", color.x, color.y, color.z);
+    //    }
+    color =5 * vec3(spatial_reservoir.w_sum);
+    //    color = vec3(spatial_reservoir.m / (pc_ray.frame_num+1) / 48);
+    // color *=  spatial_reservoir.W;
+    //    color = vec3(1, 0, 0);
+    //    color = vec4(gBuffer_uv, 0, 1).xyz;
+    //    printf_restir_reservoir(spatial_reservoir);
     temporal_reservoirs.r[pixel_idx] = spatial_reservoir;
 
-
-    color =  vec3(gBuffer_uv, 0);
     imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(color, 1.f));
 
 }

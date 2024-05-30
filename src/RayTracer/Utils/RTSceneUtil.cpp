@@ -81,16 +81,6 @@ RTSceneEntryImpl::~RTSceneEntryImpl() {
 void RTSceneEntryImpl::initScene(Scene& scene_) {
     scene = &scene_;
 
-    if (scene_.getLights().empty()) {
-        LOGI("No lights in the scene Adding default light");
-        std::string envPath    = FileUtils::getResourcePath("default.hdr");
-        auto        envTexture = Texture::loadTextureFromFile(device, envPath);
-        scene->addTexture(std::move(envTexture));
-        scene->addLight(SgLight{.type = LIGHT_TYPE::Sky, .lightProperties = {
-                                                             .texture_index = static_cast<uint32_t>(scene_.getTextures().size()) - 1,
-                                                         }});
-    }
-
     indexBuffer  = &scene->getIndexBuffer();
     uvBuffer     = &scene->getVertexBuffer(TEXCOORD_ATTRIBUTE_NAME);
     normalBuffer = &scene->getVertexBuffer(NORMAL_ATTRIBUTE_NAME);
@@ -127,6 +117,16 @@ void RTSceneEntryImpl::initScene(Scene& scene_) {
                                                               }});
             primitives.back().light_index = scene->getLights().size() - 1;
         }
+    }
+
+    if (scene_.getLights().empty()) {
+        LOGI("No lights in the scene Adding default light");
+        std::string envPath    = FileUtils::getResourcePath("default.hdr");
+        auto        envTexture = Texture::loadTextureFromFile(device, envPath);
+        scene->addTexture(std::move(envTexture));
+        scene->addLight(SgLight{.type = LIGHT_TYPE::Sky, .lightProperties = {
+                                                             .texture_index = static_cast<uint32_t>(scene_.getTextures().size()) - 1,
+                                                         }});
     }
 
     // primitives.resize(1);

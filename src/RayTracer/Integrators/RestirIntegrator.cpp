@@ -30,9 +30,6 @@ RestirIntegrator::RestirIntegrator(Device& device) : Integrator(device) {
                                                                 "Raytracing/ray.rahit",
 
                                                             });
-
-
- 
 }
 
 void RestirIntegrator::render(RenderGraph& renderGraph) {
@@ -45,9 +42,6 @@ void RestirIntegrator::render(RenderGraph& renderGraph) {
 
     auto& commandBuffer = renderContext->getGraphicCommandBuffer();
 
-
-
-
     renderGraph.addRaytracingPass(
         "Restir temporal pass", [&](RenderGraph::Builder& builder, RaytracingPassSettings& settings) {
         settings.accel = &entry_->tlas;
@@ -56,68 +50,58 @@ void RestirIntegrator::render(RenderGraph& renderGraph) {
         settings.rTPipelineSettings.maxDepth = 5;
     
     
-        auto output = renderGraph.createTexture("RT output",{width,height,TextureUsage::STORAGE | TextureUsage::TRANSFER_SRC,VK_FORMAT_R32G32B32A32_SFLOAT});
+        auto output = renderGraph.createTexture(RT_IMAGE_NAME,{width,height,TextureUsage::STORAGE | TextureUsage::TRANSFER_SRC | TextureUsage::SAMPLEABLE,VK_FORMAT_R32G32B32A32_SFLOAT});
         builder.writeTexture(output,TextureUsage::STORAGE);
-        renderGraph.getBlackBoard().put("RT",output); }, [&](RenderPassContext& context) {
+        renderGraph.getBlackBoard().put(RT_IMAGE_NAME,output); }, [&](RenderPassContext& context) {
             bindRaytracingResources(commandBuffer);
             renderContext->bindBuffer(4,*temporReservoirBuffer,0,temporReservoirBuffer->getSize(),2);
             renderContext->bindPushConstants(pcPath);
-            renderContext->bindImage(0, renderGraph.getBlackBoard().getImageView("RT"));
+            renderContext->bindImage(0, renderGraph.getBlackBoard().getImageView(RT_IMAGE_NAME));
          renderContext->traceRay(commandBuffer, {width, height, 1});
     
             pcPath.frame_num++; });
 
     renderGraph.addRaytracingPass(
-       "Restir spatial pass", [&](RenderGraph::Builder& builder, RaytracingPassSettings& settings) {
-        settings.accel = &entry_->tlas;
-       settings.pipelineLayout = spatialLayout.get();
-       settings.rTPipelineSettings.dims = {width,height,1};
-       settings.rTPipelineSettings.maxDepth = 5;
-    
-    
-        }, [&](RenderPassContext& context) {
-           bindRaytracingResources(commandBuffer);
-           renderContext->bindPushConstants(pcPath);
-           renderContext->bindImage(0, renderGraph.getBlackBoard().getImageView("RT"));
-        renderContext->traceRay(commandBuffer, {width, height, 1});
-    
-      });
-    
-    
+        "Restir spatial pass", [&](RenderGraph::Builder& builder, RaytracingPassSettings& settings) {
+            settings.accel                       = &entry_->tlas;
+            settings.pipelineLayout              = spatialLayout.get();
+            settings.rTPipelineSettings.dims     = {width, height, 1};
+            settings.rTPipelineSettings.maxDepth = 5; }, [&](RenderPassContext& context) {
+            bindRaytracingResources(commandBuffer);
+            renderContext->bindPushConstants(pcPath);
+            renderContext->bindImage(0, renderGraph.getBlackBoard().getImageView(RT_IMAGE_NAME));
+            renderContext->traceRay(commandBuffer, {width, height, 1}); });
+
     renderGraph.addRaytracingPass(
-       "Restir output pass", [&](RenderGraph::Builder& builder, RaytracingPassSettings& settings) {
+        "Restir output pass", [&](RenderGraph::Builder& builder, RaytracingPassSettings& settings) {
         settings.accel = &entry_->tlas;
        settings.pipelineLayout = outputLayout.get();
        settings.rTPipelineSettings.dims = {width,height,1};
-       settings.rTPipelineSettings.maxDepth = 5;
-    }, [&](RenderPassContext& context) {
-           bindRaytracingResources(commandBuffer);
-           renderContext->bindPushConstants(pcPath);
-           renderContext->bindImage(0, renderGraph.getBlackBoard().getImageView("RT"));
-        renderContext->traceRay(commandBuffer, {width, height, 1});
-    
-           });
+       settings.rTPipelineSettings.maxDepth = 5; }, [&](RenderPassContext& context) {
+            bindRaytracingResources(commandBuffer);
+            renderContext->bindPushConstants(pcPath);
+            renderContext->bindImage(0, renderGraph.getBlackBoard().getImageView(RT_IMAGE_NAME));
+            renderContext->traceRay(commandBuffer, {width, height, 1}); });
 }
-void RestirIntegrator::initScene(RTSceneEntry & entry) {
+void RestirIntegrator::initScene(RTSceneEntry& entry) {
     Integrator::initScene(entry);
-    
+
     temporReservoirBuffer  = std::make_unique<Buffer>(device, sizeof(RestirReservoir) * width * height, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
     spatialReservoirBuffer = std::make_unique<Buffer>(device, sizeof(RestirReservoir) * width * height, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
     passReservoirBuffer    = std::make_unique<Buffer>(device, sizeof(RestirReservoir) * width * height, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
     gBuffer                = std::make_unique<Buffer>(device, sizeof(GBuffer) * width * height, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
 
-
     entry.sceneDesc.restir_temporal_reservoir_addr = temporReservoirBuffer->getDeviceAddress();
     entry.sceneDesc.restir_spatial_reservoir_addr  = spatialReservoirBuffer->getDeviceAddress();
     entry.sceneDesc.restir_pass_reservoir_addr     = passReservoirBuffer->getDeviceAddress();
-    entry.sceneDesc.gbuffer_addr                  = gBuffer->getDeviceAddress();
+    entry.sceneDesc.gbuffer_addr                   = gBuffer->getDeviceAddress();
     entry.sceneDescBuffer->uploadData(&entry.sceneDesc, sizeof(SceneDesc));
-    
-    pcPath.light_num = entry.lights.size();
-    pcPath.max_depth = 1;
-    pcPath.min_depth = 0;
-    pcPath.frame_num = 0;
-    pcPath.do_spatial_reuse = false;
+
+    pcPath.light_num         = entry.lights.size();
+    pcPath.max_depth         = 1;
+    pcPath.min_depth         = 0;
+    pcPath.frame_num         = 0;
+    pcPath.do_spatial_reuse  = false;
     pcPath.do_temporal_reuse = false;
 }
 void RestirIntegrator::onUpdateGUI() {

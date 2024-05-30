@@ -50,7 +50,7 @@ void update_restir_reservoir(inout RestirReservoir  r_new, RestirData s, float w
 
 
 
-vec3 restir_sample_light(inout SurfaceScatterEvent event,const vec4 rand, const uint light_num, out uint light_idx, out LightSample light_sample){
+vec3 restir_sample_light(inout SurfaceScatterEvent event, const vec4 rand, const uint light_num, out uint light_idx, out LightSample light_sample){
     vec3 result = vec3(0);
 
     float light_choose_rand =rand.x;
@@ -64,17 +64,19 @@ vec3 restir_sample_light(inout SurfaceScatterEvent event,const vec4 rand, const 
     light_sample = sample_li(light, event, light_sample_rand);
 
     uint material_idx = event.material_idx;
-    event.wo = to_local(event.frame, light_sample.wi);
+    event.wi = to_local(event.frame, light_sample.wi);
 
     vec3 bsdf =eval_bsdf(materials.m[material_idx], event);
 
     if (light_sample.pdf >0) {
         result = light_sample.indensity * bsdf  / light_sample.pdf;
     }
+    //result = vec3(1, 0, 0);
+
     return result;
 }
 
-vec3 restir_sample_light(in SurfaceScatterEvent event,const vec4 rand,const uint light_num){
+vec3 restir_sample_light(in SurfaceScatterEvent event, const vec4 rand, const uint light_num){
     vec3 result = vec3(0);
 
     float light_choose_rand = rand.x;
@@ -88,17 +90,18 @@ vec3 restir_sample_light(in SurfaceScatterEvent event,const vec4 rand,const uint
     LightSample light_sample = sample_li(light, event, light_sample_rand);
 
     uint material_idx = event.material_idx;
-    event.wo = to_local(event.frame, light_sample.wi);
+    event.wi = to_local(event.frame, light_sample.wi);
 
     vec3 bsdf =eval_bsdf(materials.m[material_idx], event);
 
     if (light_sample.pdf >0) {
         result = light_sample.indensity * bsdf  / light_sample.pdf;
     }
+    //   result = vec3(1, 0, 0);
     return result;
 }
 
-vec3 restir_sample_light_with_vis(in SurfaceScatterEvent event,const vec4 rand,const uint light_num){
+vec3 restir_sample_light_with_vis(in SurfaceScatterEvent event, const vec4 rand, const uint light_num){
     vec3 result = vec3(0);
 
     float light_choose_rand = rand.x;
@@ -110,11 +113,11 @@ vec3 restir_sample_light_with_vis(in SurfaceScatterEvent event,const vec4 rand,c
     const RTLight light = lights[light_idx];
 
     LightSample light_sample = sample_li(light, event, light_sample_rand);
-    
-    if(light_sample.pdf ==0 || isBlack(light_sample.indensity)){
+
+    if (light_sample.pdf ==0 || isBlack(light_sample.indensity)){
         return vec3(0);
     }
-    
+
     bool visible = true;
     if (light_sample.pdf >0) {
         traceRayEXT(tlas,
@@ -123,12 +126,12 @@ vec3 restir_sample_light_with_vis(in SurfaceScatterEvent event,const vec4 rand,c
         0xFF, 1, 0, 1, event.p, EPS, light_sample.wi, light_sample.dist - EPS, 1);
         visible = any_hit_payload.hit == 0;
     }
-    if(!visible){
+    if (!visible){
         return vec3(0);
     }
 
     uint material_idx = event.material_idx;
-    event.wo = to_local(event.frame, light_sample.wi);
+    event.wi = to_local(event.frame, light_sample.wi);
 
     vec3 bsdf =eval_bsdf(materials.m[material_idx], event);
 
@@ -142,7 +145,7 @@ vec3 restir_sample_light_with_vis(in SurfaceScatterEvent event,const vec4 rand,c
 
 vec3 calc_L(const RestirReservoir r){
     uvec4 seed = r.s.seed;
-    return restir_sample_light(g_event,rand4(seed),48);
+    return restir_sample_light(g_event, rand4(seed), 48);
 
     vec3 result = vec3(0);
 
@@ -158,7 +161,7 @@ vec3 calc_L(const RestirReservoir r){
     LightSample   light_sample = sample_li_area_light_with_idx(light, g_event, rand3(r_seed), triangle_idx);
 
     uint material_idx = g_event.material_idx;
-    g_event.wo = to_local(g_event.frame, light_sample.wi);
+    g_event.wi = to_local(g_event.frame, light_sample.wi);
 
     vec3 bsdf =eval_bsdf(materials.m[material_idx], g_event);
 
@@ -170,13 +173,14 @@ vec3 calc_L(const RestirReservoir r){
 
 vec3 calc_L_vis(const RestirReservoir r){
     uvec4 r_seed = r.s.seed;
-    return restir_sample_light_with_vis(g_event,r_seed,48);
+
+    return restir_sample_light_with_vis(g_event, rand4(r_seed), 48);
     vec3 result = vec3(0);
 
 
     uint light_idx = r.s.light_idx;
     uint triangle_idx = r.s.triangle_idx;
-    
+
     const RTLight light = lights[light_idx];
 
     LightSample   light_sample = sample_li_area_light_with_idx(light, g_event, rand3(r_seed), triangle_idx);
@@ -194,7 +198,7 @@ vec3 calc_L_vis(const RestirReservoir r){
 
         uint material_idx = g_event.material_idx;
         // debugPrintfEXT("material_idx %d\n", material_idx);
-        g_event.wo = to_local(g_event.frame, light_sample.wi);
+        g_event.wi = to_local(g_event.frame, light_sample.wi);
 
         vec3 bsdf =eval_bsdf(materials.m[material_idx], g_event);
 
@@ -203,7 +207,9 @@ vec3 calc_L_vis(const RestirReservoir r){
     return result;
 }
 
-
+void printf_restir_reservoir(const RestirReservoir r){
+    debugPrintfEXT("all message in one line %f %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\n", r.W, r.m, r.w_sum, r.s.light_idx, r.s.triangle_idx, r.s.seed.x, r.s.seed.y, r.s.seed.z, r.s.seed.w);
+}
 
 
 float calc_p_hat(const RestirReservoir r) {
