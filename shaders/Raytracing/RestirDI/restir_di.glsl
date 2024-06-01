@@ -13,7 +13,7 @@ RestirReservoir_ spatial_reservoirs = RestirReservoir_(scene_desc.restir_spatial
 RestirReservoir_ pass_reservoir = RestirReservoir_(scene_desc.restir_pass_reservoir_addr);
 GBuffer_ gbuffer = GBuffer_(scene_desc.gbuffer_addr);
 
-uint pixel_idx = gl_LaunchIDEXT.x * gl_LaunchSizeEXT.y + gl_LaunchIDEXT.y;
+uint    pixel_idx =  gl_LaunchIDEXT.y * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.x;
 vec3 gBuffer_normal;
 vec3 gBuffer_position;
 uint gBuffer_material_idx;
@@ -208,7 +208,7 @@ vec3 calc_L_vis(const RestirReservoir r){
 }
 
 void printf_restir_reservoir(const RestirReservoir r){
-    debugPrintfEXT("all message in one line %f %d %f %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\n", r.W, r.m, r.w_sum, r.s.light_idx, r.s.triangle_idx, r.s.seed.x, r.s.seed.y, r.s.seed.z, r.s.seed.w);
+    debugPrintfEXT("all message in one line %f %d %f %d %d %d %d %d %d  \n", r.W, r.m, r.w_sum, r.s.light_idx, r.s.triangle_idx, r.s.seed.x, r.s.seed.y, r.s.seed.z, r.s.seed.w);
 }
 
 

@@ -173,7 +173,7 @@ void Camera::onShowInEditor() {
     // ImGui::PopItemWidth();
     ImGui::NextColumn();
     ImGui::InputFloat("Camera Move Speed", &mMoveSpeed);
-    
+
     const char* mode[]{
         "Perspective",
         "Orthographic"};
@@ -184,6 +184,7 @@ void Camera::onShowInEditor() {
 
     ImGui::DragFloat("Near Plane", &m_nearZ, 0.01f, 0.01f, 1000.0f);
     ImGui::DragFloat("Far Plane", &m_farZ, 0.01f, 0.0f, 1000.0f);
+    ImGui::SliderFloat("Move Speed", &mMoveSpeed, 0.0f, 100.0f);
     ImGui::Checkbox("Flip Y", &flipYTemp);
     if (flipYTemp != flipY) {
         flipY = flipYTemp;

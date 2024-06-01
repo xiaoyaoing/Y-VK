@@ -53,8 +53,13 @@ inline std::vector<uint8_t> convertIndexData(const std::vector<uint8_t>& src_dat
     Default:
         LOGE("Unsupported index format {} ", format)
     } else {
-        type = targetType;
-        return convertUnderlyingDataStride(src_data, formatStrideMap.at(format), indexStrideMap.at(targetType));
+        type            = targetType;
+        float srcStride = formatStrideMap.at(format);
+        float dstStride = indexStrideMap.at(targetType);
+        if (srcStride == dstStride) {
+            return src_data;
+        }
+        return convertUnderlyingDataStride(src_data, srcStride, dstStride);
     }
 }
 
