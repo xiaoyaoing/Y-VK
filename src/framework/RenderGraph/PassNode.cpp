@@ -113,7 +113,7 @@ void RenderPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuf
     g_context->beginRenderPass(commandBuffer, renderTarget, subpassInfos);
 
     RenderPassContext context = {
-        .commandBuffer = commandBuffer,.renderGraph =  renderGraph};
+        .commandBuffer = commandBuffer, .renderGraph = renderGraph};
 
     auto passName = getPassName("Render Pass", getName());
     DebugUtils::CmdBeginLabel(context.commandBuffer.getHandle(), passName, {1, 0, 0, 1});
@@ -159,29 +159,29 @@ void ImageCopyPassNode::execute(RenderGraph& renderGraph, CommandBuffer& command
 
     auto& srcVkImage = renderGraph.getTexture(src)->getHwTexture()->getVkImage();
     auto& dstVkImage = renderGraph.getTexture(dst)->getHwTexture()->getVkImage();
-    
 
     VkImageBlit2 blitImageRegion{};
     blitImageRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    blitImageRegion.sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2;
+    blitImageRegion.sType          = VK_STRUCTURE_TYPE_IMAGE_BLIT_2;
 
     VkOffset3D dstOffset = {static_cast<int32_t>(dstVkImage.getExtent().width), static_cast<int32_t>(dstVkImage.getExtent().height), 1};
     VkOffset3D srcOffset = {static_cast<int32_t>(srcVkImage.getExtent().width), static_cast<int32_t>(srcVkImage.getExtent().height), 1};
-    
-    blitImageRegion.srcOffsets[0] = {0, 0, 0};
-    blitImageRegion.srcOffsets[1] = srcOffset;
+
+    blitImageRegion.srcOffsets[0]  = {0, 0, 0};
+    blitImageRegion.srcOffsets[1]  = srcOffset;
     blitImageRegion.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     blitImageRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    blitImageRegion.dstOffsets[0] = {0, 0, 0};
-    blitImageRegion.dstOffsets[1] = dstOffset;
-    
+    blitImageRegion.dstOffsets[0]  = {0, 0, 0};
+    blitImageRegion.dstOffsets[1]  = dstOffset;
+
     VkBlitImageInfo2 blitImageInfo{};
-    blitImageInfo.srcImage      = srcVkImage.getHandle();
+    blitImageInfo.sType          = VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2;
+    blitImageInfo.srcImage       = srcVkImage.getHandle();
     blitImageInfo.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    blitImageInfo.dstImage     = dstVkImage.getHandle();
+    blitImageInfo.dstImage       = dstVkImage.getHandle();
     blitImageInfo.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    blitImageInfo.regionCount = 1;
-    blitImageInfo.pRegions = &blitImageRegion;
+    blitImageInfo.regionCount    = 1;
+    blitImageInfo.pRegions       = &blitImageRegion;
 
     vkCmdBlitImage2(commandBuffer.getHandle(), &blitImageInfo);
 }
@@ -191,10 +191,10 @@ ImageCopyPassNode::ImageCopyPassNode(RenderGraphHandle src, RenderGraphHandle ds
 
 void ComputePassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) {
     g_context->getPipelineState().setPipelineType(PIPELINE_TYPE::E_COMPUTE);
-    if(mPass->getData().pipelineLayout)
-    g_context->getPipelineState().setPipelineLayout(*mPass->getData().pipelineLayout);
+    if (mPass->getData().pipelineLayout)
+        g_context->getPipelineState().setPipelineLayout(*mPass->getData().pipelineLayout);
 
-    RenderPassContext context{.commandBuffer = commandBuffer,.renderGraph =  renderGraph};
+    RenderPassContext context{.commandBuffer = commandBuffer, .renderGraph = renderGraph};
 
     auto passName = getPassName("Compute Pass", getName());
     DebugUtils::CmdBeginLabel(commandBuffer.getHandle(), passName, {1, 0, 0, 1});
@@ -208,7 +208,7 @@ void RayTracingPassNode::execute(RenderGraph& renderGraph, CommandBuffer& comman
     auto& settings = mPass->getData();
     g_context->getPipelineState().setPipelineType(PIPELINE_TYPE::E_RAY_TRACING).setPipelineLayout(*settings.pipelineLayout).setrTPipelineSettings(settings.rTPipelineSettings);
     g_context->bindAcceleration(0, *settings.accel, 0, 0);
-    RenderPassContext context{.commandBuffer = commandBuffer,.renderGraph =  renderGraph};
+    RenderPassContext context{.commandBuffer = commandBuffer, .renderGraph = renderGraph};
 
     auto passName = getPassName("RayTracing Pass", getName());
     DebugUtils::CmdBeginLabel(context.commandBuffer.getHandle(), passName, {1, 0, 0, 1});

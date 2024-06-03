@@ -61,6 +61,43 @@ vec3 visualize_normal(vec3 n) {
 }
 
 
+bool is_two_sided(uint material_idx){
+    const uint material_type = materials.m[material_idx].bsdf_type;
+    return material_type == RT_BSDF_TYPE_DIELECTRIC || material_type == RT_BSDF_TYPE_PRINCIPLE;
+}
+
+SurfaceScatterEvent make_surface_scatter_event(HitPayload hit_pay_load, const vec3 wo){
+    SurfaceScatterEvent event;
+
+    bool two_sided = is_two_sided(hit_pay_load.material_idx);
+    vec3 n_s = hit_pay_load.n_s;
+    if (dot(wo, hit_pay_load.n_s) < 0 && !two_sided){
+        n_s = -n_s;
+    }
+
+    event.frame = make_frame(n_s);
+    event.wo = to_local(event.frame, wo);
+    event.p = hit_pay_load.p;
+    event.material_idx = hit_pay_load.material_idx;
+    event.uv = hit_pay_load.uv;
+    return event;
+}
+
+SurfaceScatterEvent make_surface_scatter_event(vec3 wo, vec3 n, vec3 p, vec2 uv, uint material_idx){
+    SurfaceScatterEvent event;
+
+    vec3 n_s = n;
+    bool two_sided = is_two_sided(material_idx);
+    if (dot(wo, n_s) < 0 && !two_sided){
+        n_s = -n_s;
+    }
+    event.frame = make_frame(n_s);
+    event.wo = to_local(event.frame, wo);
+    event.p = p;
+    event.material_idx = material_idx;
+    event.uv = uv;
+    return event;
+}
 
 
 
@@ -491,7 +528,7 @@ LightSample sample_li(const RTLight light, const SurfaceScatterEvent event, cons
 }
 
 bool is_specular_material(const RTMaterial material){
-    if (material.bsdf_type == RT_BSDF_TYPE_DIELCTRIC || material.bsdf_type == RT_BSDF_TYPE_CONDUCTOR || material.bsdf_type == RT_BSDF_TYPE_PLASTIC || material.bsdf_type == RT_BSDF_TYPE_MIRROR){
+    if (material.bsdf_type == RT_BSDF_TYPE_DIELECTRIC || material.bsdf_type == RT_BSDF_TYPE_CONDUCTOR || material.bsdf_type == RT_BSDF_TYPE_PLASTIC || material.bsdf_type == RT_BSDF_TYPE_MIRROR){
         return material.roughness < 1e-3;
     }
     return false;

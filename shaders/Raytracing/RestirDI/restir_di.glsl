@@ -19,11 +19,15 @@ vec3 gBuffer_position;
 uint gBuffer_material_idx;
 vec2 gBuffer_uv;
 
+
 void load_gbuffer(){
     gBuffer_normal = gbuffer.r[pixel_idx].normal;
     gBuffer_position = gbuffer.r[pixel_idx].position;
     gBuffer_material_idx = gbuffer.r[pixel_idx].material_idx;
     gBuffer_uv = gbuffer.r[pixel_idx].uv;
+    vec3 origin = (scene_ubo.viewInverse * vec4(0, 0, 0, 1)).xyz;
+    vec3 dir = normalize(gBuffer_position - origin);
+    g_event =make_surface_scatter_event(-dir, gBuffer_normal, gBuffer_position, gBuffer_uv, gBuffer_material_idx);
 }
 
 
@@ -207,9 +211,6 @@ vec3 calc_L_vis(const RestirReservoir r){
     return result;
 }
 
-void printf_restir_reservoir(const RestirReservoir r){
-    debugPrintfEXT("all message in one line %f %d %f %d %d %d %d %d %d  \n", r.W, r.m, r.w_sum, r.s.light_idx, r.s.triangle_idx, r.s.seed.x, r.s.seed.y, r.s.seed.z, r.s.seed.w);
-}
 
 
 float calc_p_hat(const RestirReservoir r) {
@@ -222,6 +223,10 @@ void combine_reservoir(inout RestirReservoir r1, const RestirReservoir r2) {
         fac *= calc_p_hat(r2);
     }
     update_restir_reservoir(r1, r2.s, fac);
+}
+
+void printf_restir_reservoir(const RestirReservoir r){
+    debugPrintfEXT("all message in one line %f %d %f %d %d %d %d %d %d %f  \n", r.W, r.m, r.w_sum, r.s.light_idx, r.s.triangle_idx, r.s.seed.x, r.s.seed.y, r.s.seed.z, r.s.seed.w, calc_p_hat(r));
 }
 
 

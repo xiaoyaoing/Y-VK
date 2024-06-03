@@ -20,7 +20,7 @@ using uvec2 = glm::uvec2;
 #define ALIGN16
 #endif
 
-#define LIGHT_TYPE_AREA 1
+#define LIGHT_TYPE_AREA     1
 #define LIGHT_TYPE_INFINITE 2
 
 //For code used in shader,use "_" code style
@@ -28,7 +28,7 @@ using uvec2 = glm::uvec2;
 struct SceneDesc {
     uint envmap_idx;
     uint padding;
-    
+
     uint64_t vertex_addr;
     uint64_t index_addr;
     uint64_t normal_addr;
@@ -41,12 +41,11 @@ struct SceneDesc {
 
     uint64_t env_sampling_addr;
 
-    
     uint64_t restir_temporal_reservoir_addr;
     uint64_t restir_spatial_reservoir_addr;
     uint64_t restir_pass_reservoir_addr;
     uint64_t restir_color_storage_addr;
-    
+
     uint64_t gbuffer_addr;
 };
 
@@ -61,14 +60,14 @@ struct SceneUbo {
 };
 
 struct RTMaterial {
-    vec3  emissiveFactor;
-    vec3  albedo;
-    int   texture_id;
-    uint  bsdf_type;
+    vec3 emissiveFactor;
+    vec3 albedo;
+    int  texture_id;
+    uint bsdf_type;
 
     vec3  eta;
     float roughness;
-    
+
     vec3  k;
     float diffuseFresnel;
 
@@ -76,7 +75,7 @@ struct RTMaterial {
     float avgTransmittance;
 
     float ior;
-    vec3 padding;
+    vec3  padding;
 };
 
 struct RTLight {
@@ -107,20 +106,19 @@ struct RTPrimitive {
     //  uint64_t padding_64;
 };
 
-struct EnvAccel
-{
+struct EnvAccel {
     uint  alias;
     float q;
     float pdf;
     float aliasPdf;
 };
 
-#define RT_BSDF_TYPE_DIFFUSE   0
-#define RT_BSDF_TYPE_MIRROR    1
-#define RT_BSDF_TYPE_DIELCTRIC 2
-#define RT_BSDF_TYPE_CONDUCTOR 3
-#define RT_BSDF_TYPE_PLASTIC   4
-#define RT_BSDF_TYPE_PRINCIPLE 5
+#define RT_BSDF_TYPE_DIFFUSE    0
+#define RT_BSDF_TYPE_MIRROR     1
+#define RT_BSDF_TYPE_DIELECTRIC 2
+#define RT_BSDF_TYPE_CONDUCTOR  3
+#define RT_BSDF_TYPE_PLASTIC    4
+#define RT_BSDF_TYPE_PRINCIPLE  5
 
 #define RT_LIGHT_TYPE_AREA     0
 #define RT_LIGHT_TYPE_INFINITE 1

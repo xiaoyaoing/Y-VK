@@ -64,34 +64,6 @@ bool isBlack(vec3 v){
 }
 
 
-
-SurfaceScatterEvent make_surface_scatter_event(HitPayload hit_pay_load, const vec3 wo){
-    SurfaceScatterEvent event;
-
-
-    //Todo Handle two side bsdf 
-    if (dot(wo, hit_pay_load.n_s) < 0){
-        hit_pay_load.n_s = -hit_pay_load.n_s;
-    }
-
-    event.frame = make_frame(hit_pay_load.n_s);
-    event.wo = to_local(event.frame, wo);
-    event.p = hit_pay_load.p;
-    event.material_idx = hit_pay_load.material_idx;
-    event.uv = hit_pay_load.uv;
-    return event;
-}
-
-SurfaceScatterEvent make_surface_scatter_event(vec3 wo, vec3 n, vec3 p, vec2 uv, uint material_idx){
-    SurfaceScatterEvent event;
-    event.frame = make_frame(n);
-    event.wo = to_local(event.frame, wo);
-    event.p = p;
-    event.material_idx = material_idx;
-    event.uv = uv;
-    return event;
-}
-
 void copy_event(in SurfaceScatterEvent src, out SurfaceScatterEvent dst){
     dst.wo = src.wo;
     dst.wi = src.wi;

@@ -112,8 +112,8 @@ void RayTracer::prepare() {
     integrators["path"]   = std::make_unique<PathIntegrator>(*device);
     integrators["restir"] = std::make_unique<RestirIntegrator>(*device);
     integratorNames       = {"path", "restir"};
-    integratorNames       = {"restir", "path"};
-    currentIntegrator     = "resitr";
+    //  integratorNames       = {"restir", "path"};
+    currentIntegrator = "resitr";
 
     sceneLoadingConfig = {.requiredVertexAttribute = {POSITION_ATTRIBUTE_NAME, INDEX_ATTRIBUTE_NAME, NORMAL_ATTRIBUTE_NAME, TEXCOORD_ATTRIBUTE_NAME},
                           .indexType               = VK_INDEX_TYPE_UINT32,
@@ -123,14 +123,14 @@ void RayTracer::prepare() {
                           .sceneScale              = glm::vec3(1.f)};
 
     // loadScene("C:/Users/pc/Downloads/bedroom/scene.json");
-    // loadScene("C:/Users/pc/Downloads/bathroom/scene.json");
+    //loadScene("C:/Users/pc/Downloads/bathroom/scene.json");
     // loadScene("E:/code/vk-raytracing-demo/resources/classroom/scene.json");
     // loadScene("E:/code/vk-raytracing-demo/resources/cornell-box-json/scene.json");
-    // loadScene("E:/code/Y-PBR/example-scenes/test-ball/scene.json");
+    loadScene(FileUtils::getResourcePath("test-ball/scene.json"));
     //  loadScene("C:/Users/pc/Downloads/house/scene.json");
-    // loadScene("C:/Users/pc/Downloads/kitchen/scene.json");
+    //loadScene("C:/Users/pc/Downloads/kitchen/scene.json");
     // loadScene("C:/Users/pc/Downloads/living-room/living-room/living-room/scene.json");
-    loadScene("E:/code/MoerEngine/target/bin/RelWithDebInfo/resource/default/scenes/sponza/Sponza01.gltf");
+    //   loadScene("E:/code/MoerEngine/target/bin/RelWithDebInfo/resource/default/scenes/sponza/Sponza01.gltf");
     // loadScene(FileUtils::getResourcePath("sponza/Sponza01.gltf"));
     // loadScene(FileUtils::getResourcePath("staircase2/scene.json"));
     //   loadScene(FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));

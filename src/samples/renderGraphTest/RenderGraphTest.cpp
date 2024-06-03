@@ -130,7 +130,9 @@ void Example::prepare() {
     // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf", {.bufferRate = BufferRate::PER_SCENE});
     // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/MoerEngineScenes/Sponza/pbr/sponza2.gltf", {.bufferRate = BufferRate::PER_SCENE});
     // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf", sceneConfig);
-    scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/vkframeworklearn2/resources/cornell-box/cornellBox.gltf", sceneConfig);
+    //  scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/vkframeworklearn2/resources/cornell-box/cornellBox.gltf", sceneConfig);
+    loadScene("E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf");
+    //loadScene(FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));
 
     auto light_pos   = glm::vec3(0.0f, 128.0f, -225.0f);
     auto light_color = glm::vec3(1.0, 1.0, 1.0);

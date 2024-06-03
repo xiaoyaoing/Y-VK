@@ -96,7 +96,7 @@ struct DepthStencilState {
     VkBool32 depthWriteEnable{VK_TRUE};
 
     // Note: Using reversed depth-buffer for increased precision, so Greater depth values are kept
-    VkCompareOp depthCompareOp{VK_COMPARE_OP_GREATER_OR_EQUAL};
+    VkCompareOp depthCompareOp{VK_COMPARE_OP_LESS_OR_EQUAL};
 
     VkBool32 depthBoundsTestEnable{VK_FALSE};
 

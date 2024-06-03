@@ -101,36 +101,18 @@ void main()
             if (all(greaterThanEqual(prev_screen_pos, ivec2(0))) && all(lessThan(prev_screen_pos, ivec2(gl_LaunchSizeEXT.xy))))
             {
                 uint prev_pixel_index = prev_screen_pos.y * gl_LaunchSizeEXT.x + prev_screen_pos.x;
-                r_prev = temporal_reservoirs.r[pixel_idx];
-                //  printf_restir_reservoir(r_prev);
+                r_prev = temporal_reservoirs.r[prev_pixel_index];
             }
-
-
         }
 
 
     }
 
-    //    if (found_intersect && r_new.m == 0){
-    //        printf_restir_reservoir(r_new);
-    //    }
-
     uint num_samples = r_new.m;
     if (pc_ray.do_temporal_reuse>0 && pc_ray.frame_num>0){
+        // r_prev.m = min(r.m, r_prev.m);
         num_samples += r_prev.m;
-        float prev_w_sum = r.w_sum;
-        float v = r_prev.W * r_prev.m;
         combine_reservoir(r, r_prev);
-        float after_w_sum = r.w_sum;
-        if (after_w_sum == prev_w_sum){
-            // printf_restir_reservoir(r_prev);
-            //   debugPrintfEXT("found intersect: %d\n", found_intersect);
-            vec3 p = gbuffer.r[pixel_idx].position;
-            //printf_restir_reservoir(r_prev);
-            //debugPrintfEXT("p %f %f %f now_pos %f %f %f %f\n", p.x, p.y, p.z, hitPayload.p.x, hitPayload.p.y, hitPayload.p.z, v);
-            // debugPrintfEXT("prev_w_sum: %f, after_w_sum: %f %f %f %f\n", prev_w_sum, after_w_sum, r_prev.w_sum, calc_p_hat(r_prev), calc_p_hat(r_new));
-        }
-        //debugPrintfEXT("prev_w_sum: %f, after_w_sum: %f %f\n", prev_w_sum, after_w_sum, r_prev.w_sum);
     }
     r.m = num_samples;
 

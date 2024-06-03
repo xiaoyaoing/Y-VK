@@ -126,8 +126,8 @@ std::unordered_map<std::string, uint32_t> type2RTBSDFTYPE = {
     {"plastic", RT_BSDF_TYPE_DIFFUSE},
     {"rough_plastic", RT_BSDF_TYPE_PLASTIC},
     {"principle", RT_BSDF_TYPE_PRINCIPLE},
-    {"dielectric", RT_BSDF_TYPE_DIELCTRIC},
-    {"rough_dielectric", RT_BSDF_TYPE_DIELCTRIC},
+    {"dielectric", RT_BSDF_TYPE_DIELECTRIC},
+    {"rough_dielectric", RT_BSDF_TYPE_DIELECTRIC},
 };
 
 static inline float dielectricReflectance(float eta, float cosThetaI, float& cosThetaT) {
@@ -183,7 +183,7 @@ void handleSpecifyMaterialAttribute(RTMaterial& rtMaterial, const Json& material
         rtMaterial.avgTransmittance = std::exp(-2.0f * avgSigmaA);
         rtMaterial.diffuseFresnel   = diffuseReflectance(m_ior, 10000);
     }
-    if (rtMaterial.bsdf_type == RT_BSDF_TYPE_DIELCTRIC) {
+    if (rtMaterial.bsdf_type == RT_BSDF_TYPE_DIELECTRIC) {
         rtMaterial.ior = GetOptional(materialJson, "ior", 1.3);
     }
 }

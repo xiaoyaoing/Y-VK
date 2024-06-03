@@ -65,14 +65,14 @@ float get_depth(vec3 world_pos){
 
 
 vec3 ssr(vec3 ori, vec3 dir) {
-    dir = normalize(vec3(1, 1, 0));
+    dir = normalize(dir);
     vec3 hitPos;
-    float step = 2.0;
+    float step = 1.f;
     vec3 lastPoint = ori;
     //
     //  step = 0;
-
-    for (int i=0;i<64;++i){
+    //  return dir;
+    for (int i=0;i<640;++i){
         // 往射线方向走一步得到测试点深度
         vec3 testPoint = lastPoint + step * dir;
         float testDepth = get_depth(testPoint);
@@ -84,7 +84,7 @@ vec3 ssr(vec3 ori, vec3 dir) {
         //   return texture(frame_color, testScreenUV).rgb;
 
         // 若测试点深度 > depth buffer深度，则说明光线相交于该测试点位置所在的像素柱条
-        if (testDepth - bufferDepth > 1e-4){
+        if (testDepth - bufferDepth   > 1e-4){
             hitPos = testPoint;
             //  return vec3(testDepth - bufferDepth);
             // return pseudocolor(i);
@@ -97,6 +97,10 @@ vec3 ssr(vec3 ori, vec3 dir) {
 }
 
 uvec4 seed = init_rng(uvec2(gl_FragCoord.xy));
+
+vec3 my_reflect(vec3 I, vec3 N){
+    return -I + 2.0 * dot(I, N) * N;
+}
 
 
 void main(){
@@ -131,14 +135,12 @@ void main(){
     //unifrom sample 
 
     vec3 view_dir = per_frame.camera_pos - world_pos;
-    vec3 reflect_dir = reflect(-view_dir, normal);
+    vec3 reflect_dir = my_reflect(view_dir, normal);
 
 
     vec2 ray_end_screen = get_screen_coordinate(world_pos + reflect_dir);
 
     for (int i = 0; i < 10; ++i){
-        vec2 rand = rand2(seed);
-        vec3 local_dir = square_to_uniform_hemisphere(rand);
         vec3 dir = reflect_dir;
         //        dir = local_dir;
         //  color = dir;

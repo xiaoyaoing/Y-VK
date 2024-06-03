@@ -49,20 +49,20 @@ void main()
     vec4 direction = scene_ubo.viewInverse*vec4(normalize(target.xyz / target.w), 0);
 
 
-    SurfaceScatterEvent event = make_surface_scatter_event(direction.xyz, gBuffer_normal, gBuffer_position, gBuffer_uv, gBuffer_material_idx);
+    SurfaceScatterEvent event = make_surface_scatter_event(-direction.xyz, gBuffer_normal, gBuffer_position, gBuffer_uv, gBuffer_material_idx);
     copy_event(event, g_event);
-    vec3 color = vec3(0);
 
     RestirReservoir spatial_reservoir = spatial_reservoirs.r[pixel_idx];
 
 
-    color += calc_L(spatial_reservoir);
+    vec3 color =  calc_L(spatial_reservoir);
     //    if(!isBlack(color)){
     //        debugPrintfEXT("color: %f %f %f\n", color.x, color.y, color.z);
     //    }
     //  color =5 * vec3(spatial_reservoir.w_sum) / (pc_ray.frame_num+1);
     //    color = vec3(spatial_reservoir.m / (pc_ray.frame_num+1) / 48);
     color *=  spatial_reservoir.W * 48;
+    // color = vec3(spatial_reservoir.W);
     //    color = vec3(1, 0, 0);
     //    color = vec4(gBuffer_uv, 0, 1).xyz;
     //    printf_restir_reservoir(spatial_reservoir);

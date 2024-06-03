@@ -28,5 +28,70 @@ layout(push_constant) uniform _PushConstantRay { RestirDIPC pc_ray; };
 
 void main()
 {
-    spatial_reservoirs.r[pixel_idx] = pass_reservoir.r[pixel_idx];
+    if (pc_ray.do_spatial_reuse== 0)
+    {
+        spatial_reservoirs.r[pixel_idx] = pass_reservoir.r[pixel_idx];
+        return;
+    }
+    const float max_r = 10;
+    const float depth_threshold = 0.01;
+    const float angle_threshold = 25 * PI / 180;
+    const float num_neighbor_samples = 5;
+    load_gbuffer();
+
+    const RestirReservoir curr_reservoir = pass_reservoir.r[pixel_idx];
+    RestirReservoir r = init_restir_reservoir();
+    if (curr_reservoir.W != 0) {
+        combine_reservoir(r, curr_reservoir);
+        uint num_samples = curr_reservoir.m;
+        for (int i = 0; i < num_neighbor_samples; i++) {
+            // Choose a neighbor pixel
+            const float randa = rand1(seed) * 2 * PI;
+            const float randr = sqrt(rand1(seed)) * max_r;
+            ivec2 rand_offset =
+            ivec2(floor(cos(randa) * randr), floor(sin(randa) * randr));
+            const ivec2 coords =
+            clamp(ivec2(gl_LaunchIDEXT.xy) + rand_offset, ivec2(0),
+            ivec2(gl_LaunchSizeEXT.xy) - 1);
+            const uint neighbor_idx = coords.y * gl_LaunchSizeEXT.x + coords.x;
+
+            const RestirReservoir r_n = pass_reservoir.r[neighbor_idx];
+
+
+            combine_reservoir(r, r_n);
+
+            //            float w = r_n.W * r_n.m * calc_p_hat(r_n);
+            //
+            //            float p_hat = calc_p_hat(r);
+            //            if (p_hat<0.000001 && p_hat>0){
+            //                printf_restir_reservoir(r)
+            //                debugPrintfEXT("w: %f w_sum %f\n", w, r.w_sum);
+            //
+            //            }
+
+            num_samples += r_n.m;
+        }
+        r.m = num_samples;
+        // float p_hat_cur = calc_p_hat(curr_reservoir);
+        const float phat = calc_p_hat(r);
+        if (phat == 0) {
+            r.W = 0;
+        } else {
+            r.W = r.w_sum / (r.m * phat);
+            if (r.W>1){
+                //  printf_restir_reservoir(r);
+                //                vec3 color = calc_L(r) * r.W * 48;// * phat * 100.f;
+                //                // debugPrintfEXT("color_l p_hat_cur: %f %f\n", length(color), phat);
+                //                imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(color, 1.f));
+
+                //   printf_restir_reservoir(r);
+            }
+
+        }
+
+
+        //printf_restir_reservoir(r);
+    }
+    //    debugPrintfEXT("r and cur r w_sum: %f %f\n", r.w_sum, curr_reservoir.w_sum);
+    spatial_reservoirs.r[pixel_idx] = r;
 }

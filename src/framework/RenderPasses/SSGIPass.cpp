@@ -13,9 +13,10 @@ void SSGIPass::render(RenderGraph& rg) {
             auto  emission   = blackBoard["emission"];
             auto  output     = blackBoard.getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
             auto  ssgi       = rg.createTexture("ssgi",
-                                                {.extent = g_context->getViewPortExtent(),
-                                                 .useage = TextureUsage::SAMPLEABLE |
-                                                           TextureUsage::COLOR_ATTACHMENT
+                                                {
+                                                    .extent = g_context->getViewPortExtent(),
+                                                    .useage = TextureUsage::SAMPLEABLE |
+                                                       TextureUsage::COLOR_ATTACHMENT | TextureUsage::TRANSFER_SRC,
 
                                          });
             builder.readTextures({normal, diffuse, emission});

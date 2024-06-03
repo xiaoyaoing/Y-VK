@@ -243,6 +243,71 @@ BsdfSampleRecord mirror_sample(const RTMaterial mat, const vec2 rand, inout Surf
     return record;
 }
 
+float copy_sign(float value, float sign_v){
+    return sign(sign_v) * value;
+}
+
+BsdfSampleRecord dielectric_sample(const RTMaterial mat, const vec2 rand, inout SurfaceScatterEvent event){
+    BsdfSampleRecord record;
+    float eta = event.wo.z < 0 ? mat.ior : 1 / mat.ior;
+    if (mat.roughness < 1e-3f){
+        float costhetaT;
+        float fresnel = dielectricReflectance(eta, event.wo.z, costhetaT);
+        //debugPrintfEXT("Fresnel %f\n", fresnel);
+        if (rand.x < fresnel){
+            event.wi = my_reflect(event.wo, vec3(0, 0, 1));
+            record.f = vec3(fresnel) * get_albedo(mat, event.uv);
+            record.pdf = fresnel;
+            record.sample_flags = RT_BSDF_LOBE_SPECULAR | RT_BSDF_LOBE_REFLECTION;
+        }
+        else {
+            event.wi =  vec3(-eta * event.wo.x, -eta * event.wo.y, -copy_sign(costhetaT, event.wo.z));
+            record.f = vec3(1 - fresnel) * get_albedo(mat, event.uv);
+            record.pdf = 1 - fresnel;
+            record.sample_flags = RT_BSDF_LOBE_SPECULAR | RT_BSDF_LOBE_REFRACTION;
+        }
+    }
+    else {
+        //        vec3 wh = ggx_sample(mat.roughness, rand);
+        //        float wh_dot_wo = dot(wh, event.wo);
+        //        float cos_theta_t;
+        //        float fresnel = dielectricReflectance(1/mat.ior, wh_dot_wo, cos_theta_t);
+        //        bool reflect = rand.x < fresnel;
+        //        if (reflect){
+        //            event.wi = my_reflect(event.wo, wh);
+        //            record.f = vec3(fresnel) * get_albedo(mat, event.uv);
+        //            record.pdf = fresnel;
+        //            record.sample_flags = RT_BSDF_LOBE_GLOSSY | RT_BSDF_LOBE_REFLECTION;
+        //        }
+        //        else {
+        //            event.wi = -eta * event.wo + (eta * wh_dot_wo - cos_theta_t) * wh;
+        //            record.f = vec3(1 - fresnel) * get_albedo(mat, event.uv);
+        //            record.pdf = 1 - fresnel;
+        //            record.sample_flags = RT_BSDF_LOBE_GLOSSY | RT_BSDF_LOBE_REFRACTION;
+        //        }
+    }
+
+    return record;
+}
+
+float dielectric_pdf(const RTMaterial mat, const SurfaceScatterEvent event){
+    if (mat.roughness < 1e-3f){
+        return 0;
+    }
+    else {
+        return 0;
+    }
+}
+
+vec3 dielectric_f(const RTMaterial mat, const SurfaceScatterEvent event){
+    if (mat.roughness < 1e-3f){
+        return vec3(0);
+    }
+    else {
+        return vec3(0);
+    }
+}
+
 
 vec3 eval_bsdf(const RTMaterial mat, const SurfaceScatterEvent event) {
     uint bsdf_type = mat.bsdf_type;
@@ -250,6 +315,7 @@ vec3 eval_bsdf(const RTMaterial mat, const SurfaceScatterEvent event) {
 HANDLE_BSDF_F(MIRROR,mirror)
 HANDLE_BSDF_F(CONDUCTOR,conductor)
 HANDLE_BSDF_F(PLASTIC,plastic)
+HANDLE_BSDF_F(DIELECTRIC,dielectric)
 return vec3(0);
 }
 
@@ -259,6 +325,7 @@ float pdf_bsdf(const RTMaterial mat, const SurfaceScatterEvent event) {
 HANDLE_BSDF_PDF(MIRROR,mirror)
 HANDLE_BSDF_PDF(CONDUCTOR,conductor)
 HANDLE_BSDF_PDF(PLASTIC,plastic)
+HANDLE_BSDF_PDF(DIELECTRIC,dielectric)
 return 0;
 }
 
@@ -272,6 +339,7 @@ BsdfSampleRecord sample_bsdf(const RTMaterial mat, inout SurfaceScatterEvent eve
 HANDLE_BSDF_SAMPLE(DIFFUSE,diffuse)
 HANDLE_BSDF_SAMPLE(CONDUCTOR,conductor)
 HANDLE_BSDF_SAMPLE(PLASTIC,plastic)
+HANDLE_BSDF_SAMPLE(DIELECTRIC,dielectric)
 BsdfSampleRecord record;
 return record;
 }
