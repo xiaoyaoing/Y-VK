@@ -5,7 +5,7 @@
 #include "Core/View.h"
 void GBufferPass::init() {
     // mNormal = std::make_unique<SgImage>(device,"normal",VKExt, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-    Device&             device = g_context->getDevice();
+    Device& device  = g_context->getDevice();
     mPipelineLayout = std::make_unique<PipelineLayout>(device, std::vector<std::string>{"defered_one_scene_buffer.vert", "defered_pbr.frag"});
 }
 void LightingPass::render(RenderGraph& rg) {
@@ -79,7 +79,7 @@ void IBLLightingPass::render(RenderGraph& rg) {
             auto& commandBuffer = context.commandBuffer;
             auto  view          = g_manager->fetchPtr<View>("view");
             auto& blackBoard    = rg.getBlackBoard();
-            g_context->getPipelineState().setPipelineLayout(g_context->getDevice().getResourceCache().requestPipelineLayout(std::vector<std::string>{"lighting.vert", "pbrLab/lighting_ibl.frag"})).setRasterizationState({.cullMode = VK_CULL_MODE_NONE}).setDepthStencilState({.depthTestEnable = false});
+            g_context->getPipelineState().setPipelineLayout(g_context->getDevice().getResourceCache().requestPipelineLayout(std::vector<std::string>{"full_screen.vert", "pbrLab/lighting_ibl.frag"})).setRasterizationState({.cullMode = VK_CULL_MODE_NONE}).setDepthStencilState({.depthTestEnable = false});
             view->bindViewBuffer();
 
             auto& irradianceCube = blackBoard.getImageView("irradianceCube");

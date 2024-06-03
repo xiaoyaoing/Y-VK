@@ -16,6 +16,7 @@
 #include "Core/math.h"
 #include "Core/Shader/GlslCompiler.h"
 #include "IO/ImageIO.h"
+#include "PostProcess/PostProcess.h"
 #include "RenderPasses/RenderPassBase.h"
 #include "Scene/Compoments/Camera.h"
 #include "Scene/SceneLoader/SceneLoaderInterface.h"
@@ -140,6 +141,8 @@ void Application::updateGUI() {
     ImGui::End();
     ImGui::Separator();
 
+    mPostProcessPass->updateGui();
+
     auto& texture = g_context->getCurHwtexture();
 
     ImGui::SameLine();
@@ -192,10 +195,10 @@ void Application::update() {
     graph.getBlackBoard().put(RENDER_VIEW_PORT_IMAGE_NAME, handle);
 
     drawFrame(graph);
+    mPostProcessPass->render(graph);
 
     mCurrentTextures = graph.getResourceNames(RENDER_GRAPH_RESOURCE_TYPE::ETexture);
     graph.addImageCopyPass(graph.getBlackBoard().getHandle(mPresentTexture), graph.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME));
-
     handleSaveImage(graph);
 
     gui->addGuiPass(graph);
@@ -297,6 +300,11 @@ void Application::initGUI() {
 void Application::prepare() {
     initVk();
     initGUI();
+
+    mPostProcessPass = std::make_unique<PostProcess>();
+    mPostProcessPass->init();
+    // std::unique_ptr<PassBase> t = std::unique_ptr<PostProcess>(std::make_unique<PostProcess>());
+    // postProcess->init();
 }
 
 Application::Application(const char* name, uint32_t width, uint32_t height) : mWidth(width), mHeight(height), mAppName(name) {
@@ -470,7 +478,7 @@ void Application::initView() {
 }
 void Application::loadScene(const std::string& path) {
     scene = SceneLoaderInterface::LoadSceneFromFile(*device, path, sceneLoadingConfig);
-  //  RuntimeSceneManager::addSponzaRestirLight(*scene);
+    //  RuntimeSceneManager::addSponzaRestirLight(*scene);
     onSceneLoaded();
 }
 void Application::onSceneLoaded() {

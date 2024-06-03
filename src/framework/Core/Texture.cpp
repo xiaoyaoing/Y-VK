@@ -66,9 +66,7 @@ const Sampler& Texture::getSampler() const {
 static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture, CommandBuffer& commandBuffer, std::vector<std::unique_ptr<Buffer>>& buffers) {
     texture->image->generateMipMapOnCpu();
     texture->image->createVkImage(device);
-
     
-
     buffers.emplace_back(std::make_unique<Buffer>(device, texture->image->getBufferSize(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY));
     auto& imageBuffer = *buffers.back();
     imageBuffer.uploadData(static_cast<void*>(texture->image->getData().data()), texture->image->getBufferSize());

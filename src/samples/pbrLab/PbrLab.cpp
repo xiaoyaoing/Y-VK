@@ -55,9 +55,9 @@ void Example::prepare() {
     g_context->setFlipViewport(true);
     mRenderPasses.push_back(std::make_unique<GBufferPass>());
     mRenderPasses.push_back(std::make_unique<IBLLightingPass>());
-    
-    SceneLoadingConfig config{};
-    scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/Vulkan-glTF-PBR/data/models/DamagedHelmet/glTF-Embedded/DamagedHelmet.gltf", config);
+
+    // loadScene("E:/code/Vulkan-glTF-PBR/data/models/DamagedHelmet/glTF-Embedded/DamagedHelmet.gltf");
+    loadScene("E:/code/FidelityFX-SSSR/sample/media/Chess/scene.gltf");
 
     scene->addDirectionalLight({0, -0.95f, 0.3f}, glm::vec3(1.0f), 1.5f);
     scene->addDirectionalLight({1.0f, 0, 0}, glm::vec3(1.0f), 0.5f);
@@ -83,8 +83,8 @@ void Example::prepare() {
 
     cube             = SceneLoaderInterface::loadSpecifyTypePrimitive(*device, "cube");
     std::string path = "E:/code/Vulkan-glTF-PBR/data/environments/papermill.ktx";
-    environmentCube = Texture::loadTextureFromFile(g_context->getDevice(), path);
-    ibl             = std::make_unique<IBL>(*device, environmentCube.get());
+    environmentCube  = Texture::loadTextureFromFile(g_context->getDevice(), path);
+    ibl              = std::make_unique<IBL>(*device, environmentCube.get());
 }
 
 Example::Example() : Application("Pbr Lab", 1920, 1080) {

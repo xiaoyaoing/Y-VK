@@ -54,7 +54,6 @@ vec4 SRGBtoLINEAR(vec4 srgbIn)
 
 void main()
 {
-    //    debugPrintfEXT("inUVW: %f %f %f\n", inUVW.x, inUVW.y, inUVW.z);
     vec3 color = SRGBtoLINEAR(tonemap(textureLod(samplerEnv, inUVW, 1.5))).rgb;
     outColor = vec4(color * 1.0, 1.0);
 }

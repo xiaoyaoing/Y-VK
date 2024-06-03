@@ -67,13 +67,6 @@ vec4 SRGBtoLINEAR(vec4 srgbIn)
 
 vec3 ibl_fragment_shader(const in PBRInfo pbr_info, vec3 n, vec3 reflection)
 {
-    if (debugMode == 6)
-    {
-        reflection = -reflection;
-    }
-    // return vec3(1.0);
-    //  return vec3(pbr_info.alphaRoughness);
-
     float lod = (pbr_info.perceptualRoughness * prefilteredCubeMipLevels);
 
     // retrieve a scale and bias to F0. See [1], Figure 3
@@ -172,9 +165,9 @@ void main(){
         pbr_info.alphaRoughness = perceptual_roughness * perceptual_roughness;
         pbr_info.perceptualRoughness = perceptual_roughness;
         pbr_info.diffuseColor = diffuse_color * (1- metallic) * (1-0.04);
-        
+
         color += ibl_fragment_shader(pbr_info, normal, R);
     }
-    
+
     out_color = vec4(color, 1);
 }

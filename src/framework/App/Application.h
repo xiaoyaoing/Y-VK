@@ -37,6 +37,7 @@
 
 #include "Common/Timer.h"
 #include "Core/View.h"
+#include "RenderPasses/RenderPassBase.h"
 #include "Scene/SceneLoader/SceneLoadingConfig.h"
 
 // #ifdef _WIN32
@@ -148,10 +149,10 @@ protected:
     void handleMouseMove(float x, float y);
 
 private:
-    std::string              mPresentTexture = RENDER_VIEW_PORT_IMAGE_NAME;
-    std::vector<std::string> mCurrentTextures{RENDER_VIEW_PORT_IMAGE_NAME};
-    const char*              mAppName;
-
+    std::string               mPresentTexture = RENDER_VIEW_PORT_IMAGE_NAME;
+    std::vector<std::string>  mCurrentTextures{RENDER_VIEW_PORT_IMAGE_NAME};
+    const char*               mAppName;
+    std::unique_ptr<PassBase> mPostProcessPass{};
     //Camera related  variable end
 
     VkFence fence{VK_NULL_HANDLE};

@@ -91,9 +91,9 @@ void RayTracer::drawFrame(RenderGraph& renderGraph) {
 
     lastFrameSceneUbo = sceneUbo;
     integrators[currentIntegrator]->render(renderGraph);
-    postProcess->render(renderGraph);
+    // postProcess->render(renderGraph);
 
-    // renderGraph.addImageCopyPass(renderGraph.getBlackBoard().getHandle("RT"), renderGraph.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME));
+    renderGraph.addImageCopyPass(renderGraph.getBlackBoard().getHandle("RT"), renderGraph.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME));
 }
 void RayTracer::onSceneLoaded() {
     Application::onSceneLoaded();
@@ -137,9 +137,6 @@ void RayTracer::prepare() {
     // loadScene("C:/Users/pc/Downloads/glTF-Sample-Models-main/glTF-Sample-Models-main/2.0/RiggedFigure/glTF/RiggedFigure.gltf");
     camera->getTransform()->setPosition(glm::vec3(0.f, 0.f, 3.f));
     camera->getTransform()->setRotation({1, 0, 0, 0});
-
-    postProcess = std::make_unique<PostProcess>();
-    postProcess->init();
 }
 
 void RayTracer::onUpdateGUI() {
@@ -161,7 +158,7 @@ void RayTracer::onUpdateGUI() {
     currentIntegrator = integratorNames[itemCurrent];
 
     integrators[currentIntegrator]->onUpdateGUI();
-    postProcess->updateGui();
+    // postProcess->updateGui();
 }
 
 // void RayTracer::buildBLAS()
