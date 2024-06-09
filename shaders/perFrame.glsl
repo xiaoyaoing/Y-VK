@@ -3,6 +3,8 @@ layout(set = 0, binding = 0) uniform _GlobalFrameUniform {
     mat4 inv_view_proj;
     mat4 proj;
     mat4 view;
+    mat4 inv_proj;
+    mat4 inv_view;
 
     vec3 camera_pos;
 
@@ -31,12 +33,13 @@ struct PerPrimitive {
 };
 
 
+
+
+
 vec3  worldPosFromDepth    (vec2 uv, float depth){
-    //  uv.y = 1.0 - uv.y;
-    vec4  clip         = vec4(uv * 2.0 - 1.0, depth, 1.0);
+    vec4  clip = vec4(uv * 2.0 - 1.0, depth, 1.0);
     vec4 world_w = per_frame.inv_view_proj * clip;
     vec3 pos     = world_w.xyz / world_w.w;
-
     return pos;
 }
 

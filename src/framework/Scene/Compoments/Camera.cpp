@@ -23,7 +23,7 @@ void Camera0::update(float deltaTime) {
             camFront.z = cos(glm::radians(rotation.x)) * cos(glm::radians(rotation.y));
             camFront   = glm::normalize(camFront);
 
-            mMoveSpeed += deltaTime;
+            // mMoveSpeed += deltaTime;
             float moveDistance = deltaTime * mMoveSpeed;
 
             if (keys.up) {
@@ -144,7 +144,7 @@ Camera::~Camera() {
 void Camera::update(float deltaTime) {
     if (moving() || firstUpdate) {
         {
-            mMoveSpeed += deltaTime;
+            // mMoveSpeed += deltaTime;
             float moveDistance = deltaTime * mMoveSpeed;
 
             if (keys.up) {

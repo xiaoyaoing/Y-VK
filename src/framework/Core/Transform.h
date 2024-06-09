@@ -8,7 +8,11 @@
 
 class Transform {
 public:
-    Transform() {}
+    Transform() {
+        updateCache();
+    }
+
+    void setParent(const Transform* parent);
 
     explicit Transform(const BBox& bbox);
 

@@ -1,13 +1,26 @@
 #include "SSGIPass.h"
 
+#include "HizPass.h"
 #include "Common/ResourceCache.h"
+#include "Common/TextureHelper.h"
 #include "Core/RenderContext.h"
 #include "RenderGraph/RenderGraph.h"
+
 void SSGIPass::render(RenderGraph& rg) {
-    rg.addGraphicPass(
-        "ssgi", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
+    if (mResource->depth_hierrachy == nullptr) {
+        VkExtent3D extent          = g_context->getViewPortExtent3D();
+        uint32_t   mipLevels       = static_cast<uint32_t>(std::floor(std::log2(std::max(extent.width, extent.height)))) + 1;
+        mResource->depth_hierrachy = std::make_unique<SgImage>(rg.getDevice(), "depth_hiz", extent, VK_FORMAT_R32_SFLOAT, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_VIEW_TYPE_2D, VK_SAMPLE_COUNT_1_BIT, mipLevels, 1);
+    }
+    rg.importTexture("depth_hiz", mResource->depth_hierrachy.get());
+
+    HizPass::render(rg);
+
+    rg.addComputePass(
+        "ssgi", [&](RenderGraph::Builder& builder, ComputePassSettings& settings) {
             auto& blackBoard = rg.getBlackBoard();
             auto  depth      = blackBoard["depth"];
+            auto  depth_hiz  = blackBoard["depth_hiz"];
             auto  normal     = blackBoard["normal"];
             auto  diffuse    = blackBoard["diffuse"];
             auto  emission   = blackBoard["emission"];
@@ -15,42 +28,52 @@ void SSGIPass::render(RenderGraph& rg) {
             auto  ssgi       = rg.createTexture("ssgi",
                                                 {
                                                     .extent = g_context->getViewPortExtent(),
-                                                    .useage = TextureUsage::SAMPLEABLE |
-                                                       TextureUsage::COLOR_ATTACHMENT | TextureUsage::TRANSFER_SRC,
+                                                    .useage = TextureUsage::SAMPLEABLE | TextureUsage::STORAGE | TextureUsage::TRANSFER_SRC,
 
                                          });
-            builder.readTextures({normal, diffuse, emission});
-            builder.readTextures({output, depth}, RenderGraphTexture::Usage::SAMPLEABLE);
-            builder.writeTexture(ssgi);
+            builder.readTextures({output, depth, depth_hiz, normal, diffuse, emission}, RenderGraphTexture::Usage::SAMPLEABLE);
+            builder.writeTexture(ssgi, RenderGraphTexture::Usage::STORAGE);
 
-            RenderGraphPassDescriptor desc{};
-            desc.setTextures({diffuse, normal, emission, ssgi}).addSubpass({.inputAttachments = {diffuse, normal, emission}, .outputAttachments = {ssgi}, .disableDepthTest = true});
-            builder.declare(desc);
+            settings.pipelineLayout = mPipelineLayout.get();
             // builder.addSubPass();
         },
         [&](RenderPassContext& context) {
-            auto& commandBuffer  = context.commandBuffer;
-            auto  view           = g_manager->fetchPtr<View>("view");
-            auto& blackBoard     = rg.getBlackBoard();
-            auto& pipelinelayout = g_context->getDevice().getResourceCache().requestPipelineLayout(std::vector<std::string>{"full_screen.vert", "postprocess/ssgi.frag"});
-            g_context->getPipelineState().setPipelineLayout(pipelinelayout).setRasterizationState({.cullMode = VK_CULL_MODE_NONE}).setDepthStencilState({.depthTestEnable = false});
+            auto& commandBuffer = context.commandBuffer;
+            auto  view          = g_manager->fetchPtr<View>("view");
+            auto& blackBoard    = rg.getBlackBoard();
             view->bindViewBuffer();
             auto& sampler = g_context->getDevice().getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, 1);
-            g_context->bindImage(0, blackBoard.getImageView("diffuse"))
-                .bindImage(1, blackBoard.getImageView("normal"))
-                .bindImage(2, blackBoard.getImageView("emission"))
+
+            mPushConstant.screen_size       = ivec2(g_context->getViewPortExtent().width, g_context->getViewPortExtent().height);
+            mPushConstant.use_inverse_depth = view->getCamera()->useInverseDepth;
+            mPushConstant.hiz_mip_count     = mResource->depth_hierrachy->getVkImage().getMipLevelCount();
+            auto&      hizDepth             = rg.getBlackBoard().getImageView("depth_hiz");
+            auto&      hizSampler           = g_context->getDevice().getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_FILTER_LINEAR, hizDepth.getSubResourceRange().levelCount);
+            glm::ivec2 dispatchSize         = glm::ivec2((g_context->getViewPortExtent().width + 7) / 8, (g_context->getViewPortExtent().height + 7) / 8);
+            g_context->bindImageSampler(0, blackBoard.getImageView("diffuse"), sampler)
+                .bindImageSampler(1, blackBoard.getImageView("normal"), sampler)
+                .bindImageSampler(2, blackBoard.getImageView("emission"), sampler)
                 .bindImageSampler(3, blackBoard.getImageView("depth"), sampler)
                 .bindImageSampler(4, blackBoard.getImageView(RENDER_VIEW_PORT_IMAGE_NAME), sampler)
-                .flushAndDraw(commandBuffer, 3, 1, 0, 0);
+                .bindImageSampler(5, TextureHelper::GetBlueNoise()->getVkImageView(), sampler)
+                .bindImageSampler(6, hizDepth, hizSampler)
+                .bindImage(0, blackBoard.getImageView("ssgi"))
+                .bindPushConstants(mPushConstant)
+                .flushAndDispatch(commandBuffer, dispatchSize.x, dispatchSize.y, 1);
         });
 
     rg.addImageCopyPass(rg.getBlackBoard().getHandle("ssgi"), rg.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME));
 }
 void SSGIPass::init() {
     PassBase::init();
+    mResource       = std::make_unique<SSRResource>();
+    mPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), std::vector<std::string>{"postprocess/ssgi.comp"});
 }
 void SSGIPass::updateGui() {
     PassBase::updateGui();
+    ImGui::SliderInt("Use hiz", reinterpret_cast<int*>(&mPushConstant.use_hiz), 0, 2);
+    ImGui::SliderFloat("Depth thickness", &mPushConstant.depth_buffer_thickness, 0.0f, 0.1f);
+    ImGui::Checkbox("Show original", reinterpret_cast<bool*>(&mPushConstant.show_original));
 }
 void SSGIPass::update() {
     PassBase::update();

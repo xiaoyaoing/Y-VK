@@ -25,8 +25,10 @@ public:
     const Queue& getPresentQueue(uint32_t queueIndex);
     CommandPool& getCommandPool(VkQueueFlags queueFlags = VK_QUEUE_GRAPHICS_BIT) { return commandPools.at(queueFlags); }
 
-    inline VmaAllocator                                     getMemoryAllocator() const { return allocator; }
-    inline CommandBuffer                                    createCommandBuffer(VkCommandBufferLevel level, bool begin = false, VkQueueFlags queueFlags = VK_QUEUE_GRAPHICS_BIT) { return getCommandPool(queueFlags).allocateCommandBuffer(level, begin); }
+    inline VmaAllocator  getMemoryAllocator() const { return allocator; }
+    inline CommandBuffer createCommandBuffer(VkCommandBufferLevel level, bool begin = false, VkQueueFlags queueFlags = VK_QUEUE_GRAPHICS_BIT) {
+        return getCommandPool(queueFlags).allocateCommandBuffer(level, begin, queueFlags);
+    }
     inline ResourceCache&                                   getResourceCache() { return *cache; }
     inline VkPhysicalDeviceProperties                       getProperties() const { return properties; }
     inline VkDevice                                         getHandle() const { return _device; }

@@ -1,5 +1,6 @@
 #version 460 core
 #extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_debug_printf : enable
 #include "shadow.glsl"
 #include "perFrameShading.glsl"
 #include "perFrame.glsl"
@@ -54,7 +55,7 @@ vec3 getNormal(int texture_idx)
 void main(void)
 {
 
-//    return;
+    //    return;
     uint material_index = primitive_infos[in_primitive_index].material_index;
     GltfMaterial material = scene_materials[material_index];
 
@@ -99,5 +100,5 @@ void main(void)
         emissionColor *= SRGBtoLinear(texture(scene_textures[material.emissiveTexture], in_uv), 2.2).rgb;
     }
     o_emssion = vec4(emissionColor, 1.0);
-    
+    //  debugPrintfEXT("material_index: %d\n", material_index);
 }

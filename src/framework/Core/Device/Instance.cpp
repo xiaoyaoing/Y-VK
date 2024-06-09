@@ -89,9 +89,7 @@ Instance::Instance(const std::string&                           application_name
     features.sType                         = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
     features.enabledValidationFeatureCount = 1;
     features.pEnabledValidationFeatures    = enables;
-    instanceInfo.pNext                     = &features;
-
-    instanceInfo.pNext = nullptr;
+    // instanceInfo.pNext                     = &features;
 
     if (enableValidationLayers) {
         uint32_t layerCount;
@@ -107,11 +105,12 @@ Instance::Instance(const std::string&                           application_name
         else {
             instanceInfo.enabledLayerCount   = required_validation_layers.size();
             instanceInfo.ppEnabledLayerNames = required_validation_layers.data();
-            instanceInfo.pNext               = &debugMessengerCreateInfo;
+            features.pNext                   = &debugMessengerCreateInfo;
         }
     } else {
         instanceInfo.enabledLayerCount = 0;
     }
+    instanceInfo.pNext = &features;
 
     VK_CHECK_RESULT(vkCreateInstance(&instanceInfo, nullptr, &_instance));
     volkLoadInstance(_instance);

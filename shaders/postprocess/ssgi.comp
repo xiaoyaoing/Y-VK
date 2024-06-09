@@ -1,0 +1,644 @@
+#version 460 core
+
+#extension GL_GOOGLE_include_directive : enable 
+#extension GL_EXT_debug_printf : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+
+
+#include "../perFrame.glsl"
+#include "../common/sampling.glsl"
+#include "../common/microfacet.glsl"
+
+precision highp float;
+
+layout(binding = 0, set=1) uniform sampler2D gbuffer_diffuse_roughness;
+layout(binding = 1, set=1) uniform sampler2D gbuffer_normal_metalic;
+layout(binding = 2, set=1) uniform sampler2D gbuffer_emission;
+layout(binding = 3, set=1) uniform sampler2D  gbuffer_depth;
+layout(binding = 4, set=1) uniform sampler2D frame_color_attach;
+layout(binding = 5, set=1) uniform sampler2D blue_noise;
+layout(binding = 6, set=1) uniform sampler2D hiz_depth;
+
+layout(binding = 0, set=2) uniform writeonly image2D out_image;
+layout(push_constant) uniform PushConstant{
+    uint use_inverse_depth;
+    uint use_hiz;
+    uvec2 screen_size;
+    float depth_buffer_thickness;
+    uint hiz_mip_count;
+    uint show_origin;
+    float pdding3;
+} pc;
+
+//vec4  textureLod(sampler2D tex, vec2 uv){
+//    return vec4(1);
+//}
+//
+//vec4  textureLod(sampler2D tex, vec2 uv, float mip_level){
+//    return vec4(1);
+//}
+
+
+uint jenkinsHash(uint a)
+{
+    a = (a + 0x7ed55d16) + (a << 12);
+    a = (a ^ 0xc761c23cu) ^ (a >> 19);
+    a = (a + 0x165667b1) + (a << 5);
+    a = (a + 0xd3a2646c) ^ (a << 9);
+    a = (a + 0xfd7046c5) + (a << 3);
+    a = (a ^ 0xb55a4f09u) ^ (a >> 16);
+    return a;
+}
+
+vec3 pseudocolor(uint value)
+{
+    if (value == 0)
+    return vec3(1, 0, 0);
+    if (value == 1)
+    return vec3(0, 1, 0);
+    if (value == 2)
+    return vec3(0, 0, 1);
+    if (value == 3)
+    return vec3(1, 1, 0);
+    if (value == 4)
+    return vec3(1, 0, 1);
+    uint h = jenkinsHash(value);
+    return (uvec3(h, h >> 8, h >> 16) & 0xffu) / 255.f;
+}
+
+void ssr_initial_advance_ray(vec3 origin, vec3 direction, vec3 inv_direction, vec2 current_mip_resolution, vec2 current_mip_resolution_inv, vec2 floor_offset, vec2 uv_offset, out vec3 position, out float current_t) {
+    vec2 current_mip_position = current_mip_resolution * origin.xy;
+
+    // Intersect ray with the half box that is pointing away from the ray origin.
+    vec2 xy_plane = floor(current_mip_position) + floor_offset;
+    xy_plane = xy_plane * current_mip_resolution_inv + uv_offset;
+
+    // o + d * t = p' => t = (p' - o) / d
+    vec2 t = xy_plane * inv_direction.xy - origin.xy * inv_direction.xy;
+    current_t = min(t.x, t.y);
+    //  debugPrintfEXT("uv offset: %f %f floor offset: %f %f\n", uv_offset.x, uv_offset.y, floor_offset.x, floor_offset.y);
+    //  debugPrintfEXT("origin: %f %f xy_plane %f %f current_t: %f inv_direction: %f %f direction %f %f %f\n", origin.x, origin.y, xy_plane.x, xy_plane.y, current_t, inv_direction.x, inv_direction.y, direction.x, direction.y, direction.z);
+    position = origin + current_t * direction;
+}
+
+#define FFX_SSSR_FLOAT_MAX 3.402823466e+38
+
+bool ssr_advance_ray(vec3 origin, vec3 direction, vec3 inv_direction, vec2 current_mip_position, vec2 current_mip_resolution_inv, vec2 floor_offset, vec2 uv_offset, float surface_z, out vec3 position, out float current_t) {
+    // Create boundary planes
+    vec2 xy_plane = floor(current_mip_position) + floor_offset;
+    xy_plane = xy_plane * current_mip_resolution_inv + uv_offset;
+    vec3 boundary_planes = vec3(xy_plane, surface_z);
+
+    // Intersect ray with the half box that is pointing away from the ray origin.
+    // o + d * t = p' => t = (p' - o) / d
+    vec3 t = boundary_planes * inv_direction - origin * inv_direction;
+
+    // Prevent using z plane when shooting out of the depth buffer.
+    if (pc.use_inverse_depth>0)
+    t.z = direction.z < 0 ? t.z : FFX_SSSR_FLOAT_MAX;
+    else
+    t.z = direction.z > 0 ? t.z : FFX_SSSR_FLOAT_MAX;
+
+
+    // t.z = direction.z < 0 ? t.z : FFX_SSSR_FLOAT_MAX;
+
+    // Choose nearest intersection with a boundary.
+    float t_min = min(min(t.x, t.y), t.z);
+    //t_min = max(t_min, 0);
+
+    bool above_surface;
+    if (pc.use_inverse_depth>0)
+    above_surface = surface_z < position.z;
+    else
+    above_surface = surface_z > position.z;
+
+
+    // Decide whether we are able to advance the ray until we hit the xy boundaries or if we had to clamp it at the surface.
+    // We use the floatBitsToInt comparison to avoid NaN / Inf logic, also we actually care about bitwise equality here to see if t_min is the t.z we fed into the min3 above.
+    bool skipped_tile = floatBitsToInt(t_min) != floatBitsToInt(t.z) && above_surface;
+
+    // Make sure to only advance the ray if we're still above the surface.
+    current_t = above_surface ? t_min : current_t;
+
+    // Advance ray
+    position = origin + current_t * direction;
+
+    if (above_surface && (position.x < 0 || position.x > 1 || position.y < 0 || position.y > 1)){
+        // debugPrintfEXT("current_t: %f direction %f %f %f t %f %f %f boundaries %f %f %f origin %f %f %f \n", current_t, direction.x, direction.y, direction.z, t.x, t.y, t.z, boundary_planes.x, boundary_planes.y, boundary_planes.z, origin.x, origin.y, origin.z);
+    }
+
+    return skipped_tile;
+}
+
+//vec2 exp2(vec2 v){
+//    return vec2(exp2(v.x), exp2(v.y));
+//}
+//
+
+float GetHizDepth(vec2 uv, int mip){
+    return textureLod(hiz_depth, uv, mip).x;
+}
+
+
+vec2 get_mip_resolution(vec2 screen_size, int mip) {
+    vec2 mip_resolution = screen_size;
+    mip_resolution = max(mip_resolution / exp2(float(mip)), 1.0);
+    return mip_resolution;
+}
+
+
+
+
+float ssr_load_depth(vec2 uv, float mip_level){
+    return textureLod(gbuffer_depth, uv, mip_level).x;
+}
+
+
+#define HiZTraceMostDetailedLevel 0
+
+//Params ray march in view space
+//@param origin: ray origin
+//@param direction: ray direction
+//@param is_mirror: whether the ray is a mirror ray
+//@param screen_size: screen size
+//@param most_detailed_mip: most detailed mip level
+//@param min_traversal_occupancy: minimum number of active threads to continue traversal
+//@param max_traversal_intersections: maximum number of intersections to traverse
+//@param valid_hit: whether the ray hit something
+//@return: hit position
+vec3 ssr_hierarch_ray_march(vec3 origin, vec3 direction, vec2 screen_size, out bool valid_hit){
+    const vec3 inv_direction = 1.f / direction;
+
+    int current_mip = 0;
+
+    vec2 current_mip_resolution = get_mip_resolution(screen_size, current_mip);
+    vec2 current_mip_resolution_inv = 1.0 / current_mip_resolution;
+
+    float current_t;
+    vec3 position;
+
+    vec2 floor_offset = vec2(1);
+    vec2 uv_offset = 0.005 * exp2(0) / screen_size;
+
+    if (direction.x < 0){
+        floor_offset.x = 0;
+        uv_offset.x = -uv_offset.x;
+    }
+    if (direction.y < 0){
+        floor_offset.y = 0;
+        uv_offset.y = -uv_offset.y;
+    }
+
+
+    ssr_initial_advance_ray(origin, direction, inv_direction, current_mip_resolution, current_mip_resolution_inv, floor_offset, uv_offset, position, current_t);
+
+    //debugPrintfEXT("current_t: %f\n", current_t);
+
+    uint max_traversal_intersections = 64;
+    uint i = 0;
+    while (i < max_traversal_intersections && current_mip >= 0) {
+        vec2 current_mip_position = current_mip_resolution * position.xy;
+        float surface_z = GetHizDepth(current_mip_position, current_mip);
+
+        bool skipped_tile = ssr_advance_ray(origin, direction, inv_direction, current_mip_position, current_mip_resolution_inv, floor_offset, uv_offset, surface_z, position, current_t);
+
+        current_mip += skipped_tile ? 1 : -1;
+        current_mip_resolution *= skipped_tile ? 0.5 : 2;
+        current_mip_resolution_inv *= skipped_tile ? 2 : 0.5;
+
+        ++i;
+    }
+
+    valid_hit = (i <= max_traversal_intersections);
+
+    return position;
+}
+
+
+vec2 get_screen_coordinate(vec3 world_pos){
+    vec4 clip_pos = per_frame.view_proj * vec4(world_pos, 1.0);
+    vec2 ndc_pos = clip_pos.xy / clip_pos.w;
+    return (ndc_pos + 1.0) / 2.0;
+}
+
+float get_depth(vec3 world_pos){
+    vec4 clip_pos = per_frame.view_proj * vec4(world_pos, 1.0);
+    return clip_pos.z / clip_pos.w;
+}
+
+
+vec2 sample_random_vector2D(uvec2 pixel){
+    return textureLod(blue_noise, vec2(pixel) / 128.0, 0).rg;
+}
+
+vec3 MyReflect(vec3 I, vec3 N){
+    // debugPrintfEXT("I: %f %f %f N %f %f %f\n", I.x, I.y, I.z, N.x, N.y, N.z);
+    // return I;
+    // return vec3(0, dot(I, N), 0);
+    //return I;
+    return -I + 2.0 * dot(I, N) * N;
+}
+
+vec3 sample_reflection_dir(vec3 normal, vec3 world_wo, float roughness, int dispatch_thread_id){
+    //    debugPrintfEXT("world_wo: %f %f %f\n", world_wo.x, world_wo.y, world_wo.z);
+    //  return MyReflect(world_wo, normal);
+    //    return MyReflect(world_wo, normal);
+    // return MyReflect(world_wo, normal);
+
+    if (roughness<0.01){
+        return MyReflect(world_wo, normal);
+    }
+    Frame frame = make_frame(normal);
+    vec3 wo = to_local(frame, world_wo);
+    vec2 xi = sample_random_vector2D(gl_GlobalInvocationID.xy);
+    vec3 wh = ggx_sample(roughness, xi);
+    vec3 wi = MyReflect(wo, wh);
+    return to_world(frame, wi);
+}
+
+
+vec3 ssr(vec3 ori, vec3 dir) {
+    dir = normalize(dir);
+    vec3 hitPos;
+    float step = 1.f;
+    vec3 lastPoint = ori;
+    //
+    //  step = 0;
+    //  return dir;
+    for (int i=0;i<640;++i){
+        // 往射线方向走一步得到测试点深度
+        vec3 testPoint = lastPoint + step * dir;
+        float testDepth = get_depth(testPoint);
+        // 测试点的uv位置对应在depth buffer的深度
+        vec2 testScreenUV = get_screen_coordinate(testPoint);
+        testScreenUV.y = 1.0 - testScreenUV.y;
+        float bufferDepth =  textureLod(gbuffer_depth, testScreenUV, 0).x;
+
+        //   return  textureLod(frame_color_attach, testScreenUV).rgb;
+
+        // 若测试点深度 > depth buffer深度，则说明光线相交于该测试点位置所在的像素柱条
+        if (testDepth - bufferDepth   > 1e-4){
+            hitPos = testPoint;
+            //  return vec3(testDepth - bufferDepth);
+            // return pseudocolor(i);
+            return textureLod(frame_color_attach, testScreenUV, 0).rgb;
+        }
+        // 继续下一次 March
+        lastPoint = testPoint;
+    }
+    return vec3(0.0);
+}
+
+//uvec4 seed = init_rng(uvec2(gl_FragCoord.xy));
+
+
+
+
+
+vec3 InvProjectPosition(vec3 coord, mat4 mat) {
+    //covert to clip space
+    coord.y = (1 - coord.y);
+    coord.xy = 2 * coord.xy - 1;
+    //convert to view space
+    vec4 projected = mat * vec4(coord, 1.0);
+    projected.xyz /= projected.w;
+    return projected.xyz;
+}
+
+vec3 ScreenSapceToViewSpace(vec3 screen_space){
+    return InvProjectPosition(screen_space, per_frame.inv_proj);
+}
+
+vec3 ProjectDirection(vec3 view_origin, vec3 view_dir, vec3 proj_origin){
+    vec3 view_target = view_origin + view_dir;
+    vec4 proj_target = (per_frame.proj * vec4(view_target, 1.0));
+    proj_target.xyz /= proj_target.w;
+
+    //now in clip space
+
+    proj_target.xy = proj_target.xy * 0.5 + 0.5;
+    proj_target.y = 1 - proj_target.y;
+
+    //now in texture_space
+    return normalize(proj_target.xyz - proj_origin);
+}
+
+vec3 ssr_linear_ray_march(vec3 origin_TS, vec3 ray_dir_TS, float max_trace_distance, out bool found_hit){
+    vec3 end_pos_TS = origin_TS + ray_dir_TS * max_trace_distance;
+
+    vec3 dp = end_pos_TS - origin_TS;
+    ivec2 origin_screen_pos = ivec2(origin_TS.xy * pc.screen_size);
+    ivec2 end_screen_pos = ivec2(end_pos_TS.xy * pc.screen_size);
+    ivec2 dp_screen = end_screen_pos - origin_screen_pos;
+
+    const int max_dist = max(abs(dp_screen.x), abs(dp_screen.y));
+    dp/=max_dist;
+
+    vec3 current_pos_TS = origin_TS + dp;
+    int hit_index = -1;
+
+    uint MAX_ITERATION = 1024;
+    for (int i = 0; i<MAX_ITERATION && i < max_dist; i++){
+        float depth = textureLod(gbuffer_depth, current_pos_TS.xy, 0).x;
+
+        float thickness = abs(current_pos_TS.z - depth);
+        if (depth < current_pos_TS.z && thickness < 0.001){
+            hit_index = i;
+            break;
+        }
+        current_pos_TS += dp;
+    }
+
+    found_hit = hit_index != -1;
+    return origin_TS + dp * (hit_index+1);
+}
+
+vec2 GetCellCount(int mip){
+    return vec2(pc.screen_size) / exp2(float(mip));
+}
+
+vec2 GetCell(vec2 position, vec2 cell_count){
+    return position * cell_count;
+}
+
+vec3 IntersectCellBoundary(vec3 o, vec3 d, vec2 cell, vec2 cell_count, vec2 crossStep, vec2 crossOffset){
+    vec3 intersection = vec3(0);
+
+    vec2 index = cell + crossStep;
+    vec2 boundary = index / cell_count;
+    boundary += crossOffset;
+
+    vec2 delta = boundary - o.xy;
+    delta /= d.xy;
+    float t = min(delta.x, delta.y);
+
+    intersection = o + t * d;
+
+    //    if (intersection.x < 0 || intersection.x > 1 || intersection.y < 0 || intersection.y > 1){
+    //         debugPrintfEXT("o t d %f %f %f %f %f %f\n", o.x, o.y, t, d.x, d.y, d.z);
+    //    }
+    return intersection;
+}
+
+bool CrossCellBoundary(vec2 old_cell_index, vec2 new_cell_index){
+    return floor(old_cell_index) != floor(new_cell_index);
+}
+
+float GetMinDepthPlane(vec2 p, int mip_level){
+    return textureLod(hiz_depth, p, mip_level).x;
+}
+
+vec3 IntersectDepthPlane(vec3 ray, vec3 direction, float depth){
+    return ray + direction* depth;
+}
+
+vec2 saturate(vec2 v){
+    return clamp(v, 0, 1);
+}
+
+vec3 SSRHierarchRayMarch(vec3 origin, vec3 direction, vec2 screen_size, float max_trace_distance, out bool valid_hit){
+    //debugPrintfEXT("direction: %f %f %f\n", direction.x, direction.y, direction.z);
+
+    const uint max_level  = pc.hiz_mip_count;
+
+    vec2 cross_step = vec2(direction.x > 0 ? 1 : -1, direction.y > 0 ? 1 : -1);
+    vec2 cross_offset = cross_step * 0.00001f;
+    cross_offset =  saturate(cross_offset);
+
+    vec3 ray = origin;
+    float minZ = ray.z;
+    float maxZ = ray.z + max_trace_distance * direction.z;
+    float deltaZ = maxZ - minZ;
+
+    vec3 o = ray;
+    vec3 d = max_trace_distance * direction;
+
+    int start_level = 2;
+    int end_level = 0;
+    vec2 start_cell_count = GetCellCount(start_level);
+
+    vec2 ray_cell = GetCell(ray.xy, start_cell_count);
+    vec3 temp_ray = ray;
+    ray = IntersectCellBoundary(o, d, ray_cell, start_cell_count, cross_step, cross_offset);
+    //debugPrintfEXT("ray: %f %f %f temp_ray: %f %f %f\n", ray.x, ray.y, ray.z, temp_ray.x, temp_ray.y, temp_ray.z);
+
+    int level = start_level;
+    int iter = 0;
+    bool isBackwardRay = direction.z < 0;
+    float ray_dir = isBackwardRay ? -1 : 1;
+
+    // while (level >= end_level && ray.z * ray_dir < maxZ * ray_dir && iter < 1024){
+    while (level >= end_level  && iter < 1024){
+        const vec2 cell_count = GetCellCount(level);
+        const vec2 old_cell_index = GetCell(ray.xy, cell_count);
+
+        //        float cell_min_z = GetMinDepthPlane(old_cell_index, level);
+        //        vec3 tmp_ray = ((cell_min_z > ray.z) && !isBackwardRay) ? IntersectDepthPlane(ray, direction, (cell_min_z-minZ)/deltaZ) : ray;
+        //
+        //        const vec2 new_cell_index = GetCell(tmp_ray.xy, cell_count);
+        //        float thickness = level == 0 ?(ray.z - cell_min_z) : 0;
+        //
+        //        bool crossed = (isBackwardRay &&  (cell_min_z > ray.z)) || (thickness > pc.depth_buffer_thickness) || CrossCellBoundary(old_cell_index, new_cell_index);
+        //        //  bool crossed = (isBackwardRay &&  (cell_min_z > ray.z)) || CrossCellBoundary(old_cell_index, new_cell_index);
+        //
+        //        ray = crossed ? IntersectCellBoundary(o, d, old_cell_index, cell_count, cross_step, cross_offset) : ray;
+        //        level = int(crossed ? min(float(max_level), float(level + 1)) : float(level-1));
+
+        {
+            float cell_min_z = GetMinDepthPlane(old_cell_index, level);
+            vec3 tmp_ray = ray;
+            if (direction.z>0){
+                float min_minus_ray = cell_min_z - ray.z;
+                tmp_ray = min_minus_ray > 0 ? IntersectDepthPlane(ray, direction, min_minus_ray) : tmp_ray;
+                const vec2 new_cell_index = GetCell(tmp_ray.xy, cell_count);
+                if (CrossCellBoundary(old_cell_index, new_cell_index)){
+                    tmp_ray = IntersectCellBoundary(o, d, old_cell_index, cell_count, cross_step, cross_offset);
+                    level=int(min(pc.hiz_mip_count, level+2));
+                }
+            }
+            else {
+                if (ray.z<cell_min_z){
+                    tmp_ray = IntersectCellBoundary(o, d, old_cell_index, cell_count, cross_step, cross_offset);
+                    level=int(min(pc.hiz_mip_count, level+2));
+                }
+            }
+            level --;
+            ray= tmp_ray;
+        }
+
+        //debugPrintfEXT("crossed: %d level: %d\n", crossed, level);
+
+        iter++;
+    }
+
+    valid_hit = level < end_level;
+    //    if (!valid_hit){
+    //        debugPrintfEXT("level end_level: %d %d %d\n", level, end_level, iter);
+    //    }
+    //    if (iter == 0){
+    //        debugPrintfEXT("ray.z maxZ: %f %f ray_dir: %f direction.z %f %f\n", ray.z, maxZ, ray_dir, direction.z, max_trace_distance);
+    //    }
+    return ray;
+}
+
+
+float ValidHit(vec3 hit, vec2 uv, vec3 world_space_ray_direction, float depth_buffer_thickness){
+    //Reject if the hit is outside the screen
+
+
+    //return 1;
+
+    if (any(greaterThan(hit.xy, vec2(1)+1e-4f)) || any(lessThan(hit.xy, vec2(0-1e-4f)))){
+        //debugPrintfEXT("hit %f %f %f\n", hit.x, hit.y, hit.z);
+        return 0;
+    }
+
+    // return 1;
+    //Reject self intersection
+    vec2 distance_TS = abs(uv - hit.xy);
+    if (all(lessThan(distance_TS, (4/pc.screen_size)))){
+        return 0;
+    }
+
+    float surface_depth = textureLod(gbuffer_depth, uv, 0).x;
+    if (surface_depth == 1){
+        return 0;
+    }
+
+    // return 1;
+
+    //Reject if the hit is behind the surface
+    vec3 hit_normal = normalize(2.0 * textureLod(gbuffer_normal_metalic, uv, 0).xyz - 1.0);
+
+    //there should be > 0 
+    //however, when set > 0, result is absolutely wrong
+    //todo : find out why
+    if (dot(hit_normal, world_space_ray_direction) < 0){
+        return 0;
+    }
+
+    return 1;
+
+
+    vec3 view_space_surface_pos = ScreenSapceToViewSpace(vec3(uv, surface_depth));
+    vec3 view_space_hit_pos = ScreenSapceToViewSpace(hit);
+
+    float distance = length(view_space_hit_pos - view_space_surface_pos);
+
+    vec2 fov = 0.05 * vec2(pc.screen_size.y / pc.screen_size.x, 1);
+
+    vec2 border;
+    border.x = smoothstep(0, fov.x, hit.x) * (1 - smoothstep(1 - fov.x, 1, hit.x));
+    border.y = smoothstep(0, fov.y, hit.y) * (1 - smoothstep(1 - fov.y, 1, hit.y));
+    float vignette = border.x * border.y;
+
+    float confidence = 1 - smoothstep(0, 1.5, distance);
+    confidence *= confidence;
+
+    return vignette * confidence;
+}
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+void main(){
+
+    if (any(greaterThanEqual(gl_GlobalInvocationID.xy, uvec2(pc.screen_size)))){
+        // debugPrintfEXT("out of range\n");
+        return;
+    }
+    vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(pc.screen_size);
+    vec4  diffuse_roughness  =  textureLod(gbuffer_diffuse_roughness, uv, 0);
+    vec4  normal_metalic    =  textureLod(gbuffer_normal_metalic, uv, 0);
+    vec3 normal      = normalize(2.0 * normal_metalic.xyz - 1.0);
+    imageStore(out_image, ivec2(gl_GlobalInvocationID.xy), vec4(normal, 1.0));
+
+    float metallic    = normal_metalic.w;
+
+    float depth    =  textureLod(gbuffer_depth, uv, 0).x;
+
+    //    {
+    //        //  debugPrintfEXT("depth: %f\n", depth);
+    //        vec4 color =  textureLod(frame_color_attach, uv, 0);
+    //        imageStore(out_image, ivec2(gl_GlobalInvocationID.xy), vec4(1, 0, 0, 1.0));
+    //        return;
+    //    }
+
+    if (depth == 1){
+        vec4 color =  textureLod(frame_color_attach, uv, 0);
+        imageStore(out_image, ivec2(gl_GlobalInvocationID.xy), vec4(color.rgb, 1.0));
+        return;
+    }
+
+    vec3 world_pos = worldPosFromDepth(vec2(uv.x, 1-uv.y), depth);
+
+    vec3 diffuse_color = diffuse_roughness.xyz;
+    float perceptual_roughness = diffuse_roughness.a;
+
+    if (perceptual_roughness>0.1f){
+        imageStore(out_image, ivec2(gl_GlobalInvocationID.xy), vec4(0, 0, 0, 1.0));
+        return;
+    }
+
+    vec3 color = vec3(0.0);
+
+    vec3 screen_origin = vec3(uv, depth);
+    vec3 view_normal = normalize(per_frame.view * vec4(normal, 0.0)).xyz;
+    vec3 view_origin = InvProjectPosition(screen_origin, per_frame.inv_proj);
+    vec3 view_ray_dir = normalize(view_origin);
+    vec3 reflect_dir_view = sample_reflection_dir(view_normal, -view_ray_dir, perceptual_roughness, 0);
+
+    vec3 ray_dir_TS = ProjectDirection(view_origin, reflect_dir_view, screen_origin);
+
+    bool valid_hit;
+
+    vec3 position;
+    if (pc.use_hiz == 2){
+        float max_trace_distance = ray_dir_TS.x>=0?(1-screen_origin.x)/ray_dir_TS.x:(-screen_origin.x)/ray_dir_TS.x;
+        max_trace_distance = min(max_trace_distance, ray_dir_TS.y>=0?(1-screen_origin.y)/ray_dir_TS.y:(-screen_origin.y)/ray_dir_TS.y);
+        max_trace_distance = min(max_trace_distance, ray_dir_TS.z>=0?(1-screen_origin.z)/ray_dir_TS.z:(-screen_origin.z)/ray_dir_TS.z);
+        position = SSRHierarchRayMarch(screen_origin, ray_dir_TS, pc.screen_size, max_trace_distance, valid_hit);
+    }
+    else if (pc.use_hiz == 1){
+        position = ssr_hierarch_ray_march(screen_origin, ray_dir_TS, pc.screen_size, valid_hit);
+    }
+    else
+    {
+        //        float max_trace_distance = ray_dir_TS.x>0?(1-screen_origin.x)/ray_dir_TS.x:(screen_origin.x-0)/ray_dir_TS.x;
+        //        max_trace_distance = min(max_trace_distance, ray_dir_TS.y>0?(1-screen_origin.y)/ray_dir_TS.y:(screen_origin.y-0)/ray_dir_TS.y);
+        //        max_trace_distance = min(max_trace_distance, ray_dir_TS.z>0?(1-screen_origin.z)/ray_dir_TS.z:(screen_origin.z-0)/ray_dir_TS.z);
+        //          ray_dir_TS = -ray_dir_TS;
+        float max_trace_distance = ray_dir_TS.x>=0?(1-screen_origin.x)/ray_dir_TS.x:(-screen_origin.x)/ray_dir_TS.x;
+        max_trace_distance = min(max_trace_distance, ray_dir_TS.y>=0?(1-screen_origin.y)/ray_dir_TS.y:(-screen_origin.y)/ray_dir_TS.y);
+        max_trace_distance = min(max_trace_distance, ray_dir_TS.z>=0?(1-screen_origin.z)/ray_dir_TS.z:(-screen_origin.z)/ray_dir_TS.z);
+        position  = ssr_linear_ray_march(screen_origin, ray_dir_TS, max_trace_distance, valid_hit);
+    }
+
+    vec3 world_space_hit = worldPosFromDepth(vec2(position.x, 1-position.y), position.z);
+    vec3 world_space_ray_direction = normalize(world_space_hit - world_pos);
+
+
+    float confidence = valid_hit ? ValidHit(position, uv, world_space_ray_direction, pc.depth_buffer_thickness) : 0;
+    // confidence = 1.f;
+
+    vec3 world_space_normal = normalize(2.0 * textureLod(gbuffer_normal_metalic, position.xy, 0).xyz - 1.0);
+
+
+    vec3 reflection_radiance = vec3(0.0);
+    //    confidence = world_space_ray_direction.x * world_space_normal.x + world_space_ray_direction.z * world_space_normal.z;
+    //    confidence = world_space_normal.y;
+    //    confidence = normal.y;
+    if (confidence > 0) {
+        // Found an intersection with the depth buffer -> We can lookup the color from lit scene.
+        reflection_radiance =  textureLod(frame_color_attach, position.xy, 0).rgb;
+    }
+    // debugPrintfEXT("raydir_TS: %f %f %f\n", ray_dir_TS.x, ray_dir_TS.y, ray_dir_TS.z);
+    //reflection_radiance = ray_dir_TS.z > 0 ? vec3(1, 0, 0) : vec3(0, 1, 0);
+    //  reflection_radiance = reflect_dir_view.y > 0 ? vec3(1, 0, 0) : vec3(0, 1, 0);
+
+    if (pc.show_origin>0){
+        reflection_radiance = screen_origin;
+    }
+    vec3 frame_color =  textureLod(frame_color_attach, uv, 0).rgb;
+    // reflection_radiance = world_space_ray_direction;
+    // imageStore(out_image, ivec2(gl_GlobalInvocationID.xy), vec4(position.xy-screen_origin.xy, 0, 1.0));
+    imageStore(out_image, ivec2(gl_GlobalInvocationID.xy), vec4(reflection_radiance, 1.0));
+}

@@ -10,7 +10,7 @@ public:
         uint32_t enable_bloom{0};
         int      width;
         int      height;
-        float    bloom_exposure;
+        float    bloom_exposure{1};
         float    bloom_amount;
     };
 

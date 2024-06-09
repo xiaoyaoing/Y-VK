@@ -24,11 +24,20 @@ void View::setScene(const Scene* scene) {
                     .position  = glm::vec4(light.lightProperties.position, 1),
                     .direction = glm::vec4(0.0f),
                     .info      = glm::vec4(2)};
+                break;
             case LIGHT_TYPE::Directional:
                 lightUib = {
                     .color     = glm::vec4(light.lightProperties.color, light.lightProperties.intensity),
                     .direction = glm::vec4(light.lightProperties.direction, 1),
                     .info      = glm::vec4(1)};
+                break;
+            case LIGHT_TYPE::Spot:
+                lightUib = {
+                    .color     = glm::vec4(light.lightProperties.color, light.lightProperties.intensity),
+                    .position  = glm::vec4(light.lightProperties.position, 1),
+                    .direction = glm::vec4(light.lightProperties.direction, 2),
+                    .info      = glm::vec4(light.lightProperties.inner_cone_angle, light.lightProperties.outer_cone_angle, 0, 0)};
+                break;
             default:
                 break;//todo
         }
@@ -53,6 +62,8 @@ View& View::bindViewBuffer() {
     perViewUnifom.proj          = mCamera->proj();
     perViewUnifom.view          = mCamera->view();
     perViewUnifom.inv_view_proj = glm::inverse(perViewUnifom.view_proj);
+    perViewUnifom.inv_proj      = glm::inverse(perViewUnifom.proj);
+    perViewUnifom.inv_view      = glm::inverse(perViewUnifom.view);
 
     vec3 position = vec3(mCamera->getPosition() + 1.f);
     //auto p = glm::vec4(position,1) * perViewUnifom.view_proj * perViewUnifom.inv_view_proj;

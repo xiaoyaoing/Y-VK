@@ -121,16 +121,14 @@ VkImageType GetImageType(VkImageViewType viewType) {
 void SgImage::freeImageCpuData() {
     mData.clear();
 }
-void SgImage::createVkImage(Device& device,uint32_t mipLevels, VkImageViewType imageViewType, VkImageCreateFlags flags) {
+void SgImage::createVkImage(Device& device, uint32_t mipLevels, VkImageViewType imageViewType, VkImageCreateFlags flags) {
     assert(vkImage == nullptr && "Image has been created");
     setIsCubeMap(imageViewType == VK_IMAGE_VIEW_TYPE_CUBE | isCubeMap());
     if (isCubeMap())
         flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
-    mipLevels = getMipLevelCount() == 1 ? std::log2(std::max(mExtent3D.width, mExtent3D.height)) +1 : getMipLevelCount();
-    if(!needGenerateMipMap) mipLevels = 1;
-    vkImage = std::make_unique<Image>(device, mExtent3D, format,
-        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_SAMPLE_COUNT_1_BIT,
-        mipLevels, layers, flags);
+    mipLevels = getMipLevelCount() == 1 ? std::log2(std::max(mExtent3D.width, mExtent3D.height)) + 1 : getMipLevelCount();
+    if (!needGenerateMipMap) mipLevels = 1;
+    vkImage = std::make_unique<Image>(device, mExtent3D, format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_SAMPLE_COUNT_1_BIT, mipLevels, layers, flags);
     createImageView();
 }
 
@@ -271,9 +269,6 @@ VkFormat SgImage::getFormat() const {
     return format;
 }
 
-
-
-
 const std::vector<Mipmap>& SgImage::getMipMaps() const {
     return mipMaps;
 }
@@ -286,6 +281,8 @@ uint32_t SgImage::getArrayLayerCount() const {
     return layers;
 }
 uint32_t SgImage::getMipLevelCount() const {
+    if (vkImage)
+        return vkImage->getMipLevelCount();
     return mipMaps.size() / layers;
 }
 
@@ -296,7 +293,7 @@ void SgImage::setArrayLevelCount(uint32_t layers) {
 void SgImage::generateMipMapOnCpu() {
     if (mipMaps.size() > 1 && mipMaps[0].isInitialized())
         return;
-    if(!needGenerateMipMap) return;
+    if (!needGenerateMipMap) return;
     assert(mipMaps.size() == 1 && "Mipmaps already generated");
 
     for (int i = 0; i < layers; i++) {
@@ -426,19 +423,17 @@ void SgImage::loadResources(const std::string& path) {
                 offsets.push_back(layerOffsets);
             }
         }
-    }
-    else if (ext == "hdr") {
-        int component;
-        float*       pixels     = stbi_loadf(path.c_str(), reinterpret_cast<int*>(&mExtent3D.width), reinterpret_cast<int*>(&mExtent3D.height), &component, STBI_rgb_alpha);
-        size_t       size       = mExtent3D.width * mExtent3D.height * 4 * sizeof(float);
+    } else if (ext == "hdr") {
+        int    component;
+        float* pixels = stbi_loadf(path.c_str(), reinterpret_cast<int*>(&mExtent3D.width), reinterpret_cast<int*>(&mExtent3D.height), &component, STBI_rgb_alpha);
+        size_t size   = mExtent3D.width * mExtent3D.height * 4 * sizeof(float);
         setExtent({toUint32(mExtent3D.width), toUint32(mExtent3D.height), 1});
         mData.resize(size);
         memcpy(mData.data(), pixels, size);
         stbi_image_free(pixels);
-        format = VK_FORMAT_R32G32B32A32_SFLOAT;
-        needGenerateMipMap  = false;
-    }
-    else {
+        format             = VK_FORMAT_R32G32B32A32_SFLOAT;
+        needGenerateMipMap = false;
+    } else {
         LOGE("Unsupported image format: {}", ext);
     }
 

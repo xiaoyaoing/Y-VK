@@ -39,6 +39,7 @@ vec3 apply_spot_light(Light light, vec3 pos, vec3 normal)
     float inner_cone_angle = light.info.x;
     float outer_cone_angle = light.info.y;
     float intensity        = (theta - outer_cone_angle) / (inner_cone_angle - outer_cone_angle);
+    return light.color.w * light.color.rgb;
     return smoothstep(0.0, 1.0, intensity) * light.color.w * light.color.rgb;
 }
 
@@ -90,7 +91,7 @@ vec3 apply_light(Light light, vec3 pos, vec3 normal)
         return apply_point_light(light, pos, normal);
     }
     else if (light.info.x == Spot_LIGHT_TYPE){
-        return apply_point_light(light, pos, normal);
+        return apply_spot_light(light, pos, normal);
     }
     return vec3(0);
 }

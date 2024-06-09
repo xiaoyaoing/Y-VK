@@ -130,6 +130,11 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkInstance
     VkPhysicalDeviceVulkan12Features features12 = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};
     features12.runtimeDescriptorArray           = true;
 
+    VkPhysicalDeviceSynchronization2FeaturesKHR syncronization2_features = {
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR};
+
+    syncronization2_features.synchronization2 = true;
+
     if (enableRayTracing) {
         VkPhysicalDeviceRayTracingPipelineFeaturesKHR rt_fts{
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR};
@@ -145,8 +150,7 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkInstance
 
         VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_feature = {
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR};
-        VkPhysicalDeviceSynchronization2FeaturesKHR syncronization2_features = {
-            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR};
+
         VkPhysicalDeviceMaintenance4FeaturesKHR maintenance4_fts = {
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES_KHR};
 
@@ -164,11 +168,9 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkInstance
         features12.scalarBlockLayout                         = true;
 
         dynamic_rendering_feature.dynamicRendering = true;
-        syncronization2_features.synchronization2  = true;
         maintenance4_fts.maintenance4              = true;
-        features12.pNext                           = &maintenance4_fts;
-        maintenance4_fts.pNext                     = &syncronization2_features;
-        syncronization2_features.pNext             = &dynamic_rendering_feature;
+        syncronization2_features.pNext             = &maintenance4_fts;
+        maintenance4_fts.pNext                     = &dynamic_rendering_feature;
         dynamic_rendering_feature.pNext            = &rt_fts;
 
         device_features2.features.samplerAnisotropy = true;
@@ -181,6 +183,7 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkInstance
         vkGetPhysicalDeviceProperties2(physicalDevice, &device_properties);
     }
 
+    features12.pNext       = &syncronization2_features;
     device_features2.pNext = &features12;
 
     bool enableFragmentStoresAndAtomics = true;
@@ -204,12 +207,7 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkInstance
         }
     }
 
-    // commandPool = std::make_unique<CommandPool>(*this,
-    //                                             getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0).getFamilyIndex(),
-    //                                             CommandBuffer::ResetMode::AlwaysAllocate);
     commandPools.emplace(VK_QUEUE_GRAPHICS_BIT, CommandPool(*this, getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0).getFamilyIndex(), CommandBuffer::ResetMode::AlwaysAllocate));
-
-    // commandPools.emplace(VK_QUEUE_COMPUTE_BIT, CommandPool(*this, getQueueByFlag(VK_QUEUE_COMPUTE_BIT, 0).getFamilyIndex(), CommandBuffer::ResetMode::AlwaysAllocate));
     commandPools.emplace(VK_QUEUE_TRANSFER_BIT, CommandPool(*this, getQueueByFlag(VK_QUEUE_TRANSFER_BIT, 0).getFamilyIndex(), CommandBuffer::ResetMode::AlwaysAllocate));
     //Init Cache
     cache = new ResourceCache(*this);
@@ -217,22 +215,6 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkInstance
 
     //Init Vma
     VmaVulkanFunctions vma_vulkan_func{};
-    // vma_vulkan_func.vkAllocateMemory                    = vkAllocateMemory;
-    // vma_vulkan_func.vkBindBufferMemory                  = vkBindBufferMemory;
-    // vma_vulkan_func.vkBindImageMemory                   = vkBindImageMemory;
-    // vma_vulkan_func.vkCreateBuffer                      = vkCreateBuffer;
-    // vma_vulkan_func.vkCreateImage                       = vkCreateImage;
-    // vma_vulkan_func.vkDestroyBuffer                     = vkDestroyBuffer;
-    // vma_vulkan_func.vkDestroyImage                      = vkDestroyImage;
-    // vma_vulkan_func.vkFlushMappedMemoryRanges           = vkFlushMappedMemoryRanges;
-    // vma_vulkan_func.vkFreeMemory                        = vkFreeMemory;
-    // vma_vulkan_func.vkGetBufferMemoryRequirements       = vkGetBufferMemoryRequirements;
-    // vma_vulkan_func.vkGetImageMemoryRequirements        = vkGetImageMemoryRequirements;
-    // vma_vulkan_func.vkGetPhysicalDeviceMemoryProperties = vkGetPhysicalDeviceMemoryProperties;
-    // vma_vulkan_func.vkGetPhysicalDeviceProperties       = vkGetPhysicalDeviceProperties;
-    // vma_vulkan_func.vkInvalidateMappedMemoryRanges      = vkInvalidateMappedMemoryRanges;
-    // vma_vulkan_func.vkMapMemory                         = vkMapMemory;
-    // vma_vulkan_func.vkUnmapMemory                       = vkUnmapMemory;
     vma_vulkan_func.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
     vma_vulkan_func.vkGetDeviceProcAddr   = vkGetDeviceProcAddr;
 
@@ -263,7 +245,7 @@ Queue& Device::getQueueByFlag(VkQueueFlagBits requiredFlag, uint32_t queueIndex)
         if ((queueFlag & requiredFlag) && queueIndex < queueCount)
             return *queueFamily[queueIndex];
     }
-    RUN_TIME_ERROR("Failed to find required queue");
+    LOGE("Failed to find queue with required flag");
     Queue* queue;
     return *queue;
     // return *(queues[0][0]);

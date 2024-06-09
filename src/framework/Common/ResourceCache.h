@@ -118,7 +118,6 @@ public:
     DescriptorLayout& requestDescriptorLayout(std::vector<Shader>& shaders);
     DescriptorLayout& requestDescriptorLayout(uint32_t setIdx, const std::vector<ShaderResource>& shaderResources);
 
-
     FrameBuffer& requestFrameBuffer(RenderTarget& renderTarget, RenderPass& renderPass);
 
     DescriptorSet& requestDescriptorSet(const DescriptorLayout&                                         descriptorSetLayout,
@@ -135,7 +134,7 @@ public:
     Shader&         requestShaderModule(const std::string& path, VkShaderStageFlagBits stage = VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM);
     PipelineLayout& requestPipelineLayout(const std::vector<std::string>& shaderPaths);
 
-    Sampler& requestSampler(VkSamplerAddressMode sampleMode, VkFilter filter, float maxLod,VkSamplerAddressMode addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkSamplerAddressMode addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkSamplerAddressMode addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT);
+    Sampler& requestSampler(VkSamplerAddressMode sampleMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VkFilter filter = VK_FILTER_LINEAR, float maxLod = 1, VkSamplerAddressMode addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkSamplerAddressMode addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkSamplerAddressMode addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT);
 
     ResourceCache(Device& device);
 

@@ -114,8 +114,8 @@ public:
 
     VkPipelineBindPoint getPipelineBindPoint() const;
 
-
     VkExtent2D getViewPortExtent() const;
+    VkExtent3D getViewPortExtent3D() const;
 
     VkExtent2D getSwapChainExtent() const;
 
@@ -140,7 +140,7 @@ public:
 
     SgImage& getCurHwtexture();
     SgImage& getSwapChainImage();
-    
+
     void flushDescriptorState(CommandBuffer& commandBuffer, VkPipelineBindPoint pipeline_bind_point);
 
     void flushAndDrawIndexed(CommandBuffer& commandBuffer, uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0);
@@ -186,8 +186,8 @@ private:
     bool        prepared{false};
     uint32_t    activeFrameIndex{0};
 
-    Device&                    device;
-    std::unique_ptr<SwapChain> swapchain;
+    Device&                          device;
+    std::unique_ptr<SwapChain>       swapchain;
     std::unique_ptr<VirtualViewport> virtualViewport;
 
     uint32_t swapChainCount{0};

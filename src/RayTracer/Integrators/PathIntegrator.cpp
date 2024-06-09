@@ -20,7 +20,6 @@ void PathIntegrator::render(RenderGraph& renderGraph) {
         pcPath.frame_num = 0;
 
     auto& commandBuffer = renderContext->getGraphicCommandBuffer();
-    
 
     renderGraph.addRaytracingPass(
         "PT pass", [&](RenderGraph::Builder& builder, RaytracingPassSettings& settings) {
@@ -31,19 +30,18 @@ void PathIntegrator::render(RenderGraph& renderGraph) {
     
     
         auto output = renderGraph.createTexture(RT_IMAGE_NAME,{width,height,TextureUsage::STORAGE | TextureUsage::TRANSFER_SRC | TextureUsage::SAMPLEABLE,VK_FORMAT_R32G32B32A32_SFLOAT});
-        builder.writeTexture(output,TextureUsage::STORAGE);
-         }, [&](RenderPassContext& context) {
+        builder.writeTexture(output,TextureUsage::STORAGE); }, [&](RenderPassContext& context) {
             bindRaytracingResources(commandBuffer);
     
             auto pushConstant = toBytes(pcPath);
             renderContext->bindPushConstants(pushConstant);
             renderContext->bindImage(0, renderGraph.getBlackBoard().getImageView(RT_IMAGE_NAME));
-         renderContext->traceRay(commandBuffer, {width, height, 1});
+            renderContext->traceRay(commandBuffer, {width, height, 1});
     
             pcPath.frame_num++; });
 }
 
-void PathIntegrator::initScene(RTSceneEntry & entry) {
+void PathIntegrator::initScene(RTSceneEntry& entry) {
     Integrator::initScene(entry);
 
     //  return;
@@ -61,7 +59,6 @@ void PathIntegrator::initScene(RTSceneEntry & entry) {
     pcPath.light_num = entry_->lights.size();
     pcPath.max_depth = 1;
     pcPath.min_depth = 0;
-    
 }
 
 void PathIntegrator::onUpdateGUI() {
@@ -98,7 +95,7 @@ PathIntegrator::PathIntegrator(Device& device_) : Integrator(device_) {
 
                                                       });
 
-    tem_layout                  = std::make_unique<PipelineLayout>(device, std::vector<std::string>({"Raytracing/compute_triangle_area.comp"}))  ;
+    tem_layout = std::make_unique<PipelineLayout>(device, std::vector<std::string>({"Raytracing/compute_triangle_area.comp"}));
 
     pcPath.enable_sample_bsdf  = 0;
     pcPath.enable_sample_light = 1;

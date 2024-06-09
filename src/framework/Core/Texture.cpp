@@ -63,13 +63,13 @@ const Sampler& Texture::getSampler() const {
 //     texture->sampler = std::make_unique<Sampler>(device, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, mipmaps.size());
 // }
 
-static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture, CommandBuffer& commandBuffer, std::vector<std::unique_ptr<Buffer>>& buffers) {
-    texture->image->generateMipMapOnCpu();
+static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture, CommandBuffer& commandBuffer, Buffer& imageBuffer, uint32_t offset) {
+    // texture->image->generateMipMapOnCpu();
     texture->image->createVkImage(device);
-    
-    buffers.emplace_back(std::make_unique<Buffer>(device, texture->image->getBufferSize(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY));
-    auto& imageBuffer = *buffers.back();
-    imageBuffer.uploadData(static_cast<void*>(texture->image->getData().data()), texture->image->getBufferSize());
+
+    // buffers.emplace_back(std::make_unique<Buffer>(device, texture->image->getBufferSize(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY));
+    // auto& imageBuffer = *buffers.back();
+    imageBuffer.uploadData(static_cast<void*>(texture->image->getData().data()), texture->image->getBufferSize(), offset);
 
     std::vector<VkBufferImageCopy> imageCopyRegions;
 
@@ -80,7 +80,7 @@ static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture, Com
         imageCopy.bufferRowLength                 = 0;
         imageCopy.bufferImageHeight               = 0;
         imageCopy.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-        imageCopy.bufferOffset                    = mipmaps[i].offset;
+        imageCopy.bufferOffset                    = offset + mipmaps[i].offset;
         imageCopy.imageSubresource.mipLevel       = toUint32(i / layerCount);
         imageCopy.imageSubresource.baseArrayLayer = i % layerCount;
         imageCopy.imageSubresource.layerCount     = 1;
@@ -89,8 +89,6 @@ static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture, Com
         imageCopyRegions.push_back(imageCopy);
     }
 
-    
-    
     VkImageSubresourceRange subresourceRange{};
     subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
     subresourceRange.baseMipLevel   = 0;
@@ -104,71 +102,73 @@ static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture, Com
 
     texture->getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY, subresourceRange);
 
-    if(texture->image->getMipMaps().size() == 1 && texture->image->needGenerateMipMapOnGpu())
-    {
+    if (texture->image->getMipMaps().size() == 1 && texture->image->needGenerateMipMapOnGpu()) {
         std::vector<VkImageBlit2> blits;
-        int mipWidth  = texture->image->getExtent().width;
-        int mipHeight = texture->image->getExtent().height;
+        int                       mipWidth  = texture->image->getExtent().width;
+        int                       mipHeight = texture->image->getExtent().height;
 
         int i = 0;
-        while(true) {
+        while (true) {
             VkImageBlit2 blit{};
-            blit.sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2;
-            blit.srcOffsets[0] = { 0, 0, 0 };
-            blit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
-            blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            blit.srcSubresource.mipLevel = i;
+            blit.sType                         = VK_STRUCTURE_TYPE_IMAGE_BLIT_2;
+            blit.srcOffsets[0]                 = {0, 0, 0};
+            blit.srcOffsets[1]                 = {mipWidth, mipHeight, 1};
+            blit.srcSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+            blit.srcSubresource.mipLevel       = i;
             blit.srcSubresource.baseArrayLayer = 0;
-            blit.srcSubresource.layerCount = 1;
-            blit.dstOffsets[0] = { 0, 0, 0 };
-            blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 };
-            blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            blit.dstSubresource.mipLevel = i+1;
+            blit.srcSubresource.layerCount     = 1;
+            blit.dstOffsets[0]                 = {0, 0, 0};
+            blit.dstOffsets[1]                 = {mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1};
+            blit.dstSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+            blit.dstSubresource.mipLevel       = i + 1;
             blit.dstSubresource.baseArrayLayer = 0;
-            blit.dstSubresource.layerCount = 1;
-            blits = {blit};
+            blit.dstSubresource.layerCount     = 1;
+            blits                              = {blit};
 
-            mipWidth = std::max(1, mipWidth / 2);
+            mipWidth  = std::max(1, mipWidth / 2);
             mipHeight = std::max(1, mipHeight / 2);
-            if(mipWidth <= 1 && mipHeight <= 1)
+            if (mipWidth <= 1 && mipHeight <= 1)
                 break;
 
             VkBlitImageInfo2 blitInfo{};
-            texture->image->getVkImage().transitionLayout(commandBuffer, VulkanLayout::TRANSFER_SRC,{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,.baseMipLevel = static_cast<uint32_t>(i),.levelCount = 1,.baseArrayLayer = 0,.layerCount = 1});
-            texture->image->getVkImage().transitionLayout(commandBuffer, VulkanLayout::TRANSFER_DST,{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,.baseMipLevel = static_cast<uint32_t>(i+1),.levelCount = 1,.baseArrayLayer = 0,.layerCount = 1});
-            blitInfo.srcImage = texture->image->getVkImage().getHandle();
+            texture->image->getVkImage().transitionLayout(commandBuffer, VulkanLayout::TRANSFER_SRC, {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .baseMipLevel = static_cast<uint32_t>(i), .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1});
+            texture->image->getVkImage().transitionLayout(commandBuffer, VulkanLayout::TRANSFER_DST, {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .baseMipLevel = static_cast<uint32_t>(i + 1), .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1});
+            blitInfo.srcImage       = texture->image->getVkImage().getHandle();
             blitInfo.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-            blitInfo.dstImage = texture->image->getVkImage().getHandle();
+            blitInfo.dstImage       = texture->image->getVkImage().getHandle();
             blitInfo.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-            blitInfo.regionCount = blits.size()  ;
-            blitInfo.pRegions = blits.data();
+            blitInfo.regionCount    = blits.size();
+            blitInfo.pRegions       = blits.data();
             vkCmdBlitImage2(commandBuffer.getHandle(), &blitInfo);//
 
             i++;
-
         }
-        
     }
     VkSamplerAddressMode addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     VkSamplerAddressMode addressModeV = texture->image->getFormat() == VK_FORMAT_R32G32B32A32_SFLOAT ? VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE : VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    texture->sampler = &device.getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, texture->image->getMipLevelCount(),addressModeU,addressModeV);
+    texture->sampler                  = &device.getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, texture->image->getMipLevelCount(), addressModeU, addressModeV);
 }
 
 std::unique_ptr<Texture> Texture::loadTextureFromFile(Device& device, const std::string& path) {
-    std::unique_ptr<Texture> texture                   = std::make_unique<Texture>();
-    texture->image                                     = std::make_unique<SgImage>(device, path);
-    CommandBuffer                        commandBuffer = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
-    std::vector<std::unique_ptr<Buffer>> buffers;
-    initVKTexture(device, texture, commandBuffer, buffers);
+    std::unique_ptr<Texture> texture = std::make_unique<Texture>();
+    texture->image                   = std::make_unique<SgImage>(device, path);
+    CommandBuffer commandBuffer      = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+    auto          buffer             = Buffer(device, texture->image->getBufferSize(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+    initVKTexture(device, texture, commandBuffer, buffer, 0);
     g_context->submit(commandBuffer);
     return texture;
 }
+std::unique_ptr<Texture> Texture::loadTextureFromFileWitoutInit(Device& device, const std::string& path) {
+    std::unique_ptr<Texture> texture = std::make_unique<Texture>();
+    texture->image                   = std::make_unique<SgImage>(device, path);
+    return texture;
+}
 std::unique_ptr<Texture> Texture::loadTextureFromMemory(Device& device, const std::vector<uint8_t>& data, VkExtent3D extent, VkImageViewType viewType, VkFormat format) {
-    std::unique_ptr<Texture> texture                   = std::make_unique<Texture>();
-    texture->image                                     = std::make_unique<SgImage>(device, data, extent, viewType, format);
-    CommandBuffer                        commandBuffer = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
-    std::vector<std::unique_ptr<Buffer>> buffers;
-    initVKTexture(device, texture, commandBuffer, buffers);
+    std::unique_ptr<Texture> texture = std::make_unique<Texture>();
+    texture->image                   = std::make_unique<SgImage>(device, data, extent, viewType, format);
+    CommandBuffer commandBuffer      = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+    auto          buffer             = Buffer(device, texture->image->getBufferSize(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+    initVKTexture(device, texture, commandBuffer, buffer, 0);
     g_context->submit(commandBuffer);
     return texture;
 }
@@ -248,12 +248,24 @@ std::unique_ptr<Texture> Texture::loadTextureArrayFromFile(Device& device, const
     return texture;
 }
 void Texture::initTexturesInOneSubmit(std::vector<std::unique_ptr<Texture>>& textures) {
-    CommandBuffer                        commandBuffer = g_context->getDevice().createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
-    std::vector<std::unique_ptr<Buffer>> buffers;
+    CommandBuffer commandBuffer = g_context->getDevice().createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+    uint32_t      size{0}, offset{0};
     for (auto& texture : textures) {
-        initVKTexture(g_context->getDevice(), texture, commandBuffer, buffers);
+        size += texture->image->getBufferSize();
+    }
+    auto buffer = Buffer(g_context->getDevice(), size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+    for (auto& texture : textures) {
+        initVKTexture(g_context->getDevice(), texture, commandBuffer, buffer, offset);
+        offset += texture->image->getBufferSize();
     }
     g_context->submit(commandBuffer);
+
+    for (auto& texture : textures) {
+        //For hdr image,cpu date may be used in ray tracing scene,for accel construction
+        if (texture->getImage().getFormat() != VK_FORMAT_R32G32B32A32_SFLOAT) {
+            texture->image->freeImageCpuData();
+        }
+    }
 }
 
 Texture& Texture::operator=(Texture&& rhs) {

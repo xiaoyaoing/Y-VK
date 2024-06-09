@@ -5,10 +5,24 @@
 
 #define GLM_ENABLE_EXPERIMENTAL
 
+#include "Common/Log.h"
+
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/rotate_vector.inl>
 #include <glm/gtx/transform.inl>
 
+void LogMatrix(const glm::mat4& matrix) {
+    LOGI("Matrix: col0 {} {} {} {} col1 {} {} {} {} col2 {} {} {} {} col3 {} {} {} {}", matrix[0][0], matrix[1][0], matrix[2][0], matrix[3][0], matrix[0][1], matrix[1][1], matrix[2][1], matrix[3][1], matrix[0][2], matrix[1][2], matrix[2][2], matrix[3][2], matrix[0][3], matrix[1][3], matrix[2][3], matrix[3][3]);
+}
+
+void Transform::setParent(const Transform* parent) {
+    // m_position += parent->getPosition();
+    // m_scale *= parent->getLocalScale();
+    // m_rotation = parent->getRotation() * m_rotation;
+    // updateCache();
+    m_localToWorldMatrix = parent->getLocalToWorldMatrix() * m_localMatrix;
+    LogMatrix(m_localToWorldMatrix);
+}
 Transform::Transform(const BBox& bbox) {
     setBBox(bbox);
     m_lastFrameWorldBBox = m_worldBBox;

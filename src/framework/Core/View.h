@@ -36,6 +36,8 @@ protected:
         glm::mat4 inv_view_proj;
         glm::mat4 proj;
         glm::mat4 view;
+        glm::mat4 inv_proj;
+        glm::mat4 inv_view;
 
         glm::vec3 camera_pos;
         uint32_t  light_count;

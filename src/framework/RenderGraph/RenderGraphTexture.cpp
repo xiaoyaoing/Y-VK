@@ -14,14 +14,13 @@ SgImage* RenderGraphTexture::getHwTexture() const {
     return mHwTexture;
 }
 
-
 void RenderGraphTexture::devirtualize() {
     if (imported)
         return;
     if (mHwTexture != nullptr) {
         LOGE("Texture already devirtualized")
     }
-    
+
     VkFormat format = mDescriptor.format == VK_FORMAT_UNDEFINED ? ImageUtil::getFormat(mDescriptor.useage) : mDescriptor.format;
 
     //2024 1 20 all renderGraph texture created with transfer_src usage for debug
@@ -39,7 +38,10 @@ RENDER_GRAPH_RESOURCE_TYPE RenderGraphTexture::getType() const {
 }
 
 void RenderGraphTexture::resloveUsage(CommandBuffer& commandBuffer, uint16_t usage) {
-    const auto  newLayout        = ImageUtil::getDefaultLayout(static_cast<TextureUsage>(usage));
+    TextureUsage textureUsage = static_cast<TextureUsage>(usage);
+    if (textureUsage == TextureUsage::NONE)
+        return;
+    const auto  newLayout        = ImageUtil::getDefaultLayout(textureUsage);
     const auto& subResourceRange = getHwTexture()->getVkImageView().getSubResourceRange();
     mHwTexture->getVkImage().transitionLayout(commandBuffer, newLayout, subResourceRange);
 }

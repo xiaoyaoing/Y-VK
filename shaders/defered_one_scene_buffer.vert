@@ -29,7 +29,7 @@ void main(void)
 
     o_uv = texcoord_0;
 
-    o_normal = (matrixIT * vec4(normal, 1.0f)).xyz;
+    o_normal = normalize((matrix * vec4(normal, 0.0f)).xyz);
 
     o_primitive_id = primitive_id;
 

@@ -15,9 +15,8 @@
 //    VK_CHECK_RESULT(vkCreateCommandPool(device->getHandle(), &info, nullptr, &_pool));
 //}
 
-
-CommandPool::CommandPool(Device &device, uint32_t queueFamilyIndex, CommandBuffer::ResetMode resetMode) : _device(
-        device) {
+CommandPool::CommandPool(Device& device, uint32_t queueFamilyIndex, CommandBuffer::ResetMode resetMode) : _device(
+                                                                                                              device) {
 
     VkCommandPoolCreateFlags flags;
     switch (resetMode) {
@@ -30,21 +29,19 @@ CommandPool::CommandPool(Device &device, uint32_t queueFamilyIndex, CommandBuffe
             flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
             break;
     }
-
-
     VkCommandPoolCreateInfo info{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
     info.queueFamilyIndex = queueFamilyIndex;
-    info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    info.flags = flags;
-    info.pNext = nullptr;
+    info.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    info.flags            = flags;
+    info.pNext            = nullptr;
     VK_CHECK_RESULT(vkCreateCommandPool(device.getHandle(), &info, nullptr, &_pool));
 }
 
-CommandBuffer CommandPool::allocateCommandBuffer(VkCommandBufferLevel level, bool begin) const {
+CommandBuffer CommandPool::allocateCommandBuffer(VkCommandBufferLevel level, bool begin, VkQueueFlags queueFlags) const {
     VkCommandBufferAllocateInfo info{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     info.commandBufferCount = 1;
-    info.level = level;
-    info.commandPool = _pool;
+    info.level              = level;
+    info.commandPool        = _pool;
     VkCommandBuffer buffer;
     VK_CHECK_RESULT(vkAllocateCommandBuffers(_device.getHandle(), &info, &buffer))
 
@@ -54,5 +51,5 @@ CommandBuffer CommandPool::allocateCommandBuffer(VkCommandBufferLevel level, boo
         VK_CHECK_RESULT(vkBeginCommandBuffer(buffer, &beginInfo));
     }
 
-    return CommandBuffer(buffer);
+    return CommandBuffer(buffer, queueFlags);
 }

@@ -30,7 +30,7 @@ namespace ImGui {
 class Gui {
 public:
     Gui(Device& device);
-
+    ~Gui();
     bool        inputEvent(const InputEvent& event);
     std::string showFileDialog();
     void        prepareResoucrces(Application* app);
@@ -40,7 +40,6 @@ public:
     bool        checkBox(const char* caption, bool* value);
     void        text(const char* formatstr, ...);
     void        newFrame();
-
     //是否有新的数据 需要更新
     bool  updated{false};
     float scale{1.f};
@@ -88,4 +87,6 @@ protected:
     double                   mTime{0};
 
     ImGui::FileBrowser* fileDialog;
+
+    std::string iniFileName;
 };

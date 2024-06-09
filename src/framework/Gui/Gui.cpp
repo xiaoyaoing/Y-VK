@@ -92,6 +92,12 @@ Gui::Gui(Device& device) : device(device) {
     fileDialog = new ImGui::FileBrowser();
     fileDialog->SetTitle("Open scene");
     fileDialog->SetTypeFilters({".gltf", ".json"});
+
+    iniFileName = FileUtils::getResourcePath() + "imgui.ini";
+}
+Gui::~Gui() {
+    vkDestroyPipeline(device.getHandle(), pipeline, nullptr);
+    ImGui::SaveIniSettingsToDisk(FileUtils::getResourcePath("imgui.ini").c_str());
 }
 
 bool Gui::inputEvent(const InputEvent& input_event) {
@@ -233,9 +239,7 @@ void Gui::prepareResoucrces(Application* app) {
 
     ImGui::GetIO().Fonts->SetTexID(&fontTexture->getImage().getVkImageView());
 
-    std::string iniPath        = FileUtils::getResourcePath() + "imgui.ini";
-    ImGui::GetIO().IniFilename = iniPath.c_str();
-    ImGui::LoadIniSettingsFromDisk(iniPath.c_str());
+    ImGui::LoadIniSettingsFromDisk(iniFileName.c_str());
 }
 
 bool Gui::update() {

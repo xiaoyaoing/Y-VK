@@ -12,6 +12,7 @@
 #include "Core/math.h"
 #include "Core/Shader/GlslCompiler.h"
 #include "RenderPasses/GBufferPass.h"
+#include "RenderPasses/SSGIPass.h"
 #include "Scene/SceneLoader/SceneLoaderInterface.h"
 
 struct SkyBoxPushConstant {
@@ -55,24 +56,10 @@ void Example::prepare() {
     g_context->setFlipViewport(true);
     mRenderPasses.push_back(std::make_unique<GBufferPass>());
     mRenderPasses.push_back(std::make_unique<IBLLightingPass>());
+    mRenderPasses.push_back(std::make_unique<SSGIPass>());
 
     // loadScene("E:/code/Vulkan-glTF-PBR/data/models/DamagedHelmet/glTF-Embedded/DamagedHelmet.gltf");
     loadScene("E:/code/FidelityFX-SSSR/sample/media/Chess/scene.gltf");
-
-    scene->addDirectionalLight({0, -0.95f, 0.3f}, glm::vec3(1.0f), 1.5f);
-    scene->addDirectionalLight({1.0f, 0, 0}, glm::vec3(1.0f), 0.5f);
-
-    camera        = scene->getCameras()[0];
-    camera->flipY = true;
-    camera->setTranslation(glm::vec3(0, 0, 4));
-    camera->setRotation(glm::vec3(0.0f, 0, 0.0f));
-    camera->getTransform()->setRotation(glm::quat(1, 0, 0, 0));
-    camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 0.1f, 4000.f);
-    camera->setMoveSpeed(0.05f);
-
-    view = std::make_unique<View>(*device);
-    view->setScene(scene.get());
-    view->setCamera(camera.get());
 
     RenderPtrManangr::init();
     g_manager->putPtr("view", view.get());

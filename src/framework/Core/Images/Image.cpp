@@ -191,7 +191,6 @@ void Image::transitionLayout(CommandBuffer& commandBuffer, VulkanLayout newLayou
 }
 
 void Image::setLayout(VulkanLayout newLayout, const VkImageSubresourceRange& subresourceRange) {
-
     layouts.insert_or_assign(HashImageSubresourceRange(subresourceRange), newLayout);
 }
 

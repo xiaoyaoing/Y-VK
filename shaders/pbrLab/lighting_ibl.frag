@@ -18,6 +18,12 @@ layout(location = 0) out vec4 out_color;
 
 #define ROUGHNESS_PREFILTER_COUNT 5
 
+layout(binding = 4, set = 0) uniform LightsInfo
+{
+    Light lights[MAX_LIGHTS];
+}lights_info;
+
+
 layout(input_attachment_index = 0, binding = 0, set=2) uniform subpassInput gbuffer_diffuse_roughness;
 //layout(input_attachment_index = 1, binding = 1, set=2) uniform subpassInput gbuffer_specular;
 layout(input_attachment_index = 1, binding = 1, set=2) uniform subpassInput gbuffer_normal_metalic;
@@ -68,22 +74,10 @@ vec4 SRGBtoLINEAR(vec4 srgbIn)
 vec3 ibl_fragment_shader(const in PBRInfo pbr_info, vec3 n, vec3 reflection)
 {
     float lod = (pbr_info.perceptualRoughness * prefilteredCubeMipLevels);
-
-    // retrieve a scale and bias to F0. See [1], Figure 3
-    //  debugPrintfEXT("lod: NdotV roughness %f %f %f\n", lod, pbr_info.NdotV, pbr_info.alphaRoughness);
-
     vec3 brdf = (texture(brdf_lut, vec2(pbr_info.NdotV, pbr_info.perceptualRoughness))).rgb;
-
-    //    return vec3(pbr_info.NdotV, pbr_info.perceptualRoughness, 0);
-
-
     vec3 diffuseLight = SRGBtoLINEAR(tonemap(texture(irradiance_map, n))).rgb;
 
-
     vec3 specularLight = SRGBtoLINEAR(tonemap(textureLod(prefilter_map, reflection, lod))).rgb;
-
-    //    return specularLight;
-
     vec3 diffuse = diffuseLight * pbr_info.diffuseColor;
     vec3 specular = specularLight * (pbr_info.F0 * brdf.x + brdf.y);
 
@@ -94,25 +88,6 @@ vec3 ibl_fragment_shader(const in PBRInfo pbr_info, vec3 n, vec3 reflection)
     diffuse *= scaleIBLAmbient;
     specular *= scaleIBLAmbient;
 
-    if (debugMode == 1)
-    {
-        return diffuse;
-    }
-    else if (debugMode == 2)
-    {
-        return specular;
-    }
-    else if (debugMode == 3)
-    {
-        return n;
-    }
-    else if (debugMode == 4)
-    {
-        return reflection;
-    }
-    else if (debugMode == 5){
-        return -reflection;
-    }
     return diffuse + specular;
 }
 
@@ -166,7 +141,42 @@ void main(){
         pbr_info.perceptualRoughness = perceptual_roughness;
         pbr_info.diffuseColor = diffuse_color * (1- metallic) * (1-0.04);
 
-        color += ibl_fragment_shader(pbr_info, normal, R);
+        // color += ibl_fragment_shader(pbr_info, normal, R);
+    }
+
+    {
+        // calculate Microfacet BRDF model
+        // Roughness is authored as perceptual roughness; as is convention
+        // convert to material roughness by squaring the perceptual roughness [2].
+        // for
+        vec3 view_dir = normalize(per_frame.camera_pos - world_pos);
+
+        PBRInfo pbr_info;
+        // why use abs here?
+        pbr_info.NdotV = clamp(abs(dot(normal, view_dir)), 0.001, 1.0);
+
+        pbr_info.F0 = mix(vec3(0.04), diffuse_color, metallic);
+        pbr_info.F90 = vec3(1.0);
+        pbr_info.alphaRoughness = perceptual_roughness * perceptual_roughness;
+        //  pbr_info.alphaRoughness = 0.01f;
+        pbr_info.diffuseColor = diffuse_color;
+
+        for (uint i = 0U; i < per_frame.light_count; ++i)
+        {
+            vec3 light_dir = calcuate_light_dir(lights_info.lights[i], world_pos);
+
+            vec3 half_vector = normalize(light_dir + view_dir);
+
+            pbr_info.NdotL = clamp(dot(normal, light_dir), 0.001, 1.0);
+            pbr_info.NdotH = clamp(dot(normal, half_vector), 0.0, 1.0);
+            pbr_info.LdotH = clamp(dot(light_dir, half_vector), 0.0, 1.0);
+            pbr_info.VdotH = clamp(dot(view_dir, half_vector), 0.0, 1.0);
+
+            vec3 light_contribution = microfacetBRDF(pbr_info) *  calcute_shadow(lights_info.lights[i], world_pos) * apply_light(lights_info.lights[i], world_pos, normal);
+            //            light_contribution = diffuse(pbr_info);
+            //debugPrintfEXT("light_contribution: %f %f %f\n", light_contribution.x, light_contribution.y, light_contribution.z);
+            color += light_contribution;
+        }
     }
 
     out_color = vec4(color, 1);

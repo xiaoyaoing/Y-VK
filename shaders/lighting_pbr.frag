@@ -31,7 +31,7 @@ layout(input_attachment_index = 3, binding = 3, set=2) uniform subpassInput gbuf
 
 
 void main(){
-  //  return ;
+    //  return ;
 
     vec4  diffuse_roughness  = subpassLoad(gbuffer_diffuse_roughness);
     vec4  normal_metalic    = subpassLoad(gbuffer_normal_metalic);
@@ -41,19 +41,18 @@ void main(){
     vec3  emission = subpassLoad(gbuffer_emission).rgb;
     float depth    = subpassLoad(gbuffer_depth).x;
 
-    if (depth == 0.0){
+    if (depth == 1.0){
         discard;
     }
 
     vec3 world_pos = worldPosFromDepth(in_uv, depth);
-   // return;
+    // return;
 
 
     vec3 diffuse_color = diffuse_roughness.xyz;
     float perceptual_roughness = diffuse_roughness.a;
 
     vec3 view_dir = per_frame.camera_pos - world_pos;
-    
 
 
     //calcuate sppecular contribution
@@ -94,9 +93,12 @@ void main(){
             pbr_info.LdotH = clamp(dot(light_dir, half_vector), 0.0, 1.0);
             pbr_info.VdotH = clamp(dot(view_dir, half_vector), 0.0, 1.0);
 
-            vec3 light_contribution = microfacetBRDF(pbr_info) * calcuate_light_intensity(lights_info.lights[i], world_pos) * calcute_shadow(lights_info.lights[i], world_pos);
-
+            vec3 light_contribution = microfacetBRDF(pbr_info) * apply_light(lights_info.lights[i], world_pos, normal) * calcute_shadow(lights_info.lights[i], world_pos);
             direct_contribution += light_contribution;
+            // light_contribution = 1-vec3(FresnelSchlick(pbr_info));
+            //debugPrintfEXT("light_dir: %f %f %f\n", light_dir.x, light_dir.y, light_dir.z);
+            //            direct_contribution =vec3(light_dir);
+
         }
     }
     out_color = vec4(direct_contribution, 1);

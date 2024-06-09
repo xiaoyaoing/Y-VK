@@ -77,6 +77,7 @@ protected:
 
     std::unique_ptr<Buffer> primitiveIdBuffer{};
     bool                    usePrimitiveId{true};
+    std::string             sceneFilePath;
 };
 
 std::unique_ptr<Scene> loadDefaultTriangleScene(Device& device);

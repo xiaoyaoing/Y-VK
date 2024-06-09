@@ -131,20 +131,20 @@ void GBufferPass::render(RenderGraph& rg) {
         "GBufferPass", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
             auto diffuse = rg.createTexture("diffuse",
                                             {.extent = renderContext->getViewPortExtent(),
-                                             .useage = TextureUsage::SUBPASS_INPUT |
-                                                       TextureUsage::COLOR_ATTACHMENT});
+                                             .useage = TextureUsage::SUBPASS_INPUT | 
+                                                       TextureUsage::COLOR_ATTACHMENT| TextureUsage::SAMPLEABLE});
             
             auto normal = rg.createTexture("normal",
                                            {.extent = renderContext->getViewPortExtent(),
                                             .useage = TextureUsage::SUBPASS_INPUT |
-                                                      TextureUsage::COLOR_ATTACHMENT
+                                                      TextureUsage::COLOR_ATTACHMENT | TextureUsage::SAMPLEABLE
 
                                            });
 
             auto emission = rg.createTexture("emission",
                                              {.extent = renderContext->getViewPortExtent(),
                                               .useage = TextureUsage::SUBPASS_INPUT |
-                                                        TextureUsage::COLOR_ATTACHMENT});   
+                                                        TextureUsage::COLOR_ATTACHMENT | TextureUsage::SAMPLEABLE});   
 
             auto depth = rg.createTexture("depth", {.extent = renderContext->getViewPortExtent(),
                 .useage = TextureUsage::SUBPASS_INPUT | TextureUsage::DEPTH_ATTACHMENT | TextureUsage::SAMPLEABLE

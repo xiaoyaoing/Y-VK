@@ -93,7 +93,7 @@ void RayTracer::drawFrame(RenderGraph& renderGraph) {
     integrators[currentIntegrator]->render(renderGraph);
     // postProcess->render(renderGraph);
 
-    renderGraph.addImageCopyPass(renderGraph.getBlackBoard().getHandle("RT"), renderGraph.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME));
+    renderGraph.addImageCopyPass(renderGraph.getBlackBoard().getHandle(RT_IMAGE_NAME), renderGraph.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME));
 }
 void RayTracer::onSceneLoaded() {
     Application::onSceneLoaded();
@@ -126,7 +126,9 @@ void RayTracer::prepare() {
     //loadScene("C:/Users/pc/Downloads/bathroom/scene.json");
     // loadScene("E:/code/vk-raytracing-demo/resources/classroom/scene.json");
     // loadScene("E:/code/vk-raytracing-demo/resources/cornell-box-json/scene.json");
-    loadScene(FileUtils::getResourcePath("test-ball/scene.json"));
+    //loadScene(FileUtils::getResourcePath("test-ball/scene.json"));
+    loadScene("D:/blender-scenes/classroom (4)/classroom/classroom.gltf");
+
     //  loadScene("C:/Users/pc/Downloads/house/scene.json");
     //loadScene("C:/Users/pc/Downloads/kitchen/scene.json");
     // loadScene("C:/Users/pc/Downloads/living-room/living-room/living-room/scene.json");

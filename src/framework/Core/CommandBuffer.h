@@ -35,7 +35,7 @@ public:
     //Avoid right value can't be located.
     const VkCommandBuffer* getHandlePointer() const { return &mCommandBuffer; }
 
-    explicit CommandBuffer(VkCommandBuffer buffer) : mCommandBuffer(buffer) {
+    explicit CommandBuffer(VkCommandBuffer buffer, VkQueueFlags flag) : mCommandBuffer(buffer), mQueueFlag(flag) {
     }
 
     void beginRecord(VkCommandBufferUsageFlags usage);
@@ -87,6 +87,9 @@ public:
 
     ~CommandBuffer();
 
+    VkQueueFlags getQueueFlag() const { return mQueueFlag; }
+
 protected:
+    VkQueueFlags    mQueueFlag{VK_QUEUE_GRAPHICS_BIT};
     VkCommandBuffer mCommandBuffer;
 };

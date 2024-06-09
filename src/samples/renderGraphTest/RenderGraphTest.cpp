@@ -120,19 +120,20 @@ void Example::prepare() {
     passes.emplace_back(std::make_unique<GBufferPass>());
     passes.emplace_back(std::make_unique<LightingPass>());
     passes.emplace_back(std::make_unique<SSGIPass>());
-    passes.emplace_back(std::make_unique<SSGIPass>());
 
     for (auto& pass : passes) {
         pass->init();
     }
 
-    SceneLoadingConfig sceneConfig;
-
     // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf", {.bufferRate = BufferRate::PER_SCENE});
     // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/MoerEngineScenes/Sponza/pbr/sponza2.gltf", {.bufferRate = BufferRate::PER_SCENE});
     // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf", sceneConfig);
     //  scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/vkframeworklearn2/resources/cornell-box/cornellBox.gltf", sceneConfig);
+    sceneLoadingConfig.sceneScale = glm::vec3(0.01);
     loadScene("E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf");
+    // loadScene("C:/Users/pc/Downloads/glTF-Sample-Models-main/glTF-Sample-Models-main/2.0/BrainStem/Gltf/BrainStem.gltf");
+    // loadScene("D:/blender-scenes/classroom (4)/classroom/classroom.gltf");
+    // loadScene("D:/glTF-Sample-Models/lone-monk_cycles_and_exposure-node_demo.gltf");
     //loadScene(FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));
 
     auto light_pos   = glm::vec3(0.0f, 128.0f, -225.0f);
@@ -164,17 +165,17 @@ void Example::prepare() {
     // }
     scene->addDirectionalLight({0, -0.95f, 0.3f}, glm::vec3(1.0f), 1.5f);
 
-    camera = scene->getCameras()[0];
-    camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
-    camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 1.f, 4000.f);
-    camera->setMoveSpeed(0.0005f);
+    // camera = scene->getCameras()[0];
+    // camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
+    // camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 1.f, 4000.f);
+    // camera->setMoveSpeed(0.0005f);
+    //
+    // camera->getTransform()->setPosition(glm::vec3(0, 1, 4));
+    // camera->getTransform()->setRotation(glm::quat(1, 0, 0, 0));
 
-    camera->getTransform()->setPosition(glm::vec3(0, 1, 4));
-    camera->getTransform()->setRotation(glm::quat(1, 0, 0, 0));
-
-    view = std::make_unique<View>(*device);
-    view->setScene(scene.get());
-    view->setCamera(camera.get());
+    // view = std::make_unique<View>(*device);
+    // view->setScene(scene.get());
+    // view->setCamera(camera.get());
 
     RenderPtrManangr::init();
     g_manager->putPtr("view", view.get());
@@ -187,6 +188,9 @@ Example::Example() : Application("Defered Rendering Sponza", 1920, 1080) {
 
 void Example::onUpdateGUI() {
     gui->checkBox("Use subpasses", &useSubpass);
+    for (auto& pass : passes) {
+        pass->updateGui();
+    }
 }
 
 int main() {

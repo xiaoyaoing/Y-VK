@@ -9,6 +9,7 @@
 #include <Core/Device/Instance.h>
 #include "../Common/VkCommon.h"
 #include "Common/Config.h"
+#include "Common/TextureHelper.h"
 #include "Gui/Gui.h"
 #include "Core/RenderTarget.h"
 #include "Core/Shader/Shader.h"
@@ -191,8 +192,7 @@ void Application::update() {
     vkResetFences(device->getHandle(), 1, &fence);
 
     RenderGraph graph(*device);
-    auto        handle = graph.importTexture(RENDER_VIEW_PORT_IMAGE_NAME, &renderContext->getCurHwtexture());
-    graph.getBlackBoard().put(RENDER_VIEW_PORT_IMAGE_NAME, handle);
+    graph.importTexture(RENDER_VIEW_PORT_IMAGE_NAME, &renderContext->getCurHwtexture());
 
     drawFrame(graph);
     mPostProcessPass->render(graph);
@@ -301,10 +301,10 @@ void Application::prepare() {
     initVk();
     initGUI();
 
+    TextureHelper::Initialize();
+
     mPostProcessPass = std::make_unique<PostProcess>();
     mPostProcessPass->init();
-    // std::unique_ptr<PassBase> t = std::unique_ptr<PostProcess>(std::make_unique<PostProcess>());
-    // postProcess->init();
 }
 
 Application::Application(const char* name, uint32_t width, uint32_t height) : mWidth(width), mHeight(height), mAppName(name) {

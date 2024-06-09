@@ -78,15 +78,14 @@ RenderContext::RenderContext(Device& device, VkSurfaceKHR surface, Window& windo
 
     for (uint32_t i = 0; i < getSwapChainImageCount(); i++) {
         frameResources.emplace_back(std::make_unique<FrameResource>(device));
-        frameResources.back()->graphicCommandBuffer = std::make_unique<CommandBuffer>(vkGraphicCommandBuffers[i]);
+        frameResources.back()->graphicCommandBuffer = std::make_unique<CommandBuffer>(vkGraphicCommandBuffers[i], VK_QUEUE_GRAPHICS_BIT);
     }
 
     maxPushConstantSize = device.getProperties().limits.maxPushConstantsSize;
-    virtualViewport = std::make_unique<VirtualViewport>(device, VkExtent2D{1920,1080}, getSwapChainImageCount());
+    virtualViewport     = std::make_unique<VirtualViewport>(device, VkExtent2D{1920, 1080}, getSwapChainImageCount());
 }
 
 void RenderContext::beginFrame() {
-    // assert(activeFrameIndex < frames.size());
     if (swapchain) {
         VK_CHECK_RESULT(swapchain->acquireNextImage(activeFrameIndex, semaphores.presentFinishedSem, VK_NULL_HANDLE));
     }
@@ -95,25 +94,15 @@ void RenderContext::beginFrame() {
     frameResources[activeFrameIndex]->reset();
     clearPassResources();
 
-    //  getComputeCommandBuffer().beginRecord(0);
-
     auto& commandBuffer = getGraphicCommandBuffer();
     commandBuffer.beginRecord(0);
 
     commandBuffer.setViewport(0, {vkCommon::initializers::viewport(float(getViewPortExtent().width), float(getViewPortExtent().height), 0.0f, 1.0f, flipViewport)});
     commandBuffer.setScissor(0, {vkCommon::initializers::rect2D(float(getViewPortExtent().width), float(getViewPortExtent().height), 0, 0)});
-
-    // return commandBuffer;
 }
 
 void RenderContext::waitFrame() {
 }
-
-// RenderFrame &RenderContext::getActiveRenderFrame() {
-//     assert(frameActive);
-//     assert(activeFrameIndex < frames.size());
-//     return *frames[activeFrameIndex];
-// }
 
 void RenderContext::prepare() {
 }
@@ -125,7 +114,6 @@ uint32_t RenderContext::getActiveFrameIndex() const {
 void RenderContext::submitAndPresent(CommandBuffer& commandBuffer, VkFence fence) {
     getSwapChainImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::PRESENT, getSwapChainImage().getVkImageView().getSubResourceRange());
     commandBuffer.endRecord();
-
 
     auto queue = device.getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0);
 
@@ -163,25 +151,7 @@ void RenderContext::submitAndPresent(CommandBuffer& commandBuffer, VkFence fence
 
         frameActive = false;
     }
-
     queue.wait();
-
-    // auto& computeQueue = device.getQueueByFlag(VK_QUEUE_COMPUTE_BIT, 0);
-    //
-    // VkPipelineStageFlags wait_stage_mask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-    //
-    // // Submit compute commands
-    // VkSubmitInfo compute_submit_info{VK_STRUCTURE_TYPE_SUBMIT_INFO};
-    // compute_submit_info.commandBufferCount   = 1;
-    // compute_submit_info.pCommandBuffers      = getComputeCommandBuffer().getHandlePointer();
-    // compute_submit_info.waitSemaphoreCount   = 1;
-    // compute_submit_info.pWaitSemaphores      = &semaphores.graphicFinishedSem;
-    // compute_submit_info.pWaitDstStageMask    = &wait_stage_mask;
-    // compute_submit_info.signalSemaphoreCount = 1;
-    // compute_submit_info.pSignalSemaphores    = &semaphores.computeFinishedSem;
-    // computeQueue.submit({compute_submit_info}, VK_NULL_HANDLE);
-    //
-    // computeQueue.wait();
 }
 
 void RenderContext::submit(CommandBuffer& commandBuffer, bool waiteFence) {
@@ -209,6 +179,11 @@ void RenderContext::submit(CommandBuffer& commandBuffer, bool waiteFence) {
 
 VkExtent2D RenderContext::getViewPortExtent() const {
     return virtualViewport->getExtent();
+}
+
+VkExtent3D RenderContext::getViewPortExtent3D() const {
+    VkExtent3D extent{getViewPortExtent().width, getViewPortExtent().height, 1};
+    return extent;
 }
 
 VkExtent2D RenderContext::getSwapChainExtent() const {
