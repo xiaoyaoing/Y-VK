@@ -478,7 +478,6 @@ void Application::initView() {
 }
 void Application::loadScene(const std::string& path) {
     scene = SceneLoaderInterface::LoadSceneFromFile(*device, path, sceneLoadingConfig);
-    //  RuntimeSceneManager::addSponzaRestirLight(*scene);
     onSceneLoaded();
 }
 void Application::onSceneLoaded() {

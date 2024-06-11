@@ -131,6 +131,7 @@ static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture, Com
                 break;
 
             VkBlitImageInfo2 blitInfo{};
+            blitInfo.sType = VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2;
             texture->image->getVkImage().transitionLayout(commandBuffer, VulkanLayout::TRANSFER_SRC, {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .baseMipLevel = static_cast<uint32_t>(i), .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1});
             texture->image->getVkImage().transitionLayout(commandBuffer, VulkanLayout::TRANSFER_DST, {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .baseMipLevel = static_cast<uint32_t>(i + 1), .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1});
             blitInfo.srcImage       = texture->image->getVkImage().getHandle();

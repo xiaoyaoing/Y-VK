@@ -38,6 +38,10 @@ void CommandBuffer::bindVertexBuffer(uint32_t firstBinding, std::vector<const Bu
 
     vkCmdBindVertexBuffers(mCommandBuffer, firstBinding, static_cast<uint32_t>(bufferHandles.size()), bufferHandles.data(), offsets.data());
 }
+void CommandBuffer::bindVertexBuffer(uint32_t firstBinding, Buffer& buffer, VkDeviceSize offset) const {
+    std::vector<const Buffer*> buffers = {&buffer};
+    bindVertexBuffer(firstBinding, buffers, {offset});
+}
 
 void CommandBuffer::bindIndicesBuffer(const Buffer& buffer, VkDeviceSize offset, VkIndexType indexType) {
     // auto bufferHandles = getHandles<Buffer,VkBuffer>(buffers);

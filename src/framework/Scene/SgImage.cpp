@@ -128,11 +128,12 @@ void SgImage::createVkImage(Device& device, uint32_t mipLevels, VkImageViewType 
         flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
     mipLevels = getMipLevelCount() == 1 ? std::log2(std::max(mExtent3D.width, mExtent3D.height)) + 1 : getMipLevelCount();
     if (!needGenerateMipMap) mipLevels = 1;
-    vkImage = std::make_unique<Image>(device, mExtent3D, format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_SAMPLE_COUNT_1_BIT, mipLevels, layers, flags);
+
+    vkImage = std::make_unique<Image>(device, mExtent3D, format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_SAMPLE_COUNT_1_BIT, mipLevels, layers, flags);
     createImageView();
 }
 
-SgImage::SgImage(Device& device, const std::string& path) : device(device) {
+SgImage::SgImage(Device& device, const std::string& path) : device(device), filePath(path) {
     loadResources(path);
 }
 SgImage::SgImage(Device& device, const std::vector<uint8_t>& data, VkExtent3D extent, VkImageViewType viewType, VkFormat format) : device(device), mData(data), format(format) {
@@ -385,12 +386,6 @@ void SgImage::loadResources(const std::string& path) {
         };
         result = ktxTexture_IterateLevelFaces(ktxTexture, callBack, &callbackData);
         assert(result == KTX_SUCCESS);
-
-        // for(uint32_t i = 0; i < ktxTexture->numLevels; i++)
-        // {
-        //     mipMaps[i].offset = ktxTextureSize
-        // }
-
         layers = ktxTexture->numLayers;
         setIsCubeMap(ktxTexture->isCubemap);
         if (ktxTexture->isCubemap) {

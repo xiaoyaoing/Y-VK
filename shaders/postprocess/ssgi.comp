@@ -574,8 +574,8 @@ void main(){
     float perceptual_roughness = diffuse_roughness.a;
 
     if (perceptual_roughness>0.1f){
-        imageStore(out_image, ivec2(gl_GlobalInvocationID.xy), vec4(0, 0, 0, 1.0));
-        return;
+       // imageStore(out_image, ivec2(gl_GlobalInvocationID.xy), vec4(0, 0, 0, 1.0));
+       // return;
     }
 
     vec3 color = vec3(0.0);

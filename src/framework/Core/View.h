@@ -23,6 +23,8 @@ public:
     using PrimitiveSelectFunc = std::function<bool(const Primitive& primitive)>;
     void drawPrimitives(CommandBuffer& commandBuffer, const PrimitiveSelectFunc& selectFunc);
 
+    void drawPrimitivesUseSeparateBuffers(CommandBuffer& commandBuffer);
+
     const Camera*                 getCamera() const;
     std::vector<const Primitive*> getMVisiblePrimitives() const;
     void                          setMVisiblePrimitives(const std::vector<const Primitive*>& mVisiblePrimitives);
@@ -50,15 +52,13 @@ protected:
         }
     };
 
-    const Scene* mScene{nullptr};
-
 protected:
     const Camera*                 mCamera{nullptr};
     std::vector<const Primitive*> mVisiblePrimitives;
     std::vector<const Texture*>   mTextures;
     std::vector<GltfMaterial>     mMaterials;
+    const Scene*                  mScene{nullptr};
     std::unique_ptr<Buffer>       mPerViewBuffer;
-    const Scene*                  scene;
     PerViewUnifom                 mPerViewUniform;
     std::unique_ptr<Buffer>       mLightBuffer;
 };

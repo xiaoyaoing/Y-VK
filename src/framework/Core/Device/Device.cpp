@@ -129,6 +129,7 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkInstance
     device_features2.features.shaderInt64       = true;
     VkPhysicalDeviceVulkan12Features features12 = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};
     features12.runtimeDescriptorArray           = true;
+    features12.bufferDeviceAddress              = true;
 
     VkPhysicalDeviceSynchronization2FeaturesKHR syncronization2_features = {
         VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR};
@@ -163,7 +164,6 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkInstance
         accel_fts.pNext                                      = &atomic_fts;
         rt_fts.rayTracingPipeline                            = true;
         rt_fts.pNext                                         = &accel_fts;
-        features12.bufferDeviceAddress                       = true;
         features12.shaderSampledImageArrayNonUniformIndexing = true;
         features12.scalarBlockLayout                         = true;
 

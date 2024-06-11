@@ -52,6 +52,8 @@ public:
     bool                                           usePrimitiveIdBuffer() const;
     void                                           updateSceneUniformBuffer();
     void                                           updateScenePrimitiveIdBuffer();
+    void                                           setBufferRate(BufferRate rate);
+    BufferRate                                     getBufferRate() const;
 
     void addPrimitive(std::unique_ptr<Primitive> primitive);
     void addPrimitives(std::vector<std::unique_ptr<Primitive>>&& primitives);
@@ -78,6 +80,7 @@ protected:
     std::unique_ptr<Buffer> primitiveIdBuffer{};
     bool                    usePrimitiveId{true};
     std::string             sceneFilePath;
+    BufferRate              bufferRate{BufferRate::PER_SCENE};
 };
 
 std::unique_ptr<Scene> loadDefaultTriangleScene(Device& device);

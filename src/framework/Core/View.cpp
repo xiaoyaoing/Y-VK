@@ -101,22 +101,39 @@ View& View::bindViewShading() {
     return *this;
 }
 View& View::bindViewGeom(CommandBuffer& commandBuffer) {
-    g_context->bindScene(commandBuffer, *mScene);
+    if (mScene->getBufferRate() == BufferRate::PER_SCENE)
+        g_context->bindScene(commandBuffer, *mScene);
     return *this;
 }
 void View::drawPrimitives(CommandBuffer& commandBuffer) {
+    if (mScene->getBufferRate() == BufferRate::PER_PRIMITIVE) {
+        drawPrimitivesUseSeparateBuffers(commandBuffer);
+        return;
+    }
     uint32_t instance_count = 0;
     for (const auto& primitive : mVisiblePrimitives) {
         g_context->flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, primitive->firstIndex, primitive->firstVertex, instance_count++);
     }
 }
 void View::drawPrimitives(CommandBuffer& commandBuffer, const PrimitiveSelectFunc& selectFunc) {
-    uint32_t instance_count = 0;
+    int instance_count = 0;
     for (const auto& primitive : mVisiblePrimitives) {
         if (selectFunc(*primitive)) {
             g_context->flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, primitive->firstIndex, primitive->firstVertex, instance_count);
         }
         instance_count++;
+    }
+}
+void View::drawPrimitivesUseSeparateBuffers(CommandBuffer& commandBuffer) {
+    uint32_t instance_count = 0;
+    //Here first binding hard code
+    //Fix me
+    commandBuffer.bindVertexBuffer(3, mScene->getPrimitiveIdBuffer(), {0});
+    g_context->bindBuffer(static_cast<uint32_t>(UniformBindingPoints::PRIM_INFO), mScene->getUniformBuffer(), 0, mScene->getUniformBuffer().getSize());
+    for (const auto& primitive : mVisiblePrimitives) {
+        g_context->bindPrimitiveGeom(commandBuffer, *primitive);
+        g_context->flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, 0, 0, instance_count++);
+        //  return;
     }
 }
 

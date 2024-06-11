@@ -15,7 +15,7 @@
 #include "Scene/SceneLoader/gltfloader.h"
 
 void Example::drawFrame(RenderGraph& rg) {
-
+    rg.setCutUnUsedResources(false);
     for (auto& pass : passes) {
         pass->render(rg);
     }
@@ -119,7 +119,7 @@ void Example::prepare() {
 
     passes.emplace_back(std::make_unique<GBufferPass>());
     passes.emplace_back(std::make_unique<LightingPass>());
-    passes.emplace_back(std::make_unique<SSGIPass>());
+    // passes.emplace_back(std::make_unique<SSGIPass>());
 
     for (auto& pass : passes) {
         pass->init();
@@ -129,8 +129,14 @@ void Example::prepare() {
     // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/MoerEngineScenes/Sponza/pbr/sponza2.gltf", {.bufferRate = BufferRate::PER_SCENE});
     // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf", sceneConfig);
     //  scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/vkframeworklearn2/resources/cornell-box/cornellBox.gltf", sceneConfig);
-    sceneLoadingConfig.sceneScale = glm::vec3(0.01);
-    loadScene("E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf");
+    // sceneLoadingConfig.sceneScale = glm::vec3(0.01);
+    sceneLoadingConfig.indexType = VK_INDEX_TYPE_UINT32;
+    // sceneLoadingConfig.bufferRate = BufferRate::PER_PRIMITIVE;
+    // loadScene("E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf");
+    loadScene("E:/code/RTXDI/media/bistro/bistro.gltf");
+
+    //loadScene("C:/Users/pc/Documents/landsapce/landspace.gltf");
+    //loadScene("C:/Users/pc/Documents/moutain1/1.gltf");
     // loadScene("C:/Users/pc/Downloads/glTF-Sample-Models-main/glTF-Sample-Models-main/2.0/BrainStem/Gltf/BrainStem.gltf");
     // loadScene("D:/blender-scenes/classroom (4)/classroom/classroom.gltf");
     // loadScene("D:/glTF-Sample-Models/lone-monk_cycles_and_exposure-node_demo.gltf");

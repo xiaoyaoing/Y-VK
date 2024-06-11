@@ -283,10 +283,10 @@ RenderContext& RenderContext::bindView(const View& view) {
 
 RenderContext& RenderContext::bindPrimitiveGeom(CommandBuffer& commandBuffer, const Primitive& primitive) {
     VertexInputState vertexInputState;
+    uint32_t         maxLoaction = 0;
 
     for (const auto& inputResource : pipelineState.getPipelineLayout().getShaderResources(ShaderResourceType::Input,
                                                                                           VK_SHADER_STAGE_VERTEX_BIT)) {
-
         auto inputResourceName = inputResource.name;
         //resource name in shader is in_XXX,so we need to remove the prefix
         auto splitPos = inputResourceName.find("in_");
@@ -296,7 +296,8 @@ RenderContext& RenderContext::bindPrimitiveGeom(CommandBuffer& commandBuffer, co
 
         VertexAttribute attribute{};
         if (!primitive.getVertexAttribute(inputResourceName, &attribute)) {
-            LOGW("Primitive does not have vertex buffer for input resource {}", inputResourceName);
+            if (inputResourceName != "primitive_id")
+                LOGW("Primitive does not have vertex buffer for input resource {}", inputResourceName);
             continue;
         }
         VkVertexInputAttributeDescription vertex_attribute{};
@@ -316,16 +317,21 @@ RenderContext& RenderContext::bindPrimitiveGeom(CommandBuffer& commandBuffer, co
         if (primitive.hasVertexBuffer(inputResourceName)) {
             std::vector<const Buffer*> buffers = {&primitive.getVertexBuffer(inputResourceName)};
             commandBuffer.bindVertexBuffer(inputResource.location, buffers, {0});
+            maxLoaction = std::max(maxLoaction, inputResource.location);
         }
     }
     if (primitive.hasIndexBuffer())
         commandBuffer.bindIndicesBuffer(primitive.getIndexBuffer(), 0, primitive.getIndexType());
     InputAssemblyState inputAssemblyState = pipelineState.getInputAssemblyState();
     inputAssemblyState.topology           = GetVkPrimitiveTopology(primitive.primitiveType);
+
+    vertexInputState.attributes.push_back({.location = maxLoaction + 1, .binding = maxLoaction + 1, .format = VK_FORMAT_R32_UINT, .offset = 0});
+    vertexInputState.bindings.push_back({.binding = maxLoaction + 1, .stride = sizeof(uint32_t), .inputRate = VK_VERTEX_INPUT_RATE_INSTANCE});
+
     pipelineState.setVertexInputState(vertexInputState).setInputAssemblyState(inputAssemblyState);
 
     //  bindPushConstants(primitive);
-    bindBuffer(static_cast<uint32_t>(UniformBindingPoints::PER_RENDERABLE), primitive.getUniformBuffer(), 0, sizeof(PerPrimitiveUniform));
+    // bindBuffer(static_cast<uint32_t>(UniformBindingPoints::PRIM_INFO), primitive.getUniformBuffer(), 0, sizeof(PerPrimitiveUniform));
     return *this;
     // return bindMaterial(primitive.material);
 }
@@ -335,7 +341,6 @@ RenderContext& RenderContext::bindScene(CommandBuffer& commandBuffer, const Scen
     uint32_t         maxLoaction = 0;
     for (const auto& inputResource : pipelineState.getPipelineLayout().getShaderResources(ShaderResourceType::Input,
                                                                                           VK_SHADER_STAGE_VERTEX_BIT)) {
-
         auto inputResourceName = inputResource.name;
         //resource name in shader is in_XXX,so we need to remove the prefix
         auto splitPos = inputResourceName.find("in_");
@@ -381,7 +386,6 @@ RenderContext& RenderContext::bindScene(CommandBuffer& commandBuffer, const Scen
 
     pipelineState.setVertexInputState(vertexInputState);
 
-    //  bindPushConstants(primitive);
     bindBuffer(static_cast<uint32_t>(UniformBindingPoints::PRIM_INFO), scene.getUniformBuffer(), 0, scene.getUniformBuffer().getSize());
     return *this;
 }

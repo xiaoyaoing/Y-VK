@@ -121,6 +121,13 @@ void Scene::updateScenePrimitiveIdBuffer() {
         primitiveIdBuffer = std::make_unique<Buffer>(primitiveIdBuffer->getDevice(), sizeof(uint32_t) * ids.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, ids.data());
     }
 }
+BufferRate Scene::getBufferRate() const {
+    return bufferRate;
+}
+
+void Scene::setBufferRate(BufferRate rate) {
+    bufferRate = rate;
+}
 void Scene::addPrimitive(std::unique_ptr<Primitive> primitive) {
     primitives.push_back(std::move(primitive));
     updateScenePrimitiveIdBuffer();

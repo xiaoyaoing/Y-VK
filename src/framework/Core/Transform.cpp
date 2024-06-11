@@ -21,7 +21,6 @@ void Transform::setParent(const Transform* parent) {
     // m_rotation = parent->getRotation() * m_rotation;
     // updateCache();
     m_localToWorldMatrix = parent->getLocalToWorldMatrix() * m_localMatrix;
-    LogMatrix(m_localToWorldMatrix);
 }
 Transform::Transform(const BBox& bbox) {
     setBBox(bbox);

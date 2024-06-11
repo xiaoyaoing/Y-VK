@@ -55,25 +55,9 @@ void main()
     RestirReservoir spatial_reservoir = spatial_reservoirs.r[pixel_idx];
 
 
-    vec3 color =  calc_L(spatial_reservoir);
-    //    if(!isBlack(color)){
-    //        debugPrintfEXT("color: %f %f %f\n", color.x, color.y, color.z);
-    //    }
-    //  color =5 * vec3(spatial_reservoir.w_sum) / (pc_ray.frame_num+1);
-    //    color = vec3(spatial_reservoir.m / (pc_ray.frame_num+1) / 48);
+    vec3 color =  calc_L_vis(spatial_reservoir);
     color *=  spatial_reservoir.W * 48;
-    // color = vec3(spatial_reservoir.W);
-    //    color = vec3(1, 0, 0);
-    //    color = vec4(gBuffer_uv, 0, 1).xyz;
-    //    printf_restir_reservoir(spatial_reservoir);
-    //    if (spatial_reservoir.m == 0){
-    //        printf_restir_reservoir(spatial_reservoir);
-    //    }
-
     temporal_reservoirs.r[pixel_idx] = spatial_reservoir;
-    //    if (spatial_reservoir.m == 0){
-    //        printf_restir_reservoir(spatial_reservoir);
-    //    }
 
     imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(color, 1.f));
 
