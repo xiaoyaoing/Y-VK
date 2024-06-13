@@ -8,6 +8,7 @@
 #include "gltfloader.h"
 
 #include "Common/Timer.h"
+#include "Common/samplerCPP/ThreadPool.h"
 #include "Core/Descriptor/DescriptorSet.h"
 #include "Core/Buffer.h"
 #include "Core/RenderContext.h"
@@ -279,13 +280,10 @@ VkBufferUsageFlags getBufferUsageFlags(const SceneLoadingConfig& config) {
 
 struct GLTFLoadingImpl {
     std::vector<std::unique_ptr<Primitive>> primitives;
-    SceneLoadingConfig                      config;
+
+    SceneLoadingConfig config;
 
     Device& device;
-    //  Queue& queue;
-    //        Mesh *mesh;
-    // std::vector<Node*> nodes;
-    //    std::vector<Node*> linearNodes;
 
     std::vector<std::unique_ptr<Texture>>                textures;
     std::vector<SgLight>                                 lights;
@@ -299,7 +297,7 @@ struct GLTFLoadingImpl {
 
     bool metallicRoughnessWorkflow;
 
-    GLTFLoadingImpl(Device& device, const std::string& path, const SceneLoadingConfig& config);
+    GLTFLoadingImpl(Device& device, const std::string& path, const SceneLoadingConfig& config, Scene* scene);
     ~GLTFLoadingImpl();
 
     const Texture* getTexture(uint32_t idx) const;
@@ -339,15 +337,17 @@ struct GLTFLoadingImpl {
     std::map<uint32_t, uint32_t>                        gltfIndexAccessors;
 
     std::map<std::uint32_t, std::vector<const tinygltf::Primitive*>> gltfPrimitives;
+
+    Scene* sceneToLoad;
 };
 
 bool loadImageDataFunc(tinygltf::Image* image, const int imageIndex, std::string* error, std::string* warning, int req_width, int req_height, const unsigned char* bytes, int size, void* userData) {
     // KTX files will be handled by our own code
     auto imageEXT = FileUtils::getFileExt(image->uri);
     if (imageEXT == "ktx" || imageEXT == "dds") {
-      //  if (image->uri.substr(image->uri.find_last_of(".") + 1) == "ktx") {
-            return true;
-      //  }
+        //  if (image->uri.substr(image->uri.find_last_of(".") + 1) == "ktx") {
+        return true;
+        //  }
     }
 
     return LoadImageData(image, imageIndex, error, warning, req_width, req_height, bytes, size, userData);
@@ -764,8 +764,8 @@ void GLTFLoadingImpl::loadFromFile(const std::string& path) {
         primitiveUniforms.push_back(primitives[i]->GetPerPrimitiveUniform());
     }
 
-    sceneUniformBuffer     = std::make_unique<Buffer>(device, sizeof(PerPrimitiveUniform) * primitiveUniforms.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, primitiveUniforms.data());
-    scenePrimitiveIdBuffer = std::make_unique<Buffer>(device, sizeof(uint32_t) * primitiveIdxs.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, primitiveIdxs.data());
+    sceneUniformBuffer     = std::make_unique<Buffer>(device, sizeof(PerPrimitiveUniform) * primitiveUniforms.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, primitiveUniforms.data());
+    scenePrimitiveIdBuffer = std::make_unique<Buffer>(device, sizeof(uint32_t) * primitiveIdxs.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, primitiveIdxs.data());
 
     if (cameras.empty()) {
         auto camera = std::make_shared<Camera>();
@@ -797,12 +797,26 @@ void GLTFLoadingImpl::loadMaterials(tinygltf::Model& gltfModel) {
         material.occlusionTexture         = mat.occlusionTexture.index;
         material.occlusionTextureStrength = static_cast<float>(mat.occlusionTexture.strength);
 
-        auto& pbr                            = mat.pbrMetallicRoughness;
-        material.pbrBaseColorFactor          = glm::vec4(pbr.baseColorFactor[0], pbr.baseColorFactor[1], pbr.baseColorFactor[2], pbr.baseColorFactor[3]);
-        material.pbrBaseColorTexture         = requestTexture(pbr.baseColorTexture.index, gltfModel);
-        material.pbrMetallicFactor           = static_cast<float>(pbr.metallicFactor);
-        material.pbrMetallicRoughnessTexture = requestTexture(pbr.metallicRoughnessTexture.index, gltfModel);
-        material.pbrRoughnessFactor          = static_cast<float>(pbr.roughnessFactor);
+        if (mat.extensions.find("KHR_materials_pbrSpecularGlossiness") == mat.extensions.end()) {
+            auto& pbr                            = mat.pbrMetallicRoughness;
+            material.pbrBaseColorFactor          = glm::vec4(pbr.baseColorFactor[0], pbr.baseColorFactor[1], pbr.baseColorFactor[2], pbr.baseColorFactor[3]);
+            material.pbrBaseColorTexture         = requestTexture(pbr.baseColorTexture.index, gltfModel);
+            material.pbrMetallicFactor           = static_cast<float>(pbr.metallicFactor);
+            material.pbrMetallicRoughnessTexture = requestTexture(pbr.metallicRoughnessTexture.index, gltfModel);
+            material.pbrRoughnessFactor          = static_cast<float>(pbr.roughnessFactor);
+        } else {
+            auto ext = mat.extensions.find("KHR_materials_pbrSpecularGlossiness");
+            if (ext != mat.extensions.end()) {
+                auto& pbr                   = ext->second;
+                material.pbrBaseColorFactor = glm::vec4(pbr.Get("diffuseFactor").Get(0).Get<double>(), pbr.Get("diffuseFactor").Get(1).Get<double>(), pbr.Get("diffuseFactor").Get(2).Get<double>(), pbr.Get("diffuseFactor").Get(3).Get<double>());
+                if (pbr.Has("diffuseTexture"))
+                    material.pbrBaseColorTexture = requestTexture(pbr.Get("diffuseTexture").Get("index").Get<int>(), gltfModel);
+                // material.pbrSpecularFactor            = glm::vec3(pbr.Get("specularFactor").Get(0).Get<double>(), pbr.Get("specularFactor").Get(1).Get<double>(), pbr.Get("specularFactor").Get(2).Get<double>());
+                // material.pbrGlossinessFactor          = static_cast<float>(pbr.Get("glossinessFactor").Get<double>());
+                // material.pbrSpecularGlossinessTexture = requestTexture(pbr.Get("specularGlossinessTexture").Get("index").Get<int>(), gltfModel);
+            }
+        }
+
         materials.emplace_back(material);
     }
     //   materials.resize(gltfModel.materials.size());
@@ -816,10 +830,7 @@ GLTFLoadingImpl::~GLTFLoadingImpl() {
 void GLTFLoadingImpl::loadImages(const std::filesystem::path& modelPath, const tinygltf::Model& gltfModel) {
     auto parentDir = modelPath.parent_path();
 
-    auto thread_count = std::thread::hardware_concurrency();
-
-    thread_count = thread_count == 0 ? 1 : thread_count;
-    ctpl::thread_pool thread_pool(thread_count);
+    auto& thread_pool = ThreadPool::GetThreadPool();
 
     using TextureFuture = std::future<std::unique_ptr<Texture>>;
 
@@ -845,17 +856,59 @@ void GLTFLoadingImpl::loadImages(const std::filesystem::path& modelPath, const t
         //  textures.emplace_back(futures->back().get());
     }
 
-    auto futPushTex = thread_pool.push([this, futures](size_t) {
-        // for (int i = 0; i < futures->size(); i++) {
-        //     futures->operator[](i).wait();
-        // }
+    auto reOrganize = thread_pool.push([this, futures](size_t) {
+        for (auto& future : *futures)
+            future.wait();
+
         for (int i = 0; i < futures->size(); i++) {
             textures.emplace_back(futures->operator[](i).get());
         }
 
+        std::unordered_map<int, int> texIndexRemap;
+        int                          validTextureCount = 0;
+        for (int i = 0; i < textures.size(); i++) {
+            if (textures[i] != nullptr) {
+                texIndexRemap[i] = validTextureCount;
+                validTextureCount++;
+            }
+        }
+        for (auto& material : materials) {
+            if (material.pbrBaseColorTexture != -1) {
+                material.pbrBaseColorTexture = texIndexRemap.contains(material.pbrBaseColorTexture) ? texIndexRemap[material.pbrBaseColorTexture] : -1;
+            }
+            if (material.pbrMetallicRoughnessTexture != -1) {
+                material.pbrMetallicRoughnessTexture = texIndexRemap.contains(material.pbrMetallicRoughnessTexture) ? texIndexRemap[material.pbrMetallicRoughnessTexture] : -1;
+            }
+            if (material.normalTexture != -1) {
+                material.normalTexture = texIndexRemap.contains(material.normalTexture) ? texIndexRemap[material.normalTexture] : -1;
+            }
+        }
+
+        std::vector<std::unique_ptr<Texture>> remappedTextures;
+        for (int i = 0; i < textures.size(); i++) {
+            if (textures[i] != nullptr) {
+                remappedTextures.emplace_back(std::move(textures[i]));
+            }
+        }
+        textures = std::move(remappedTextures);
+
         Texture::initTexturesInOneSubmit(textures);
+
+        sceneToLoad->setLoaded(true);
         delete futures;
         return 1;
+    });
+
+    auto futPushTex = thread_pool.push([this, futures](size_t) {
+        // for (int i = 0; i < futures->size(); i++) {
+        //     futures->operator[](i).wait();
+        // }
+
+        // reOrganizeT();
+
+        // Texture::initTexturesInOneSubmit(textures);
+        // delete futures;
+        // return 1;
     });
 
     // auto fut = thread_pool.push([this, futures](size_t) {
@@ -883,8 +936,8 @@ const Texture* GLTFLoadingImpl::getTexture(uint32_t index) const {
 }
 
 std::unique_ptr<Scene> GltfLoading::LoadSceneFromGLTFFile(Device& device, const std::string& path, const SceneLoadingConfig& config) {
-    auto model                = std::make_unique<GLTFLoadingImpl>(device, path, config);
     auto scene                = std::make_unique<Scene>();
+    auto model                = std::make_unique<GLTFLoadingImpl>(device, path, config, scene.get());
     scene->primitives         = std::move(model->primitives);
     scene->textures           = std::move(model->textures);
     scene->materials          = std::move(model->materials);
@@ -900,7 +953,7 @@ std::unique_ptr<Scene> GltfLoading::LoadSceneFromGLTFFile(Device& device, const 
     return scene;
 }
 
-GLTFLoadingImpl::GLTFLoadingImpl(Device& device, const std::string& path, const SceneLoadingConfig& config) : device(device), config(config) {
+GLTFLoadingImpl::GLTFLoadingImpl(Device& device, const std::string& path, const SceneLoadingConfig& config, Scene* scene) : device(device), config(config), sceneToLoad(scene) {
     loadFromFile(path);
 }
 

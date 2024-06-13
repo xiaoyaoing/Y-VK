@@ -16,10 +16,10 @@ using uvec2 = glm::uvec2;
 
 struct RestirData {
     uvec4 seed;
-    uint light_idx;
-    uint triangle_idx;
-    uint padding;
-    uint padding2;
+    uint  light_idx;
+    uint  triangle_idx;
+    uint  padding;
+    uint  padding2;
 };
 
 struct RestirDIPC {
@@ -32,14 +32,18 @@ struct RestirDIPC {
     uint enable_sample_light;
     uint do_temporal_reuse;
     uint do_spatial_reuse;
+    uint spatial_sample_count;
+    uint frame_num_from_view_changed;
+    uint max_history_length;
+    uint per_frame_light_sample_count;
 };
 
 struct RestirReservoir {
     float w_sum;
     float W;
-    uint m;
+    uint  m;
     float pdf;
-   // float p_hat;
+    // float p_hat;
     RestirData s;
 };
 

@@ -123,8 +123,8 @@ protected:
     size_t firstImageViewHash{0};
 
     //Attributes to init when load resources
-    std::vector<uint8_t> mData;
-    VkFormat             format;
+    std::vector<uint8_t> mData{};
+    VkFormat             format{};
     VkExtent3D           mExtent3D{0, 0, 1};
 
     //Attention: size = layer * level

@@ -229,6 +229,10 @@ void printf_restir_reservoir(const RestirReservoir r){
     debugPrintfEXT("all message in one line %f %d %f %d %d %d %d %d %d %f  \n", r.W, r.m, r.w_sum, r.s.light_idx, r.s.triangle_idx, r.s.seed.x, r.s.seed.y, r.s.seed.z, r.s.seed.w, calc_p_hat(r));
 }
 
+void compate_two_reservoir(const RestirReservoir r1, RestirReservoir r2){
+    debugPrintfEXT("W1 %f W2 %f W_Sum1 %f W_Sum2 %f m1 %d m2 %d phat1 %f phat2 %f seed1 %d %d %d %d  seed2 %d %d %d %d\n", r1.W, r2.W, r1.w_sum, r2.w_sum, r1.m, r2.m, calc_p_hat(r1), calc_p_hat(r2), r1.s.seed.x, r1.s.seed.y, r1.s.seed.z, r1.s.seed.w, r2.s.seed.x, r2.s.seed.y, r2.s.seed.z, r2.s.seed.w);
+}
+
 
 
 

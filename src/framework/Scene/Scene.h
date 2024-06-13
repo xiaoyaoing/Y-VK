@@ -22,8 +22,13 @@ enum class BufferRate {
     PER_SCENE
 };
 
+struct SceneLoadCompleteInfo {
+    bool loaded{false};
+};
+
 class Scene {
 public:
+    Scene();
     using PrimitiveCallBack = std::function<void(const Primitive& primitive)>;
 
     void IteratePrimitives(PrimitiveCallBack primitiveCallBack) const;
@@ -58,6 +63,9 @@ public:
     void addPrimitive(std::unique_ptr<Primitive> primitive);
     void addPrimitives(std::vector<std::unique_ptr<Primitive>>&& primitives);
 
+    void setLoaded(bool loaded);
+    bool isLoaded() const;
+
 protected:
     friend GltfLoading;
     friend Jsonloader;
@@ -81,6 +89,8 @@ protected:
     bool                    usePrimitiveId{true};
     std::string             sceneFilePath;
     BufferRate              bufferRate{BufferRate::PER_SCENE};
+
+    std::unique_ptr<SceneLoadCompleteInfo> loadCompleteInfo;
 };
 
 std::unique_ptr<Scene> loadDefaultTriangleScene(Device& device);

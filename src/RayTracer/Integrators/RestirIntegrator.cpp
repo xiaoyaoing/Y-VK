@@ -38,7 +38,7 @@ void RestirIntegrator::render(RenderGraph& renderGraph) {
     }
 
     if (camera->moving())
-        pcPath.frame_num = 0;
+        pcPath.frame_num_from_view_changed = 0;
 
     auto& commandBuffer = renderContext->getGraphicCommandBuffer();
 
@@ -59,7 +59,8 @@ void RestirIntegrator::render(RenderGraph& renderGraph) {
             renderContext->bindImage(0, renderGraph.getBlackBoard().getImageView(RT_IMAGE_NAME));
          renderContext->traceRay(commandBuffer, {width, height, 1});
     
-            pcPath.frame_num++; });
+            pcPath.frame_num++;
+            pcPath.frame_num_from_view_changed++; });
 
     renderGraph.addRaytracingPass(
         "Restir spatial pass", [&](RenderGraph::Builder& builder, RaytracingPassSettings& settings) {
@@ -97,15 +98,21 @@ void RestirIntegrator::initScene(RTSceneEntry& entry) {
     entry.sceneDesc.gbuffer_addr                   = gBuffer->getDeviceAddress();
     entry.sceneDescBuffer->uploadData(&entry.sceneDesc, sizeof(SceneDesc));
 
-    pcPath.light_num         = entry.lights.size();
-    pcPath.max_depth         = 1;
-    pcPath.min_depth         = 0;
-    pcPath.frame_num         = 0;
-    pcPath.do_spatial_reuse  = false;
-    pcPath.do_temporal_reuse = false;
+    pcPath.light_num                    = entry.lights.size();
+    pcPath.max_depth                    = 1;
+    pcPath.min_depth                    = 0;
+    pcPath.frame_num                    = 0;
+    pcPath.do_spatial_reuse             = false;
+    pcPath.do_temporal_reuse            = false;
+    pcPath.spatial_sample_count         = 0;
+    pcPath.max_history_length           = 20;
+    pcPath.per_frame_light_sample_count = 4;
 }
 void RestirIntegrator::onUpdateGUI() {
     Integrator::onUpdateGUI();
     ImGui::Checkbox("Do temporal reuse", reinterpret_cast<bool*>(&pcPath.do_temporal_reuse));
     ImGui::Checkbox("Do spatial reuse", reinterpret_cast<bool*>(&pcPath.do_spatial_reuse));
+    ImGui::SliderInt("Spatial sample count", reinterpret_cast<int*>(&pcPath.spatial_sample_count), 1, 9);
+    ImGui::SliderInt("Max history length", reinterpret_cast<int*>(&pcPath.max_history_length), 1, 100);
+    ImGui::SliderInt("Per frame light sample count", reinterpret_cast<int*>(&pcPath.per_frame_light_sample_count), 1, 64);
 }

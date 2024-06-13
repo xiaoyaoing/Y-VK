@@ -2,6 +2,9 @@
 
 #include "Compoments/Camera.h"
 
+Scene::Scene() {
+    loadCompleteInfo = std::make_unique<SceneLoadCompleteInfo>();
+}
 // Material Material::getDefaultMaterial() {
 //     Material material{};
 //     return material;
@@ -135,6 +138,12 @@ void Scene::addPrimitive(std::unique_ptr<Primitive> primitive) {
 void Scene::addPrimitives(std::vector<std::unique_ptr<Primitive>>&& _primitives) {
     primitives.insert(primitives.end(), std::make_move_iterator(_primitives.begin()), std::make_move_iterator(_primitives.end()));
     updateScenePrimitiveIdBuffer();
+}
+void Scene::setLoaded(bool loaded) {
+    loadCompleteInfo->loaded = loaded;
+}
+bool Scene::isLoaded() const {
+    return loadCompleteInfo->loaded;
 }
 VkPrimitiveTopology GetVkPrimitiveTopology(PRIMITIVE_TYPE type) {
     switch (type) {

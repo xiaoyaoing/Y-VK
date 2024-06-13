@@ -5,6 +5,7 @@
 #include "RenderGraphTest.h"
 #include "Core/Shader/Shader.h"
 #include "../../framework/Common/VkCommon.h"
+#include "Common/Config.h"
 #include "Common/FIleUtils.h"
 #include "Core/View.h"
 #include "Core/math.h"
@@ -105,18 +106,8 @@ void Example::drawFrame(RenderGraph& rg) {
 }
 
 void Example::prepare() {
+    GlslCompiler::forceRecompile = true;
     Application::prepare();
-
-    // std::vector<Shader> shaders{
-    //     Shader(*device, FileUtils::getShaderPath("defered_one_scene_buffer.vert")),
-    //     Shader(*device, FileUtils::getShaderPath("defered.frag"))};
-    // pipelineLayouts.gBuffer = std::make_unique<PipelineLayout>(*device, shaders);
-    //
-    // std::vector<Shader> shaders1{
-    //     Shader(*device, FileUtils::getShaderPath("lighting.vert")),
-    //     Shader(*device, FileUtils::getShaderPath("lighting.frag"))};
-    // pipelineLayouts.lighting = std::make_unique<PipelineLayout>(*device, shaders1);
-
     passes.emplace_back(std::make_unique<GBufferPass>());
     passes.emplace_back(std::make_unique<LightingPass>());
     // passes.emplace_back(std::make_unique<SSGIPass>());
@@ -124,24 +115,7 @@ void Example::prepare() {
     for (auto& pass : passes) {
         pass->init();
     }
-
-    // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf", {.bufferRate = BufferRate::PER_SCENE});
-    // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/MoerEngineScenes/Sponza/pbr/sponza2.gltf", {.bufferRate = BufferRate::PER_SCENE});
-    // scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf", sceneConfig);
-    //  scene = SceneLoaderInterface::LoadSceneFromFile(*device, "E:/code/vkframeworklearn2/resources/cornell-box/cornellBox.gltf", sceneConfig);
-    // sceneLoadingConfig.sceneScale = glm::vec3(0.01);
-    sceneLoadingConfig.indexType = VK_INDEX_TYPE_UINT32;
-    // sceneLoadingConfig.bufferRate = BufferRate::PER_PRIMITIVE;
-    // loadScene("E:/code/VulkanFrameWorkLearn/resources/sponza/Sponza01.gltf");
-    loadScene("E:/code/RTXDI/media/bistro/bistro.gltf");
-
-    //loadScene("C:/Users/pc/Documents/landsapce/landspace.gltf");
-    //loadScene("C:/Users/pc/Documents/moutain1/1.gltf");
-    // loadScene("C:/Users/pc/Downloads/glTF-Sample-Models-main/glTF-Sample-Models-main/2.0/BrainStem/Gltf/BrainStem.gltf");
-    // loadScene("D:/blender-scenes/classroom (4)/classroom/classroom.gltf");
-    // loadScene("D:/glTF-Sample-Models/lone-monk_cycles_and_exposure-node_demo.gltf");
-    //loadScene(FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));
-
+    loadScene(Config::GetInstance().GetScenePath());
     auto light_pos   = glm::vec3(0.0f, 128.0f, -225.0f);
     auto light_color = glm::vec3(1.0, 1.0, 1.0);
 
@@ -162,7 +136,7 @@ void Example::prepare() {
     //
     //             LightProperties props;
     //             props.color     = light_color;
-    //             props.intensity = 0.2f;
+    //             props.intensity = 0.2f;l
     //             props.position  = pos;
     //
     //             scene->addLight(SgLight{.type = LIGHT_TYPE::Point, .lightProperties = props});
@@ -170,19 +144,6 @@ void Example::prepare() {
     //     }
     // }
     scene->addDirectionalLight({0, -0.95f, 0.3f}, glm::vec3(1.0f), 1.5f);
-
-    // camera = scene->getCameras()[0];
-    // camera->setRotation(glm::vec3(0.0f, -90.0f, 0.0f));
-    // camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 1.f, 4000.f);
-    // camera->setMoveSpeed(0.0005f);
-    //
-    // camera->getTransform()->setPosition(glm::vec3(0, 1, 4));
-    // camera->getTransform()->setRotation(glm::quat(1, 0, 0, 0));
-
-    // view = std::make_unique<View>(*device);
-    // view->setScene(scene.get());
-    // view->setCamera(camera.get());
-
     RenderPtrManangr::init();
     g_manager->putPtr("view", view.get());
 }

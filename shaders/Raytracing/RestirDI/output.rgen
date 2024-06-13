@@ -36,7 +36,7 @@ void main()
     if (light_idx == -1 || gBuffer_material_idx == -1)
     {
         //   debugPrintfEXT("light_idx: %d, material_idx: %d\n", light_idx, gBuffer_material_idx);
-        imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(1, 0, 0, 1));
+        imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(0, 0, 0, 1));
         temporal_reservoirs.r[pixel_idx] = init_restir_reservoir();
         return;
     }
@@ -54,10 +54,19 @@ void main()
 
     RestirReservoir spatial_reservoir = spatial_reservoirs.r[pixel_idx];
 
+    temporal_reservoirs.r[pixel_idx] = spatial_reservoir;
+
+    if (spatial_reservoir.W == 0){
+        imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(0, 0, 0, 1));
+        return;
+    }
 
     vec3 color =  calc_L_vis(spatial_reservoir);
     color *=  spatial_reservoir.W * 48;
-    temporal_reservoirs.r[pixel_idx] = spatial_reservoir;
+
+    if (color == vec3(1, 0, 0)){
+        printf_restir_reservoir(spatial_reservoir);
+    }
 
     imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(color, 1.f));
 

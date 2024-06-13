@@ -1,6 +1,8 @@
 #version 460 core
 #extension GL_GOOGLE_include_directive : enable
 #extension GL_EXT_debug_printf : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+
 #include "shadow.glsl"
 #include "perFrameShading.glsl"
 #include "perFrame.glsl"
@@ -33,8 +35,14 @@ vec4 SRGBtoLinear(vec4 srgbIn, float gamma)
 }
 
 
-vec3 getNormal(int texture_idx)
+vec3 getNormal(const int texture_idx)
 {
+    if (texture_idx <0 || texture_idx>=129){
+        // debugPrintfEXT("Invalid texture index %d\n", texture_idx);
+    }
+    //    texture_idx = clamp(texture_idx, 0, 136);
+    //    return texture(scene_textures[texture_idx], in_uv).xyz * 2.0 - 1.0;
+    //    return vec3(0);
     // Perturb normal, see http://www.thetenthplanet.de/archives/1180
     vec3 tangentNormal = texture(scene_textures[texture_idx], in_uv).xyz * 2.0 - 1.0;
 
@@ -100,5 +108,4 @@ void main(void)
         emissionColor *= SRGBtoLinear(texture(scene_textures[material.emissiveTexture], in_uv), 2.2).rgb;
     }
     o_emssion = vec4(emissionColor, 1.0);
-    //  debugPrintfEXT("material_index: %d\n", material_index);
 }

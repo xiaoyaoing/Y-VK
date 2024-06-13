@@ -44,6 +44,7 @@ void main()
     RestirReservoir r = init_restir_reservoir();
 
 
+
     { uint rayFlags = gl_RayFlagsOpaqueEXT;
         uint cullMask = 0xff;
         float tmin = 0.001;
@@ -57,7 +58,7 @@ void main()
         SurfaceScatterEvent  event = make_surface_scatter_event(hitPayload, -direction.xyz);
         copy_event(event, g_event);
 
-        uint light_sample_count = 32;
+        uint light_sample_count = pc_ray.per_frame_light_sample_count;
         for (int i = 0;i<light_sample_count;i++)
         {
             const uvec4 light_seed = seed;
@@ -71,9 +72,6 @@ void main()
             update_restir_reservoir(r_new, restir_data, length(un_shadowed_light_contrib));
         }
 
-        //        if (r_new.s.light_idx==-1){
-        //            printf_restir_reservoir(r_new);
-        //        }
 
         vec3 color = vec3(0);
         if (r_new.w_sum > 0)
@@ -89,9 +87,7 @@ void main()
             {
                 r_new.W = r_new.w_sum  / (p_hat * r_new.m);
             }
-
             combine_reservoir(r, r_new);
-
         }
 
         if (pc_ray.do_temporal_reuse>0 && pc_ray.frame_num>0)
@@ -110,7 +106,7 @@ void main()
 
     uint num_samples = r_new.m;
     if (pc_ray.do_temporal_reuse>0 && pc_ray.frame_num>0){
-        // r_prev.m = min(r.m, r_prev.m);
+        r_prev.m = min(r_prev.m, pc_ray.max_history_length * pc_ray.per_frame_light_sample_count);
         num_samples += r_prev.m;
         combine_reservoir(r, r_prev);
     }
@@ -130,17 +126,12 @@ void main()
     }
 
     if (pc_ray.do_temporal_reuse>0 && pc_ray.frame_num>0){
-        // printf_restir_reservoir(r);
     }
 
     if (r.m == 0 && found_intersect){
-        // printf_restir_reservoir(r_new);
-        // debugPrintfEXT("found intersect: %d\n", found_intersect);
     }
-    // printf_restir_reservoir(r);
     pass_reservoir.r[pixel_idx] = r;
     if (!found_intersect){
-        // r.m = 23134;
         pass_reservoir.r[pixel_idx] = r;
     }
 

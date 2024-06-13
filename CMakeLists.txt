@@ -34,6 +34,7 @@ add_subdirectory(src/samples/computePipelineTest)
 add_subdirectory(src/samples/vxgi)
 add_subdirectory(src/samples/pbrLab)
 add_subdirectory(src/samples/ssgi)
+#add_subdirectory(src/samples/visualize_texture)
 
 # add_subdirectory(src/samples/vxgiapp)
 file(COPY shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

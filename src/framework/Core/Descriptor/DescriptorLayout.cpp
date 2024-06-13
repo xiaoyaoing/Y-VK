@@ -141,12 +141,19 @@ DescriptorLayout::DescriptorLayout(Device& device, uint32_t setIdx, const std::v
         layoutBindings.push_back(binding.second);
     }
 
+  //  layoutBindings.resize(127);
+ //   for (int i = 0; i < 127; i++) {
+ //       layoutBindings[i] = VkDescriptorSetLayoutBinding{static_cast<uint32_t>(i), VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr};
+ //   }
+
     VkDescriptorSetLayoutCreateInfo descSetLayoutInfo = {};
     descSetLayoutInfo.sType                           = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     descSetLayoutInfo.bindingCount                    = static_cast<uint32_t>(layoutBindings.size());
     descSetLayoutInfo.pBindings                       = layoutBindings.data();
     descSetLayoutInfo.flags                           = 0;
     VK_CHECK_RESULT(vkCreateDescriptorSetLayout(_deivce.getHandle(), &descSetLayoutInfo, nullptr, &_layout))
+
+    LOGI("Descriptor layout created with {} bindings", layoutBindings.size());
 }
 
 void DescriptorLayout::addBinding(VkShaderStageFlags       stageFlags,

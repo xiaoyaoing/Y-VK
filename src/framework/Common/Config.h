@@ -3,14 +3,15 @@
 
 class Config {
 public:
-    void  SaveConfig();
+    void SaveConfig();
     Config static GetInstance();
-    void  CameraFromConfig(Camera & camera);
-    void  CameraToConfig(const Camera & camera);
+    void              CameraFromConfig(Camera& camera);
+    void              CameraToConfig(const Camera& camera);
+    const std::string GetScenePath();
+
 protected:
     Config();
     static Config* instance;
     class Impl;
     Impl* impl{nullptr};
 };
-

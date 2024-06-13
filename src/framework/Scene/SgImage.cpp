@@ -350,8 +350,11 @@ void SgImage::loadResources(const std::string& path) {
     if (ext == "jpg" || ext == "png") {
         int  w, h, comp;
         auto rawData = stbi_load(path.c_str(), &w, &h, &comp, 4);
-        comp         = 4;
-        mData        = {rawData, rawData + w * h * comp};
+        if (rawData == nullptr) {
+            return;
+        }
+        comp  = 4;
+        mData = {rawData, rawData + w * h * comp};
         stbi_image_free(rawData);
 
         setExtent({toUint32(w), toUint32(h), 1});
@@ -428,6 +431,13 @@ void SgImage::loadResources(const std::string& path) {
         stbi_image_free(pixels);
         format             = VK_FORMAT_R32G32B32A32_SFLOAT;
         needGenerateMipMap = false;
+    } else if (ext == "dds") {
+        auto desc = ImageIO::loadImage(path);
+        setExtent(desc.extent);
+        mData              = std::move(desc.data);
+        format             = desc.format;
+        needGenerateMipMap = desc.needGenerateMipmaps;
+
     } else {
         LOGE("Unsupported image format: {}", ext);
     }

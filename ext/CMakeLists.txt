@@ -145,6 +145,6 @@ add_library(tiny_obj_loader STATIC ${TINY_OBJ_LOADER_FILES})
 target_include_directories(tiny_obj_loader PUBLIC ${TINY_OBJ_LOADER_DIR})
 target_sources(tiny_obj_loader PRIVATE ${TINY_OBJ_LOADER_FILES})
 
-
 add_subdirectory(volk)
 add_subdirectory(json)
+add_subdirectory(dds_image)

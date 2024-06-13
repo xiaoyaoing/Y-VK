@@ -194,8 +194,10 @@ void Application::update() {
     RenderGraph graph(*device);
     graph.importTexture(RENDER_VIEW_PORT_IMAGE_NAME, &renderContext->getCurHwtexture());
 
-    drawFrame(graph);
-    mPostProcessPass->render(graph);
+    if (scene->isLoaded()) {
+        drawFrame(graph);
+        mPostProcessPass->render(graph);
+    }
 
     mCurrentTextures = graph.getResourceNames(RENDER_GRAPH_RESOURCE_TYPE::ETexture);
     graph.addImageCopyPass(graph.getBlackBoard().getHandle(mPresentTexture), graph.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME));
@@ -478,6 +480,7 @@ void Application::initView() {
 }
 void Application::loadScene(const std::string& path) {
     scene = SceneLoaderInterface::LoadSceneFromFile(*device, path, sceneLoadingConfig);
+    //RuntimeSceneManager::addSponzaRestirLight(*scene);
     onSceneLoaded();
 }
 void Application::onSceneLoaded() {

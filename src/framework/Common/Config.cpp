@@ -14,10 +14,10 @@ Json to_json(const Transform& transform) {
 }
 
 class Config::Impl {
-protected:
-    Json json;
 
 public:
+    Json json;
+
     Impl() {
         std::string path = FileUtils::getResourcePath("config.json");
         if (FileUtils::fileExists(path)) {
@@ -77,6 +77,9 @@ void Config::CameraFromConfig(Camera& camera) {
 }
 void Config::CameraToConfig(const Camera& camera) {
     impl->cameraToConfig(camera);
+}
+const std::string Config::GetScenePath() {
+    return impl->json["scene"];
 }
 Config::Config() {
     impl = new Impl();

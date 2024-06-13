@@ -162,6 +162,8 @@ std::unique_ptr<Texture> Texture::loadTextureFromFile(Device& device, const std:
 std::unique_ptr<Texture> Texture::loadTextureFromFileWitoutInit(Device& device, const std::string& path) {
     std::unique_ptr<Texture> texture = std::make_unique<Texture>();
     texture->image                   = std::make_unique<SgImage>(device, path);
+    if (texture->image->getData().empty())
+        return nullptr;
     return texture;
 }
 std::unique_ptr<Texture> Texture::loadTextureFromMemory(Device& device, const std::vector<uint8_t>& data, VkExtent3D extent, VkImageViewType viewType, VkFormat format) {
@@ -249,6 +251,9 @@ std::unique_ptr<Texture> Texture::loadTextureArrayFromFile(Device& device, const
     return texture;
 }
 void Texture::initTexturesInOneSubmit(std::vector<std::unique_ptr<Texture>>& textures) {
+    if (textures.empty()) {
+        return;
+    }
     CommandBuffer commandBuffer = g_context->getDevice().createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
     uint32_t      size{0}, offset{0};
     for (auto& texture : textures) {
