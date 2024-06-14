@@ -301,7 +301,7 @@ struct GLTFLoadingImpl {
     ~GLTFLoadingImpl();
 
     const Texture* getTexture(uint32_t idx) const;
-    void           loadImages(const std::filesystem::path& modelPath, const tinygltf::Model& model);
+    void           loadImages(const std::filesystem::path& modelPath, std::shared_ptr<tinygltf::Model> model);
     void           loadNode(const tinygltf::Node& node, const tinygltf::Model& model);
     void           loadFromFile(const std::string& path);
     void           loadMaterials(tinygltf::Model& gltfModel);
@@ -731,30 +731,30 @@ void GLTFLoadingImpl::loadFromFile(const std::string& path) {
     Timer timer;
     timer.start();
 
-    tinygltf::Model    gltfModel;
-    tinygltf::TinyGLTF gltfContext;
-    std::string        error, warning;
+    std::shared_ptr<tinygltf::Model> gltfModel = std::make_shared<tinygltf::Model>();
+    tinygltf::TinyGLTF               gltfContext;
+    std::string                      error, warning;
     gltfContext.SetImageLoader(loadImageDataFunc, nullptr);
-    bool fileLoaded = gltfContext.LoadASCIIFromFile(&gltfModel, &error, &warning, path);
+    bool fileLoaded = gltfContext.LoadASCIIFromFile(gltfModel.get(), &error, &warning, path);
 
     if (!fileLoaded) {
         LOGE("Could not load glTF file {} {} \"", path, error)
     }
 
     std::vector<uint32_t> indexData;
-    loadMaterials(gltfModel);
+    loadMaterials(*gltfModel);
     loadImages(path, gltfModel);
-    loadCameras(gltfModel);
-    loadLights(gltfModel);
-    const tinygltf::Scene& scene = gltfModel.scenes[gltfModel.defaultScene > -1 ? gltfModel.defaultScene : 0];
+    loadCameras(*gltfModel);
+    loadLights(*gltfModel);
+    const tinygltf::Scene& scene = gltfModel->scenes[gltfModel->defaultScene > -1 ? gltfModel->defaultScene : 0];
 
     if (config.bufferRate == BufferRate::PER_PRIMITIVE) {
         for (size_t i = 0; i < scene.nodes.size(); i++) {
-            const tinygltf::Node node = gltfModel.nodes[scene.nodes[i]];
-            loadNode(node, gltfModel);
+            const tinygltf::Node node = gltfModel->nodes[scene.nodes[i]];
+            loadNode(node, *gltfModel);
         }
     } else {
-        process(gltfModel);
+        process(*gltfModel);
     }
 
     std::vector<uint32_t>            primitiveIdxs;
@@ -773,7 +773,7 @@ void GLTFLoadingImpl::loadFromFile(const std::string& path) {
         cameras.push_back(camera);
     }
 
-    for (auto extension : gltfModel.extensionsUsed) {
+    for (auto extension : gltfModel->extensionsUsed) {
         if (extension == "KHR_materials_pbrSpecularGlossiness") {
             metallicRoughnessWorkflow = false;
         }
@@ -827,7 +827,7 @@ GLTFLoadingImpl::~GLTFLoadingImpl() {
     //     delete node;
 }
 
-void GLTFLoadingImpl::loadImages(const std::filesystem::path& modelPath, const tinygltf::Model& gltfModel) {
+void GLTFLoadingImpl::loadImages(const std::filesystem::path& modelPath, std::shared_ptr<tinygltf::Model> gltfModel) {
     auto parentDir = modelPath.parent_path();
 
     auto& thread_pool = ThreadPool::GetThreadPool();
@@ -841,15 +841,15 @@ void GLTFLoadingImpl::loadImages(const std::filesystem::path& modelPath, const t
         texIndexVec[remap.second] = remap.first;
     for (const auto& remap : texIndexVec) {
         auto fut = thread_pool.push(
-            [this, parentDir, temp_remap = remap, &gltfModel](size_t) {
-                auto& image = gltfModel.images[temp_remap];
+            [this, parentDir, temp_remap = remap, gltfModel](size_t) {
+                auto& image = gltfModel->images[temp_remap];
                 if (image.uri.empty() && image.image.size() > 0)
                     return Texture::loadTextureFromMemory(device, image.image, VkExtent3D{static_cast<uint32_t>(image.width), static_cast<uint32_t>(image.height), 1});
                 else if (!image.uri.empty())
                     return Texture::loadTextureFromFileWitoutInit(device, parentDir.string() + "/" + image.uri);
                 else {
                     LOGE("Image uri is empty and image data is empty!");
-                    //return nullptr;
+                    return std::unique_ptr<Texture>(nullptr);
                 }
             });
         futures->emplace_back(std::move(fut));
@@ -859,7 +859,6 @@ void GLTFLoadingImpl::loadImages(const std::filesystem::path& modelPath, const t
     auto reOrganize = thread_pool.push([this, futures](size_t) {
         for (auto& future : *futures)
             future.wait();
-
         for (int i = 0; i < futures->size(); i++) {
             textures.emplace_back(futures->operator[](i).get());
         }
@@ -894,7 +893,10 @@ void GLTFLoadingImpl::loadImages(const std::filesystem::path& modelPath, const t
 
         Texture::initTexturesInOneSubmit(textures);
 
-        sceneToLoad->setLoaded(true);
+        sceneToLoad->getLoadCompleteInfo().sceneTexturesLoaded = true;
+        if (sceneToLoad->getLoadCompleteInfo().GetSceneLoaded()) {
+            delete this;
+        }
         delete futures;
         return 1;
     });
@@ -936,8 +938,9 @@ const Texture* GLTFLoadingImpl::getTexture(uint32_t index) const {
 }
 
 std::unique_ptr<Scene> GltfLoading::LoadSceneFromGLTFFile(Device& device, const std::string& path, const SceneLoadingConfig& config) {
-    auto scene                = std::make_unique<Scene>();
-    auto model                = std::make_unique<GLTFLoadingImpl>(device, path, config, scene.get());
+    auto scene = std::make_unique<Scene>();
+    auto model = new GLTFLoadingImpl(device, path, config, scene.get());
+
     scene->primitives         = std::move(model->primitives);
     scene->textures           = std::move(model->textures);
     scene->materials          = std::move(model->materials);
@@ -950,6 +953,11 @@ std::unique_ptr<Scene> GltfLoading::LoadSceneFromGLTFFile(Device& device, const 
     scene->indexType          = model->indexType;
     scene->primitiveIdBuffer  = std::move(model->scenePrimitiveIdBuffer);
     scene->bufferRate         = config.bufferRate;
+
+    scene->getLoadCompleteInfo().sceneGeometryLoaded = true;
+    if (scene->getLoadCompleteInfo().GetSceneLoaded()) {
+        delete model;
+    }
     return scene;
 }
 

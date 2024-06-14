@@ -194,7 +194,7 @@ void Application::update() {
     RenderGraph graph(*device);
     graph.importTexture(RENDER_VIEW_PORT_IMAGE_NAME, &renderContext->getCurHwtexture());
 
-    if (scene->isLoaded()) {
+    if (scene->getLoadCompleteInfo().GetSceneLoaded()) {
         drawFrame(graph);
         mPostProcessPass->render(graph);
     }

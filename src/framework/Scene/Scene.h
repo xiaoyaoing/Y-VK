@@ -23,7 +23,11 @@ enum class BufferRate {
 };
 
 struct SceneLoadCompleteInfo {
-    bool loaded{false};
+    bool sceneGeometryLoaded{false};
+    bool sceneTexturesLoaded{false};
+    bool GetSceneLoaded() const {
+        return sceneGeometryLoaded && sceneTexturesLoaded;
+    }
 };
 
 class Scene {
@@ -63,8 +67,7 @@ public:
     void addPrimitive(std::unique_ptr<Primitive> primitive);
     void addPrimitives(std::vector<std::unique_ptr<Primitive>>&& primitives);
 
-    void setLoaded(bool loaded);
-    bool isLoaded() const;
+    SceneLoadCompleteInfo& getLoadCompleteInfo() const;
 
 protected:
     friend GltfLoading;

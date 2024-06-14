@@ -35,6 +35,7 @@ public:
      * \brief load from memory
      */
     SgImage(Device& device, const std::vector<uint8_t>& data, VkExtent3D extent, VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D, VkFormat format = VK_FORMAT_R8G8B8A8_UNORM);
+    SgImage(Device& device, std::vector<uint8_t>&& data, VkExtent3D extent, VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D, VkFormat format = VK_FORMAT_R8G8B8A8_UNORM);
 
     /**
      * \brief create from image attribute 

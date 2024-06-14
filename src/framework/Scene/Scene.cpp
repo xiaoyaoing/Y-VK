@@ -139,11 +139,8 @@ void Scene::addPrimitives(std::vector<std::unique_ptr<Primitive>>&& _primitives)
     primitives.insert(primitives.end(), std::make_move_iterator(_primitives.begin()), std::make_move_iterator(_primitives.end()));
     updateScenePrimitiveIdBuffer();
 }
-void Scene::setLoaded(bool loaded) {
-    loadCompleteInfo->loaded = loaded;
-}
-bool Scene::isLoaded() const {
-    return loadCompleteInfo->loaded;
+SceneLoadCompleteInfo& Scene::getLoadCompleteInfo() const {
+    return *loadCompleteInfo;
 }
 VkPrimitiveTopology GetVkPrimitiveTopology(PRIMITIVE_TYPE type) {
     switch (type) {

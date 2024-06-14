@@ -166,9 +166,9 @@ std::unique_ptr<Texture> Texture::loadTextureFromFileWitoutInit(Device& device, 
         return nullptr;
     return texture;
 }
-std::unique_ptr<Texture> Texture::loadTextureFromMemory(Device& device, const std::vector<uint8_t>& data, VkExtent3D extent, VkImageViewType viewType, VkFormat format) {
+std::unique_ptr<Texture> Texture::loadTextureFromMemory(Device& device, std::vector<uint8_t>& data, VkExtent3D extent, VkImageViewType viewType, VkFormat format) {
     std::unique_ptr<Texture> texture = std::make_unique<Texture>();
-    texture->image                   = std::make_unique<SgImage>(device, data, extent, viewType, format);
+    texture->image                   = std::make_unique<SgImage>(device, std::move(data), extent, viewType, format);
     CommandBuffer commandBuffer      = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
     auto          buffer             = Buffer(device, texture->image->getBufferSize(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
     initVKTexture(device, texture, commandBuffer, buffer, 0);

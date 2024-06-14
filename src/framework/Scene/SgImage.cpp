@@ -140,6 +140,10 @@ SgImage::SgImage(Device& device, const std::vector<uint8_t>& data, VkExtent3D ex
     setIsCubeMap(viewType == VK_IMAGE_VIEW_TYPE_CUBE);
     setExtent(extent);
 }
+SgImage::SgImage(Device& device, std::vector<uint8_t>&& data, VkExtent3D extent, VkImageViewType viewType, VkFormat format) : device(device), mData(std::move(data)), format(format) {
+    setIsCubeMap(viewType == VK_IMAGE_VIEW_TYPE_CUBE);
+    setExtent(extent);
+}
 
 SgImage::~SgImage() {
     // if(vkImage)delete vkImage.get();
