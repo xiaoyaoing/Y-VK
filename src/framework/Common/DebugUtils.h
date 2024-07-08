@@ -1,5 +1,5 @@
 #include <iostream>
-#include <glm/vec4.hpp>
+#include <vec4.hpp>
 #include <volk.h>
 #pragma once
 

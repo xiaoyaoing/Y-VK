@@ -29,6 +29,8 @@ layout(input_attachment_index = 0, binding = 0, set=2) uniform subpassInput gbuf
 layout(input_attachment_index = 1, binding = 1, set=2) uniform subpassInput gbuffer_normal_metalic;
 layout(input_attachment_index = 2, binding = 2, set=2) uniform subpassInput gbuffer_emission;
 layout(input_attachment_index = 3, binding = 3, set=2) uniform subpassInput gbuffer_depth;
+layout(binding = 4, set = 2, rgba32f) uniform image2D image;
+
 
 layout(binding = 2, set=1) uniform sampler2D brdf_lut;
 layout(binding = 0, set=1) uniform samplerCube irradiance_map;
@@ -41,7 +43,8 @@ layout(push_constant) uniform Params
     float scaleIBLAmbient;
     float prefilteredCubeMipLevels;
     int debugMode;
-    int padding[3];
+    uint frame_index;
+    uint padding[2];
 };
 
 vec3 Uncharted2Tonemap(vec3 color)
@@ -103,11 +106,11 @@ void main(){
     vec3  emission = subpassLoad(gbuffer_emission).rgb;
     float depth    = subpassLoad(gbuffer_depth).x;
 
-    if (depth == 0.0){
+    if (depth == 1.0){
         discard;
     }
 
-    vec3 world_pos = worldPosFromDepth(in_uv, depth);
+    vec3 world_pos = worldPosFromDepth(vec2(in_uv.x,1-in_uv.y), depth);
 
 
     vec3 diffuse_color = diffuse_roughness.xyz;
@@ -141,7 +144,7 @@ void main(){
         pbr_info.perceptualRoughness = perceptual_roughness;
         pbr_info.diffuseColor = diffuse_color * (1- metallic) * (1-0.04);
 
-        // color += ibl_fragment_shader(pbr_info, normal, R);
+         color += ibl_fragment_shader(pbr_info, normal, R);
     }
 
     {
@@ -178,6 +181,11 @@ void main(){
             color += light_contribution;
         }
     }
-
+   // color = normal;
     out_color = vec4(color, 1);
+    
+     float w = 1. / float(frame_index + 1);
+    vec3 old_color = imageLoad(image, ivec2(gl_FragCoord.xy)).xyz;
+    imageStore(image, ivec2(gl_FragCoord.xy),
+    vec4(mix(old_color, color, w), 1.f));
 }

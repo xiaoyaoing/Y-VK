@@ -56,10 +56,12 @@ void Example::prepare() {
     g_context->setFlipViewport(true);
     mRenderPasses.push_back(std::make_unique<GBufferPass>());
     mRenderPasses.push_back(std::make_unique<IBLLightingPass>());
-    mRenderPasses.push_back(std::make_unique<SSGIPass>());
+    //mRenderPasses.push_back(std::make_unique<SSGIPass>());
 
     // loadScene("E:/code/Vulkan-glTF-PBR/data/models/DamagedHelmet/glTF-Embedded/DamagedHelmet.gltf");
-    loadScene("E:/code/FidelityFX-SSSR/sample/media/Chess/scene.gltf");
+   // loadScene("E:/code/FidelityFX-SSSR/sample/media/Chess/scene.gltf");
+    //loadScene("C://Users//yjp//Downloads//ABeautifulGame//glTF//ABeautifulGame.gltf");
+    loadScene("C:/Users/yjp/Downloads/teapot/scene.json");
 
     RenderPtrManangr::init();
     g_manager->putPtr("view", view.get());
@@ -69,7 +71,7 @@ void Example::prepare() {
     }
 
     cube             = SceneLoaderInterface::loadSpecifyTypePrimitive(*device, "cube");
-    std::string path = "E:/code/Vulkan-glTF-PBR/data/environments/papermill.ktx";
+    std::string path = "C:/code/Vulkan-glTF-PBR/data/environments/papermill.ktx";
     environmentCube  = Texture::loadTextureFromFile(g_context->getDevice(), path);
     ibl              = std::make_unique<IBL>(*device, environmentCube.get());
 }

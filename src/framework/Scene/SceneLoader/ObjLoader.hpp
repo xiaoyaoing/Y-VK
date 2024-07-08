@@ -6,7 +6,7 @@
 #include <vector>
 #include <unordered_map>
 
-#include <glm/glm.hpp>
+#include <glm.hpp>
 
 
 using BufferData = std::vector<uint8_t>;

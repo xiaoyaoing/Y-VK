@@ -50,8 +50,16 @@ struct IBLLightingPassPushConstant {
     float scaleIBLAmbient = 1.0f;
     float prefilteredCubeMipLevels;
     int   debugMode;
-    int   padding[3];
+    int frameIndex = 0.f;;
+    int   padding[2];
 };
+
+struct GBufferPassPushConstant {
+   uint  frame_index;
+    uint pad;
+    ivec2 screen_size;
+};
+
 
 void IBLLightingPass::render(RenderGraph& rg) {
     rg.addGraphicPass(
@@ -65,10 +73,13 @@ void IBLLightingPass::render(RenderGraph& rg) {
             auto  irradianceCube = blackBoard.getHandle("irradianceCube");
             auto  prefilterCube  = blackBoard.getHandle("prefilterCube");
             auto  brdfLUT        = blackBoard.getHandle("brdfLUT");
+            auto  image = rg.createTexture("accul_image", {.extent = g_context->getViewPortExtent(), .useage = TextureUsage::STORAGE | TextureUsage::SAMPLEABLE,.format = VK_FORMAT_R32G32B32A32_SFLOAT });
 
             builder.readTextures({depth, normal, diffuse, emission, output});
             builder.readTextures({irradianceCube, prefilterCube, brdfLUT}, TextureUsage::SAMPLEABLE);
             builder.writeTexture(output);
+            builder.writeTexture(image);
+            builder.readTexture(image);
 
             RenderGraphPassDescriptor desc{};
             desc.setTextures({output, diffuse, depth, normal, emission}).addSubpass({.inputAttachments = {diffuse, depth, normal, emission}, .outputAttachments = {output}, .disableDepthTest = true});
@@ -86,9 +97,13 @@ void IBLLightingPass::render(RenderGraph& rg) {
             auto& prefilterCube  = blackBoard.getImageView("prefilterCube");
             auto& brdfLUT        = blackBoard.getImageView("brdfLUT");
 
+            if(view->getCamera()->moving()) {
+                frameIndex = 0;
+            }
             IBLLightingPassPushConstant constant;
             constant.prefilteredCubeMipLevels = prefilterCube.getImage().getMipLevelCount();
             constant.debugMode                = debugMode;
+            constant.frameIndex               = frameIndex++;
             g_context->bindPushConstants(constant);
 
             auto& irradianceCubeSampler = g_context->getDevice().getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_FILTER_LINEAR, irradianceCube.getImage().getMipLevelCount());
@@ -97,6 +112,7 @@ void IBLLightingPass::render(RenderGraph& rg) {
 
             g_context->bindImageSampler(0, irradianceCube, irradianceCubeSampler).bindImageSampler(1, prefilterCube, prefilterCubeSampler).bindImageSampler(2, brdfLUT, brdfLUTSampler);
 
+            g_context->bindImage(4,blackBoard.getImageView("accul_image"));
             g_context->bindImage(0, blackBoard.getImageView("diffuse"))
                 .bindImage(1, blackBoard.getImageView("normal"))
                 .bindImage(2, blackBoard.getImageView("emission"))
@@ -156,5 +172,11 @@ void GBufferPass::render(RenderGraph& rg) {
 
             builder.writeTextures({diffuse,  emission, depth}, TextureUsage::COLOR_ATTACHMENT).writeTexture(depth, TextureUsage::DEPTH_ATTACHMENT); }, [&](RenderPassContext& context) {
             renderContext->getPipelineState().setPipelineLayout(*mPipelineLayout).setDepthStencilState({.depthCompareOp = VK_COMPARE_OP_LESS});
+
+            GBufferPassPushConstant pc{};
+            pc.frame_index = frameIndex++;
+            pc.screen_size = ivec2(g_context->getViewPortExtent().width, g_context->getViewPortExtent().height);
+            g_context->bindPushConstants(pc);
+                g_context->getPipelineState().setRasterizationState({.cullMode =  VK_CULL_MODE_NONE});
             g_manager->fetchPtr<View>("view")->bindViewBuffer().bindViewShading().bindViewGeom(context.commandBuffer).drawPrimitives(context.commandBuffer); });
 }

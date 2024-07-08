@@ -15,7 +15,7 @@ target_link_libraries(${target_name} PUBLIC
         glfw
         stb_image
 
-        # glm
+         glm
         imgui
         ktx
         astc

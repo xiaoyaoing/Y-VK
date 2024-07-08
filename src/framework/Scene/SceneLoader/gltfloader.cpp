@@ -53,7 +53,7 @@ inline std::vector<uint8_t> convertIndexData(const std::vector<uint8_t>& src_dat
                 return src_data;
         }
     Default:
-        LOGE("Unsupported index format {} ", format)
+        LOGE("Unsupported index format {} ", uint64_t(format))
     } else {
         //type            = targetType;
         float srcStride = formatStrideMap.at(format);
@@ -403,6 +403,24 @@ void GLTFLoadingImpl::loadLights(const tinygltf::Model& model) {
             sgLight.lightProperties.direction = vec4(0.0f, 0.0f, 1.0f, 0.0f);
             this->lights.push_back(sgLight);
         }
+    }
+    if(lights.empty()) {
+        //Add default Directional light
+        SgLight sgLight;
+        sgLight.lightProperties.color = vec3(1.0f);
+        sgLight.lightProperties.intensity = 10.0f;
+        vec3 dir = glm::normalize(vec3(1,0,0));
+        sgLight.lightProperties.direction = vec4(dir, 0.0f);
+        sgLight.type = LIGHT_TYPE::Directional;
+        lights.push_back(sgLight);
+
+        dir = glm::normalize(vec3(0,1,0));
+        sgLight.lightProperties.direction  = vec4(dir, 0.0f);
+        lights.push_back(sgLight);
+
+        dir = glm::normalize(vec3(0,0,1));
+        sgLight.lightProperties.direction  = vec4(dir, 0.0f);
+        lights.push_back(sgLight);
     }
 }
 int GLTFLoadingImpl::requestTexture(int tex, const tinygltf::Model& model) {
@@ -844,7 +862,7 @@ void GLTFLoadingImpl::loadImages(const std::filesystem::path& modelPath, std::sh
             [this, parentDir, temp_remap = remap, gltfModel](size_t) {
                 auto& image = gltfModel->images[temp_remap];
                 if (image.uri.empty() && image.image.size() > 0)
-                    return Texture::loadTextureFromMemory(device, image.image, VkExtent3D{static_cast<uint32_t>(image.width), static_cast<uint32_t>(image.height), 1});
+                    return Texture::loadTextureFromMemoryWithoutInit(device, image.image, VkExtent3D{static_cast<uint32_t>(image.width), static_cast<uint32_t>(image.height), 1});
                 else if (!image.uri.empty())
                     return Texture::loadTextureFromFileWitoutInit(device, parentDir.string() + "/" + image.uri);
                 else {

@@ -2,7 +2,7 @@
 
 #include "Core/Vulkan.h"
 #include "Core/Buffer.h"
-#include <glm/vec2.hpp>
+#include <vec2.hpp>
 
 #include "InputEvent.h"
 #include "Core/BufferPool.h"

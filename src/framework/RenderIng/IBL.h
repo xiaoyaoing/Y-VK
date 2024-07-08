@@ -19,7 +19,7 @@ protected:
     std::unique_ptr<PipelineLayout> cubeMapLayout;
     std::unique_ptr<PipelineLayout> envMapLayout;
     std::unique_ptr<PipelineLayout> brdfLUTLayout;
-    SgImage *                       irradianceCube{nullptr}, *prefilterCube{nullptr}, *brdfLUT{nullptr};
+    std::unique_ptr<SgImage>                     irradianceCube{nullptr}, prefilterCube{nullptr}, brdfLUT{nullptr};
     const Texture*                  environmentCube{nullptr};
     Device&                         device;
 };

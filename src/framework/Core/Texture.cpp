@@ -175,6 +175,13 @@ std::unique_ptr<Texture> Texture::loadTextureFromMemory(Device& device, std::vec
     g_context->submit(commandBuffer);
     return texture;
 }
+std::unique_ptr<Texture> Texture::loadTextureFromMemoryWithoutInit(Device& device, std::vector<uint8_t>& data, VkExtent3D extent, VkImageViewType viewType, VkFormat format) {
+    std::unique_ptr<Texture> texture = std::make_unique<Texture>();
+    texture->image                   = std::make_unique<SgImage>(device, std::move(data), extent, viewType, format);
+    if (texture->image->getData().empty())
+        return nullptr;
+    return texture;
+}
 
 // void GenerateTextureMipmaps(Device& device, std::vector<std::unique_ptr<Texture>> & textures) {
 //     // CommandBuffer                        commandBuffer = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);

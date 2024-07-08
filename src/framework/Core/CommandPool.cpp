@@ -43,6 +43,8 @@ CommandBuffer CommandPool::allocateCommandBuffer(VkCommandBufferLevel level, boo
     info.level              = level;
     info.commandPool        = _pool;
     VkCommandBuffer buffer;
+   // auto result = vkAllocateCommandBuffers(_device.getHandle(), &info, &buffer;
+    auto result = vkAllocateCommandBuffers(_device.getHandle(), &info, &buffer);
     VK_CHECK_RESULT(vkAllocateCommandBuffers(_device.getHandle(), &info, &buffer))
 
     if (begin) {

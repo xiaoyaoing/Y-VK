@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glm/gtx/hash.hpp>
+#include <gtx/hash.hpp>
 
 #include "PipelineState.h"
 #include "RenderTarget.h"

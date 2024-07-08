@@ -1,7 +1,7 @@
 #pragma once
 
-#include <glm/vec3.hpp>
-#include <glm/vec4.hpp>
+#include <vec3.hpp>
+#include <vec4.hpp>
 
 #include "Compoments/RenderPrimitive.h"
 #include "Core/Texture.h"

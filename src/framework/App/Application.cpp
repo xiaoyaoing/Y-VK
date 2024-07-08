@@ -278,7 +278,7 @@ void Application::handleSaveImage(RenderGraph& graph) {
 }
 
 void Application::setFocused(bool focused) {
-    //m_focused = focused;
+    m_focused = focused;
 }
 
 // void Application::loadScene(const std::string& path,const SceneLoadingConfig & config)

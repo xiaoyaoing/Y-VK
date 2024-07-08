@@ -38,6 +38,10 @@ RENDER_GRAPH_RESOURCE_TYPE RenderGraphTexture::getType() const {
 }
 
 void RenderGraphTexture::resloveUsage(CommandBuffer& commandBuffer, uint16_t usage) {
+    if(getName() == "irradianceCube") {
+        int k = 1;
+    }
+    auto extent = mHwTexture->getExtent();
     TextureUsage textureUsage = static_cast<TextureUsage>(usage);
     if (textureUsage == TextureUsage::NONE)
         return;

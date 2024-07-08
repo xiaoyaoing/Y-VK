@@ -97,7 +97,7 @@ void JsonLoader::loadCamera() {
     vec2  resolution = GetOptional(cameraJson, "resolution", vec2(1920, 1080));
     float aspect     = resolution.x / resolution.y;
     //  camera->setRotation(GetOptional(transform, "rotation", glm::vec3(0.0f)));
-    camera->setPerspective(GetOptional(transform, "fov", 45.0f), aspect, GetOptional(cameraJson, "zNear", 0.1f), GetOptional(cameraJson, "zFar", 4000.0f));
+    camera->setPerspective(GetOptional(transform, "fov", 45.0f), aspect, GetOptional(cameraJson, "zNear", 0.00001f), GetOptional(cameraJson, "zFar", 4000.0f));
     camera->setFlipY(true);
     cameras.push_back(camera);
 }
@@ -189,11 +189,20 @@ void handleSpecifyMaterialAttribute(RTMaterial& rtMaterial, const Json& material
 }
 void JsonLoader::loadMaterials() {
     std::unordered_set<std::string> texture_paths;
-    for (auto& materialJson : materialJsons) {
-        RTMaterial rtMaterial;
-        if (materialJson.contains("albedo") && materialJson["albedo"].is_string()) {
-            texture_paths.insert(materialJson["albedo"].get<std::string>());
+
+    static auto InsertTexturePath([&texture_paths](const Json& materialJson,const std::string & attribute) {
+        if (materialJson.contains(attribute) && materialJson[attribute].is_string()) {
+            texture_paths.insert(materialJson[attribute].get<std::string>());
         }
+    });
+    
+    for (auto& materialJson : materialJsons) {
+        InsertTexturePath(materialJson, "albedo");
+        InsertTexturePath(materialJson, "normal");
+        InsertTexturePath(materialJson, "metallic");
+        InsertTexturePath(materialJson, "roughness");
+        InsertTexturePath(materialJson, "ao");
+        InsertTexturePath(materialJson, "emission");        
     }
     //  std::vector<std::unique_ptr<Texture>> textures;
     std::unordered_map<std::string_view, int> texture_index;
@@ -232,6 +241,10 @@ void JsonLoader::loadMaterials() {
         GltfMaterial material        = InitGltfMaterial();
         material.pbrBaseColorFactor  = glm::vec4(rtMaterial.albedo, 1);
         material.pbrBaseColorTexture = rtMaterial.texture_id;
+        if(materialJson.contains("normal") && materialJson["normal"].is_string()) {
+            auto textureName = materialJson["normal"].get<std::string>();
+            material.normalTexture = texture_index.contains(textureName) ? texture_index[textureName] : -1;
+        }
         materials.push_back(material);
     }
     //textures.clear();
@@ -531,5 +544,7 @@ std::unique_ptr<Scene> Jsonloader::LoadSceneFromJsonFile(Device& device, const s
     scene->indexType          = VK_INDEX_TYPE_UINT32;
     scene->primitiveIdBuffer  = std::move(loader.scenePrimitiveIdBuffer);
 
+    scene->loadCompleteInfo->sceneGeometryLoaded = true;
+    scene->loadCompleteInfo->sceneTexturesLoaded = true;
     return scene;
 }

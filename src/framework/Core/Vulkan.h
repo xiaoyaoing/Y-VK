@@ -19,7 +19,7 @@
 #include <cstdarg>
 #include <stdexcept>
 #include <algorithm>
-#include <glm/fwd.hpp>
+#include <fwd.hpp>
 
 #include "Common/Log.h"
 #include "Common/DebugUtils.h"
@@ -27,7 +27,7 @@
 #include "Common/FIleUtils.h"
 #include "Common/Enums.h"
 
-#include <glm/glm.hpp>
+#include <glm.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
 
 #include "vk_mem_alloc.h"

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "RenderGraph/RenderGraph.h"
-#include <glm/glm.hpp>
+#include <glm.hpp>
 
 class Scene;
 

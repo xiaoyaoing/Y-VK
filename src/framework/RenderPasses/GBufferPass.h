@@ -11,6 +11,7 @@ public:
 
 private:
     std::unique_ptr<PipelineLayout> mPipelineLayout{nullptr};
+    uint32_t frameIndex{0};
     // Device&                         device;
 };
 
@@ -30,4 +31,5 @@ public:
 
 protected:
     int debugMode = 0;
+    uint32_t frameIndex{0};
 };

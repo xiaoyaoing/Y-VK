@@ -4,7 +4,7 @@
 
 #include <memory>
 #include <string>
-#include <glm/glm.hpp>
+#include <glm.hpp>
 
 
 class BBox;

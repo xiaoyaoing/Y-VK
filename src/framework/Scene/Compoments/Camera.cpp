@@ -1,13 +1,13 @@
 #define GLM_ENABLE_EXPERIMENTAL
 
-#include <glm/ext/matrix_clip_space.hpp>
+#include <ext/matrix_clip_space.hpp>
 #include "Camera.h"
 
 #include "imgui.h"
 #include "Core/math.h"
 
-#include <glm/vec3.hpp>
-#include <glm/gtx/quaternion.hpp>
+#include <vec3.hpp>
+#include <gtx/quaternion.hpp>
 Camera0::Camera0() {
 }
 

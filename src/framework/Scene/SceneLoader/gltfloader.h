@@ -6,9 +6,9 @@
 
 #include "SceneLoadingConfig.h"
 
-#include <glm/ext/matrix_float4x4.hpp>
-#include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include <ext/matrix_float4x4.hpp>
+#include <glm.hpp>
+#include <gtc/type_ptr.hpp>
 
 #include <filesystem>
 #include <unordered_set>

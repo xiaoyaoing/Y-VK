@@ -1,5 +1,5 @@
 #pragma once
-#include <glm/glm.hpp>
+#include <glm.hpp>
 
 namespace math {
     constexpr float PI          = 3.1415926536f;

@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Buffer.h"
 
-#include <glm/glm.hpp>
+#include <glm.hpp>
 #include <memory>
 #include <vector>
 

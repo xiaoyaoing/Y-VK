@@ -245,8 +245,8 @@ GltfMaterial InitGltfMaterial() {
     GltfMaterial material{};
     material.pbrBaseColorFactor          = glm::vec4(1.0f);
     material.pbrBaseColorTexture         = -1;
-    material.pbrMetallicFactor           = 0.f;
-    material.pbrRoughnessFactor          = 0.f;
+    material.pbrMetallicFactor           = 0.1f;
+    material.pbrRoughnessFactor          = 0.8f;
     material.pbrMetallicRoughnessTexture = -1;
     material.emissiveTexture             = -1;
     material.emissiveFactor              = glm::vec3(0.0f);

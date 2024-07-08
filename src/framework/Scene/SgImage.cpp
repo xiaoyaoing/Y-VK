@@ -266,6 +266,7 @@ void SgImage::createImageView(VkImageViewType view_type, VkFormat format, uint32
     size_t hashValue = ImageViewHash(view_type, format, mip_level, base_array_layer, n_mip_levels, n_array_layers);
     if (vkImageViews.contains(hashValue)) {
         LOGW("Image view already created for hash value: {}", hashValue);
+        return;
     }
     vkImageViews[hashValue] = std::make_unique<ImageView>(*vkImage, view_type, format, mip_level, base_array_layer, n_mip_levels, n_array_layers);
 }
