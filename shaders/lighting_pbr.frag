@@ -21,13 +21,17 @@ layout(binding = 4, set = 0) uniform LightsInfo
 }lights_info;
 
 
-
+layout(push_constant) uniform Params
+{
+    uint frame_index;
+} pc;
 
 layout(input_attachment_index = 0, binding = 0, set=2) uniform subpassInput gbuffer_diffuse_roughness;
 //layout(input_attachment_index = 1, binding = 1, set=2) uniform subpassInput gbuffer_specular;
 layout(input_attachment_index = 1, binding = 1, set=2) uniform subpassInput gbuffer_normal_metalic;
 layout(input_attachment_index = 2, binding = 2, set=2) uniform subpassInput gbuffer_emission;
 layout(input_attachment_index = 3, binding = 3, set=2) uniform subpassInput gbuffer_depth;
+layout(binding = 4, set = 2, rgba32f) uniform image2D image;
 
 
 void main(){
@@ -42,6 +46,10 @@ void main(){
     float depth    = subpassLoad(gbuffer_depth).x;
 
     if (depth == 1.0){
+        float w = 1. / float(pc.frame_index + 1);
+        vec3 old_color = imageLoad(image, ivec2(gl_FragCoord.xy)).xyz;
+        imageStore(image, ivec2(gl_FragCoord.xy),
+        vec4(mix(old_color, vec3(0), w), 1.f));
         discard;
     }
 
@@ -101,5 +109,12 @@ void main(){
 
         }
     }
+    direct_contribution = clamp(direct_contribution, vec3(0), vec3(1));
+    direct_contribution = diffuse_color;
     out_color = vec4(direct_contribution, 1);
+
+    float w = 1. / float(pc.frame_index + 1);
+    vec3 old_color = imageLoad(image, ivec2(gl_FragCoord.xy)).xyz;
+    imageStore(image, ivec2(gl_FragCoord.xy),
+    vec4(mix(old_color, direct_contribution, w), 1.f));
 }

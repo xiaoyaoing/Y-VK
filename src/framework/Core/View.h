@@ -31,6 +31,7 @@ public:
 
     std::vector<const Texture*> GetMTextures() const;
     std::vector<GltfMaterial>   GetMMaterials() const;
+    uint32_t frameIndex{0};
 
 protected:
     struct PerViewUnifom {

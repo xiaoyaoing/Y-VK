@@ -24,6 +24,8 @@
 #include "Images/KtxFormat.h"
 #include "Core/Buffer.h"
 #include "IO/ImageIO.h"
+
+
 struct CallbackData final {
     ktxTexture*          texture;
     std::vector<Mipmap>* mipmaps;
@@ -129,7 +131,7 @@ void SgImage::createVkImage(Device& device, uint32_t mipLevels, VkImageViewType 
     mipLevels = getMipLevelCount() == 1 ? std::log2(std::max(mExtent3D.width, mExtent3D.height)) + 1 : getMipLevelCount();
     if (!needGenerateMipMap) mipLevels = 1;
 
-    vkImage = std::make_unique<Image>(device, mExtent3D, format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_SAMPLE_COUNT_1_BIT, mipLevels, layers, flags);
+    vkImage = std::make_unique<Image>(device, mExtent3D, format, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT , VMA_MEMORY_USAGE_GPU_ONLY, VK_SAMPLE_COUNT_1_BIT, mipLevels, layers, flags);
     createImageView();
 }
 
@@ -436,14 +438,14 @@ void SgImage::loadResources(const std::string& path) {
         stbi_image_free(pixels);
         format             = VK_FORMAT_R32G32B32A32_SFLOAT;
         needGenerateMipMap = false;
-    } else if (ext == "dds") {
+    } else if (ext == "dds" || ext == "exr") {
         auto desc = ImageIO::loadImage(path);
         setExtent(desc.extent);
         mData              = std::move(desc.data);
         format             = desc.format;
         needGenerateMipMap = desc.needGenerateMipmaps;
-
-    } else {
+    }
+    else {
         LOGE("Unsupported image format: {}", ext);
     }
 

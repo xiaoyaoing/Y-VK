@@ -14,6 +14,7 @@ namespace TextureHelper {
     };
 
     std::unique_ptr<SgImage> helperTextures[HELPERTEXTURE_COUNT];
+    std::unique_ptr<Buffer> helperBuffers[HELPERTEXTURE_COUNT];
     std::unique_ptr<Sampler> sampler;
 
     void Initialize() {
@@ -65,7 +66,10 @@ namespace TextureHelper {
             blueNoise->getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY, subresourceRange);
             g_context->submit(commandBuffer);
             helperTextures[HELPERTEXTURE_BLUENOISE] = std::move(blueNoise);
-        }
+
+            helperBuffers[HELPERTEXTURE_BLUENOISE] = std::make_unique<Buffer>(g_context->getDevice(), data.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, data.data());
+            helperBuffers[HELPERTEXTURE_BLUENOISE]->uploadData(data.data(),data.size());
+        }l
 
         {
         }
@@ -75,5 +79,9 @@ namespace TextureHelper {
     }
     const SgImage* GetBlueNoise() {
         return helperTextures[HELPERTEXTURE_BLUENOISE].get();
+    }
+
+     Buffer* GetBlueNoiseBuffer() {
+        return helperBuffers[HELPERTEXTURE_BLUENOISE].get();
     }
 }

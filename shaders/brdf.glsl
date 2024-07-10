@@ -66,6 +66,9 @@ float microfacetDistribution(PBRInfo pbrInputs)
 
 vec3 microfacetBRDF(PBRInfo pbrInputs)
 {
+    
+    //return vec3(pow(clamp(pbrInputs.NdotH,0.f,1.f),2.2));
+    
  //   return vec3(pbrInputs.alphaRoughness);
     vec3 F = FresnelSchlick(pbrInputs);
     float G = geometricOcclusion(pbrInputs);
@@ -77,6 +80,7 @@ vec3 microfacetBRDF(PBRInfo pbrInputs)
     vec3 diffuseContrib = (1.0 - F) * diffuse(pbrInputs);
     vec3 specContrib = F * G * D / (4.0 *  pbrInputs.NdotV);
     //! Obtain final intensity as reflectance (BRDF) scaled by the energy of the light (cos law)
+//    return specContrib;
     return diffuseContrib * pbrInputs.NdotL + specContrib;
 }
 

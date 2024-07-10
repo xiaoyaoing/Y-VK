@@ -9,3 +9,4 @@ layout (std430, set=0, binding = 3) readonly buffer  MaterialBuffer
 };
 
 layout(set =0, binding =6) uniform sampler2D scene_textures[MAX_SCENE_TEXTURES];                         
+layout(set =2, binding =7,rgba8) uniform image2D scene_storage_textures[MAX_SCENE_TEXTURES];                         

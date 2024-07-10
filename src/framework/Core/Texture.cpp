@@ -100,7 +100,7 @@ static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture, Com
 
     commandBuffer.copyBufferToImage(imageBuffer, texture->image->getVkImage(), imageCopyRegions);
 
-    texture->getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY, subresourceRange);
+    texture->getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::STORAGE, subresourceRange);
 
     if (texture->image->getMipMaps().size() == 1 && texture->image->needGenerateMipMapOnGpu()) {
         std::vector<VkImageBlit2> blits;

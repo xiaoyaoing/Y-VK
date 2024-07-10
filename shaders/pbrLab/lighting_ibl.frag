@@ -107,6 +107,8 @@ void main(){
     float depth    = subpassLoad(gbuffer_depth).x;
 
     if (depth == 1.0){
+        imageStore(image, ivec2(gl_FragCoord.xy),
+        vec4(0,0,0, 1.f));
         discard;
     }
 
@@ -181,7 +183,7 @@ void main(){
             color += light_contribution;
         }
     }
-   // color = normal;
+ //   color = diffuse_color;
     out_color = vec4(color, 1);
     
      float w = 1. / float(frame_index + 1);

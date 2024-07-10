@@ -136,13 +136,16 @@ void RayTracer::prepare() {
     // loadScene("C:/Users/pc/Dow nloads/living-room/living-room/living-room/scene.json");
     //sceneLoadingConfig.sceneScale = glm::vec3(0.01f);
     //  loadScene("E:/code/MoerEngine/target/bin/RelWithDebInfo/resource/default/scenes/sponza/Sponza01.gltf");
-    loadScene("E:/packman-repo/chk/rtxdi-media/p4sw-30874147/Arcade/Arcade.gltf");
+    // loadScene("E:/packman-repo/chk/rtxdi-media/p4sw-30874147/Arcade/Arcade.gltf");
     // loadScene(FileUtils::getResourcePath("sponza/Sponza01.gltf"));
     // loadScene(FileUtils::getResourcePath("staircase2/scene.json"));
     //   loadScene(FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));
     // loadScene("C:/Users/pc/Downloads/glTF-Sample-Models-main/glTF-Sample-Models-main/2.0/RiggedFigure/glTF/RiggedFigure.gltf");
     // camera->getTransform()->setPosition(glm::vec3(0.f, 0.f, 3.f));
     //  camera->getTransform()->setlokllRotation({1, 0, 0, 0});
+
+    loadScene("C:/Users/yuanjunping/Downloads/teapot/scene.json");
+
 }
 
 void RayTracer::onUpdateGUI() {

@@ -1,6 +1,7 @@
 #include "GBufferPass.h"
 
 #include "Common/ResourceCache.h"
+#include "Common/TextureHelper.h"
 #include "Core/RenderContext.h"
 #include "Core/View.h"
 void GBufferPass::init() {
@@ -8,6 +9,13 @@ void GBufferPass::init() {
     Device& device  = g_context->getDevice();
     mPipelineLayout = std::make_unique<PipelineLayout>(device, std::vector<std::string>{"defered_one_scene_buffer.vert", "defered_pbr.frag"});
 }
+
+void GBufferPass::updateGui() {
+    PassBase::updateGui();
+    ImGui::Checkbox("Jitter", reinterpret_cast<bool*>(&jitter));
+    ImGui::SliderInt("Stochastic", reinterpret_cast<int*>(&stochastic), 0, 3);
+}
+
 void LightingPass::render(RenderGraph& rg) {
     rg.addGraphicPass(
         "LightingPass", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
@@ -17,9 +25,13 @@ void LightingPass::render(RenderGraph& rg) {
             auto  diffuse    = blackBoard["diffuse"];
             auto  emission   = blackBoard["emission"];
             auto  output     = blackBoard.getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
+            auto  image = rg.createTexture("accul_image", {.extent = g_context->getViewPortExtent(), .useage = TextureUsage::STORAGE | TextureUsage::SAMPLEABLE,.format = VK_FORMAT_R32G32B32A32_SFLOAT });
+
 
             builder.readTextures({depth, normal, diffuse, emission});
             builder.writeTexture(output);
+            builder.readTexture(image);
+            builder.writeTexture(image);
 
             RenderGraphPassDescriptor desc{};
             desc.setTextures({output, diffuse, depth, normal, emission}).addSubpass({.inputAttachments = {diffuse, depth, normal, emission}, .outputAttachments = {output}, .disableDepthTest = true});
@@ -32,10 +44,12 @@ void LightingPass::render(RenderGraph& rg) {
             auto& blackBoard    = rg.getBlackBoard();
             g_context->getPipelineState().setPipelineLayout(*mPipelineLayout).setRasterizationState({.cullMode = VK_CULL_MODE_NONE}).setDepthStencilState({.depthTestEnable = false});
             view->bindViewBuffer();
+            uint frameIndex = view->frameIndex;
+            g_context->bindPushConstants(frameIndex);
             g_context->bindImage(0, blackBoard.getImageView("diffuse"))
                 .bindImage(1, blackBoard.getImageView("normal"))
                 .bindImage(2, blackBoard.getImageView("emission"))
-                .bindImage(3, blackBoard.getImageView("depth"))
+                .bindImage(3, blackBoard.getImageView("depth")).bindImage(4,blackBoard.getImageView("accul_image"))
                 .flushAndDraw(commandBuffer, 3, 1, 0, 0);
         });
 }
@@ -56,8 +70,10 @@ struct IBLLightingPassPushConstant {
 
 struct GBufferPassPushConstant {
    uint  frame_index;
-    uint pad;
+   uint jitter;
     ivec2 screen_size;
+    uint stochastic;
+    uint padding[3];
 };
 
 
@@ -172,11 +188,23 @@ void GBufferPass::render(RenderGraph& rg) {
 
             builder.writeTextures({diffuse,  emission, depth}, TextureUsage::COLOR_ATTACHMENT).writeTexture(depth, TextureUsage::DEPTH_ATTACHMENT); }, [&](RenderPassContext& context) {
             renderContext->getPipelineState().setPipelineLayout(*mPipelineLayout).setDepthStencilState({.depthCompareOp = VK_COMPARE_OP_LESS});
+                auto& sampler = g_context->getDevice().getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_NEAREST, 1);
 
             GBufferPassPushConstant pc{};
             pc.frame_index = frameIndex++;
+            pc.jitter = jitter;
+            pc.stochastic= stochastic;
             pc.screen_size = ivec2(g_context->getViewPortExtent().width, g_context->getViewPortExtent().height);
             g_context->bindPushConstants(pc);
                 g_context->getPipelineState().setRasterizationState({.cullMode =  VK_CULL_MODE_NONE});
+                auto & buffer = *TextureHelper::GetBlueNoiseBuffer();
+                std::vector<float> data;
+                data.resize(128 * 128 * 4);
+                auto mapped = buffer.map();
+                memcpy(data.data(), mapped, 128 * 128 * 4);
+                buffer.unmap();
+                
+               // g_context->bindImageSampler(5,TextureHelper::GetBlueNoise()->getVkImageView(),sampler);
+                g_context->bindBuffer(5,*TextureHelper::GetBlueNoiseBuffer());
             g_manager->fetchPtr<View>("view")->bindViewBuffer().bindViewShading().bindViewGeom(context.commandBuffer).drawPrimitives(context.commandBuffer); });
 }

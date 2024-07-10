@@ -3,6 +3,8 @@
 #extension GL_EXT_debug_printf : enable
 
 #include "perFrame.glsl"
+//#include "common/sampling.glsl"
+precision highp float;
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 normal;
@@ -19,34 +21,33 @@ layout(std430, set = 0, binding = 2) readonly buffer _GlobalPrimitiveUniform {
     PerPrimitive primitive_infos[];
 };
 
+layout(std430, set = 0, binding = 5) readonly buffer _BLUE_NOISE {
+    vec4 blue_noise[];
+};
+
+
+
 layout(push_constant) uniform PushConstant {
     uint  frame_index;
-        uint pad;
+    uint jitter;
     ivec2 screen_size;
+    uint use_stochastic;
+    uint padding[3];
 } pc;
 
-vec2 uv_jitter(){
-    return vec2(0,0);
 
+
+vec2 uv_jitter(){
+//    return vec2(0,0);
+
+    if(pc.jitter == 0u) return vec2(0.f,0.f);
     int index = int(pc.frame_index);
-    index = index % 16;
-   if(index == 0) return vec2(0.500000, 0.333333);
-    else if(index == 1) return vec2(0.250000, 0.666667);
-    else if(index == 2) return vec2(0.750000, 0.111111);
-    else if(index == 3) return vec2(0.125000, 0.444444);
-    else if(index == 4) return vec2(0.625000, 0.777778);
-    else if(index == 5) return vec2(0.375000, 0.222222);
-    else if(index == 6) return vec2(0.875000, 0.555556);
-    else if(index == 7) return vec2(0.062500, 0.888889);
-    else if(index == 8) return vec2(0.562500, 0.037037);
-    else if(index == 9) return vec2(0.312500, 0.370370);
-    else if(index == 10) return vec2(0.812500, 0.703704);
-    else if(index == 11) return vec2(0.187500, 0.148148);
-    else if(index == 12) return vec2(0.687500, 0.481481);
-    else if(index == 13) return vec2(0.437500, 0.814815);
-    else if(index == 14) return vec2(0.937500, 0.259259);
-    else if(index == 15) return vec2(0.031250, 0.592593);
-    return vec2(0,0);
+    index = index % (128 * 128);
+    ivec2 uv = ivec2(index % 128, index / 128);
+    vec2 uv_float = vec2(uv) + vec2(0.5f);
+   // debugPrintfEXT("uv_float: %f %f\n", uv_float.x, uv_float.y);
+ return blue_noise[index].xy / 255.f;
+   
     }
 
 void main(void)
@@ -72,4 +73,6 @@ void main(void)
 
     gl_Position = per_frame.view_proj * pos;
     gl_Position.xy += (uv_jitter() - vec2(0.5f)) / vec2(pc.screen_size);
+    vec2 jitter = uv_jitter();
+   // debugPrintfEXT("jitter: %f %f\n", jitter.x, jitter.y);
 }

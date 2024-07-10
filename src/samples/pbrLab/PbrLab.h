@@ -22,4 +22,6 @@ protected:
     std::unique_ptr<Texture>               environmentCube;
     float                                  exposure = 4.5f;
     float                                  gamma    = 2.2f;
+    glm::vec3 dir = vec3(1);
+
 };

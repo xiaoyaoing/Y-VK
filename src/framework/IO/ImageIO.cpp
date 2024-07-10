@@ -170,6 +170,11 @@ VkFormat ConvertFormatFromDxgiFormat(DXGI_FORMAT format, bool alpha_flag) {
     }
 }
 
+
+#define TINYEXR_IMPLEMENTATION
+
+#include <ext/tinyexr/tinyexr.h>
+
 ImageIO::ImageDesc ImageIO::loadImage(const std::string& path) {
     auto ext = FileUtils::getFileExt(path);
     if (ext == "dds") {
@@ -183,6 +188,21 @@ ImageIO::ImageDesc ImageIO::loadImage(const std::string& path) {
         memcpy(desc.data.data(), image.data.data(), image.data.size());
         desc.format              = ConvertFormatFromDxgiFormat(image.format, image.supportsAlpha);
         desc.needGenerateMipmaps = false;
+        return desc;
+    }
+    if(ext == "exr") {
+        ImageDesc desc;
+        int    targetChannels = 3;
+        float* img;
+        int    ret    = LoadEXR(&img, reinterpret_cast<int*>(&desc.extent.width), reinterpret_cast<int*>(&desc.extent.height), path.c_str(), nullptr);
+        desc.format = VK_FORMAT_R32G32B32_SFLOAT;
+        desc.needGenerateMipmaps = true;
+        int w = desc.extent.width;
+        int h = desc.extent.height;
+        desc.extent.height = 1;
+        desc.data.resize(w * h * targetChannels * sizeof(float));
+        memcpy(desc.data.data(),img, w * h * targetChannels * sizeof(float));
+        free(img);
         return desc;
     }
 }

@@ -241,6 +241,7 @@ void JsonLoader::loadMaterials() {
         GltfMaterial material        = InitGltfMaterial();
         material.pbrBaseColorFactor  = glm::vec4(rtMaterial.albedo, 1);
         material.pbrBaseColorTexture = rtMaterial.texture_id;
+        material.pbrRoughnessFactor = rtMaterial.roughness;
         if(materialJson.contains("normal") && materialJson["normal"].is_string()) {
             auto textureName = materialJson["normal"].get<std::string>();
             material.normalTexture = texture_index.contains(textureName) ? texture_index[textureName] : -1;
