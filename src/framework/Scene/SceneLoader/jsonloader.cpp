@@ -199,6 +199,7 @@ void JsonLoader::loadMaterials() {
     for (auto& materialJson : materialJsons) {
         InsertTexturePath(materialJson, "albedo");
         InsertTexturePath(materialJson, "normal");
+        InsertTexturePath(materialJson, "mr");
         InsertTexturePath(materialJson, "metallic");
         InsertTexturePath(materialJson, "roughness");
         InsertTexturePath(materialJson, "ao");
@@ -245,6 +246,11 @@ void JsonLoader::loadMaterials() {
         if(materialJson.contains("normal") && materialJson["normal"].is_string()) {
             auto textureName = materialJson["normal"].get<std::string>();
             material.normalTexture = texture_index.contains(textureName) ? texture_index[textureName] : -1;
+        }
+
+        if(materialJson.contains("mr") && materialJson["mr"].is_string()) {
+            auto textureName = materialJson["mr"].get<std::string>();
+            material.pbrMetallicRoughnessTexture = texture_index.contains(textureName) ? texture_index[textureName] : -1;
         }
         materials.push_back(material);
     }

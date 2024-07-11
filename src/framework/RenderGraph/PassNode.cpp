@@ -64,7 +64,7 @@ void RenderPassNode::RenderPassData::devirtualize(RenderGraph& renderGraph, cons
         attachments.push_back(attachment);
         attachment_textures[color] = index++;
     }
-    renderTarget = std::make_unique<RenderTarget>(images, attachments, g_context->getViewPortExtent());
+    renderTarget = std::make_unique<RenderTarget>(images, attachments, images[0]->getExtent2D());
 }
 
 RenderTarget& RenderPassNode::RenderPassData::getRenderTarget() {

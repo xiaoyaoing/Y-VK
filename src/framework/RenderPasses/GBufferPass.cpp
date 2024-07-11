@@ -201,6 +201,7 @@ void GBufferPass::render(RenderGraph& rg) {
                 std::vector<float> data;
                 data.resize(128 * 128 * 4);
                 auto mapped = buffer.map();
+                LOGI("BlueNoise addr {}", uint64_t(mapped));
                 memcpy(data.data(), mapped, 128 * 128 * 4);
                 buffer.unmap();
                 

@@ -91,6 +91,7 @@ void Example::onUpdateGUI() {
     ImGui::SliderFloat("dir x", &dir.x, -1, 1);
     ImGui::SliderFloat("dir y", &dir.y, -1, 1);
     ImGui::SliderFloat("dir z", &dir.z, -1, 1);
+    ImGui::SliderFloat("light intensity", &scene->getLights1()[1].lightProperties.intensity, 0, 100);
     
     scene->getLights1()[1].lightProperties.direction = dir;
     

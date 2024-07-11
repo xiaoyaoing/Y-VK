@@ -110,7 +110,7 @@ void main(){
         }
     }
     direct_contribution = clamp(direct_contribution, vec3(0), vec3(1));
-    direct_contribution = diffuse_color;
+//    direct_contribution = vec3(metallic,perceptual_roughness,0.0);
     out_color = vec4(direct_contribution, 1);
 
     float w = 1. / float(pc.frame_index + 1);

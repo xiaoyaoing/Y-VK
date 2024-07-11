@@ -1,6 +1,7 @@
 #include "View.h"
 
 #include "RenderContext.h"
+#include "Common/ResourceCache.h"
 #include "Scene/Scene.h"
 #include "Scene/Compoments/SgLight.h"
 
@@ -129,7 +130,8 @@ View& View::bindViewShading() {
     const auto& textures = GetMTextures();
     for (uint32_t i = 0; i < textures.size(); i++) {
         g_context->bindImageSampler(6, textures[i]->getImage().getVkImageView(), textures[i]->getSampler(), 0, i);
-        g_context->bindImage(7, textures[i]->getImage().getVkImageView(VK_IMAGE_VIEW_TYPE_2D,textures[i]->getImage().getFormat(),0,0,1,1));
+        auto & sampler = g_context->getDevice().getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_NEAREST, textures[i]->getImage().getMipLevelCount());
+        g_context->bindImageSampler(6, textures[i]->getImage().getVkImageView(), sampler, 2, i);
     }
 
     return *this;

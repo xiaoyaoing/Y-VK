@@ -44,9 +44,13 @@ vec2 uv_jitter(){
     int index = int(pc.frame_index);
     index = index % (128 * 128);
     ivec2 uv = ivec2(index % 128, index / 128);
-    vec2 uv_float = vec2(uv) + vec2(0.5f);
+    vec2 uv_float = vec2(uv);
+    return uv_float / 128.f;
    // debugPrintfEXT("uv_float: %f %f\n", uv_float.x, uv_float.y);
- return blue_noise[index].xy / 255.f;
+//    vec2 jitter_in_pixel =  uv_float / 128.f;
+//
+//    gl_Position.xy = floor(gl_Position.xy);
+//    gl_Position.xy += jitter_in_pixel;
    
     }
 
@@ -72,7 +76,12 @@ void main(void)
     o_position =    pos.xyz;
 
     gl_Position = per_frame.view_proj * pos;
-    gl_Position.xy += (uv_jitter() - vec2(0.5f)) / vec2(pc.screen_size);
-    vec2 jitter = uv_jitter();
+   // gl_Position.xy += (uv_jitter() - vec2(0.5f)) /  vec2(pc.screen_size);
+   // vec2 jitter = uv_jitter();
+    
+    if(uv_jitter()!=vec2(0)) 
+    gl_Position.xy = (floor(gl_Position.xy / gl_Position.w * vec2(pc.screen_size)) + uv_jitter()) / vec2(pc.screen_size) * gl_Position.w;
+    //debugPrintfEXT("GL_Position: %f %f %f %f\n", gl_Position.x, gl_Position.y, gl_Position.z, gl_Position.w);
+    //o_uv = jitter;
    // debugPrintfEXT("jitter: %f %f\n", jitter.x, jitter.y);
 }

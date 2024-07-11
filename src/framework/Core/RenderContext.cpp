@@ -82,7 +82,7 @@ RenderContext::RenderContext(Device& device, VkSurfaceKHR surface, Window& windo
     }
 
     maxPushConstantSize = device.getProperties().limits.maxPushConstantsSize;
-    virtualViewport     = std::make_unique<VirtualViewport>(device, VkExtent2D{1920, 1080}, getSwapChainImageCount());
+    virtualViewport     = std::make_unique<VirtualViewport>(device, VkExtent2D{1920 * 5, 1080 * 5}, getSwapChainImageCount());
 }
 
 void RenderContext::beginFrame() {
