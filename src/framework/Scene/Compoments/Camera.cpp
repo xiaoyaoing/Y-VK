@@ -1,13 +1,13 @@
 #define GLM_ENABLE_EXPERIMENTAL
 
-#include <glm/ext/matrix_clip_space.hpp>
+#include <ext/matrix_clip_space.hpp>
 #include "Camera.h"
 
 #include "imgui.h"
 #include "Core/math.h"
 
-#include <glm/vec3.hpp>
-#include <glm/gtx/quaternion.hpp>
+#include <vec3.hpp>
+#include <gtx/quaternion.hpp>
 Camera0::Camera0() {
 }
 
@@ -172,7 +172,7 @@ void Camera::onShowInEditor() {
     ImGui::Text("Camera Rotation: %.2f %.2f %.2f %.2f", rotat.x, rotat.y, rotat.z, rotat.w);
     // ImGui::PopItemWidth();
     ImGui::NextColumn();
-    ImGui::InputFloat("Camera Move Speed", &mMoveSpeed);
+  //  ImGui::InputFloat("Camera Move Speed", &mMoveSpeed);
 
     const char* mode[]{
         "Perspective",
@@ -184,12 +184,17 @@ void Camera::onShowInEditor() {
 
     ImGui::DragFloat("Near Plane", &m_nearZ, 0.01f, 0.01f, 1000.0f);
     ImGui::DragFloat("Far Plane", &m_farZ, 0.01f, 0.0f, 1000.0f);
+    ImGui::DragFloat("Fov  Y", &m_fovY, 0.1f, 1.0f, 179.0f);
+
     ImGui::SliderFloat("Move Speed", &mMoveSpeed, 0.0f, 100.0f);
     ImGui::Checkbox("Flip Y", &flipYTemp);
     if (flipYTemp != flipY) {
         flipY = flipYTemp;
-        updateProjMatrix();
     }
+
+    //Todo Add cache 
+    updateProjMatrix();
+
 }
 
 void Camera::setOrthographic(float screenWidth, float screenHeight, float zn, float zf) noexcept {

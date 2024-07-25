@@ -53,7 +53,7 @@ inline std::vector<uint8_t> convertIndexData(const std::vector<uint8_t>& src_dat
                 return src_data;
         }
     Default:
-        LOGE("Unsupported index format {} ", format)
+        LOGE("Unsupported index format {} ", uint32(format))
     } else {
         //type            = targetType;
         float srcStride = formatStrideMap.at(format);
@@ -362,7 +362,7 @@ void GLTFLoadingImpl::loadCameras(const tinygltf::Model& model) {
     if (model.cameras.empty()) {
         LOGI("No camera found in gltf file, using default camera");
         auto camera = std::make_shared<Camera>();
-        camera->setPerspective(45.0f, 16.0f / 9.0f, 0.1f, 100.0f);
+        camera->setPerspective(45.0f, 16.0f / 9.0f, 0.1f, 4000.0f);
         camera->getTransform()->setPosition({0.0f, 0.0f, 5.0f});
         cameras.push_back(camera);
     }

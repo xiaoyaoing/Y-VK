@@ -9,7 +9,7 @@
 
 #include "App/Application.h"
 
-#include <glm/gtx/hash.hpp>
+#include <gtx/hash.hpp>
 
 #include <mutex>
 

@@ -3,7 +3,7 @@
 
 
 #if defined(__cplusplus)
-#include <glm/glm.hpp>
+#include <glm.hpp>
 using vec4 = glm:: vec4;
 using vec3 = glm:: vec3;
 #endif

@@ -115,6 +115,7 @@ void Example::prepare() {
     for (auto& pass : passes) {
         pass->init();
     }
+    sceneLoadingConfig.sceneScale = glm::vec3(0.001);
     loadScene(Config::GetInstance().GetScenePath());
     auto light_pos   = glm::vec3(0.0f, 128.0f, -225.0f);
     auto light_color = glm::vec3(1.0, 1.0, 1.0);

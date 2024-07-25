@@ -3,8 +3,8 @@
 // #include "imgui.h"
 // #include "math.h"
 //
-// #include <glm/ext.hpp>
-// #include <glm/gtx/quaternion.hpp>
+// #include <ext.hpp>
+// #include <gtx/quaternion.hpp>
 //
 // void Frustum::transform(const glm::mat4& matrix)
 // {

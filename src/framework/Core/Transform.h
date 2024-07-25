@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
-#include <glm/glm.hpp>
-#include <glm/ext.hpp>
+#include <glm.hpp>
+#include <ext.hpp>
 #include "Core/BoundingBox.h"
 
 #include <string>

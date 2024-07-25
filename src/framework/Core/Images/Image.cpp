@@ -2,7 +2,7 @@
 #include "Core/Device/Device.h"
 #include "ImageUtil.h"
 
-#include <glm/gtx/hash.hpp>
+#include <gtx/hash.hpp>
 //
 //Image::Image(VmaAllocator allocator, VmaMemoryUsage memoryUsage, const VkImageCreateInfo &createInfo) {
 //    _allocator = allocator;
@@ -117,7 +117,7 @@ Image::Image(Device& device, const VkExtent3D& extent, VkFormat format, VkImageU
          extent.height,
          mip_levels,
          array_layers,
-         format);
+         uint32(format));
 }
 
 Image::Image(Device& device, VkImage handle, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags image_usage, VkSampleCountFlagBits sample_count) : device(device), image(handle),

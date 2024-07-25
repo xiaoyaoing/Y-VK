@@ -1,7 +1,7 @@
 // #pragma once
 // #include <vector>
-// #include <glm/ext/quaternion_common.hpp>
-// #include <glm/glm.hpp>
+// #include <ext/quaternion_common.hpp>
+// #include <glm.hpp>
 // #include "Core/BoundingBox.h"
 
 // #include <string>

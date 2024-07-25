@@ -1,9 +1,9 @@
 #include "math.h"
 #define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/quaternion.hpp>
-#include <glm/gtx/transform.inl>
+#include <gtx/quaternion.hpp>
+#include <gtx/transform.inl>
 
-#include <glm/gtx/rotate_vector.inl>
+#include <gtx/rotate_vector.inl>
 
 namespace math {
 

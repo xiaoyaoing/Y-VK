@@ -291,7 +291,7 @@ namespace glm
 	/// @tparam genTypeU Floating point or boolean scalar or vector. It can't be a vector if it is the length of genTypeT.
 	///
 	/// @code
-	/// #include <glm/glm.hpp>
+	/// #include <glm.hpp>
 	/// ...
 	/// float a;
 	/// bool b;
