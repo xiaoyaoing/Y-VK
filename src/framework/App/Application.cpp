@@ -480,6 +480,8 @@ void Application::initView() {
 }
 void Application::loadScene(const std::string& path) {
     scene = SceneLoaderInterface::LoadSceneFromFile(*device, path, sceneLoadingConfig);
+    scene->addDirectionalLight({0, -0.95f, 0.3f}, glm::vec3(1.0f), 1.5f);
+
     //RuntimeSceneManager::addSponzaRestirLight(*scene);
     onSceneLoaded();
 }

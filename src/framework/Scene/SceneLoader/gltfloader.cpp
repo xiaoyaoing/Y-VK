@@ -844,7 +844,8 @@ void GLTFLoadingImpl::loadImages(const std::filesystem::path& modelPath, std::sh
             [this, parentDir, temp_remap = remap, gltfModel](size_t) {
                 auto& image = gltfModel->images[temp_remap];
                 if (image.uri.empty() && image.image.size() > 0)
-                    return Texture::loadTextureFromMemory(device, image.image, VkExtent3D{static_cast<uint32_t>(image.width), static_cast<uint32_t>(image.height), 1});
+                    return Texture::loadTextureFromMemoryWithoutInit(device, image.image, VkExtent3D{static_cast<uint32_t>(image.width), static_cast<uint32_t>(image.height), 1});
+                    //return Texture::loadTextureFromMemory(device, image.image, VkExtent3D{static_cast<uint32_t>(image.width), static_cast<uint32_t>(image.height), 1});
                 else if (!image.uri.empty())
                     return Texture::loadTextureFromFileWitoutInit(device, parentDir.string() + "/" + image.uri);
                 else {

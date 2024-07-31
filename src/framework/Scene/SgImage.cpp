@@ -247,7 +247,7 @@ ImageView& SgImage::getVkImageView(VkImageViewType view_type, VkFormat format, u
     if (!vkImageViews.contains(hashValue)) {
         LOGI("No image view found for hash value: {} created", hashValue)
         //may be ugly
-        const_cast<std::unordered_map<size_t, std::unique_ptr<ImageView>>&>(vkImageViews)[hashValue] = std::make_unique<ImageView>(*vkImage, view_type, format, mip_level, base_array_layer, n_mip_levels, n_array_layers);
+        const_cast<std::map<size_t, std::unique_ptr<ImageView>>&>(vkImageViews)[hashValue] = std::make_unique<ImageView>(*vkImage, view_type, format, mip_level, base_array_layer, n_mip_levels, n_array_layers);
     }
     return *vkImageViews.at(hashValue);
 }

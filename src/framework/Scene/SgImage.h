@@ -118,7 +118,7 @@ protected:
 
     friend class AstcImageHelper;
 
-    std::unordered_map<size_t, std::unique_ptr<ImageView>> vkImageViews{};
+    std::map<size_t, std::unique_ptr<ImageView>> vkImageViews{};
     std::unique_ptr<Image>                                 vkImage{nullptr};
 
     size_t firstImageViewHash{0};

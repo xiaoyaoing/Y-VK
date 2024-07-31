@@ -126,7 +126,7 @@ void RayTracer::prepare() {
     //loadScene("C:/Users/pc/Downloads/bathroom/scene.json");
     // loadScene("E:/code/vk-raytracing-demo/resources/classroom/scene.json");
     // loadScene("E:/code/vk-raytracing-demo/resources/cornell-box-json/scene.json");
-    //loadScene(FileUtils::getResourcePath("test-ball/scene.json"));
+    // loadScene(FileUtils::getResourcePath("test-ball/scene.json"));
     //  loadScene("D:/blender-scenes/classroom (4)/classroom/classroom.gltf");
     //  loadScene("C:/Users/pc/Documents/moutain1/1.gltf");
     // loadScene("C:/Users/pc/Documents/car/1.gltf");
@@ -143,6 +143,8 @@ void RayTracer::prepare() {
     // loadScene("C:/Users/pc/Downloads/glTF-Sample-Models-main/glTF-Sample-Models-main/2.0/RiggedFigure/glTF/RiggedFigure.gltf");
     // camera->getTransform()->setPosition(glm::vec3(0.f, 0.f, 3.f));
     //  camera->getTransform()->setlokllRotation({1, 0, 0, 0});
+
+    loadScene("C:/Users/yuanjunping/Downloads/kitchen/scene.json");
 }
 
 void RayTracer::onUpdateGUI() {

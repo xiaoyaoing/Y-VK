@@ -103,7 +103,7 @@ void main(){
     vec3  emission = subpassLoad(gbuffer_emission).rgb;
     float depth    = subpassLoad(gbuffer_depth).x;
 
-    if (depth == 0.0){
+    if (depth == 1.0){
         discard;
     }
 

@@ -101,6 +101,6 @@ void main(){
 
         }
     }
-    direct_contribution = vec3(1,0,0);
+//    direct_contribution = vec3(1,0,0);
     out_color = vec4(direct_contribution, 1);
 }
