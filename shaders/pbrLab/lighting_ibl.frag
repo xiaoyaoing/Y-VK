@@ -85,6 +85,7 @@ vec3 ibl_fragment_shader(const in PBRInfo pbr_info, vec3 n, vec3 reflection)
     // return vec3(brdf.y);
     // For presentation, this allows us to disable IBL terms
     // For presentation, this allows us to disable IBL terms
+    return specular;
     diffuse *= scaleIBLAmbient;
     specular *= scaleIBLAmbient;
 
@@ -107,7 +108,7 @@ void main(){
         discard;
     }
 
-    vec3 world_pos = worldPosFromDepth(in_uv, depth);
+    vec3 world_pos = worldPosFromDepth(vec2(in_uv.x,1-in_uv.y), depth);
 
 
     vec3 diffuse_color = diffuse_roughness.xyz;
@@ -141,7 +142,7 @@ void main(){
         pbr_info.perceptualRoughness = perceptual_roughness;
         pbr_info.diffuseColor = diffuse_color * (1- metallic) * (1-0.04);
 
-        // color += ibl_fragment_shader(pbr_info, normal, R);
+         color += ibl_fragment_shader(pbr_info, normal, R);
     }
 
     {
