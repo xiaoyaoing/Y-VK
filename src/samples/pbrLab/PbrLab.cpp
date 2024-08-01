@@ -60,7 +60,7 @@ void Example::prepare() {
 
     // loadScene("E:/code/Vulkan-glTF-PBR/data/models/DamagedHelmet/glTF-Embedded/DamagedHelmet.gltf");
     //loadScene("E:/code/FidelityFX-SSSR/sample/media/Chess/scene.gltf");
-    loadScene("C:/Users/yuanjunping/Downloads/car.gltf");
+    loadScene(FileUtils::getResourcePath("cars/car.gltf"));
 
     RenderPtrManangr::init();
     g_manager->putPtr("view", view.get());
@@ -70,7 +70,7 @@ void Example::prepare() {
     }
 
     cube             = SceneLoaderInterface::loadSpecifyTypePrimitive(*device, "cube");
-    std::string path = "C:/Users/yuanjunping/Downloads/papermill.ktx";
+    std::string path = FileUtils::getResourcePath("papermill.ktx");
     environmentCube  = Texture::loadTextureFromFile(g_context->getDevice(), path);
     ibl              = std::make_unique<IBL>(*device, environmentCube.get());
 }
