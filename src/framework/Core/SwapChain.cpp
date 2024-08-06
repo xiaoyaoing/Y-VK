@@ -16,6 +16,12 @@ SwapChain::SwapChain(Device& device, VkSurfaceKHR surface, const VkExtent2D& ext
         imageCount = swapChainSupport.capabilities.maxImageCount;
     }
 
+    VkSurfaceCapabilitiesKHR surfaceCapabilities;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_device.getPhysicalDevice(), surface, &surfaceCapabilities);
+
+    VkExtent2D imageExtent;
+    imageExtent.width = std::max(surfaceCapabilities.minImageExtent.width, std::min(surfaceCapabilities.maxImageExtent.width, extent.width));
+    imageExtent.height = std::max(surfaceCapabilities.minImageExtent.height, std::min(surfaceCapabilities.maxImageExtent.height, extent.height));
 
     VkSwapchainCreateInfoKHR createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -24,12 +30,12 @@ SwapChain::SwapChain(Device& device, VkSurfaceKHR surface, const VkExtent2D& ext
     createInfo.imageFormat = surfaceFormat.format;
     createInfo.imageColorSpace = surfaceFormat.colorSpace;
     createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    createInfo.imageExtent = extent;
+    createInfo.imageExtent = imageExtent;
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |VK_IMAGE_USAGE_TRANSFER_DST_BIT ;
 
     prop.image_usage = createInfo.imageUsage;
-    prop.extent = extent;
+    prop.extent = imageExtent;
     prop.surface_format = surfaceFormat;
 
     //QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
@@ -60,7 +66,7 @@ SwapChain::SwapChain(Device& device, VkSurfaceKHR surface, const VkExtent2D& ext
     // VK_CHECK_RESULT(vkCreateSwapchainKHR(_device.getHandle(), &createInfo, nullptr, &swapchainKhr));
     _format = surfaceFormat;
     _imageFormat = surfaceFormat.format;
-    _extent = extent;
+    _extent = imageExtent;
 
     //create swapchain images
     VK_CHECK_RESULT(vkGetSwapchainImagesKHR(_device.getHandle(), _swapChain, &imageCount, nullptr));

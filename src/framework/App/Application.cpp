@@ -23,6 +23,55 @@
 #include "Scene/SceneLoader/SceneLoaderInterface.h"
 #include "Scene/SceneLoader/gltfloader.h"
 
+
+/*
+ * Initializes window dimensions and application name
+ * Calls initWindow to create the application window       
+ */
+Application::Application(const char* name,
+                         uint32_t width, 
+                         uint32_t height) : mWidth(width), mHeight(height), mAppName(name) {
+    initWindow(name, width, height);
+}
+
+/**
+ * @brief init window
+ */
+void Application::initWindow(const char* name, uint32_t width, uint32_t height) {
+    glfwInit();
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+    window = std::make_unique<Window>(Window::WindowProp{name, {width, height}}, this);
+}
+
+/**
+ * @brief Initialize Vulkan components:
+ * - Initialize Vulkan loader
+ * - Create Vulkan instance
+ * - Create surface
+ * - Select physical device
+ * - Create logical device
+ */
+void Application::prepare() {
+    initVk();
+    initGUI();
+
+    TextureHelper::Initialize();
+
+    mPostProcessPass = std::make_unique<PostProcess>();
+    mPostProcessPass->init();
+}
+
+/**
+ * @brief Initialize Vulkan components:
+ * - Initialize Vulkan loader
+ * - Create Vulkan instance
+ * - Create surface
+ * - Select physical device
+ * - Create logical device
+ * - Create render context
+ * - Create fence for synchronization
+ */
 void Application::initVk() {
     VK_CHECK_RESULT(volkInitialize());
 
@@ -287,31 +336,16 @@ void Application::setFocused(bool focused) {
 //     camera = scene->getCameras()[0];
 // }
 
-void Application::initWindow(const char* name, uint32_t width, uint32_t height) {
-    glfwInit();
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-    window = std::make_unique<Window>(Window::WindowProp{name, {width, height}}, this);
-}
+
 
 void Application::initGUI() {
     gui = std::make_unique<Gui>(*device);
     gui->prepareResoucrces(this);
 }
 
-void Application::prepare() {
-    initVk();
-    initGUI();
 
-    TextureHelper::Initialize();
 
-    mPostProcessPass = std::make_unique<PostProcess>();
-    mPostProcessPass->init();
-}
 
-Application::Application(const char* name, uint32_t width, uint32_t height) : mWidth(width), mHeight(height), mAppName(name) {
-    initWindow(name, width, height);
-}
 
 void Application::inputEvent(const InputEvent& inputEvent) {
     if (gui) {

@@ -54,9 +54,16 @@
         return 0;                     \
     }
 
+
 class Application {
+    /**
+     * @brief Initializes the window for the application.
+     */
     void initWindow(const char* name, uint32_t width, uint32_t height);
 
+    /**
+     * @brief Initializes the GUI for the application.
+     */
     virtual void initGUI();
 
 public:

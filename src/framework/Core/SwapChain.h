@@ -2,6 +2,8 @@
 
 #include "Core/Vulkan.h"
 
+#include <algorithm>
+
 class Device;
 
 class Surface;
