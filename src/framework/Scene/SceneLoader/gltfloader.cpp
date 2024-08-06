@@ -289,6 +289,7 @@ struct GLTFLoadingImpl {
     std::vector<SgLight>                                 lights;
     std::vector<GltfMaterial>                            materials;
     std::unordered_map<const tinygltf::Node*, Transform> modelTransforms;
+    std::unordered_map<const tinygltf::Node*, const tinygltf::Node *> nodeParentMap;
 
     std::unordered_map<int, int> texIndexRemap;
     int                          cur_tex_index{0};
@@ -313,6 +314,7 @@ struct GLTFLoadingImpl {
     void      processNode(const tinygltf::Node& node, const tinygltf::Model& model);
     Transform getTransform(const tinygltf::Node& node);
     void      GetModelTransforms(const tinygltf::Model& model);
+    void transformNodes(const std::vector<tinygltf::Node>& nodes, const tinygltf::Node& node) ;
 
     // std::unique_ptr<Buffer> sceneVertexBuffer{nullptr};
 
@@ -469,6 +471,11 @@ Transform GLTFLoadingImpl::getTransform(const tinygltf::Node& node) {
         glm::mat4 matrix = glm::make_mat4x4(node.matrix.data());
         transform.setLocalToWorldMatrix(glm::scale(matrix, config.sceneScale));
         transform.setLocalToWorldMatrix(matrix);
+        if(abs(matrix[1][2] - 0.001)<0.0005) {
+            matrix = glm::make_mat4x4(node.matrix.data());
+                        }
+        
+
     } else {
         vec3 translation = config.sceneTranslation;
         if (node.translation.size() == 3) {
@@ -492,10 +499,17 @@ Transform GLTFLoadingImpl::getTransform(const tinygltf::Node& node) {
     return transform;
 }
 
-void transformNodes(const std::vector<tinygltf::Node>& nodes, const tinygltf::Node& node, std::unordered_map<const tinygltf::Node*, Transform>& modelTransforms) {
+void GLTFLoadingImpl::transformNodes(const std::vector<tinygltf::Node>& nodes, const tinygltf::Node& node) {
+    if(node.name == "body") {
+        int k = 1;
+    }
     for (auto child : node.children) {
-        modelTransforms[&nodes[child]].setParent(&modelTransforms[&node]);
-        transformNodes(nodes, nodes[child], modelTransforms);
+        if(nodes[child].name == "body") {
+            int k = 1;
+        }
+        nodeParentMap[&nodes[child]] = &node;
+        // modelTransforms[&nodes[child]].setParent(&modelTransforms[&node]);
+        transformNodes(nodes, nodes[child]);
     }
 }
 
@@ -504,8 +518,19 @@ void GLTFLoadingImpl::GetModelTransforms(const tinygltf::Model& model) {
     for (const auto& node : nodes) {
         modelTransforms[&node] = getTransform(node);
     }
-    for (const auto& node : model.scenes[0].nodes) {
-        transformNodes(nodes, nodes[node], modelTransforms);
+   // for (const auto& node : model.scenes[0].nodes) {
+    for (const auto& node : model.nodes) {
+        transformNodes(nodes, node);
+    }
+
+    for (auto& [node, parent] : nodeParentMap) {
+       // auto & parent = nodeParentMap[node];
+        glm::mat4 matrix = modelTransforms[node].getLocalToWorldMatrix();
+        while (parent) {
+            matrix = modelTransforms[parent].getLocalToWorldMatrix() * matrix;
+            parent = nodeParentMap.count(parent) ? nodeParentMap[parent] : nullptr;
+        }
+        modelTransforms[node].setLocalToWorldMatrix(matrix);
     }
 }
 

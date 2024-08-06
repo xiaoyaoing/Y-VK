@@ -56,6 +56,7 @@ vec3 getNormal(const int texture_idx)
     vec3 B = -normalize(cross(N, T));
     mat3 TBN = mat3(T, B, N);
 
+    return in_normal;
     return normalize(TBN * tangentNormal);
 }
 

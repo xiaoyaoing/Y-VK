@@ -23,3 +23,11 @@
 [submodule "ext/tinyexr"]
 	path = ext/tinyexr
 	url = git@github.com:syoyo/tinyexr.git
+
+
+[submodule "ext/dds_image"]
+	path = ext/dds_image
+	url = git@github.com:spnda/dds_image.git
+
+
+

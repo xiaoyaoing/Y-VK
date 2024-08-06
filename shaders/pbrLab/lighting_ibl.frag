@@ -9,6 +9,22 @@
 #include "../lighting.glsl"
 #include "../brdf.glsl"
 
+
+//    ImGui::Combo("Debug Mode", &debugMode, "None\0Diffuse\0Specular\0Normal\0Depth\0Albedo\0Metallic\0Roughness\0Ambient Occlusion\0Irradiance\0Prefilter\0BRDF LUT\0");
+
+#define DEBUG_MODEL_DIFFUSE 1
+#define DEBUG_MODEL_SPECULAR 2
+#define DEBUG_MODEL_NORMAL 3
+#define DEBUG_MODEL_DEPTH 4
+#define DEBUG_MODEL_ALBEDO 5
+#define DEBUG_MODEL_METALLIC 6
+#define DEBUG_MODEL_ROUGHNESS 7
+#define DEBUG_MODEL_AMBIENT_OCCLUSION 8
+#define DEBUG_MODEL_IRRADIANCE 9
+#define DEBUG_MODEL_PREFILTER 10
+#define DEBUG_MODEL_BRDF_LUT 11
+
+
 precision highp float;
 
 layout(location = 0) in vec2 in_uv;
@@ -85,10 +101,14 @@ vec3 ibl_fragment_shader(const in PBRInfo pbr_info, vec3 n, vec3 reflection)
     // return vec3(brdf.y);
     // For presentation, this allows us to disable IBL terms
     // For presentation, this allows us to disable IBL terms
-    return specular;
+    
     diffuse *= scaleIBLAmbient;
     specular *= scaleIBLAmbient;
 
+    if(debugMode == DEBUG_MODEL_DIFFUSE)
+        return diffuseLight;
+    if(debugMode == DEBUG_MODEL_SPECULAR)
+        return specularLight;
     return diffuse + specular;
 }
 
@@ -108,7 +128,7 @@ void main(){
         discard;
     }
 
-    vec3 world_pos = worldPosFromDepth(vec2(in_uv.x,1-in_uv.y), depth);
+    vec3 world_pos = worldPosFromDepth(vec2(in_uv.x,in_uv.y), depth);
 
 
     vec3 diffuse_color = diffuse_roughness.xyz;
@@ -130,12 +150,13 @@ void main(){
         // convert to material roughness by squaring the perceptual roughness [2].
         // for 
 
-        vec3 view_dir = normalize(per_frame.camera_pos - world_pos);
-        vec3 R = -normalize(reflect(view_dir, normal));
+        vec3 view_dir = -normalize(per_frame.camera_pos - world_pos);
+        vec3 R = normalize(reflect(view_dir, normal));
+        R.y = -R.y;
         PBRInfo pbr_info;
         // why use abs here?
         pbr_info.NdotV = clamp(abs(dot(normal, view_dir)), 0.001, 1.0);
-
+                            
         pbr_info.F0 = mix(vec3(0.04), diffuse_color, metallic);
         pbr_info.F90 = vec3(1.0);
         pbr_info.alphaRoughness = perceptual_roughness * perceptual_roughness;
@@ -180,5 +201,48 @@ void main(){
         }
     }
 
+    
+    if (debugMode == DEBUG_MODEL_NORMAL)
+    {
+        out_color = vec4(normal         , 1);
+        return;
+    }
+    if (debugMode == DEBUG_MODEL_DEPTH)
+    {
+        out_color = vec4(vec3(depth), 1);
+        return;
+    }
+    if (debugMode == DEBUG_MODEL_ALBEDO)
+    {
+        out_color = vec4(diffuse_color, 1);
+        return;
+    }
+    if (debugMode == DEBUG_MODEL_METALLIC)
+    {
+        out_color = vec4(vec3(metallic), 1);
+        return;
+    }
+    if (debugMode == DEBUG_MODEL_ROUGHNESS)
+    {
+        out_color = vec4(vec3(perceptual_roughness), 1);
+        return;
+    }
+    if (debugMode == DEBUG_MODEL_AMBIENT_OCCLUSION)
+    {
+        out_color = vec4(vec3(1.0), 1);
+        return;
+    }
+    if (debugMode == DEBUG_MODEL_IRRADIANCE)
+    {
+        out_color = vec4(vec3(1.0), 1);
+        return;
+    }
+    if (debugMode == DEBUG_MODEL_PREFILTER)
+    {
+        out_color = vec4(vec3(1.0), 1);
+        return;
+    }
+    
+    //color = world_pos / 100.f;
     out_color = vec4(color, 1);
 }

@@ -130,7 +130,7 @@ void GBufferPass::render(RenderGraph& rg) {
     rg.addGraphicPass(
         "GBufferPass", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
             auto diffuse = rg.createTexture("diffuse",
-                                            {.extent = renderContext->getViewPortExtent(),
+                                            {.extent             = renderContext->getViewPortExtent(),
                                              .useage = TextureUsage::SUBPASS_INPUT | 
                                                        TextureUsage::COLOR_ATTACHMENT| TextureUsage::SAMPLEABLE});
             
