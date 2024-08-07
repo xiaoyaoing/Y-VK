@@ -4,8 +4,23 @@
 #pragma once
 
 #include "App/Application.h"
-#include "RenderIng/IBL.h"
+#include "Rendering/IBL.h"
 #include "RenderPasses/RenderPassBase.h"
+/**
+ * @class Example
+ * @brief A sample application demonstrating PBR (Physically Based Rendering) techniques.
+ *
+ * This class extends the Application base class to create a PBR rendering example.
+ * It includes features such as:
+ * - Image-Based Lighting (IBL)
+ * - Multiple render passes
+ * - Environment mapping
+ * - Exposure and gamma controls
+ *
+ * The class sets up the necessary components for PBR rendering, including
+ * render passes, IBL setup, and primitive objects (like a cube).
+ * It also provides methods for updating the GUI and drawing frames using a render graph.
+ */
 
 class Example : public Application {
 public:

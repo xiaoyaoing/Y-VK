@@ -23,6 +23,65 @@
 #include "Scene/SceneLoader/SceneLoaderInterface.h"
 #include "Scene/SceneLoader/gltfloader.h"
 
+
+/*
+ * Initializes window dimensions and application name
+ * Calls initWindow to create the application window       
+ */
+Application::Application(const char* name,
+                         uint32_t width, 
+                         uint32_t height) : mWidth(width), mHeight(height), mAppName(name) {
+    initWindow(name, width, height);
+}
+
+Application::~Application() {
+    scene.reset();
+    camera.reset();
+    renderContext.reset();
+    gui.reset();
+    device.reset();
+    _instance.reset();
+    window.reset();
+}
+
+/**
+ * @brief init window
+ */
+void Application::initWindow(const char* name, uint32_t width, uint32_t height) {
+    glfwInit();
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+    window = std::make_unique<Window>(Window::WindowProp{name, {width, height}}, this);
+}
+
+/**
+ * @brief Initialize Vulkan components:
+ * - Initialize Vulkan loader
+ * - Create Vulkan instance
+ * - Create surface
+ * - Select physical device
+ * - Create logical device
+ */
+void Application::prepare() {
+    initVk();
+    initGUI();
+
+    TextureHelper::Initialize();
+
+    mPostProcessPass = std::make_unique<PostProcess>();
+    mPostProcessPass->init();
+}
+
+/**
+ * @brief Initialize Vulkan components:
+ * - Initialize Vulkan loader
+ * - Create Vulkan instance
+ * - Create surface
+ * - Select physical device
+ * - Create logical device
+ * - Create render context
+ * - Create fence for synchronization
+ */
 void Application::initVk() {
     VK_CHECK_RESULT(volkInitialize());
 
@@ -62,6 +121,11 @@ void Application::initVk() {
     VK_CHECK_RESULT(vkCreateFence(device->getHandle(), &fenceInfo, nullptr, &fence));
 }
 
+void Application::initGUI() {
+    gui = std::make_unique<Gui>(*device);
+    gui->prepareResoucrces(this);
+}
+
 void Application::getRequiredInstanceExtensions() {
     uint32_t     glfwExtensionsCount = 0;
     const char** glfwExtensions      = glfwGetRequiredInstanceExtensions(&glfwExtensionsCount);
@@ -72,6 +136,89 @@ void Application::getRequiredInstanceExtensions() {
         addInstanceExtension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 }
 
+void Application::createRenderContext() {
+    renderContext = std::make_unique<RenderContext>(*device, surface, *window);
+    g_context     = renderContext.get();
+}
+
+void Application::mainloop() {
+    while (!glfwWindowShouldClose(window->getHandle())) {
+        glfwPollEvents();
+        update();
+    }
+}
+
+/**
+ * @brief Updates the application state.
+ * 
+ * - Calculates the delta time since the last frame.
+ * - Checks if the application is focused;
+ * - Calls the onViewUpdated() method.
+ * - Updates the scene and GUI.
+ * - Begins a new frame in the render context.
+ * - Waits for the fence to ensure synchronization.
+ * - Resets the fence for the next frame.
+ * ------------------------- Render Graph -------------------------
+ * - Creates a render graph and imports the current hardware texture.
+ * - Draws the frame and renders the post-process pass.
+ * - Updates the list of current textures.
+ * - Adds an image copy pass to the render graph.
+ * - Handles saving the image if required.
+ * - Adds the GUI pass to the render graph.
+ * - Executes the render graph using the graphic command buffer.
+ * ------------------------- Render Graph -------------------------
+ * - Submits the command buffer and presents the frame.
+ * - Resets the image save state.
+ * - Updates the camera based on the delta time.
+ */
+
+
+void Application::update() {
+
+    deltaTime = timer.tick<Timer::Seconds>();
+    if (!m_focused)
+        return;
+
+    if (viewUpdated) {
+        viewUpdated = false;
+        onViewUpdated();
+    }
+
+    updateScene();
+    updateGUI();
+
+    renderContext->beginFrame();
+
+    vkWaitForFences(device->getHandle(), 1, &fence, VK_TRUE, UINT64_MAX);
+    vkResetFences(device->getHandle(), 1, &fence);
+
+    RenderGraph graph(*device);
+    graph.importTexture(RENDER_VIEW_PORT_IMAGE_NAME, &renderContext->getCurHwtexture());
+
+    if (scene->getLoadCompleteInfo().GetSceneLoaded()) {
+        drawFrame(graph);
+        mPostProcessPass->render(graph);
+    }
+
+    mCurrentTextures = graph.getResourceNames(RENDER_GRAPH_RESOURCE_TYPE::ETexture);
+    graph.addImageCopyPass(graph.getBlackBoard().getHandle(mPresentTexture), graph.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME));
+    handleSaveImage(graph);
+
+    gui->addGuiPass(graph);
+
+    graph.execute(renderContext->getGraphicCommandBuffer());
+
+    renderContext->submitAndPresent(renderContext->getGraphicCommandBuffer(), fence);
+
+    resetImageSave();
+
+    camera->update(deltaTime);
+
+    if (camera->moving()) {
+        viewUpdated = true;
+    }
+}
+
 void Application::updateScene() {
     if (sceneAsync != nullptr) {
         scene = std::move(sceneAsync);
@@ -79,7 +226,17 @@ void Application::updateScene() {
         sceneAsync = nullptr;
     }
 }
-
+/**
+ * @brief Update GUI
+ * 
+ * 
+ * Sets the display size and delta time for ImGui;
+ * Starts a new frame;
+ * Renders various GUI elements such as:
+ * - frame time
+ * - FPS
+ * - file dialogs
+ */
 void Application::updateGUI() {
     if (!gui)
         return;
@@ -172,56 +329,6 @@ void Application::updateGUI() {
     }
 }
 
-void Application::update() {
-
-    deltaTime = timer.tick<Timer::Seconds>();
-    if (!m_focused)
-        return;
-
-    if (viewUpdated) {
-        viewUpdated = false;
-        onViewUpdated();
-    }
-
-    updateScene();
-    updateGUI();
-
-    renderContext->beginFrame();
-
-    vkWaitForFences(device->getHandle(), 1, &fence, VK_TRUE, UINT64_MAX);
-    vkResetFences(device->getHandle(), 1, &fence);
-
-    RenderGraph graph(*device);
-    graph.importTexture(RENDER_VIEW_PORT_IMAGE_NAME, &renderContext->getCurHwtexture());
-
-    if (scene->getLoadCompleteInfo().GetSceneLoaded()) {
-        drawFrame(graph);
-        mPostProcessPass->render(graph);
-    }
-
-    mCurrentTextures = graph.getResourceNames(RENDER_GRAPH_RESOURCE_TYPE::ETexture);
-    graph.addImageCopyPass(graph.getBlackBoard().getHandle(mPresentTexture), graph.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME));
-    handleSaveImage(graph);
-
-    gui->addGuiPass(graph);
-
-    graph.execute(renderContext->getGraphicCommandBuffer());
-
-    renderContext->submitAndPresent(renderContext->getGraphicCommandBuffer(), fence);
-
-    resetImageSave();
-
-    camera->update(deltaTime);
-
-    if (camera->moving()) {
-        viewUpdated = true;
-    }
-}
-
-void Application::createRenderContext() {
-    renderContext = std::make_unique<RenderContext>(*device, surface, *window);
-    g_context     = renderContext.get();
-}
 void Application::resetImageSave() {
     if (imageSave.savePng | imageSave.saveExr) {
 
@@ -286,32 +393,6 @@ void Application::setFocused(bool focused) {
 //     scene = GltfLoading::LoadSceneFromGLTFFile(*device,FileUtils::getResourcePath(path));
 //     camera = scene->getCameras()[0];
 // }
-
-void Application::initWindow(const char* name, uint32_t width, uint32_t height) {
-    glfwInit();
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-    window = std::make_unique<Window>(Window::WindowProp{name, {width, height}}, this);
-}
-
-void Application::initGUI() {
-    gui = std::make_unique<Gui>(*device);
-    gui->prepareResoucrces(this);
-}
-
-void Application::prepare() {
-    initVk();
-    initGUI();
-
-    TextureHelper::Initialize();
-
-    mPostProcessPass = std::make_unique<PostProcess>();
-    mPostProcessPass->init();
-}
-
-Application::Application(const char* name, uint32_t width, uint32_t height) : mWidth(width), mHeight(height), mAppName(name) {
-    initWindow(name, width, height);
-}
 
 void Application::inputEvent(const InputEvent& inputEvent) {
     if (gui) {
@@ -456,16 +537,26 @@ void Application::inputEvent(const InputEvent& inputEvent) {
     }
 }
 
-void Application::mainloop() {
-    while (!glfwWindowShouldClose(window->getHandle())) {
-        glfwPollEvents();
-        update();
-    }
-}
 void Application::onResize(uint32_t width, uint32_t height) {
     this->mWidth  = width;
     this->mHeight = height;
 }
+
+void Application::loadScene(const std::string& path) {
+    scene = SceneLoaderInterface::LoadSceneFromFile(*device, path, sceneLoadingConfig);
+    scene->addDirectionalLight({0, -0.95f, 0.3f}, glm::vec3(1.0f), 1.5f);
+
+    //RuntimeSceneManager::addSponzaRestirLight(*scene);
+    onSceneLoaded();
+}
+
+void Application::onSceneLoaded() {
+    camera = scene->getCameras()[0];
+    initView();
+    Config::GetInstance();
+    Config::GetInstance().CameraFromConfig(*camera);
+}
+
 void Application::initView() {
     view = std::make_unique<View>(*device);
     if (scene->getCameras().empty()) {
@@ -478,29 +569,7 @@ void Application::initView() {
     RenderPtrManangr::init();
     g_manager->putPtr("view", view.get());
 }
-void Application::loadScene(const std::string& path) {
-    scene = SceneLoaderInterface::LoadSceneFromFile(*device, path, sceneLoadingConfig);
-    scene->addDirectionalLight({0, -0.95f, 0.3f}, glm::vec3(1.0f), 1.5f);
 
-    //RuntimeSceneManager::addSponzaRestirLight(*scene);
-    onSceneLoaded();
-}
-void Application::onSceneLoaded() {
-    camera = scene->getCameras()[0];
-    initView();
-    Config::GetInstance();
-    Config::GetInstance().CameraFromConfig(*camera);
-}
-
-Application::~Application() {
-    scene.reset();
-    camera.reset();
-    renderContext.reset();
-    gui.reset();
-    device.reset();
-    _instance.reset();
-    window.reset();
-}
 
 void Application::handleMouseMove(float x, float y) {
     bool  handled = false;

@@ -54,19 +54,26 @@
         return 0;                     \
     }
 
+
 class Application {
+    /**
+     * @brief Initializes the window for the application.
+     */
     void initWindow(const char* name, uint32_t width, uint32_t height);
 
+    /**
+     * @brief Initializes the GUI for the application.
+     */
     virtual void initGUI();
 
 public:
     Application(const char* name, uint32_t width, uint32_t height);
     Application() : Application("Vulkan", 1920, 1080) {
     }
-
+    virtual ~Application();
+    
     virtual void prepare();
     virtual void inputEvent(const InputEvent& inputEvent);
-    virtual ~Application();
 
     void         setFocused(bool focused);
     void         mainloop();
