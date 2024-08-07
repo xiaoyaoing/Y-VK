@@ -15,7 +15,8 @@ SwapChain::SwapChain(Device& device, VkSurfaceKHR surface, const VkExtent2D& ext
     {
         imageCount = swapChainSupport.capabilities.maxImageCount;
     }
-
+    
+    // Check if the extent is supported by the surface
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_device.getPhysicalDevice(), surface, &surfaceCapabilities);
 
