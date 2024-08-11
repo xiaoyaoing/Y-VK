@@ -16,6 +16,7 @@
         if (!(f)) {                                                               \
             std::cout << "Fatal \""                                               \
                       << "\" in " << __FILE__ << " at line " << __LINE__ << "\n"; \
+            throw std::runtime_error("Fatal error");                    \
         }                                                                         \
     }
 

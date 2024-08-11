@@ -111,7 +111,6 @@ Image::Image(Device& device, const VkExtent3D& extent, VkFormat format, VkImageU
                                    &image,
                                    &memory,
                                    nullptr));
-
     LOGI("Image created: {}x{}, {} mips, {} layers, format {}",
          extent.width,
          extent.height,
@@ -172,6 +171,10 @@ uint32_t Image::getMipLevelCount() const {
 
 void Image::transitionLayout(CommandBuffer& commandBuffer, VulkanLayout newLayout, const VkImageSubresourceRange& subresourceRange) {
     auto oldLayout = getLayout(subresourceRange);
+
+    if (oldLayout == newLayout) {
+        return;
+    }
     //oldLayout = VulkanLayout::UNDEFINED;
     auto [srcAccessMask, dstAccessMask, srcStage, dstStage, vkOldLayout, vkNewLayout] = ImageUtil::getVkTransition(oldLayout, newLayout);
 
@@ -185,8 +188,8 @@ void Image::transitionLayout(CommandBuffer& commandBuffer, VulkanLayout newLayou
         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .image               = image,
         .subresourceRange    = subresourceRange};
+    
     vkCmdPipelineBarrier(commandBuffer.getHandle(), srcStage, dstStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-
     setLayout(newLayout, subresourceRange);
 }
 

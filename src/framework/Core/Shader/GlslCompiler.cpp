@@ -142,3 +142,6 @@ void GlslCompiler::setEnvTarget(glslang::EShTargetLanguage        target_languag
     GlslCompiler::env_target_language         = target_language;
     GlslCompiler::env_target_language_version = target_language_version;
 }
+void GlslCompiler::setForceRecompile(bool _forceRecompile) {
+    forceRecompile = _forceRecompile;
+}

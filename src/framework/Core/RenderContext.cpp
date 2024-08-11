@@ -325,8 +325,8 @@ RenderContext& RenderContext::bindPrimitiveGeom(CommandBuffer& commandBuffer, co
     InputAssemblyState inputAssemblyState = pipelineState.getInputAssemblyState();
     inputAssemblyState.topology           = GetVkPrimitiveTopology(primitive.primitiveType);
 
-    vertexInputState.attributes.push_back({.location = maxLoaction + 1, .binding = maxLoaction + 1, .format = VK_FORMAT_R32_UINT, .offset = 0});
-    vertexInputState.bindings.push_back({.binding = maxLoaction + 1, .stride = sizeof(uint32_t), .inputRate = VK_VERTEX_INPUT_RATE_INSTANCE});
+   // vertexInputState.attributes.push_back({.location = maxLoaction + 1, .binding = maxLoaction + 1, .format = VK_FORMAT_R32_UINT, .offset = 0});
+  //  vertexInputState.bindings.push_back({.binding = maxLoaction + 1, .stride = sizeof(uint32_t), .inputRate = VK_VERTEX_INPUT_RATE_INSTANCE});
 
     pipelineState.setVertexInputState(vertexInputState).setInputAssemblyState(inputAssemblyState);
 

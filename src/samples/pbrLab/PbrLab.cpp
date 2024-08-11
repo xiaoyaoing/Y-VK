@@ -40,26 +40,28 @@ void Example::drawFrame(RenderGraph& rg) {
         [&](RenderPassContext& context) {
             renderContext->getPipelineState().setDepthStencilState({.depthTestEnable = false}).setRasterizationState({.cullMode = VK_CULL_MODE_NONE}).setPipelineLayout(device->getResourceCache().requestPipelineLayout(std::vector<std::string>{"skybox.vert", "skybox.frag"}));
             view->bindViewBuffer();
-
+    
             renderContext->bindPrimitiveGeom(context.commandBuffer, *cube).bindImageSampler(0, environmentCube->getImage().getVkImageView(), environmentCube->getSampler()).bindPushConstants(SkyBoxPushConstant{.exposure = exposure, .gamma = gamma});
             renderContext->flushAndDrawIndexed(context.commandBuffer, cube->indexCount, 1, 0, 0, 0);
         });
 
-    for (auto& pass : mRenderPasses) {
+    for (auto& pass : mRenderPasses) { 
         pass->render(rg);
     }
 }
 
 void Example::prepare() {
     Application::prepare();
-
+    GlslCompiler::forceRecompile = true;
+    
     g_context->setFlipViewport(true);
     mRenderPasses.push_back(std::make_unique<GBufferPass>());
-    mRenderPasses.push_back(std::make_unique<IBLLightingPass>());
+     mRenderPasses.push_back(std::make_unique<IBLLightingPass>());
     // mRenderPasses.push_back(std::make_unique<SSGIPass>());
 
     // loadScene("E:/code/Vulkan-glTF-PBR/data/models/DamagedHelmet/glTF-Embedded/DamagedHelmet.gltf");
     //loadScene("E:/code/FidelityFX-SSSR/sample/media/Chess/scene.gltf");
+    sceneLoadingConfig.indexType = VK_INDEX_TYPE_UINT32;
     loadScene(FileUtils::getResourcePath("cars/car.gltf"));
 
     RenderPtrManangr::init();

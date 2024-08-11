@@ -49,7 +49,7 @@ namespace TextureHelper {
             imageCopy.imageSubresource.baseArrayLayer = 0;
             imageCopy.imageSubresource.layerCount     = 1;
             imageCopy.imageOffset                     = {0, 0, 0};
-            imageCopy.imageExtent                     = {128, 128};
+            imageCopy.imageExtent                     = {128, 128,1};
 
             VkImageSubresourceRange subresourceRange{};
             subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;

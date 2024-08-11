@@ -20,6 +20,7 @@
 #include "PostProcess/PostProcess.h"
 #include "RenderPasses/RenderPassBase.h"
 #include "Scene/Compoments/Camera.h"
+#include "Scene/SceneLoader/ObjLoader.hpp"
 #include "Scene/SceneLoader/SceneLoaderInterface.h"
 #include "Scene/SceneLoader/gltfloader.h"
 
@@ -106,6 +107,8 @@ void Application::initVk() {
 
     addDeviceExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     addDeviceExtension(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    addDeviceExtension(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+    addDeviceExtension( VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
 
     VkPhysicalDeviceProperties deviceProperties;
     vkGetPhysicalDeviceProperties(physical_devices[0], &deviceProperties);
@@ -260,8 +263,7 @@ void Application::updateGUI() {
     }
 
     ImGui::Begin("Basic", nullptr, ImGuiWindowFlags_NoMove);
-    // ImGui::SetWindowSize(ImVec2(300,0));
-    //ImGui::PushItemWidth(200.0f * gui->scale);
+    
     ImGui::Text("%.2f ms/frame ", 1000.f * deltaTime);
     ImGui::NextColumn();
     ImGui::Text(" %d fps", toUint32(1.f / deltaTime));
@@ -546,6 +548,7 @@ void Application::loadScene(const std::string& path) {
     scene = SceneLoaderInterface::LoadSceneFromFile(*device, path, sceneLoadingConfig);
     scene->addDirectionalLight({0, -0.95f, 0.3f}, glm::vec3(1.0f), 1.5f);
 
+    RuntimeSceneManager::addPlane(*scene);
     //RuntimeSceneManager::addSponzaRestirLight(*scene);
     onSceneLoaded();
 }
@@ -572,7 +575,6 @@ void Application::initView() {
 
 
 void Application::handleMouseMove(float x, float y) {
-    bool  handled = false;
     float dx      = static_cast<int32_t>(mousePos.x) - x;
     float dy      = static_cast<int32_t>(mousePos.y) - y;
     onMouseMove();

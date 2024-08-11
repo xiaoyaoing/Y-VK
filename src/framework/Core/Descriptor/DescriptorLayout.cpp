@@ -97,7 +97,7 @@ DescriptorLayout::DescriptorLayout(Device& device, std::vector<Shader>& shaders)
     VK_CHECK_RESULT(vkCreateDescriptorSetLayout(_deivce.getHandle(), &descSetLayoutInfo, nullptr, &_layout))
 }
 DescriptorLayout::DescriptorLayout(Device& device, uint32_t setIdx, const std::vector<ShaderResource>& resources) : _deivce(device), setIdx(setIdx), resources(resources) {
-    VkDescriptorSetLayoutCreateInfo       createInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
+    VkDescriptorSetLayoutCreateInfo       descSetLayoutInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
     std::vector<VkDescriptorBindingFlags> bindingFlags;
 
     std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindingInfoMap{};
@@ -122,17 +122,23 @@ DescriptorLayout::DescriptorLayout(Device& device, uint32_t setIdx, const std::v
         bindingInfo.binding         = resource.binding;
         bindingInfo.descriptorCount = resource.arraySize;
 
+        
         if (bindingInfo.descriptorCount == 0) {
+
+            // VkDescriptorBindingFlags flags = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
+            // auto set_layout_bind_flags_ci = VkDescriptorSetLayoutBindingFlagsCreateInfo{};
+            // set_layout_bind_flags_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+            // set_layout_bind_flags_ci.bindingCount = 1;
+            // set_layout_bind_flags_ci.pBindingFlags = &flags;
+            // descSetLayoutInfo.pNext = &set_layout_bind_flags_ci;
+            
             LOGI("Descriptor count is 0 for {} set 64", resource.name);
             bindingInfo.descriptorCount = 64;
         }
-        //   if(binding == 5) bindingInfo.descriptorCount = 25;
         //todo fix this
         bindingInfo.descriptorType = find_descriptor_type(resource.type, false);
-
         bindingFlags.emplace_back(0);
         resourceLookUp.emplace(resource.name, binding);
-        //layoutBindings.emplace_back(bindingInfo);
         bindingInfoMap.emplace(binding, bindingInfo);
         bindingLookUp.emplace(bindingInfo.binding, bindingInfoMap.size() - 1);
     }
@@ -140,19 +146,10 @@ DescriptorLayout::DescriptorLayout(Device& device, uint32_t setIdx, const std::v
     for (auto& binding : bindingInfoMap) {
         layoutBindings.push_back(binding.second);
     }
-
-  //  layoutBindings.resize(127);
- //   for (int i = 0; i < 127; i++) {
- //       layoutBindings[i] = VkDescriptorSetLayoutBinding{static_cast<uint32_t>(i), VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr};
- //   }
-
-    VkDescriptorSetLayoutCreateInfo descSetLayoutInfo = {};
-    descSetLayoutInfo.sType                           = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     descSetLayoutInfo.bindingCount                    = static_cast<uint32_t>(layoutBindings.size());
     descSetLayoutInfo.pBindings                       = layoutBindings.data();
     descSetLayoutInfo.flags                           = 0;
     VK_CHECK_RESULT(vkCreateDescriptorSetLayout(_deivce.getHandle(), &descSetLayoutInfo, nullptr, &_layout))
-
     LOGI("Descriptor layout created with {} bindings", layoutBindings.size());
 }
 
@@ -161,7 +158,7 @@ void DescriptorLayout::addBinding(VkShaderStageFlags       stageFlags,
                                   uint32_t                 descCount,
                                   VkDescriptorType         descType,
                                   VkDescriptorBindingFlags bindingFlags) {
-    VkDescriptorSetLayoutBinding bindingInfo = {};
+    VkDescriptorSetLayoutBinding bindingInfo{};
     bindingInfo.stageFlags                   = stageFlags;
     bindingInfo.binding                      = bindingPoint;
     bindingInfo.descriptorCount              = descCount;

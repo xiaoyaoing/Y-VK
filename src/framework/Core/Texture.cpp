@@ -93,14 +93,14 @@ static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture, Com
     subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
     subresourceRange.baseMipLevel   = 0;
     subresourceRange.baseArrayLayer = 0;
-    subresourceRange.levelCount     = texture->image->getMipLevelCount();
+    subresourceRange.levelCount     = texture->image->getMipMaps().size() / texture->image->getArrayLayerCount();
     subresourceRange.layerCount     = layerCount;
 
     texture->getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::TRANSFER_DST, subresourceRange);
 
     commandBuffer.copyBufferToImage(imageBuffer, texture->image->getVkImage(), imageCopyRegions);
 
-    texture->getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY, subresourceRange);
+  //  texture->getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY, subresourceRange);
 
     if (texture->image->getMipMaps().size() == 1 && texture->image->needGenerateMipMapOnGpu()) {
         std::vector<VkImageBlit2> blits;
@@ -145,6 +145,10 @@ static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture, Com
             i++;
         }
     }
+
+    subresourceRange.levelCount = texture->image->getMipLevelCount();
+    texture->getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY, subresourceRange);
+
     VkSamplerAddressMode addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     VkSamplerAddressMode addressModeV = texture->image->getFormat() == VK_FORMAT_R32G32B32A32_SFLOAT ? VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE : VK_SAMPLER_ADDRESS_MODE_REPEAT;
     texture->sampler                  = &device.getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, texture->image->getMipLevelCount(), addressModeU, addressModeV);

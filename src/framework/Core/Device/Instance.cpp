@@ -84,10 +84,10 @@ Instance::Instance(const std::string&                           application_name
     instanceInfo.ppEnabledExtensionNames = enabledExtensions.data();
     instanceInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
     instanceInfo.enabledLayerCount         = 0;
-    VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT};
+  VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT};
     VkValidationFeaturesEXT      features  = {};
     features.sType                         = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
-    features.enabledValidationFeatureCount = 1;
+    features.enabledValidationFeatureCount = 0;
     features.pEnabledValidationFeatures    = enables;
     // instanceInfo.pNext                     = &features;
 

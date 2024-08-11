@@ -116,8 +116,15 @@ IBL::~IBL() {
 }
 void IBL::generate(RenderGraph& rg) {
     if (generated) return;
-    generatePrefilteredCubeMap(rg);
-    generatePrefilertedEnvMap(rg);
-    generateBRDFLUT(rg);
+    RenderGraph rdg(rg.getDevice());
+    importTexturesToRenderGraph(rdg);
+    generatePrefilteredCubeMap(rdg);
+    generatePrefilertedEnvMap(rdg);
+    generateBRDFLUT(rdg);
+    CommandBuffer commandBuffer = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+    rdg.execute(commandBuffer);
+    g_context->submit(commandBuffer);
+
+    //importTexturesToRenderGraph(rg);
     generated = true;
 }

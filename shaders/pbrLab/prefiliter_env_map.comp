@@ -113,7 +113,7 @@ void main(){
     if (face == 5) N = vec3(normal2d.x, normal2d.y, -1.0);
 
     N = normalize(N);
-    storePos.y = size.y - storePos.y;
+    storePos.y = size.y - storePos.y - 1;
     imageStore(prefilter_cube, ivec3(storePos), vec4(prefilterEnvMap(N, roughness), 1.0));
 
 }

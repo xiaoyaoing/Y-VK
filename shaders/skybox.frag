@@ -9,10 +9,6 @@
 layout (set = 1, binding = 0) uniform samplerCube samplerEnv;
 
 
-layout (set = 0, binding = 0) buffer UBOParams {
-    RTPrimitive primitives[1];
-} uboParams1;
-
 layout (location = 0) in vec3 inUVW;
 
 layout (location = 0) out vec4 outColor;

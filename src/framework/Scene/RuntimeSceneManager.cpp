@@ -75,6 +75,11 @@ void RuntimeSceneManager::addPrimitives(Scene& scene, std::vector<std::unique_pt
     scene.sceneVertexBuffer = std::move(newVertexBuffers);
     scene.updateSceneUniformBuffer();
 }
+void RuntimeSceneManager::addPrimitive(Scene& scene, std::unique_ptr<Primitive>&& primitive) {
+    auto primitives = std::vector<std::unique_ptr<Primitive>>();
+    primitives.push_back(std::move(primitive));
+    addPrimitives(scene, std::move(primitives));
+}
 void RuntimeSceneManager::addGltfMaterialsToScene(Scene& scene, std::vector<GltfMaterial>&& materials) {
     scene.materials.resize(scene.materials.size() + materials.size());
     std::copy(materials.begin(), materials.end(), scene.materials.end() - materials.size());
@@ -153,4 +158,17 @@ void RuntimeSceneManager::addSponzaRestirPointLight(Scene& scene) {
             scene.addLight(SgLight{.type = LIGHT_TYPE::Point, .lightProperties = props});
         }
     }
+}
+void RuntimeSceneManager::addPlane(Scene& scene) {
+    auto quad = SceneLoaderInterface::loadSpecifyTypePrimitive(g_context->getDevice(), "quad");
+    quad->transform.setLocalScale(glm::vec3(10000.f));
+    GltfMaterial material       = InitGltfMaterial();
+    material.pbrBaseColorFactor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    material.pbrRoughnessFactor = 1.0;
+    material.pbrMetallicFactor = 0.0;
+    
+    RuntimeSceneManager::addPrimitive(scene, std::move(quad));
+    scene.materials.push_back(material);
+    scene.primitives[scene.primitives.size() - 1]->materialIndex = scene.materials.size() - 1;
+    scene.updateSceneUniformBuffer();
 }
