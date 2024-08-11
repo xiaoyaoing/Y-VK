@@ -23,6 +23,8 @@ void View::setScene(const Scene* scene) {
         mSamplers.emplace_back(&texture->getSampler());
     }
     mMaterials = scene->getGltfMaterials();
+
+    mLights = scene->getLights();
 }
 void View::setCamera(const Camera* camera) {
     mCamera = camera;
@@ -39,7 +41,7 @@ View& View::bindViewBuffer() {
 
     perViewUnifom.resolution     = glm::ivec2(g_context->getViewPortExtent().width, g_context->getViewPortExtent().height);
     perViewUnifom.inv_resolution = glm::vec2(1.0f / perViewUnifom.resolution.x, 1.0f / perViewUnifom.resolution.y);
-    perViewUnifom.light_count    = mScene->getLights().size();
+    perViewUnifom.light_count    = getLights().size();
     perViewUnifom.camera_pos     = mCamera->getPosition();
 
     if (perViewUnifom != mPerViewUniform) {
@@ -123,14 +125,19 @@ std::vector<const Primitive*> View::getMVisiblePrimitives() const {
 void View::setMVisiblePrimitives(const std::vector<const Primitive*>& mVisiblePrimitives) {
     this->mVisiblePrimitives = mVisiblePrimitives;
 }
+
+std::vector<SgLight>& View::getLights() {
+    return mLights;
+}
+
 std::vector<GltfMaterial> View::GetMMaterials() const {
     return mMaterials;
 }
 void View::updateLight() {
     std::vector<LightUib> lights;
-    lights.reserve(mScene->getLights().size());
+    lights.reserve(getLights().size());
     //uint32_t curLightCount = 0;
-    for (const auto& light : mScene->getLights()) {
+    for (const auto& light : getLights()) {
         LightUib lightUib;
         lightUib.info.g = light.lightProperties.shadow_index;
         switch (light.type) {

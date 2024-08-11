@@ -57,7 +57,7 @@ void Example::prepare() {
     
     g_context->setFlipViewport(true);
     mRenderPasses.push_back(std::make_unique<GBufferPass>());
-    // mRenderPasses.push_back(std::make_unique<ShadowMapPass>());
+    mRenderPasses.push_back(std::make_unique<ShadowMapPass>());
     mRenderPasses.push_back(std::make_unique<IBLLightingPass>());
     // mRenderPasses.push_back(std::make_unique<SSGIPass>());
 

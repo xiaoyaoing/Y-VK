@@ -33,6 +33,7 @@ public:
     const Camera*                 getCamera() const;
     std::vector<const Primitive*> getMVisiblePrimitives() const;
     void                          setMVisiblePrimitives(const std::vector<const Primitive*>& mVisiblePrimitives);
+    std::vector<SgLight> & getLights();
 
     std::vector<GltfMaterial>   GetMMaterials() const;
 
@@ -64,6 +65,7 @@ protected:
     std::vector<const Primitive*> mVisiblePrimitives;
     std::vector<const ImageView *> mImageViews;
     std::vector<const Sampler *>  mSamplers;
+    std::vector<SgLight> mLights;
     std::vector<GltfMaterial>     mMaterials;
     const Scene*                  mScene{nullptr};
     std::unique_ptr<Buffer>       mPerViewBuffer;

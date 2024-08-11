@@ -49,6 +49,10 @@ const std::vector<SgLight>& Scene::getLights() const {
     return lights;
 }
 
+std::vector<SgLight>& Scene::getLights() {
+    return lights;
+}
+
 const std::vector<std::unique_ptr<Primitive>>& Scene::getPrimitives() const {
     return primitives;
 }

@@ -12,6 +12,7 @@ struct  Light
     vec4 position;// position.w represents type of light
     vec4 direction;// direction.w represents range
     vec4 info;// (only used for spot lights) info.x represents light inner cone angle, info.y represents light outer cone angle
+    mat4 matrix;
 };
 
 vec3 apply_directional_light(Light light, vec3 normal)
