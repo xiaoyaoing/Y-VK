@@ -112,7 +112,6 @@ void RayTracer::prepare() {
     integrators["path"]   = std::make_unique<PathIntegrator>(*device);
     integrators["restir"] = std::make_unique<RestirIntegrator>(*device);
     integratorNames       = {"path", "restir"};
-    // integratorNames       = {"restir", "path"};
     currentIntegrator = "resitr";
 
     sceneLoadingConfig = {.requiredVertexAttribute = {POSITION_ATTRIBUTE_NAME, INDEX_ATTRIBUTE_NAME, NORMAL_ATTRIBUTE_NAME, TEXCOORD_ATTRIBUTE_NAME},
@@ -121,30 +120,7 @@ void RayTracer::prepare() {
                           .bufferForAccel          = true,
                           .bufferForStorage        = true,
                           .sceneScale              = glm::vec3(1.f)};
-
-    // loadScene("C:/Users/pc/Downloads/bedroom/scene.json");
-    //loadScene("C:/Users/pc/Downloads/bathroom/scene.json");
-    // loadScene("E:/code/vk-raytracing-demo/resources/classroom/scene.json");
-    // loadScene("E:/code/vk-raytracing-demo/resources/cornell-box-json/scene.json");
-    // loadScene(FileUtils::getResourcePath("test-ball/scene.json"));
-    //  loadScene("D:/blender-scenes/classroom (4)/classroom/classroom.gltf");
-    //  loadScene("C:/Users/pc/Documents/moutain1/1.gltf");
-    // loadScene("C:/Users/pc/Documents/car/1.gltf");
-
-    //  loadScene("C:/Users/pc/Downloads/house/scene.json");
-    //loadScene("C:/Users/pc/Downloads/kitchen/scene.json");
-    // loadScene("C:/Users/pc/Dow nloads/living-room/living-room/living-room/scene.json");
-    //sceneLoadingConfig.sceneScale = glm::vec3(0.01f);
-    //  loadScene("E:/code/MoerEngine/target/bin/RelWithDebInfo/resource/default/scenes/sponza/Sponza01.gltf");
-    // loadScene("C:/Users/yuanjunping/Downloads/car.gltf");
-    // loadScene(FileUtils::getResourcePath("sponza/Sponza01.gltf"));
-    // loadScene(FileUtils::getResourcePath("staircase2/scene.json"));
-    //   loadScene(FileUtils::getResourcePath("cornell-box/cornellBox.gltf"));
-    // loadScene("C:/Users/pc/Downloads/glTF-Sample-Models-main/glTF-Sample-Models-main/2.0/RiggedFigure/glTF/RiggedFigure.gltf");
-    // camera->getTransform()->setPosition(glm::vec3(0.f, 0.f, 3.f));
-    //  camera->getTransform()->setlokllRotation({1, 0, 0, 0});
-
-    loadScene("C:/Users/yuanjunping/Downloads/kitchen/scene.json");
+    loadScene(FileUtils::getResourcePath("kitchen/scene.json"));
 }
 
 void RayTracer::onUpdateGUI() {
