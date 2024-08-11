@@ -26,6 +26,8 @@ struct LightProperties {
 
     float outer_cone_angle{0.0f};
 
+    int shadow_index{-1};
+
     uint32_t prim_index{0};
     uint32_t texture_index{0};
     glm::mat4 world_matrix{1.0f};
@@ -78,3 +80,8 @@ inline void LightingState::addLight(const SgLight& light) {
             LOGE("Light type not supported")
     }
 }
+
+//todo 正确封装light 现在太丑了 
+class Light {
+    
+};

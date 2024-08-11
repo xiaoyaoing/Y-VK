@@ -163,7 +163,7 @@ void main(){
         pbr_info.perceptualRoughness = perceptual_roughness;
         pbr_info.diffuseColor = diffuse_color * (1- metallic) * (1-0.04);
 
-         color += ibl_fragment_shader(pbr_info, normal, R);
+        // color += ibl_fragment_shader(pbr_info, normal, R);
     }
 
     {

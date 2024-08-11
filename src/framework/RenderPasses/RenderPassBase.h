@@ -2,6 +2,8 @@
 #include <string_view>
 #include <unordered_map>
 
+class View;
+
 class RenderGraph;
 class PassBase {
 public:
@@ -23,6 +25,8 @@ public:
     void putPtr(const std::string_view name, T* ptr) {
         mPointersMap[name] = ptr;
     }
+
+    View * getView();
 
     static void init();
     static void destroy();

@@ -25,8 +25,6 @@ struct PerPrimitive {
     mat4 model;
     mat4 modelIT;
     uint material_index;
-//    uvec3 padding1;
-//    uvec4 padding2;
     uint padding1;
     uint padding2;
     uint padding3;

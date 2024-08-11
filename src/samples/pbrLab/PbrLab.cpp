@@ -13,6 +13,7 @@
 #include "Core/Shader/GlslCompiler.h"
 #include "RenderPasses/GBufferPass.h"
 #include "RenderPasses/SSGIPass.h"
+#include "RenderPasses/ShadowMapPass.h"
 #include "Scene/SceneLoader/SceneLoaderInterface.h"
 
 struct SkyBoxPushConstant {
@@ -56,11 +57,11 @@ void Example::prepare() {
     
     g_context->setFlipViewport(true);
     mRenderPasses.push_back(std::make_unique<GBufferPass>());
-     mRenderPasses.push_back(std::make_unique<IBLLightingPass>());
+    // mRenderPasses.push_back(std::make_unique<ShadowMapPass>());
+    mRenderPasses.push_back(std::make_unique<IBLLightingPass>());
     // mRenderPasses.push_back(std::make_unique<SSGIPass>());
 
-    // loadScene("E:/code/Vulkan-glTF-PBR/data/models/DamagedHelmet/glTF-Embedded/DamagedHelmet.gltf");
-    //loadScene("E:/code/FidelityFX-SSSR/sample/media/Chess/scene.gltf");
+
     sceneLoadingConfig.indexType = VK_INDEX_TYPE_UINT32;
     loadScene(FileUtils::getResourcePath("cars/car.gltf"));
 
