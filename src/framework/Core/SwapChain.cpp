@@ -95,12 +95,6 @@ SwapChain::SwapChainSupportDetails SwapChain::querySwapChainSupport()
 
     uint32_t formatCount;
 
-
-
-
-
-
-
     vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, _surface, &formatCount, nullptr);
     if (formatCount != 0)
     {

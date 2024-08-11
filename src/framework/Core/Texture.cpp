@@ -63,7 +63,11 @@ const Sampler& Texture::getSampler() const {
 //     texture->sampler = std::make_unique<Sampler>(device, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, mipmaps.size());
 // }
 
-static void initVKTexture(Device& device, std::unique_ptr<Texture>& texture, CommandBuffer& commandBuffer, Buffer& imageBuffer, uint32_t offset) {
+static void initVKTexture(Device& device, 
+                        std::unique_ptr<Texture>& texture,
+                        CommandBuffer& commandBuffer,
+                        Buffer& imageBuffer,
+                        uint32_t offset) {
     // texture->image->generateMipMapOnCpu();
     texture->image->createVkImage(device);
 
