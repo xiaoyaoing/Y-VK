@@ -19,8 +19,7 @@ ShadowMapPass::ShadowMapPass():mSampler(g_context->getDevice().getResourceCache(
 }
 void ShadowMapPass::render(RenderGraph& rg) {
    auto view = g_manager->fetchPtr<View>("view");
-    Scene * g_scene;
-   auto lights = g_scene->getLights();
+   auto lights = view->getLights();
     
     for(int i = 0; i < lights.size(); i++) {
         if (lights[i].type == LIGHT_TYPE::Directional) {
@@ -36,10 +35,10 @@ void ShadowMapPass::render(RenderGraph& rg) {
                 builder.writeTexture(depth, TextureUsage::DEPTH_ATTACHMENT);
                 },
                 
-                [&](RenderPassContext& context) {
+                [&,light = &lights[i],name = shadowName](RenderPassContext& context) {
                     g_context->getPipelineState().setPipelineLayout(*mPipelineLayout).setDepthStencilState({.depthCompareOp = VK_COMPARE_OP_LESS});
-                    g_context->bindPushConstants(getLightMVP(lights[i].lightProperties.position,lights[i].lightProperties.direction));
-                    lights[i].lightProperties.shadow_index = g_manager->getView()->bindTexture(rg.getBlackBoard().getImageView(shadowName), mSampler);
+                    g_context->bindPushConstants(getLightMVP(light->lightProperties.position,light->lightProperties.direction));
+                    light->lightProperties.shadow_index = g_manager->getView()->bindTexture(rg.getBlackBoard().getImageView(name), mSampler);
                     g_manager->fetchPtr<View>("view")->bindViewGeom(context.commandBuffer).drawPrimitives(context.commandBuffer);
                     g_manager->getView()->setLightDirty(true);
                 });
@@ -48,5 +47,5 @@ void ShadowMapPass::render(RenderGraph& rg) {
 }
 void ShadowMapPass::init() {
     PassBase::init();
-    mPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice().getResourceCache().requestPipelineLayout({"shadowmap.vert", "shadowmap.frag"}));
+    mPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice().getResourceCache().requestPipelineLayout({"shadows/shadowMap.vert", "shadows/shadowMap.frag"}));
 }

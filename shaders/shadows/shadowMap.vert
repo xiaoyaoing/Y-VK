@@ -1,7 +1,9 @@
-﻿layout(location = 0) in vec3 position;
+#version  320 es
+
+layout(location = 0) in vec3 position;
 layout(location = 1) in uint primitive_id;
 
-layout(pushing) uniform PushConstants {
+layout(push_constant) uniform PushConstants {
     mat4 mvp;
 };
 

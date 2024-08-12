@@ -45,6 +45,7 @@ public:
     void addDirectionalLight(vec3 direction, vec3 color, float intensity);
 
     const std::vector<SgLight>& getLights() const;
+    std::vector<SgLight>& getLights();
 
     const std::vector<std::unique_ptr<Primitive>>& getPrimitives() const;
     const std::vector<std::unique_ptr<Texture>>&   getTextures() const;
