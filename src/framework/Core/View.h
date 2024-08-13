@@ -30,6 +30,9 @@ public:
 
     void drawPrimitivesUseSeparateBuffers(CommandBuffer& commandBuffer);
     void setLightDirty(bool dirty) { lightDirty = dirty; }
+
+    void updateGui();
+    
     const Camera*                 getCamera() const;
     std::vector<const Primitive*> getMVisiblePrimitives() const;
     void                          setMVisiblePrimitives(const std::vector<const Primitive*>& mVisiblePrimitives);

@@ -1,6 +1,8 @@
 #include "View.h"
 
+#include "imgui.h"
 #include "RenderContext.h"
+#include "Gui/Gui.h"
 #include "Scene/Scene.h"
 #include "Scene/Compoments/SgLight.h"
 
@@ -112,6 +114,15 @@ void View::drawPrimitivesUseSeparateBuffers(CommandBuffer& commandBuffer) {
         g_context->bindPrimitiveGeom(commandBuffer, *primitive);
         g_context->flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, 0, 0, instance_count++);
         //  return;
+    }
+}
+
+void View::updateGui() {
+    ImGui::Begin("View");
+    ImGui::Text("Lights: %d", mLights.size());
+    for(const auto& light : mLights) {
+        ImGui::InputFloat3("Position", &light.lightProperties.position.x;
+        ImGui::InputFloat3("Direction", glm::value_ptr(light.lightProperties.direction));
     }
 }
 

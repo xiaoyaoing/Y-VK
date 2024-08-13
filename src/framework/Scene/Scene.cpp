@@ -45,6 +45,16 @@ void Scene::addDirectionalLight(vec3 direction, vec3 color, float intensity) {
     lights.emplace_back(light);
 }
 
+void Scene::addDirectionalLight(vec3 direction, vec3 color, float intensity, vec3 position) {
+    SgLight light{};
+    light.lightProperties.color     = color;
+    light.lightProperties.intensity = intensity;
+    light.lightProperties.direction = direction;
+    light.lightProperties.position  = position;
+    light.type                      = LIGHT_TYPE::Directional;
+    lights.emplace_back(light);
+}
+
 const std::vector<SgLight>& Scene::getLights() const {
     return lights;
 }
