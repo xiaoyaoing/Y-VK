@@ -45,5 +45,10 @@ set(FRAMEWORK_INCLUDE_DIR "." CACHE PATH "Path to the framework include director
 # 获取 framework 文件夹下的所有源文件
 file(GLOB_RECURSE FRAMEWORK_FILES *.h)
 
+file(GLOB_RECURSE ALL_SOURCES *.cpp)
+
+# 按照层次结构组织源文件
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${FRAMEWORK_FILES} ${ALL_SOURCES})
+
 # 设置源文件
 target_sources(${target_name} PRIVATE ${FRAMEWORK_FILES})

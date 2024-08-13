@@ -130,6 +130,7 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkInstance
     VkPhysicalDeviceVulkan12Features features12 = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};
     features12.runtimeDescriptorArray           = true;
     features12.bufferDeviceAddress              = true;
+    features12.descriptorIndexing               = true;
 
     VkPhysicalDeviceSynchronization2FeaturesKHR syncronization2_features = {
         VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR};
