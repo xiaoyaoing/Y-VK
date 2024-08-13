@@ -2,4 +2,6 @@ file(GLOB_RECURSE rt_src ${CMAKE_CURRENT_SOURCE_DIR}/*.h
 ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp) 
 add_executable(RTRT ${rt_src} ${shaders_src})
 
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${rt_src} )
+source_group("Shaders" ${CMAKE_CURRENT_SOURCE_DIR} FILES ${shaders_src})
 target_link_libraries(RTRT framework)
