@@ -196,6 +196,7 @@ void main(){
 
             vec3 light_contribution = microfacetBRDF(pbr_info) *  calcute_shadow(lights_info.lights[i], world_pos) * apply_light(lights_info.lights[i], world_pos, normal);
             //            light_contribution = diffuse(pbr_info);
+            light_contribution = vec3(calcute_shadow(lights_info.lights[i], world_pos));
             //debugPrintfEXT("light_contribution: %f %f %f\n", light_contribution.x, light_contribution.y, light_contribution.z);
             color += light_contribution;
         }

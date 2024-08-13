@@ -10,7 +10,7 @@ constexpr size_t CONFIG_MAX_LIGHT_COUNT = 256;
 
 
 View::View(Device& device) {
-    mLightBuffer   = std::make_unique<Buffer>(device, sizeof(LightUib) * CONFIG_MAX_LIGHT_COUNT, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+    mLightBuffer   = std::make_unique<Buffer>(device, sizeof(LightUib) * CONFIG_MAX_LIGHT_COUNT, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
     mPerViewBuffer = std::make_unique<Buffer>(device, sizeof(PerViewUnifom), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 }
 void View::setScene(const Scene* scene) {
@@ -54,14 +54,17 @@ View& View::bindViewBuffer() {
 
     RenderContext* context = g_context;
 
-    if(lightDirty) updateLight();
-    context->bindBuffer(static_cast<uint32_t>(UniformBindingPoints::LIGHTS), *mLightBuffer, 0, mLightBuffer->getSize(), 0);
+    
     context->bindBuffer(static_cast<uint32_t>(UniformBindingPoints::PER_VIEW), *mPerViewBuffer, 0, mPerViewBuffer->getSize(), 0);
 
     return *this;
 }
 
 View& View::bindViewShading() {
+
+    if(lightDirty) updateLight();
+    g_context->bindBuffer(static_cast<uint32_t>(UniformBindingPoints::LIGHTS), *mLightBuffer, 0, mLightBuffer->getSize(), 0);
+    
     auto             materials  = GetMMaterials();
     BufferAllocation allocation = g_context->allocateBuffer(sizeof(GltfMaterial) * materials.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     allocation.buffer->uploadData(materials.data(), allocation.size, allocation.offset);
@@ -120,10 +123,16 @@ void View::drawPrimitivesUseSeparateBuffers(CommandBuffer& commandBuffer) {
 void View::updateGui() {
     ImGui::Begin("View");
     ImGui::Text("Lights: %d", mLights.size());
-    for(const auto& light : mLights) {
-        ImGui::InputFloat3("Position", &light.lightProperties.position.x;
-        ImGui::InputFloat3("Direction", glm::value_ptr(light.lightProperties.direction));
+    for (auto& light : mLights) {
+        //todo fix this only one dir now
+        static float dir[3] = {light.lightProperties.direction.x, light.lightProperties.direction.y, light.lightProperties.direction.z};
+        ImGui::SliderFloat3("Direction", dir, -1, 1, "%.2f");
+        light.lightProperties.direction = glm::normalize(glm::vec3(dir[0], dir[1], dir[2]));
     }
+}
+void View::perFrameUpdate() {
+    mSamplers.resize(mScene->getTextures().size());
+    mImageViews.resize(mScene->getTextures().size());
 }
 
 const Camera* View::getCamera() const {
@@ -151,6 +160,7 @@ void View::updateLight() {
     for (const auto& light : getLights()) {
         LightUib lightUib;
         lightUib.info.g = light.lightProperties.shadow_index;
+        lightUib.shadow_matrix = light.lightProperties.shadow_matrix;
         switch (light.type) {
             case LIGHT_TYPE::Point:
                 lightUib = {
