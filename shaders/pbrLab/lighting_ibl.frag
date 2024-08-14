@@ -2,11 +2,12 @@
 
 #extension GL_GOOGLE_include_directive : enable 
 #extension GL_EXT_debug_printf : enable
+#extension GL_EXT_nonuniform_qualifier : enable
 
 
 #include "../perFrame.glsl"
-//#include "../shadow.glsl"
-#include "../lighting.glsl"
+#include "../shadow.glsl"
+//#include "../lighting.glsl"
 #include "../brdf.glsl"
 
 
@@ -194,8 +195,9 @@ void main(){
             pbr_info.LdotH = clamp(dot(light_dir, half_vector), 0.0, 1.0);
             pbr_info.VdotH = clamp(dot(view_dir, half_vector), 0.0, 1.0);
 
-            vec3 light_contribution = microfacetBRDF(pbr_info) *  calcute_shadow(lights_info.lights[i], world_pos) * apply_light(lights_info.lights[i], world_pos, normal);
+            vec3 light_contribution = microfacetBRDF(pbr_info) *   apply_light(lights_info.lights[i], world_pos, normal);
             //            light_contribution = diffuse(pbr_info);
+            //light_contribution = vec3(calcute_shadow(lights_info.lights[i], world_pos));
             //debugPrintfEXT("light_contribution: %f %f %f\n", light_contribution.x, light_contribution.y, light_contribution.z);
             color += light_contribution;
         }

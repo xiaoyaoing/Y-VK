@@ -31,6 +31,7 @@ struct LightProperties {
     uint32_t prim_index{0};
     uint32_t texture_index{0};
     glm::mat4 world_matrix{1.0f};
+    glm::mat4 shadow_matrix{1.0f};
     
 };
 
@@ -44,6 +45,7 @@ struct alignas(16) LightUib {
     glm::vec4 position{0}; // position.w represents type of light
     glm::vec4 direction{0};// direction.w represents range
     glm::vec4 info{0};
+    glm::mat4 shadow_matrix{1.0f};  // (only used for directional and spot lights)
     // (only used for spot lights) info.x represents light inner cone angle, info.y represents light outer cone angle
 };
 

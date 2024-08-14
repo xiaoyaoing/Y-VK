@@ -65,10 +65,12 @@ void IBLLightingPass::render(RenderGraph& rg) {
             auto  irradianceCube = blackBoard.getHandle("irradianceCube");
             auto  prefilterCube  = blackBoard.getHandle("prefilterCube");
             auto  brdfLUT        = blackBoard.getHandle("brdfLUT");
+           // auto  shadow        = blackBoard.getHandle("ShadowMap0");
 
             builder.readTextures({depth, normal, diffuse, emission, output});
             builder.readTextures({irradianceCube, prefilterCube, brdfLUT}, TextureUsage::SAMPLEABLE);
             builder.writeTexture(output);
+            
 
             RenderGraphPassDescriptor desc{};
             desc.setTextures({output, diffuse, depth, normal, emission}).addSubpass({.inputAttachments = {diffuse, depth, normal, emission}, .outputAttachments = {output}, .disableDepthTest = true});
@@ -95,6 +97,8 @@ void IBLLightingPass::render(RenderGraph& rg) {
             auto& prefilterCubeSampler  = g_context->getDevice().getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_FILTER_LINEAR, prefilterCube.getImage().getMipLevelCount());
             auto& brdfLUTSampler        = g_context->getDevice().getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_FILTER_LINEAR, 1);
 
+           g_manager->getView()->bindViewShading();
+            
             g_context->bindImageSampler(0, irradianceCube, irradianceCubeSampler).bindImageSampler(1, prefilterCube, prefilterCubeSampler).bindImageSampler(2, brdfLUT, brdfLUTSampler);
 
             g_context->bindImage(0, blackBoard.getImageView("diffuse"))

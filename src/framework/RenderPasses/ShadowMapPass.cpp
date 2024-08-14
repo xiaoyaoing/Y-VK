@@ -10,7 +10,7 @@ static mat4 getLightMVP(const glm::vec3& lightPos, const glm::vec3& lightDir) {
     glm::mat4 lightView       = glm::lookAt(lightPos, lightPos + lightDir, glm::vec3(0.0f, 1.0f, 0.0f));
     float aspect = (float)g_context->getViewPortExtent().width / (float)g_context->getViewPortExtent().height;
     float near = 1.0f;
-    float far = 25.0f;
+    float far = 500.0f;
     glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), aspect, near, far);
     return shadowProj * lightView;
 }
@@ -39,7 +39,10 @@ void ShadowMapPass::render(RenderGraph& rg) {
                     g_context->getPipelineState().setPipelineLayout(*mPipelineLayout).setDepthStencilState({.depthCompareOp = VK_COMPARE_OP_LESS});
                     g_context->bindPushConstants(getLightMVP(light->lightProperties.position,light->lightProperties.direction));
                     light->lightProperties.shadow_index = g_manager->getView()->bindTexture(rg.getBlackBoard().getImageView(name), mSampler);
+                    light->lightProperties.shadow_matrix = getLightMVP(light->lightProperties.position,light->lightProperties.direction);
                     g_manager->fetchPtr<View>("view")->bindViewGeom(context.commandBuffer).drawPrimitives(context.commandBuffer);
+
+                    rg.getBlackBoard().getImage(name).transitionLayout(context.commandBuffer, VulkanLayout::DEPTH_SAMPLER);
                     g_manager->getView()->setLightDirty(true);
                 });
         }

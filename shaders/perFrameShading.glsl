@@ -3,7 +3,7 @@
 #define MAX_SCENE_TEXTURES  127
 #define MAX_SCENE_MATERIALS 25
 
-layout (std430, set=0, binding = 3) readonly buffer  MaterialBuffer
+layout (std430, set=0, binding = 3)  buffer  MaterialBuffer 
 {
     GltfMaterial scene_materials[MAX_SCENE_MATERIALS];
 };

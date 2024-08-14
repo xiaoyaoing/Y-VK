@@ -3,7 +3,7 @@
 #extension GL_EXT_debug_printf : enable
 #extension GL_EXT_nonuniform_qualifier : enable
 
-#include "shadow.glsl"
+//#include "shadow.glsl"
 #include "perFrameShading.glsl"
 #include "perFrame.glsl"
 

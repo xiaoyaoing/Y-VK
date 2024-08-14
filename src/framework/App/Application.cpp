@@ -23,7 +23,8 @@
 #include "Scene/SceneLoader/ObjLoader.hpp"
 #include "Scene/SceneLoader/SceneLoaderInterface.h"
 #include "Scene/SceneLoader/gltfloader.h"
-
+#include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
 
 /*
  * Initializes window dimensions and application name
@@ -33,6 +34,14 @@ Application::Application(const char* name,
                          uint32_t width, 
                          uint32_t height) : mWidth(width), mHeight(height), mAppName(name) {
     initWindow(name, width, height);
+    
+    auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+
+    auto filename = "my_log.txt";
+    auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(filename, true);
+
+    spdlog::logger logger("my_logger", {console_sink, file_sink});
+    spdlog::set_default_logger(std::make_shared<spdlog::logger>(logger));
 }
 
 Application::~Application() {
@@ -228,6 +237,7 @@ void Application::updateScene() {
         onSceneLoaded();
         sceneAsync = nullptr;
     }
+    view->perFrameUpdate();
 }
 /**
  * @brief Update GUI
@@ -302,6 +312,8 @@ void Application::updateGUI() {
     ImGui::Separator();
 
     mPostProcessPass->updateGui();
+
+    g_manager->getView()->updateGui();
 
     auto& texture = g_context->getCurHwtexture();
 
@@ -546,7 +558,7 @@ void Application::onResize(uint32_t width, uint32_t height) {
 
 void Application::loadScene(const std::string& path) {
     scene = SceneLoaderInterface::LoadSceneFromFile(*device, path, sceneLoadingConfig);
-    scene->addDirectionalLight({0, -0.95f, 0.3f}, glm::vec3(1.0f), 1.5f,vec3(0,20,0));
+    scene->addDirectionalLight({0, -0.95f, 0.3f}, glm::vec3(1.0f), 1.5f,vec3(0,10,0));
 
     RuntimeSceneManager::addPlane(*scene);
     //RuntimeSceneManager::addSponzaRestirLight(*scene);

@@ -161,7 +161,7 @@ void RuntimeSceneManager::addSponzaRestirPointLight(Scene& scene) {
 }
 void RuntimeSceneManager::addPlane(Scene& scene) {
     auto quad = SceneLoaderInterface::loadSpecifyTypePrimitive(g_context->getDevice(), "quad");
-    quad->transform.setLocalScale(glm::vec3(10000.f));
+    quad->transform.setLocalScale(glm::vec3(100.f));
     GltfMaterial material       = InitGltfMaterial();
     material.pbrBaseColorFactor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
     material.pbrRoughnessFactor = 1.0;

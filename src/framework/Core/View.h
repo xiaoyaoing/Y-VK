@@ -32,6 +32,7 @@ public:
     void setLightDirty(bool dirty) { lightDirty = dirty; }
 
     void updateGui();
+    void perFrameUpdate();
     
     const Camera*                 getCamera() const;
     std::vector<const Primitive*> getMVisiblePrimitives() const;

@@ -98,9 +98,9 @@ vec3 apply_light(Light light, vec3 pos, vec3 normal)
 }
 
 
-float calcute_shadow(in Light light, vec3 world_pos){
-    //todo handle shadow 
-    return 1;
-
-}
+//float calcute_shadow(in Light light, vec3 world_pos){
+//    //todo handle shadow 
+//    return 1;
+//
+//}
 #endif
