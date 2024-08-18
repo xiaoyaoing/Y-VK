@@ -51,9 +51,6 @@ const VkImageSubresourceRange& ImageView::getSubResourceRange() const {
 }
 
 ImageView::~ImageView() {
-    if (isDepthOrStencilFormat(_format)) {
-        int k = 1;
-    }
     if (_view != VK_NULL_HANDLE)
         vkDestroyImageView(_device.getHandle(), _view, nullptr);
 }

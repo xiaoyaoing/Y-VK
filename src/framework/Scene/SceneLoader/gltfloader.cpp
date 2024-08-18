@@ -621,8 +621,6 @@ void GLTFLoadingImpl::processNode(const tinygltf::Node& node, const tinygltf::Mo
         int   light_index                            = extension->Get("light").Get<int>();
         auto& transform                              = modelTransforms[&node];
         lights[light_index].lightProperties.position = transform.getPosition();
-        {
-        }
     }
 }
 
@@ -967,6 +965,11 @@ std::unique_ptr<Scene> GltfLoading::LoadSceneFromGLTFFile(Device& device, const 
     auto scene = std::make_unique<Scene>();
     auto model = new GLTFLoadingImpl(device, path, config, scene.get());
 
+
+    while(scene->getLoadCompleteInfo().sceneTexturesLoaded == false) {
+       ;
+    }
+    
     scene->primitives         = std::move(model->primitives);
     scene->textures           = std::move(model->textures);
     scene->materials          = std::move(model->materials);

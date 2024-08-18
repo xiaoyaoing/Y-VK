@@ -120,7 +120,8 @@ void RayTracer::prepare() {
                           .bufferForAccel          = true,
                           .bufferForStorage        = true,
                           .sceneScale              = glm::vec3(1.f)};
-    loadScene(FileUtils::getResourcePath("kitchen/scene.json"));
+  loadScene(FileUtils::getResourcePath("kitchen/scene.json"));
+  //  loadScene("E:/code/vk-raytracing-demo/resources/classroom/scene.json");
 }
 
 void RayTracer::onUpdateGUI() {

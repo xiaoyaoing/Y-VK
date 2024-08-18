@@ -40,7 +40,7 @@ Application::Application(const char* name,
     auto filename = "my_log.txt";
     auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(filename, true);
 
-    spdlog::logger logger("my_logger", {console_sink, file_sink});
+    spdlog::logger logger("Y-VK", {console_sink, file_sink});
     spdlog::set_default_logger(std::make_shared<spdlog::logger>(logger));
 }
 
@@ -558,9 +558,9 @@ void Application::onResize(uint32_t width, uint32_t height) {
 
 void Application::loadScene(const std::string& path) {
     scene = SceneLoaderInterface::LoadSceneFromFile(*device, path, sceneLoadingConfig);
-    scene->addDirectionalLight({0, -0.95f, 0.3f}, glm::vec3(1.0f), 1.5f,vec3(0,10,0));
+   // scene->addDirectionalLight({0, -0.95f, 0.3f}, glm::vec3(1.0f), 1.5f,vec3(0,10,0));
 
-    RuntimeSceneManager::addPlane(*scene);
+   // RuntimeSceneManager::addPlane(*scene);
     //RuntimeSceneManager::addSponzaRestirLight(*scene);
     onSceneLoaded();
 }

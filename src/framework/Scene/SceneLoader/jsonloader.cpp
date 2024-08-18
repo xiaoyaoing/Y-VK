@@ -215,6 +215,7 @@ void JsonLoader::loadMaterials() {
     // texture_index.clear();
 
     for (auto& materialJson : materialJsons) {
+        
         RTMaterial rtMaterial;
         if (materialJson.contains("albedo") && materialJson["albedo"].is_string()) {
             auto textureName      = materialJson["albedo"].get<std::string>();
@@ -222,6 +223,12 @@ void JsonLoader::loadMaterials() {
         } else {
             rtMaterial.texture_id = -1;
             rtMaterial.albedo     = GetOptional(materialJson, "albedo", vec3(0.5f));
+        }
+        if(materialJson.contains("name")) {
+            LOGI("name : " + materialJson["name"].get<std::string>());
+            if(materialJson["name"] == "Floor") {
+                LOGI(rtMaterial.texture_id);
+            }
         }
         rtMaterial.emissiveFactor = vec3(0);
         rtMaterial.bsdf_type      = type2RTBSDFTYPE[materialJson["type"].get<std::string>()];

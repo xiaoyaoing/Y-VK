@@ -159,6 +159,8 @@ void main()
         //origin = offset_ray_origin(event.p,  , direction);
     }
 
+   // color = vec3(1,0,0);
+    
     if (isnan(color.x) || isnan(color.y) || isnan(color.z)){
         debugPrintfEXT("nan %f %f %f\n", color.x, color.y, color.z);
     }
