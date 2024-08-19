@@ -6,7 +6,6 @@ class CommandBuffer;
 class Device;
 
 class Buffer {
-  
 public:
     ~Buffer();
 
