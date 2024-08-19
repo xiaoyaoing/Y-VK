@@ -64,7 +64,7 @@ RTLight RTSceneEntryImpl::toRTLight(Scene& scene, const SgLight& light) {
         rtLight.light_type                       = RT_LIGHT_TYPE_INFINITE;
         Texture* tex                             = scene.getTextures().operator[](rtLight.light_texture_id).get();
         auto                               aceel = hdrSampling.createEnvironmentAccel(reinterpret_cast<const float*>(tex->image->getData().data()), tex->image->getExtent2D());
-        infiniteSamplingBuffer                   = std::make_unique<Buffer>(device, sizeof(EnvAccel) * aceel.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, aceel.data());
+        infiniteSamplingBuffer                   = std::make_unique<Buffer>(device, sizeof(EnvAccel) * aceel.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, aceel.data());
         sceneDesc.env_sampling_addr              = infiniteSamplingBuffer->getDeviceAddress();
         sceneDesc.envmap_idx                     = lights.size();
     }
