@@ -913,38 +913,21 @@ void GLTFLoadingImpl::loadImages(const std::filesystem::path& modelPath, std::sh
                 remappedTextures.emplace_back(std::move(textures[i]));
             }
         }
-        textures = std::move(remappedTextures);
 
+        
+        textures = std::move(remappedTextures);
         Texture::initTexturesInOneSubmit(textures);
 
-        sceneToLoad->getLoadCompleteInfo().sceneTexturesLoaded = true;
+        sceneToLoad->setTextures(std::move(textures));
+
+        sceneToLoad->getLoadCompleteInfo().SetTextureLoaded();
         if (sceneToLoad->getLoadCompleteInfo().GetSceneLoaded()) {
             delete this;
         }
         delete futures;
         return 1;
     });
-
-    auto futPushTex = thread_pool.push([this, futures](size_t) {
-        // for (int i = 0; i < futures->size(); i++) {
-        //     futures->operator[](i).wait();
-        // }
-
-        // reOrganizeT();
-
-        // Texture::initTexturesInOneSubmit(textures);
-        // delete futures;
-        // return 1;
-    });
-
-    // auto fut = thread_pool.push([this, futures](size_t) {
-    //     // for (int i = 0; i < futures->size(); i++) {
-    //     //     futures->operator[](i).wait();
-    //     // }
-    //     Texture::initTexturesInOneSubmit(textures);
-    //     delete futures;
-    //     return 1;9
-    // });
+    
 }
 
 template<class T, class Y>
@@ -961,17 +944,16 @@ const Texture* GLTFLoadingImpl::getTexture(uint32_t index) const {
     return nullptr;
 }
 
+
+
+
 std::unique_ptr<Scene> GltfLoading::LoadSceneFromGLTFFile(Device& device, const std::string& path, const SceneLoadingConfig& config) {
     auto scene = std::make_unique<Scene>();
     auto model = new GLTFLoadingImpl(device, path, config, scene.get());
 
-
-    while(scene->getLoadCompleteInfo().sceneTexturesLoaded == false) {
-       ;
-    }
     
     scene->primitives         = std::move(model->primitives);
-    scene->textures           = std::move(model->textures);
+    //scene->textures           = std::move(model->textures);
     scene->materials          = std::move(model->materials);
     scene->lights             = std::move(model->lights);
     scene->cameras            = std::move(model->cameras);
@@ -983,10 +965,7 @@ std::unique_ptr<Scene> GltfLoading::LoadSceneFromGLTFFile(Device& device, const 
     scene->primitiveIdBuffer  = std::move(model->scenePrimitiveIdBuffer);
     scene->bufferRate         = config.bufferRate;
 
-    scene->getLoadCompleteInfo().sceneGeometryLoaded = true;
-    if (scene->getLoadCompleteInfo().GetSceneLoaded()) {
-        delete model;
-    }
+    scene->getLoadCompleteInfo().SetGeometryLoaded();
     return scene;
 }
 

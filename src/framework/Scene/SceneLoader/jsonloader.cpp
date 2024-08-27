@@ -538,8 +538,8 @@ std::unique_ptr<Scene> Jsonloader::LoadSceneFromJsonFile(Device& device, const s
     scene->indexType          = VK_INDEX_TYPE_UINT32;
     scene->primitiveIdBuffer  = std::move(loader.scenePrimitiveIdBuffer);
 
-    scene->loadCompleteInfo->sceneGeometryLoaded = true;
-    scene->loadCompleteInfo->sceneTexturesLoaded = true;
+    scene->loadCompleteInfo->SetGeometryLoaded();
+    scene->loadCompleteInfo->SetTextureLoaded();
 
     return scene;
 }

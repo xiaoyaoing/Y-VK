@@ -141,6 +141,9 @@ void Scene::updateScenePrimitiveIdBuffer() {
 BufferRate Scene::getBufferRate() const {
     return bufferRate;
 }
+void Scene::setTextures(std::vector<std::unique_ptr<Texture>>&& textures) {
+    this->textures = std::move(textures);
+}
 
 void Scene::setBufferRate(BufferRate rate) {
     bufferRate = rate;

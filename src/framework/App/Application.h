@@ -66,6 +66,7 @@ class Application {
      */
     virtual void initGUI();
 
+    void initLogger();
 public:
     Application(const char* name, uint32_t width, uint32_t height);
     Application() : Application("Vulkan", 1920, 1080) {
@@ -160,6 +161,7 @@ private:
     std::vector<std::string>  mCurrentTextures{RENDER_VIEW_PORT_IMAGE_NAME};
     const char*               mAppName;
     std::unique_ptr<PassBase> mPostProcessPass{};
+    bool sceneFirstLoad{true};
     //Camera related  variable end
 
     VkFence fence{VK_NULL_HANDLE};

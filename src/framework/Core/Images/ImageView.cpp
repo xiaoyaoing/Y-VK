@@ -57,9 +57,5 @@ ImageView::~ImageView() {
 
 ImageView::ImageView(ImageView&& other) : image(other.image), _device(other._device), _format(other._format),
                                           subResourceRange(other.subResourceRange) {
-    //    auto &views = image->get_views();
-    //    views.erase(&other);
-    //    views.emplace(this);
-
     other._view = VK_NULL_HANDLE;
 }

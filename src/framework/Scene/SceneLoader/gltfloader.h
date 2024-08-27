@@ -40,4 +40,7 @@ public:
         RenderAlphaMaskedNodes  = 0x00000004,
         RenderAlphaBlendedNodes = 0x00000008
     };
+
+protected:
 };
+

@@ -34,14 +34,6 @@ Application::Application(const char* name,
                          uint32_t width, 
                          uint32_t height) : mWidth(width), mHeight(height), mAppName(name) {
     initWindow(name, width, height);
-    
-    auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-
-    auto filename = "my_log.txt";
-    auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(filename, true);
-
-    spdlog::logger logger("Y-VK", {console_sink, file_sink});
-    spdlog::set_default_logger(std::make_shared<spdlog::logger>(logger));
 }
 
 Application::~Application() {
@@ -75,9 +67,11 @@ void Application::initWindow(const char* name, uint32_t width, uint32_t height) 
 void Application::prepare() {
     initVk();
     initGUI();
+    initLogger();
 
     TextureHelper::Initialize();
-
+    
+    camera = std::make_shared<Camera>();
     mPostProcessPass = std::make_unique<PostProcess>();
     mPostProcessPass->init();
 }
@@ -136,6 +130,12 @@ void Application::initVk() {
 void Application::initGUI() {
     gui = std::make_unique<Gui>(*device);
     gui->prepareResoucrces(this);
+}
+void Application::initLogger() {
+    auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+    auto file_sink    = std::make_shared<spdlog::sinks::basic_file_sink_mt>(mAppName, true);
+    spdlog::logger logger(mAppName, {console_sink, file_sink});
+    spdlog::set_default_logger(std::make_shared<spdlog::logger>(logger));
 }
 
 void Application::getRequiredInstanceExtensions() {
@@ -196,7 +196,6 @@ void Application::update() {
         onViewUpdated();
     }
 
-    updateScene();
     updateGUI();
 
     renderContext->beginFrame();
@@ -208,6 +207,10 @@ void Application::update() {
     graph.importTexture(RENDER_VIEW_PORT_IMAGE_NAME, &renderContext->getCurHwtexture());
 
     if (scene->getLoadCompleteInfo().GetSceneLoaded()) {
+        if(sceneFirstLoad){
+            onSceneLoaded();
+        }
+        updateScene();
         drawFrame(graph);
         mPostProcessPass->render(graph);
     }
@@ -313,7 +316,7 @@ void Application::updateGUI() {
 
     mPostProcessPass->updateGui();
 
-    g_manager->getView()->updateGui();
+    if(view) view->updateGui();
 
     auto& texture = g_context->getCurHwtexture();
 
@@ -562,7 +565,7 @@ void Application::loadScene(const std::string& path) {
 
    // RuntimeSceneManager::addPlane(*scene);
     //RuntimeSceneManager::addSponzaRestirLight(*scene);
-    onSceneLoaded();
+    //nSceneLoaded();
 }
 
 void Application::onSceneLoaded() {
@@ -570,6 +573,7 @@ void Application::onSceneLoaded() {
     initView();
     Config::GetInstance();
     Config::GetInstance().CameraFromConfig(*camera);
+    sceneFirstLoad = false;
 }
 
 void Application::initView() {

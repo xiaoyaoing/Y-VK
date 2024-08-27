@@ -22,11 +22,34 @@ enum class BufferRate {
     PER_SCENE
 };
 
-struct SceneLoadCompleteInfo {
+using LoadCallback = std::function<void()>;
+
+
+class SceneLoadCompleteInfo {
+protected:
     bool sceneGeometryLoaded{false};
     bool sceneTexturesLoaded{false};
+    LoadCallback * callback{nullptr};
+public:
     bool GetSceneLoaded() const {
         return sceneGeometryLoaded && sceneTexturesLoaded;
+    }
+    void SetTextureLoaded() {
+        sceneTexturesLoaded = true;
+        if (GetSceneLoaded() && callback) {
+            callback->operator()();
+            callback = nullptr;
+        }
+    }
+    void SetGeometryLoaded() {
+        sceneGeometryLoaded = true;
+        if (GetSceneLoaded() && callback) {
+            callback->operator()();
+            callback = nullptr;
+        }
+    }
+    void SetCallback(LoadCallback * callback) {
+        this->callback = callback;
     }
 };
 
@@ -65,6 +88,7 @@ public:
     void                                           updateScenePrimitiveIdBuffer();
     void                                           setBufferRate(BufferRate rate);
     BufferRate                                     getBufferRate() const;
+    void setTextures(std::vector<std::unique_ptr<Texture>>&& textures);
 
     void addPrimitive(std::unique_ptr<Primitive> primitive);
     void addPrimitives(std::vector<std::unique_ptr<Primitive>>&& primitives);
