@@ -312,10 +312,10 @@ void Application::updateGUI() {
     ImGui::Begin("app sepcify", nullptr, ImGuiWindowFlags_NoMove);
     onUpdateGUI();
     ImGui::End();
+    
     ImGui::Separator();
-
+    
     mPostProcessPass->updateGui();
-
     if(view) view->updateGui();
 
     auto& texture = g_context->getCurHwtexture();
@@ -333,10 +333,6 @@ void Application::updateGUI() {
     ImGui::Image(&texture.getVkImageView(), size, ImVec2(0, 0), ImVec2(1, 1));
     ImGui::PopStyleVar();
     ImGui::End();
-
-    // ImGui::End();
-
-    //  ImGui::End();
 
     ImGui::Render();
     ImGui::EndFrame();
@@ -561,11 +557,9 @@ void Application::onResize(uint32_t width, uint32_t height) {
 
 void Application::loadScene(const std::string& path) {
     scene = SceneLoaderInterface::LoadSceneFromFile(*device, path, sceneLoadingConfig);
-   // scene->addDirectionalLight({0, -0.95f, 0.3f}, glm::vec3(1.0f), 1.5f,vec3(0,10,0));
-
-   // RuntimeSceneManager::addPlane(*scene);
+    scene->addDirectionalLight({0, -0.5f, 0.5f}, glm::vec3(1.0f), 1.5f,vec3(0,10,0));
+    RuntimeSceneManager::addPlane(*scene);
     //RuntimeSceneManager::addSponzaRestirLight(*scene);
-    //nSceneLoaded();
 }
 
 void Application::onSceneLoaded() {

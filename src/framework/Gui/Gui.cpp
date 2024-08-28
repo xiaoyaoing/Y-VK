@@ -197,7 +197,6 @@ std::string Gui::showFileDialog() {
     if (ImGui::Button("Load Scene"))
         fileDialog->Open();
     // }
-    // ImGui::End();
 
     fileDialog->Display();
 

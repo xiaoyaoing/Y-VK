@@ -94,7 +94,6 @@ void main(){
             pbr_info.VdotH = clamp(dot(view_dir, half_vector), 0.0, 1.0);
 
             vec3 light_contribution = microfacetBRDF(pbr_info) * apply_light(lights_info.lights[i], world_pos, normal) * calcute_shadow(lights_info.lights[i], world_pos);
-            direct_contribution += light_contribution;
             // light_contribution = 1-vec3(FresnelSchlick(pbr_info));
             //debugPrintfEXT("light_dir: %f %f %f\n", light_dir.x, light_dir.y, light_dir.z);
             //            direct_contribution =vec3(light_dir);

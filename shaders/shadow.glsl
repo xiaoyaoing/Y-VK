@@ -5,18 +5,70 @@
 
 //uniform sampler2D shadow_maps[4];
 
+#define ambient 0.1
+
+float textureProj(vec4 shadowCoord, vec2 off,int shadowMapTexture)
+{
+    float shadow = 1.0;
+  //  return shadowCoord.z;
+    float dist = texture(scene_textures[shadowMapTexture], shadowCoord.xy + off).r;
+//    debugPrintfEXT("shadowCoord: %f %f %f %f\n", shadowCoord.x, shadowCoord.y, shadowCoord.z, shadowCoord.w);
+//    return abs(shadowCoord.z - dist);
+//    return dist;
+    if ( shadowCoord.z > -1.0 && shadowCoord.z < 1.0 )
+    {
+        float dist = texture(scene_textures[shadowMapTexture], shadowCoord.xy + off).r;
+        if ( shadowCoord.w > 0.0 && dist < shadowCoord.z)
+        {
+            shadow = 0;
+        }
+    }
+    return shadow;
+}
+
+float filterPCF(vec4 sc,int texture_idx)
+{
+    ivec2 texDim;
+    texDim = textureSize(scene_textures[texture_idx], 0);
+    
+    float scale = 1.5;
+    float dx = scale * 1.0 / float(texDim.x);
+    float dy = scale * 1.0 / float(texDim.y);
+
+    float shadowFactor = 0.0;
+    int count = 0;
+    int range = 1;
+
+    for (int x = -range; x <= range; x++)
+    {
+        for (int y = -range; y <= range; y++)
+        {
+            shadowFactor += textureProj(sc, vec2(dx*x, dy*y),texture_idx);
+            count++;
+        }
+
+    }
+    return shadowFactor / count;
+}
+                   
+const mat4 biasMat = mat4(
+0.5, 0.0, 0.0, 0.0,
+0.0, 0.5, 0.0, 0.0,
+0.0, 0.0, 1.0, 0.0,
+0.5, 0.5, 0.0, 1.0 );
+
 float  calcute_shadow(in Light light, vec3 world_pos){
     int shadow_map_index = int(light.info.z);
     mat4 mvp = light.matrix;
-    vec4 clipPos = mvp * vec4(world_pos, 1.0);
-    vec3 ndcPos = clipPos.xyz / clipPos.w;
-    vec3 shadowCoord = ndcPos * 0.5 + 0.5;
+    
+    vec4 shadowCoord = biasMat * mvp * vec4(world_pos, 1.0);
+    //debugPrintfEXT("shadowCoord: %f %f %f %f\n", shadowCoord.x, shadowCoord.y, shadowCoord.z, shadowCoord.w);
+    shadowCoord = shadowCoord / shadowCoord.w;  
+    
     float  shadow = 1.0;
     
-   // if(shadowCoord.x > 1 || shadowCoord.y > 1 || shadowCoord.z > 1){
-   // return vec3(1,0,0);
-  //  }
-   // return shadowCoord;
+    return filterPCF(shadowCoord, shadow_map_index);
+    
     if (shadowCoord.z > 1.0)
     {
         shadow = 0.0;

@@ -74,7 +74,7 @@ protected:
     const Scene*                  mScene{nullptr};
     std::unique_ptr<Buffer>       mPerViewBuffer;
     PerViewUnifom                 mPerViewUniform;
-    std::unique_ptr<Buffer>       mLightBuffer;
+    std::vector<std::unique_ptr<Buffer>>      mLightBuffer;
 
     bool lightDirty{false};
 };

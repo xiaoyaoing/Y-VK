@@ -7,11 +7,11 @@
 #include "Scene/Scene.h"
 
 static mat4 getLightMVP(const glm::vec3& lightPos, const glm::vec3& lightDir) {
-    glm::mat4 lightView       = glm::lookAt(lightPos, lightPos + lightDir, glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 lightView       = glm::lookAt(lightPos, lightDir, glm::vec3(0.0f, 1.0f, 0.0f));
     float aspect = (float)g_context->getViewPortExtent().width / (float)g_context->getViewPortExtent().height;
     float near = 1.0f;
-    float far = 500.0f;
-    glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), aspect, near, far);
+    float far = 96.f;
+    glm::mat4 shadowProj = glm::perspective(glm::radians(45.f), aspect, near, far);
     return shadowProj * lightView;
 }
 

@@ -10,7 +10,10 @@ constexpr size_t CONFIG_MAX_LIGHT_COUNT = 64;
 
 
 View::View(Device& device) {
-    mLightBuffer   = std::make_unique<Buffer>(device, sizeof(LightUib) * CONFIG_MAX_LIGHT_COUNT, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+    mLightBuffer.resize(g_context->getSwapChainImageCount());
+    for (auto& lightBuffer : mLightBuffer) {
+        lightBuffer = std::make_unique<Buffer>(device, sizeof(LightUib) * CONFIG_MAX_LIGHT_COUNT, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+    }
     mPerViewBuffer = std::make_unique<Buffer>(device, sizeof(PerViewUnifom), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 }
 void View::setScene(const Scene* scene) {
@@ -52,10 +55,7 @@ View& View::bindViewBuffer() {
     }
     //perViewUnif
 
-    RenderContext* context = g_context;
-
-    
-    context->bindBuffer(static_cast<uint32_t>(UniformBindingPoints::PER_VIEW), *mPerViewBuffer, 0, mPerViewBuffer->getSize(), 0);
+    g_context->bindBuffer(static_cast<uint32_t>(UniformBindingPoints::PER_VIEW), *mPerViewBuffer, 0, mPerViewBuffer->getSize(), 0);
 
     return *this;
 }
@@ -63,7 +63,7 @@ View& View::bindViewBuffer() {
 View& View::bindViewShading() {
 
     if(lightDirty) updateLight();
-    g_context->bindBuffer(static_cast<uint32_t>(UniformBindingPoints::LIGHTS), *mLightBuffer, 0, mLightBuffer->getSize(), 0);
+    g_context->bindBuffer(static_cast<uint32_t>(UniformBindingPoints::LIGHTS), *mLightBuffer[g_context->getActiveFrameIndex()], 0, mLightBuffer[g_context->getActiveFrameIndex()]->getSize(), 0);
     
     auto             materials  = GetMMaterials();
     BufferAllocation allocation = g_context->allocateBuffer(sizeof(GltfMaterial) * materials.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
@@ -129,6 +129,7 @@ void View::updateGui() {
         ImGui::SliderFloat3("Direction", dir, -1, 1, "%.2f");
         light.lightProperties.direction = glm::normalize(glm::vec3(dir[0], dir[1], dir[2]));
     }
+    ImGui::End();
 }
 void View::perFrameUpdate() {
     mSamplers.resize(mScene->getTextures().size());
@@ -154,6 +155,8 @@ std::vector<GltfMaterial> View::GetMMaterials() const {
     return mMaterials;
 }
 void View::updateLight() {
+    if(getLights().empty())
+        return;
     std::vector<LightUib> lights;
     lights.reserve(getLights().size());
     //uint32_t curLightCount = 0;
@@ -187,6 +190,7 @@ void View::updateLight() {
         lightUib.shadow_matrix = light.lightProperties.shadow_matrix;
         lights.emplace_back(lightUib);
     }
-    mLightBuffer->uploadData(lights.data(), mLightBuffer->getSize(), 0);
+    auto & currentLightBuffer = mLightBuffer[g_context->getActiveFrameIndex()];
+    currentLightBuffer->uploadData(lights.data(), lights.size() * sizeof(LightUib), 0);
     lightDirty = false;
 }
