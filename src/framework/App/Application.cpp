@@ -557,7 +557,7 @@ void Application::onResize(uint32_t width, uint32_t height) {
 
 void Application::loadScene(const std::string& path) {
     scene = SceneLoaderInterface::LoadSceneFromFile(*device, path, sceneLoadingConfig);
-    scene->addDirectionalLight({0, -0.5f, 0.5f}, glm::vec3(1.0f), 1.5f,vec3(0,10,0));
+    scene->addDirectionalLight({0, -0.5f, 0.5f}, glm::vec3(1.0f), 1.5f,vec3(0,20,0));
     RuntimeSceneManager::addPlane(*scene);
     //RuntimeSceneManager::addSponzaRestirLight(*scene);
 }

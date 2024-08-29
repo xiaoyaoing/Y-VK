@@ -164,7 +164,7 @@ void main(){
         pbr_info.perceptualRoughness = perceptual_roughness;
         pbr_info.diffuseColor = diffuse_color * (1- metallic) * (1-0.04);
 
-        // color += ibl_fragment_shader(pbr_info, normal, R);
+         color += ibl_fragment_shader(pbr_info, normal, R);
     }
 
     {
@@ -196,13 +196,13 @@ void main(){
             pbr_info.VdotH = clamp(dot(view_dir, half_vector), 0.0, 1.0);
 
             vec3 light_contribution = microfacetBRDF(pbr_info) *   apply_light(lights_info.lights[i], world_pos, normal);
-            light_contribution =  vec3(calcute_shadow(lights_info.lights[i], world_pos));
             
             color += light_contribution;
         }
     }
 
-    
+    color = color *    vec3(calcute_shadow(lights_info.lights[0], world_pos));
+
     if (debugMode == DEBUG_MODEL_NORMAL)
     {
         out_color = vec4(normal         , 1);

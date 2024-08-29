@@ -23,6 +23,14 @@ private:
     std::unique_ptr<PipelineLayout> mPipelineLayout{nullptr};
 };
 
+class ForwardPass : public PassBase {
+public:
+    void render(RenderGraph& rg) override;
+    void init() override;
+    private:
+    std::unique_ptr<PipelineLayout> mPipelineLayout{nullptr};
+};
+
 class IBLLightingPass : public PassBase {
 public:
     void render(RenderGraph& rg) override;

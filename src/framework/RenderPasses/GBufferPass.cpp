@@ -43,6 +43,42 @@ void LightingPass::init() {
     std::vector<std::string> shadersPath{"full_screen.vert", "lighting_pbr.frag"};
     mPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), shadersPath);
 }
+void ForwardPass::render(RenderGraph& rg) {
+    // rg.addGraphicPass(
+    //     "ForwardPass", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
+    //         auto& blackBoard = rg.getBlackBoard();
+    //         auto  depth      = blackBoard["depth"];
+    //         auto  normal     = blackBoard["normal"];
+    //         auto  diffuse    = blackBoard["diffuse"];
+    //         auto  emission   = blackBoard["emission"];
+    //         auto  output     = blackBoard.getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
+    //
+    //         builder.readTextures({depth, normal, diffuse, emission});
+    //         builder.writeTexture(output);
+    //
+    //         RenderGraphPassDescriptor desc{};
+    //         desc.setTextures({output, diffuse, depth, normal, emission}).addSubpass({.inputAttachments = {diffuse, depth, normal, emission}, .outputAttachments = {output}, .disableDepthTest = true});
+    //         builder.declare(desc);
+    //         // builder.addSubPass();
+    //     },
+    //     [&](RenderPassContext& context) {
+    //         auto& commandBuffer = context.commandBuffer;
+    //         auto  view          = g_manager->fetchPtr<View>("view");
+    //         auto& blackBoard    = rg.getBlackBoard();
+    //         g_context->getPipelineState().setPipelineLayout(*mPipelineLayout).setRasterizationState({.cullMode = VK_CULL_MODE_NONE}).setDepthStencilState({.depthTestEnable = false});
+    //         view->bindViewBuffer();
+    //         g_context->bindImage(0, blackBoard.getImageView("diffuse"))
+    //             .bindImage(1, blackBoard.getImageView("normal"))
+    //             .bindImage(2, blackBoard.getImageView("emission"))
+    //             .bindImage(3, blackBoard.getImageView("depth"))
+    //             .flushAndDraw(commandBuffer, 3, 1, 0, 0);
+    //     });
+}
+void ForwardPass::init() {
+    PassBase::init();
+    std::vector<std::string> shadersPath{"defered_one_scene_buffer.vert", "forward_lighting.frag"};
+    mPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), shadersPath);
+}
 
 struct IBLLightingPassPushConstant {
     float exposure        = 4.5f;

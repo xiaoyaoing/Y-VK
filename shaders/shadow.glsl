@@ -18,9 +18,9 @@ float textureProj(vec4 shadowCoord, vec2 off,int shadowMapTexture)
     if ( shadowCoord.z > -1.0 && shadowCoord.z < 1.0 )
     {
         float dist = texture(scene_textures[shadowMapTexture], shadowCoord.xy + off).r;
-        if ( shadowCoord.w > 0.0 && dist < shadowCoord.z)
+        if ( shadowCoord.w > 0.0 && dist < shadowCoord.z - 0.001f)
         {
-            shadow = 0;
+            shadow = ambient;
         }
     }
     return shadow;
