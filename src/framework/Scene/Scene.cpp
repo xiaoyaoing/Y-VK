@@ -116,12 +116,12 @@ void Scene::updateSceneUniformBuffer() {
     uniforms.reserve(primitives.size());
     for (auto& prim : primitives) {
         uniforms.push_back(prim->GetPerPrimitiveUniform());
+      //  uniforms.back().model = glm::rotate(glm::radians(45.f), glm::vec3(0, 1, 0)) * uniforms.back().model;
     }
-
     if (sceneUniformBuffer->getSize() == primitives.size() * sizeof(PerPrimitiveUniform)) {
         sceneUniformBuffer->uploadData(uniforms.data());
     } else {
-        sceneUniformBuffer = std::make_unique<Buffer>(sceneUniformBuffer->getDevice(), sizeof(PerPrimitiveUniform) * uniforms.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, uniforms.data());
+        sceneUniformBuffer = std::make_unique<Buffer>(sceneUniformBuffer->getDevice(), sizeof(PerPrimitiveUniform) * uniforms.size(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_ONLY, uniforms.data());
     }
 }
 void Scene::updateScenePrimitiveIdBuffer() {

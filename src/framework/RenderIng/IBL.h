@@ -11,6 +11,7 @@ public:
     void generateBRDFLUT(RenderGraph& rg);
     void importTexturesToRenderGraph(RenderGraph& rg);
     void generate(RenderGraph& rg);
+    void setEnvironmentCube(const Texture* texture);
     IBL(Device& device, const Texture*);
     ~IBL();
 

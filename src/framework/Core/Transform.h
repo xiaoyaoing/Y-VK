@@ -59,7 +59,7 @@ public:
     /**
     * Returns the rotation quaternion in world space.
     */
-    const glm::quat& getRotation() const { return m_localToWorldRotation; }
+    const glm::quat& getRotation() const { return m_rotation; }
 
     /**
     * Returns the scale in world space. Due to skewing the 3 component scale

@@ -102,7 +102,7 @@ vec3 getNormal(const int texture_idx)
     vec3 B = -normalize(cross(N, T));
     mat3 TBN = mat3(T, B, N);
 
-    return in_normal;
+    //return in_normal;
     return normalize(TBN * tangentNormal);
 }
 
@@ -128,7 +128,8 @@ vec3 ibl_fragment_shader(const in PBRInfo pbr_info, vec3 n, vec3 reflection)
     return diffuseLight;
     if(debugMode == DEBUG_MODEL_SPECULAR)
     return specularLight;
-    return diffuse + specular;
+    
+    return diffuse * 0.5f  + specular;
 }
 
 
@@ -156,10 +157,10 @@ vec3 calculateShading(PBRInfo pbr_info,vec3 normal,vec3 R){
             pbr_info.VdotH = clamp(dot(view_dir, half_vector), 0.0, 1.0);
 
             vec3 light_contribution = microfacetBRDF(pbr_info) *   apply_light(lights_info.lights[i], pbr_info.worldPos, normal);
-            color += light_contribution;
+           // color += light_contribution;
         }
     }
-    return color;
+    return   color * vec3(calcute_shadow(lights_info.lights[0], pbr_info.worldPos));
 }
 
 
@@ -181,6 +182,10 @@ void main(void)
     float metallic;
 
     perceptual_roughness = material.pbrRoughnessFactor;
+    
+  
+    
+    
     metallic = material.pbrMetallicFactor;
     // Roughness is stored in the 'g' channel, metallic is stored in the 'b' channel
     // This layout intentionally reserves the 'r' channel for (optional) occlusion map data
@@ -195,6 +200,16 @@ void main(void)
         perceptual_roughness = clamp(perceptual_roughness, MIN_ROUGHNESS, 1.0);
         metallic = clamp(metallic, 0.0, 1.0);
     }
+
+
+    if(per_frame.use_roughness_override > 0.0)
+    {
+        perceptual_roughness = per_frame.roughness_override;
+    }
+
+    perceptual_roughness *= per_frame.roughness_scale;
+
+  //  perceptual_roughness = 100000.f;
 
     baseColor = material.pbrBaseColorFactor;
     if (material.pbrBaseColorTexture > -1)
@@ -228,5 +243,5 @@ void main(void)
     pbr_info.diffuseColor = diffuseColor * (1- metallic) * (1-0.04);
     pbr_info.worldPos = in_world_pos;
     
-    o_color = vec4(calculateShading(pbr_info, normal,R), 1.0);
+    o_color = vec4(calculateShading(pbr_info, normal,R), baseColor.w);
 }

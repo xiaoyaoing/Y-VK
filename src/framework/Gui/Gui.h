@@ -32,7 +32,7 @@ public:
     Gui(Device& device);
     ~Gui();
     bool        inputEvent(const InputEvent& event);
-    std::string showFileDialog();
+    std::string showFileDialog(std::string title, std::vector<std::string> fileTypes);
     void        prepareResoucrces(Application* app);
     bool        update();
     void        addGuiPass(RenderGraph& graph);

@@ -48,6 +48,10 @@ View& View::bindViewBuffer() {
     perViewUnifom.inv_resolution = glm::vec2(1.0f / perViewUnifom.resolution.x, 1.0f / perViewUnifom.resolution.y);
     perViewUnifom.light_count    = getLights().size();
     perViewUnifom.camera_pos     = mCamera->getPosition();
+    perViewUnifom.roughnessScale = mPerViewUniform.roughnessScale;
+    perViewUnifom.normalScale    = mPerViewUniform.normalScale;
+    perViewUnifom.roughnessOverride = mPerViewUniform.roughnessOverride;
+    perViewUnifom.overrideRoughness = mPerViewUniform.overrideRoughness;
 
     if (perViewUnifom != mPerViewUniform) {
         mPerViewBuffer->uploadData(&perViewUnifom, sizeof(PerViewUnifom), 0);
@@ -129,6 +133,10 @@ void View::updateGui() {
         ImGui::SliderFloat3("Direction", dir, -1, 1, "%.2f");
         light.lightProperties.direction = glm::normalize(glm::vec3(dir[0], dir[1], dir[2]));
     }
+    ImGui::SliderFloat("Rough Scale", &mPerViewUniform.roughnessScale, 0.0f, 5.0f);
+    ImGui::SliderFloat("Normal Scale", &mPerViewUniform.normalScale, 0.0f, 1.0f);
+    ImGui::SliderFloat("Roughness Override value", &mPerViewUniform.roughnessOverride, 0.0f, 1.0f);
+    ImGui::Checkbox("Override Roughness", reinterpret_cast<bool *>(&mPerViewUniform.overrideRoughness));
     ImGui::End();
 }
 void View::perFrameUpdate() {
@@ -139,16 +147,24 @@ void View::perFrameUpdate() {
 const Camera* View::getCamera() const {
     return mCamera;
 }
+void View::IteratorPrimitives(const PrimitiveCallBack& callback) const {
+    for ( auto& primitive : mVisiblePrimitives) {
+        callback(*primitive);
+    }
+}
 
-std::vector<const Primitive*> View::getMVisiblePrimitives() const {
+std::vector<Primitive*> View::getMVisiblePrimitives() const {
     return mVisiblePrimitives;
 }
-void View::setMVisiblePrimitives(const std::vector<const Primitive*>& mVisiblePrimitives) {
+void View::setMVisiblePrimitives(const std::vector<Primitive*>& mVisiblePrimitives) {
     this->mVisiblePrimitives = mVisiblePrimitives;
 }
 
 std::vector<SgLight>& View::getLights() {
     return mLights;
+}
+AlphaMode View::getAlphaMode(const Primitive& primitive) const {
+    return static_cast<AlphaMode>(mMaterials[primitive.materialIndex].alphaMode);
 }
 
 std::vector<GltfMaterial> View::GetMMaterials() const {
