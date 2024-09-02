@@ -500,13 +500,7 @@ Transform GLTFLoadingImpl::getTransform(const tinygltf::Node& node) {
 }
 
 void GLTFLoadingImpl::transformNodes(const std::vector<tinygltf::Node>& nodes, const tinygltf::Node& node) {
-    if(node.name == "body") {
-        int k = 1;
-    }
     for (auto child : node.children) {
-        if(nodes[child].name == "body") {
-            int k = 1;
-        }
         nodeParentMap[&nodes[child]] = &node;
         // modelTransforms[&nodes[child]].setParent(&modelTransforms[&node]);
         transformNodes(nodes, nodes[child]);
@@ -812,6 +806,12 @@ void GLTFLoadingImpl::loadMaterials(tinygltf::Model& gltfModel) {
         GltfMaterial material;
         material.alphaCutoff              = static_cast<float>(mat.alphaCutoff);
         material.alphaMode                = mat.alphaMode == "MASK" ? 1 : (mat.alphaMode == "BLEND" ? 2 : 0);
+        if(mat.name.find("glass") != std::string::npos) {
+            if(mat.name.find("red") == std::string::npos)
+            material.alphaMode = 2;
+        }
+        LOGI("alpha mode {}", material.alphaMode);
+        LOGI("mat name {}", mat.name);
         material.doubleSided              = mat.doubleSided ? 1 : 0;
         material.emissiveFactor           = glm::vec3(mat.emissiveFactor[0], mat.emissiveFactor[1], mat.emissiveFactor[2]);
         material.emissiveTexture          = requestTexture(mat.emissiveTexture.index, gltfModel);
@@ -839,7 +839,10 @@ void GLTFLoadingImpl::loadMaterials(tinygltf::Model& gltfModel) {
                 // material.pbrSpecularGlossinessTexture = requestTexture(pbr.Get("specularGlossinessTexture").Get("index").Get<int>(), gltfModel);
             }
         }
-
+       if(material.alphaMode == 2) {
+            material.pbrBaseColorFactor.w = 0.2f;
+        }
+    LOGI("base color factor {} {} {} {}", material.pbrBaseColorFactor.x, material.pbrBaseColorFactor.y, material.pbrBaseColorFactor.z, material.pbrBaseColorFactor.w);
         materials.emplace_back(material);
     }
     //   materials.resize(gltfModel.materials.size());

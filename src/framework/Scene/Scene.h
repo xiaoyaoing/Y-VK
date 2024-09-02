@@ -111,7 +111,8 @@ protected:
     std::unordered_map<std::string, VertexAttribute>         vertexAttributes;
     std::unordered_map<std::string, std::unique_ptr<Buffer>> sceneVertexBuffer;
     std::unique_ptr<Buffer>                                  sceneIndexBuffer{nullptr};
-    std::unique_ptr<Buffer>                                  sceneUniformBuffer{nullptr};
+   std::unique_ptr<Buffer>                                  sceneUniformBuffer{nullptr};
+    // std::vector<std::unique_ptr<Buffer>>                                  sceneUniformBuffer{};
     VkIndexType                                              indexType{VK_INDEX_TYPE_UINT16};
 
     std::unique_ptr<Buffer> primitiveIdBuffer{};

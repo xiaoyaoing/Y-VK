@@ -34,7 +34,8 @@ protected:
     void                                   drawFrame(RenderGraph& renderGraph) override;
     std::unique_ptr<IBL>                   ibl;
     std::unique_ptr<Primitive>             cube;
-    std::unique_ptr<Texture>               environmentCube;
+    std::unique_ptr<Texture>               environmentCube{nullptr};
+    std::unique_ptr<Texture>               environmentCubeAsync {nullptr};
     float                                  exposure = 4.5f;
     float                                  gamma    = 2.2f;
 };

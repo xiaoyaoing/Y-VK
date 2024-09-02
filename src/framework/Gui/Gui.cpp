@@ -90,7 +90,7 @@ Gui::Gui(Device& device) : device(device) {
 
     // (optional) set browser properties
     fileDialog = new ImGui::FileBrowser();
-    fileDialog->SetTitle("Open scene");
+    //fileDialog->SetTitle("Open scene");
     fileDialog->SetTypeFilters({".gltf", ".json"});
 
     iniFileName = FileUtils::getResourcePath() + "imgui.ini";
@@ -191,13 +191,15 @@ bool Gui::inputEvent(const InputEvent& input_event) {
 
     return capture_move_event;
 }
-std::string Gui::showFileDialog() {
+std::string Gui::showFileDialog(std::string title, std::vector<std::string> fileTypes) {
     // if (ImGui::Begin("dummy window")) {
     // open file dialog when user clicks this button
-    if (ImGui::Button("Load Scene"))
+    if (ImGui::Button(title.c_str())) {
         fileDialog->Open();
+        fileDialog->SetTitle(title);
+        fileDialog->SetTypeFilters(fileTypes);
+    }
     // }
-
     fileDialog->Display();
 
     if (fileDialog->HasSelected()) {
@@ -207,6 +209,7 @@ std::string Gui::showFileDialog() {
     }
     return "no file selected";
 }
+
 
 void Gui::prepareResoucrces(Application* app) {
     fontTexture = Texture::loadTextureFromFile(device, FileUtils::getResourcePath() + "Roboto-Medium.ttf");

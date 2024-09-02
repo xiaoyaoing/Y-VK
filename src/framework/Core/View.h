@@ -12,6 +12,12 @@ class Texture;
 class ImageView;
 class Sampler;
 
+enum AlphaMode {
+    OPAQUE = 0,
+    MASK,
+    BLEND
+};
+
 class View {
 public:
     View(Device& device);
@@ -35,10 +41,14 @@ public:
     void perFrameUpdate();
     
     const Camera*                 getCamera() const;
-    std::vector<const Primitive*> getMVisiblePrimitives() const;
-    void                          setMVisiblePrimitives(const std::vector<const Primitive*>& mVisiblePrimitives);
+
+    using PrimitiveCallBack = std::function<void(Primitive& primitive)>;
+    void IteratorPrimitives(const PrimitiveCallBack& callback) const;
+    std::vector< Primitive*> getMVisiblePrimitives() const;
+    void                          setMVisiblePrimitives(const std::vector< Primitive*>& mVisiblePrimitives);
     std::vector<SgLight> & getLights();
 
+    AlphaMode getAlphaMode(const Primitive & primitive) const;
     std::vector<GltfMaterial>   GetMMaterials() const;
 
 protected:
@@ -55,6 +65,12 @@ protected:
 
         glm::ivec2 resolution;
         glm::ivec2 inv_resolution;
+        
+        float roughnessScale = 1.f;
+        float normalScale= 1.f;
+        float roughnessOverride = -1.f;
+        int overrideRoughness = 0;
+
 
         bool operator!=(const PerViewUnifom& other) const {
             return memcmp(this, &other, sizeof(PerViewUnifom)) != 0;
@@ -66,7 +82,7 @@ protected:
     void updateLight();
     
     const Camera*                 mCamera{nullptr};
-    std::vector<const Primitive*> mVisiblePrimitives;
+    std::vector< Primitive*> mVisiblePrimitives;
     std::vector<const ImageView *> mImageViews;
     std::vector<const Sampler *>  mSamplers;
     std::vector<SgLight> mLights;

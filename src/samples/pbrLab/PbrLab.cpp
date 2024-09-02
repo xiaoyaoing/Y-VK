@@ -4,6 +4,8 @@
 
 #include "PbrLab.h"
 #include "PbrLab.h"
+
+#include "ctpl_stl.h"
 #include "Core/Shader/Shader.h"
 #include "../../framework/Common/VkCommon.h"
 #include "Common/FIleUtils.h"
@@ -23,8 +25,19 @@ struct SkyBoxPushConstant {
 };
 
 void Example::drawFrame(RenderGraph& rg) {
+
+    view->IteratorPrimitives([](Primitive& primitive) {
+      primitive.transform.setLocalToWorldMatrix(glm::rotate(0.005f, glm::vec3(0, 1, 0)) * primitive.transform.getLocalToWorldMatrix());
+    });
+    scene->updateSceneUniformBuffer();
+    
     rg.setCutUnUsedResources(false);
 
+    if (environmentCubeAsync) {
+        environmentCube = std::move(environmentCubeAsync);
+        environmentCubeAsync.reset();
+        ibl->setEnvironmentCube(environmentCube.get());
+    }
     ibl->importTexturesToRenderGraph(rg);
     ibl->generate(rg);
 
@@ -56,9 +69,10 @@ void Example::prepare() {
     GlslCompiler::forceRecompile = true;
     
     g_context->setFlipViewport(true);
-    mRenderPasses.push_back(std::make_unique<GBufferPass>());
+  //  mRenderPasses.push_back(std::make_unique<GBufferPass>());
     mRenderPasses.push_back(std::make_unique<ShadowMapPass>());
-    mRenderPasses.push_back(std::make_unique<IBLLightingPass>());
+    mRenderPasses.push_back(std::make_unique<ForwardPass>());
+   // mRenderPasses.push_back(std::make_unique<IBLLightingPass>());
     // mRenderPasses.push_back(std::make_unique<SSGIPass>());
 
 
@@ -73,7 +87,8 @@ void Example::prepare() {
     }
 
     cube             = SceneLoaderInterface::loadSpecifyTypePrimitive(*device, "cube");
-    std::string path = FileUtils::getResourcePath("papermill.ktx");
+    std::string path = FileUtils::getResourcePath("pisa_cube.ktx");
+    
     environmentCube  = Texture::loadTextureFromFile(g_context->getDevice(), path);
     ibl              = std::make_unique<IBL>(*device, environmentCube.get());
 }
@@ -86,6 +101,18 @@ void Example::onUpdateGUI() {
     for (auto& pass : mRenderPasses) {
         pass->updateGui();
     }
+
+
+    auto file = gui->showFileDialog("Select a cubemap", {".ktx"});
+
+    if (file != "no file selected") {
+        ctpl::thread_pool pool(1);
+        pool.push([this, file](size_t) {
+            LOGI("file selected: {}", file);
+            environmentCubeAsync = Texture::loadTextureFromFile(g_context->getDevice(), file);
+        });
+    }
+
     // ImGui::Selectable()
 }
 

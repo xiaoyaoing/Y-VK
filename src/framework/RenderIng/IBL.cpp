@@ -128,3 +128,7 @@ void IBL::generate(RenderGraph& rg) {
     //importTexturesToRenderGraph(rg);
     generated = true;
 }
+void IBL::setEnvironmentCube(const Texture* texture) {
+    environmentCube = texture;
+    generated       = false;
+}

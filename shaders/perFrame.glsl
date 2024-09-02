@@ -13,6 +13,11 @@ layout(set = 0, binding = 0) uniform _GlobalFrameUniform {
     ivec2 resolution;
     ivec2 inv_resolution;
 
+    float roughness_scale;
+    float normal_scale;
+    float roughness_override;
+    int  use_roughness_override;
+
 } per_frame;
 
 
