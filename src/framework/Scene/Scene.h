@@ -71,6 +71,8 @@ public:
     const std::vector<SgLight>& getLights() const;
     std::vector<SgLight>& getLights();
 
+    BBox getSceneBBox() const;
+    void setSceneBBox(const BBox& bbox);
     const std::vector<std::unique_ptr<Primitive>>& getPrimitives() const;
     const std::vector<std::unique_ptr<Texture>>&   getTextures() const;
     const std::vector<GltfMaterial>&               getGltfMaterials() const;
@@ -101,6 +103,7 @@ protected:
     friend RuntimeSceneManager;
     std::vector<GltfMaterial> materials;
     std::vector<RTMaterial>   rtMaterials;
+    BBox sceneBBox;
 
     std::vector<SgLight> lights;
 

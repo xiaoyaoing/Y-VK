@@ -13,6 +13,8 @@ public:
         : m_type(type),
           m_clipRegionCount(clipRegionCount) {}
 
+    ClipmapUpdatePolicy() = default;
+
     void update();
 
     void                    setType(Type type) { m_type = type; }

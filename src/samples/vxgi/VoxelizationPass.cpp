@@ -7,7 +7,6 @@
 #include "Core/View.h"
 
 void VoxelizationPass::initClipRegions() {
-    mBBoxes = g_manager->fetchPtr<std::vector<BBox>>("bboxes");
 
     mClipRegions.resize(CLIP_MAP_LEVEL_COUNT);
     constexpr float extentWorldLevel0 = 16.f;
@@ -30,6 +29,8 @@ void VoxelizationPass::initClipRegions() {
         glm::ivec3 delta = computeChangeDeltaV(clipmapLevel);
         clipRegion.minCoord += delta;
     }
+
+    VxgiContext::setClipmapRegions(mClipRegions);
 }
 
 void VoxelizationPass::init() {
@@ -113,7 +114,7 @@ void VoxelizationPass::render(RenderGraph& rg) {
 //Returns the difference between the current BoundingBox and the previous frame clip region in voxel coordinates.
 glm::ivec3 VoxelizationPass::computeChangeDeltaV(uint32_t clipmapLevel) {
     const auto& clipRegion = mClipRegions[clipmapLevel];
-    const auto& bb         = mBBoxes->at(clipmapLevel);
+    const auto& bb         = VxgiContext::getBBoxes()[clipmapLevel];
 
     //  glm::ivec3 delta = (bb.min() - clipRegion.getMinPosWorld()) / clipRegion.voxelSize;
     glm::vec3 deltaW = bb.min() - clipRegion.getMinPosWorld();
@@ -131,7 +132,7 @@ glm::ivec3 VoxelizationPass::computeChangeDeltaV(uint32_t clipmapLevel) {
 //see https://zhuanlan.zhihu.com/p/549938187
 void VoxelizationPass::fillRevoxelizationRegions(uint32_t clipLevel, const BBox& boundingBox) {
     auto        delta = computeChangeDeltaV(clipLevel);
-    const auto& bb    = mBBoxes->at(clipLevel);
+    const auto& bb    = VxgiContext::getBBoxes()[clipLevel];
     //    LOGI("delta {} {} {} {} {} {}", delta.x, delta.y, delta.z, bb.center().x, bb.center().y, bb.center().z);
     auto& clipRegion = mClipRegions[clipLevel];
 
@@ -193,7 +194,7 @@ void VoxelizationPass::updateVoxelization() {
         // return;
         for (uint32_t clipmapLevel = 0; clipmapLevel < CLIP_MAP_LEVEL_COUNT; ++clipmapLevel) {
             mRevoxelizationRegions[clipmapLevel].clear();
-            fillRevoxelizationRegions(clipmapLevel, mBBoxes->at(clipmapLevel));
+            fillRevoxelizationRegions(clipmapLevel, VxgiContext::getBBoxes()[clipmapLevel]);
         }
     }
 }

@@ -407,6 +407,7 @@ void JsonLoader::loadPrimitives() {
             vec3 color = primitiveJson["emission"];
             lights.push_back(SgLight{.type = LIGHT_TYPE::Area, .lightProperties = {.color = color, .prim_index = static_cast<uint32_t>(primitives.size())}});
             lightIndex = lights.size() - 1;
+            LOGI("light color : {} {} {}", lights.back().lightProperties.color.x, lights.back().lightProperties.color.y, lights.back().lightProperties.color.z);
         }
 
         if (primitiveJson.contains("power")) {
@@ -415,6 +416,8 @@ void JsonLoader::loadPrimitives() {
             //todo
             lights.push_back(SgLight{.type = LIGHT_TYPE::Area, .lightProperties = {.color = color, .prim_index = static_cast<uint32_t>(primitives.size())}});
             lightIndex = lights.size() - 1;
+            LOGI("light color : {} {} {}", lights.back().lightProperties.color.x, lights.back().lightProperties.color.y, lights.back().lightProperties.color.z);
+
         }
         // auto primitiveData = PrimitiveLoader::loadPrimitive(rootPath.string()+"/"+primitiveJson["file"].get<std::string>());
         //

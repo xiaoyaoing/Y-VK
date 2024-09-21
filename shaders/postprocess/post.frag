@@ -23,6 +23,7 @@ layout(location = 0) in vec2 in_uv;
 layout(location = 0) out vec4 fragColor;
 
 layout(set = 1, binding = 0) uniform  sampler2D input_img;
+//layout(set = 1, binding = 0) uniform subpassInput input_img;
 layout(push_constant) uniform PCPost_ { PCPost pc; };
 
 vec3 aces(vec3 x) {

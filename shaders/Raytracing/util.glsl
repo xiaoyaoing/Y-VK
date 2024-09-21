@@ -87,9 +87,13 @@ float power_heuristic(float a, float b) {
 }
 
 
+bool hasNaN(const vec3 v){
+    return any(isnan(v));
+}
 
 
-float dielectricReflectance(float eta, float cosThetaI, float cosThetaT) {
+
+float dielectricReflectance(float eta, float cosThetaI, out float cosThetaT) {
     if (cosThetaI < 0.0) {
         eta       = 1.0 / eta;
         cosThetaI = -cosThetaI;

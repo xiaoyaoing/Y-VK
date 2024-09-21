@@ -10,3 +10,4 @@ cmake-build-release-visual-studio--2022
 /build-vs2022
 /.vscode
 .idea
+/resources/scenes

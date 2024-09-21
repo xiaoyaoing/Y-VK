@@ -19,7 +19,7 @@ void PostProcess::render(RenderGraph& rg) {
             auto inputRt = rg.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
             auto output  = rg.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
             builder.readTextures({inputRt}, TextureUsage::SAMPLEABLE);
-            builder.writeTexture(output);
+            builder.writeTexture(output, TextureUsage::COLOR_ATTACHMENT);
             RenderGraphPassDescriptor desc{};
             desc.textures = {inputRt, output};
             desc.addSubpass({{}, {output}});
@@ -27,9 +27,7 @@ void PostProcess::render(RenderGraph& rg) {
         },
         [&](RenderPassContext& context) {
             g_context->getPipelineState().setPipelineLayout(*mPipelineLayout).setDepthStencilState({.depthTestEnable = false}).setRasterizationState({.cullMode = VK_CULL_MODE_NONE});
-            g_context->
-                // bindImage(0,rg.getBlackBoard().getImageView(RENDER_VIEW_PORT_IMAGE_NAME))
-                bindImageSampler(0, rg.getBlackBoard().getImageView(RENDER_VIEW_PORT_IMAGE_NAME), *mSampler)
+            g_context->bindImageSampler(0, rg.getBlackBoard().getImageView(RENDER_VIEW_PORT_IMAGE_NAME), *mSampler)
                     .bindPushConstants(pcPost)
                     .flushAndDraw(context.commandBuffer, 3, 1, 0, 0);
         });

@@ -39,6 +39,7 @@ layout (push_constant) uniform PushConstants
     int   uEnable32Cones;// 52
     int       uDirectLighting;//56
     int       uIndirectLighting;//60
+    float fopacityScale;
 //    bool useLowerLevel;
 //    bool useHigherLevel;
 //    bool usemix;
@@ -136,7 +137,7 @@ vec3(-0.182696, 0.388844, 0.903007),
 vec3(0.182696, -0.388844, 0.903007)
 };
 
-const float MAX_TRACE_DISTANCE = 30.f;
+const float MAX_TRACE_DISTANCE = 300.f;
 const float MIN_SPECULAR_FACTOR  = 0.05f;
 
 
@@ -214,14 +215,11 @@ void main(){
     {
         float cos_theta = dot(normal, DIFFUSE_CONE_DIRECTIONS_16[i]);
         if (cos_theta < 0.0)
-        continue;
+            continue;
 
         indirect_contribution += traceCone(world_pos, DIFFUSE_CONE_DIRECTIONS_16[i], DIFFUSE_CONE_APERTURE_16,
         MAX_TRACE_DISTANCE, min_level, 1).rgb * cos_theta;// / 3.141592;
 
-        // out_color = vec4(world_pos,1);
-        //        return;
-        //validConeCount += cos_theta;
     }
     indirect_contribution /= DIFFUSE_CONE_COUNT_16;
 
@@ -290,14 +288,12 @@ void main(){
 
             // vec3 light_contribution = microfacetBRDF(pbr_info) * calcuate_light_intensity(lights_info.lights[i], world_pos) * calcute_shadow(lights_info.lights[i], world_pos);
             vec3 light_contribution = apply_light(lights_info.lights[i], world_pos, normal) * pbr_info.diffuseColor;
-
             direct_contribution += light_contribution;
         }
         //  direct_contribution = vec3(1);
     }
-    //direct_contribution = SIX_LEVEL_DEBUG_COLORS[min_levl_uint];
+//    direct_contribution = world_pos / 20.f;
     out_color = vec4(direct_contribution * uDirectLighting + indirect_contribution * uIndirectLighting, 1);
-    //    out_color = vec4(direct_contribution, 1);
 }
 
 
@@ -373,17 +369,13 @@ vec4 traceCone(vec3 start_pos, vec3 direction, float aperture, float maxDistance
 
     float curSegmentLength    = cur_voxel_size;
     float minRadius        = voxel_size  * 0.5 * clip_map_resoultion;
-
-
-
-
+    
     while ((step < maxDistance) && (occlusion < 1.0))
     {
         vec3  position                = start_pos + direction * step;
         float distanceToVoxelCenter = length(volume_center - position);
         float min_level                = ceil(log2(distanceToVoxelCenter / minRadius));
-
-
+        
         curLevel = log2(diameter / voxel_size);
         curLevel = min(max(max(startLevel, curLevel), min_level), CLIP_LEVEL_COUNT - 1);
 
@@ -401,7 +393,6 @@ vec4 traceCone(vec3 start_pos, vec3 direction, float aperture, float maxDistance
         //        if (min_level_int ==3) return vec4(1, 1, 0, 1);
         //        if (min_level_int ==4) return vec4(1, 0, 1, 1);
         //        if (min_level_int ==5) return vec4(1, 1, 1, 1);
-
         vec4 clipmapSample = sampleClipmapLinear(radiance_map, position, curLevel, faceIndex, weight);
         vec3 radiance = clipmapSample.rgb;
 
@@ -410,7 +401,7 @@ vec4 traceCone(vec3 start_pos, vec3 direction, float aperture, float maxDistance
 
         //  return clipmapSample;
 
-        float opacity = clipmapSample.a;
+        float opacity = clipmapSample.a * fopacityScale;
 
         cur_voxel_size = voxel_size * exp2(curLevel);
 
@@ -418,9 +409,7 @@ vec4 traceCone(vec3 start_pos, vec3 direction, float aperture, float maxDistance
         //todo what does correction do?
         radiance = radiance * correction;
         opacity  = clamp(1.0 - pow(1.0 - opacity, correction), 0.0, 1.0);
-
-
-
+        
         vec4 src = vec4(radiance.rgb, opacity);
         // Alpha blending
         result      += clamp(1.0 - result.a, 0.0, 1.0) * src;

@@ -1,6 +1,19 @@
 #pragma once
-#include "VxgiCommon.h"
+// #include "VxgiCommon.h"
 #include "Core/BoundingBox.h"
+
+struct alignas(16) VoxelizationParamater {
+    //using vec3 and float/int layout avoid alignment problem of vec3 in std140 glsl layout
+    glm::vec3 prevClipmapMinWorldPos{};
+    int       clipmapLevel;
+    glm::vec3 prevClipmapMaxWorldPos{};
+    float     voxelSize;
+    glm::vec3 clipmapMinWorldPos;
+    int       voxelResolution;
+    glm::vec3 clipmapMaxWorldPos;
+    float     maxExtentWorld;
+};
+
 
 struct ClipmapRegion {
     ClipmapRegion() {}
@@ -60,7 +73,7 @@ struct ClipmapRegion {
         VoxelizationParamater param;
         // param.clipmapMinCoord    = minCoord;
         // param.clipmapMaxCoord    = getMaxCoord();
-        param.voxelResolution    = VOXEL_RESOLUTION;
+        param.voxelResolution    = 128;
         param.clipmapMinWorldPos = getMinPosWorld();
         param.clipmapMaxWorldPos = getMaxPosWorld();
         param.voxelSize          = voxelSize;

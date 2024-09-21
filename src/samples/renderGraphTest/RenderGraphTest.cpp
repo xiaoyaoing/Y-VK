@@ -144,7 +144,7 @@ void Example::prepare() {
     //         }
     //     }
     // }
-    RenderPtrManangr::init();
+    RenderPtrManangr::Initalize();
     g_manager->putPtr("view", view.get());
 }
 

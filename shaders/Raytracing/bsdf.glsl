@@ -253,7 +253,8 @@ BsdfSampleRecord dielectric_sample(const RTMaterial mat, const vec2 rand, inout 
     if (mat.roughness < 1e-3f){
         float costhetaT;
         float fresnel = dielectricReflectance(eta, event.wo.z, costhetaT);
-        //debugPrintfEXT("Fresnel %f\n", fresnel);
+       // debugPrintfEXT("Fresnel %f\n", fresnel);
+//        fresnel = 0;
         if (rand.x < fresnel){
             event.wi = my_reflect(event.wo, vec3(0, 0, 1));
             record.f = vec3(fresnel) * get_albedo(mat, event.uv);
@@ -262,29 +263,16 @@ BsdfSampleRecord dielectric_sample(const RTMaterial mat, const vec2 rand, inout 
         }
         else {
             event.wi =  vec3(-eta * event.wo.x, -eta * event.wo.y, -copy_sign(costhetaT, event.wo.z));
+//            if(isnan(event.wi.x) || isnan(event.wi.y) || isnan(event.wi.z)){
+//                debugPrintfEXT("eta ,event.wo.x, event.wo.y, event.wo.z, costhetaT %f %f %f %f %f wi.x, wi.y, wi.z %f %f %f\n", eta, event.wo.x, event.wo.y, event.wo.z, costhetaT, event.wi.x, event.wi.y, event.wi.z);
+//            }
             record.f = vec3(1 - fresnel) * get_albedo(mat, event.uv);
             record.pdf = 1 - fresnel;
             record.sample_flags = RT_BSDF_LOBE_SPECULAR | RT_BSDF_LOBE_REFRACTION;
         }
     }
     else {
-        //        vec3 wh = ggx_sample(mat.roughness, rand);
-        //        float wh_dot_wo = dot(wh, event.wo);
-        //        float cos_theta_t;
-        //        float fresnel = dielectricReflectance(1/mat.ior, wh_dot_wo, cos_theta_t);
-        //        bool reflect = rand.x < fresnel;
-        //        if (reflect){
-        //            event.wi = my_reflect(event.wo, wh);
-        //            record.f = vec3(fresnel) * get_albedo(mat, event.uv);
-        //            record.pdf = fresnel;
-        //            record.sample_flags = RT_BSDF_LOBE_GLOSSY | RT_BSDF_LOBE_REFLECTION;
-        //        }
-        //        else {
-        //            event.wi = -eta * event.wo + (eta * wh_dot_wo - cos_theta_t) * wh;
-        //            record.f = vec3(1 - fresnel) * get_albedo(mat, event.uv);
-        //            record.pdf = 1 - fresnel;
-        //            record.sample_flags = RT_BSDF_LOBE_GLOSSY | RT_BSDF_LOBE_REFRACTION;
-        //        }
+       
     }
 
     return record;

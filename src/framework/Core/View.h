@@ -79,7 +79,7 @@ protected:
 
 protected:
 
-    void updateLight();
+    void updateLight(bool updateAllLightBuffer = false);
     
     const Camera*                 mCamera{nullptr};
     std::vector< Primitive*> mVisiblePrimitives;

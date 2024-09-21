@@ -6,6 +6,6 @@ void RenderPtrManangr::destroy() {
 View* RenderPtrManangr::getView() {
     return fetchPtr<View>("view");
 }
-void RenderPtrManangr::init() {
+void RenderPtrManangr::Initalize() {
     g_manager = new RenderPtrManangr();
 }

@@ -1,6 +1,10 @@
 #pragma once
 #include <string_view>
 #include <unordered_map>
+#include <Common/Log.h>
+#include "Core/PipelineLayout.h"
+#include "Core/Images/Sampler.h"
+#include "Scene/SgImage.h"
 
 class View;
 
@@ -16,9 +20,18 @@ public:
 
 class RenderPtrManangr {
 public:
+
+    // RenderPtrManangr(const RenderPtrManangr&) = delete;
+    // RenderPtrManangr& operator=(const RenderPtrManangr&) = delete;
+    // RenderPtrManangr(RenderPtrManangr&&) = delete;
+    
     template<typename T>
     T* fetchPtr(const std::string_view name) {
-        return static_cast<T*>(mPointersMap[name]);
+        void * ptr = mPointersMap[name];
+        if (ptr == nullptr) {
+            LOGE("Failed to fetch pointer with name: {0}", name);
+        }
+        return static_cast<T*>(ptr);
     }
 
     template<typename T>
@@ -28,7 +41,7 @@ public:
 
     View * getView();
 
-    static void init();
+    static void Initalize();
     static void destroy();
 
 protected:

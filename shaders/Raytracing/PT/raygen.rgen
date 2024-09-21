@@ -108,7 +108,13 @@ void main()
         }
 
         if (depth >= pc_ray.min_depth)
-        color +=  throughput *  uniform_sample_one_light(seed, event, pc_ray.light_num, pc_ray.enable_sample_light>0, pc_ray.enable_sample_bsdf>0);
+        {
+            vec3 light_sample = uniform_sample_one_light(seed, event, pc_ray.light_num, pc_ray.enable_sample_light>0, pc_ray.enable_sample_bsdf>0);
+            color += throughput * light_sample;
+            if(isnan(light_sample.x) || isnan(light_sample.y) || isnan(light_sample.z)){
+                debugPrintfEXT("nan light_sample %f %f %f\n", light_sample.x, light_sample.y, light_sample.z);
+            }
+        }
 
 
 
@@ -128,7 +134,7 @@ void main()
         vec3 wi_world = to_world(event.frame, event.wi);
         throughput *= record.f / record.pdf;
 
-        if (pc_ray.visual_throughput>0){
+        if (pc_ray.visual_throughput>0 && depth == pc_ray.max_depth-1){
             color = throughput;
             break;
         }
@@ -159,10 +165,17 @@ void main()
         //origin = offset_ray_origin(event.p,  , direction);
     }
 
-   // color = vec3(1,0,0);
     
+   // color = vec3(1,0,0);
+//    if(depth  >= pc_ray.max_depth-1 ){
+//         color = throughput;
+//    }
+  //  color = throughput * eval_env(direction.xyz);
+   // color = direction.xyz;
+
+
     if (isnan(color.x) || isnan(color.y) || isnan(color.z)){
-        debugPrintfEXT("nan %f %f %f\n", color.x, color.y, color.z);
+        debugPrintfEXT("nan color %f %f %f\n", color.x, color.y, color.z);
     }
     if (pc_ray.frame_num > 0 && pc_ray.enable_accumulation>0) {
 

@@ -19,7 +19,8 @@ View::View(Device& device) {
 void View::setScene(const Scene* scene) {
     mScene = scene;
 
-    lightDirty = true;
+ 
+    
     for (const auto& primitive : mScene->getPrimitives()) {
         mVisiblePrimitives.emplace_back(primitive.get());
     }
@@ -30,6 +31,8 @@ void View::setScene(const Scene* scene) {
     mMaterials = scene->getGltfMaterials();
 
     mLights = scene->getLights();
+    lightDirty = true;
+    updateLight(true);
 }
 void View::setCamera(const Camera* camera) {
     mCamera = camera;
@@ -170,12 +173,11 @@ AlphaMode View::getAlphaMode(const Primitive& primitive) const {
 std::vector<GltfMaterial> View::GetMMaterials() const {
     return mMaterials;
 }
-void View::updateLight() {
+void View::updateLight(bool updateAllLightBuffer) {
     if(getLights().empty())
         return;
     std::vector<LightUib> lights;
     lights.reserve(getLights().size());
-    //uint32_t curLightCount = 0;
     for (const auto& light : getLights()) {
         LightUib lightUib;
         switch (light.type) {
@@ -206,7 +208,14 @@ void View::updateLight() {
         lightUib.shadow_matrix = light.lightProperties.shadow_matrix;
         lights.emplace_back(lightUib);
     }
-    auto & currentLightBuffer = mLightBuffer[g_context->getActiveFrameIndex()];
-    currentLightBuffer->uploadData(lights.data(), lights.size() * sizeof(LightUib), 0);
+    if(!updateAllLightBuffer) {
+        auto & currentLightBuffer = mLightBuffer[g_context->getActiveFrameIndex()];
+        currentLightBuffer->uploadData(lights.data(), lights.size() * sizeof(LightUib), 0);
+    }
+    else {
+        for (uint32_t i = 0; i < g_context->getSwapChainImageCount(); i++) {
+            mLightBuffer[i]->uploadData(lights.data(), lights.size() * sizeof(LightUib), 0);
+        }
+    }
     lightDirty = false;
 }

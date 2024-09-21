@@ -1,7 +1,10 @@
 #pragma once
 
-#include "RenderGraph/RenderGraph.h"
-#include <glm.hpp>
+#include "Core/BoundingBox.h"
+#include "ClipmapRegion.h"
+#include "ClipmapUpdatePolicy.h"
+
+#include <memory>
 
 class Scene;
 
@@ -12,6 +15,20 @@ class Scene;
 //     static VxgiContext& getInstance();
 // };
 
+struct VxgiContext {
+    //static VxgiContext& getInstance();
+protected:
+    struct VxgiContextImpl;
+    VxgiContext();
+    VxgiContextImpl* mImpl = nullptr;
+    static VxgiContext & getInstance();
+public:
+    static std::vector<ClipmapRegion>& getClipmapRegions();
+    static void setClipmapRegions(std::vector<ClipmapRegion>& regions);
+    static ClipmapUpdatePolicy& getClipmapUpdatePolicy();
+    static std::vector<BBox>& getBBoxes();
+};
+
 #define VOXEL_RESOLUTION     128
 #define CLIP_MAP_LEVEL_COUNT 6
 
@@ -21,16 +38,5 @@ struct VxgiConfig {
     inline static int level0MaxExtent{16};
 };
 
-struct alignas(16) VoxelizationParamater {
-    //using vec3 and float/int layout avoid alignment problem of vec3 in std140 glsl layout
-    glm::vec3 prevClipmapMinWorldPos{};
-    int       clipmapLevel;
-    glm::vec3 prevClipmapMaxWorldPos{};
-    float     voxelSize;
-    glm::vec3 clipmapMinWorldPos;
-    int       voxelResolution;
-    glm::vec3 clipmapMaxWorldPos;
-    float     maxExtentWorld;
-};
 
 // VxgiPtrManangr * VxgiPtrManangr::gManager = nullptr;

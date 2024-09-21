@@ -62,7 +62,13 @@ const std::vector<SgLight>& Scene::getLights() const {
 std::vector<SgLight>& Scene::getLights() {
     return lights;
 }
+BBox Scene::getSceneBBox() const {
+    return sceneBBox;
+}
 
+void Scene::setSceneBBox(const BBox& bbox) {
+    sceneBBox = bbox;
+}
 const std::vector<std::unique_ptr<Primitive>>& Scene::getPrimitives() const {
     return primitives;
 }

@@ -15,57 +15,8 @@
 #include "Scene/SceneLoader/SceneLoaderInterface.h"
 #include "Scene/SceneLoader/gltfloader.h"
 
-// static BlasInput toVkGeometry(const Primitive & primitive)
-// {
-//
-//         VkAccelerationStructureGeometryKHR accelerationStructureGeometry{};
-//         accelerationStructureGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-//         accelerationStructureGeometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-//         accelerationStructureGeometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-//         accelerationStructureGeometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-//         accelerationStructureGeometry.geometry.triangles.vertexData.deviceAddress = primitive.vertexBuffers.at("position")->getDeviceAddress();
-//         accelerationStructureGeometry.geometry.triangles.maxVertex = primitive.vertexCount;
-//         accelerationStructureGeometry.geometry.triangles.vertexStride = sizeof(glm::vec3);
-//         accelerationStructureGeometry.geometry.triangles.indexType = primitive.indexType;
-//         accelerationStructureGeometry.geometry.triangles.indexData.deviceAddress = primitive.indexBuffer->getDeviceAddress();
-//         accelerationStructureGeometry.geometry.triangles.transformData.deviceAddress = primitive.vertexBuffers.at("transform")->getDeviceAddress();
-//         accelerationStructureGeometry.geometry.triangles.transformData.hostAddress = nullptr;
-//
-//         VkAccelerationStructureBuildRangeInfoKHR accelerationStructureBuildRangeInfo{};
-//         accelerationStructureBuildRangeInfo.primitiveCount = primitive.indexCount  / 3;
-//         accelerationStructureBuildRangeInfo.primitiveOffset = 0;
-//         accelerationStructureBuildRangeInfo.firstVertex = 0;
-//         accelerationStructureBuildRangeInfo.transformOffset = 0;
-//
-//         return {.geometry = {accelerationStructureGeometry},.range = {accelerationStructureBuildRangeInfo}};
-//         // accelerationStructureGeometry.geometry.triangles.transformData = transformBufferDeviceAddress;
-//
-// }
-//
-// static TlasInput toVkInstance(const Primitive & primitive,VkDeviceAddress blasAddress)
-// {
-//     VkAccelerationStructureInstanceKHR instance{};
-//     instance.transform = toVkTransformMatrix(primitive.matrix);
-//     instance.instanceCustomIndex = 0;
-//     instance.mask = 0xFF;
-//     instance.instanceShaderBindingTableRecordOffset = 0;
-//     instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-//     instance.accelerationStructureReference = blasAddress;
-//     return instance;
-// }
-//
-// Accel RayTracer::createAccel(VkAccelerationStructureCreateInfoKHR& accel)
-// {
-//     Accel result_accel;
-//     result_accel.buffer = std::make_unique<Buffer>(*device,accel.size, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-//                   VMA_MEMORY_USAGE_GPU_ONLY);
-//     accel.buffer = result_accel.buffer->getHandle();
-//     // Create the acceleration structure
-//     VK_CHECK_RESULT(vkCreateAccelerationStructureKHR(device->getHandle(), &accel, nullptr, &result_accel.accel));
-//     return result_accel;
-// }
 
-RayTracer::RayTracer(const RayTracerSettings& settings) {
+RayTracer::RayTracer(const RayTracerSettings& settings):Application("Real time Ray tracer",1920,1080) {
     addDeviceExtension(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     addDeviceExtension(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
     addDeviceExtension(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
@@ -120,8 +71,9 @@ void RayTracer::prepare() {
                           .bufferForAccel          = true,
                           .bufferForStorage        = true,
                           .sceneScale              = glm::vec3(1.f)};
-  loadScene(FileUtils::getResourcePath("kitchen/scene.json"));
-  //  loadScene("E:/code/vk-raytracing-demo/resources/classroom/scene.json");
+ loadScene(FileUtils::getResourcePath("kitchen/scene.json"));
+ // loadScene("E:/code/vk-raytracing-demo/resources/test-ball/scene.json");
+ //   loadScene("E:/code/vk-raytracing-demo/resources/classroom/scene.json");
 }
 
 void RayTracer::onUpdateGUI() {

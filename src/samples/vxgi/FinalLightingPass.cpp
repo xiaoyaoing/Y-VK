@@ -25,8 +25,8 @@ void FinalLightingPass::init() {
     mRadianceMapSampler          = std::make_unique<Sampler>(g_context->getDevice(), VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, 0.0f);
     g_manager->putPtr("radiance_map_sampler", mRadianceMapSampler.get());
 
-    mVoxelParam.uDirectLighting   = 0;
-    mVoxelParam.uIndirectLighting = 10;
+    mVoxelParam.uDirectLighting   = 1;
+    mVoxelParam.uIndirectLighting = 1;
 }
 void FinalLightingPass::render(RenderGraph& rg) {
     rg.addGraphicPass(
@@ -69,7 +69,7 @@ void FinalLightingPass::render(RenderGraph& rg) {
 }
 
 void FinalLightingPass::pushFinalLightingParam() {
-    auto& region = g_manager->fetchPtr<std::vector<ClipmapRegion>>("clipmap_regions")->operator[](0);
+    auto& region = VxgiContext::getClipmapRegions()[0];
 
     mVoxelParam.volume_center       = region.getBoundingBox().center();
     mVoxelParam.voxel_size          = region.voxelSize;
@@ -81,6 +81,7 @@ void FinalLightingPass::pushFinalLightingParam() {
 void FinalLightingPass::updateGui() {
     ImGui::InputInt("Direct intensity", &mVoxelParam.uDirectLighting);
     ImGui::InputInt("Indirect intensity", &mVoxelParam.uIndirectLighting);
+    ImGui::SliderFloat("Indirect Diffuse Intensity", &mVoxelParam.uIndirectDiffuseIntensity, 0.0f, 1.0f);
     // ImGui::Checkbox("useHigherLevel", &mVoxelParam.useHigherLevel);
     // ImGui::SameLine();
     // ImGui::Checkbox("useLowerLevel", &mVoxelParam.useLowerLevel);

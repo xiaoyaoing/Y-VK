@@ -25,6 +25,7 @@ protected:
         int       uEnable32Cones{0};
         int       uDirectLighting{1};
         int       uIndirectLighting{1};
+        float fopacityScale{1.f};
         // bool      useLowerLevel{0};
         // bool      useHigherLevel{0};
         // bool      mix{1};

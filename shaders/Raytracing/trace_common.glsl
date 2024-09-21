@@ -31,13 +31,13 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
                 float light_mis_weight =enable_sample_bsdf? power_heuristic(light_sample.pdf, bsdf_pdf):1;
                 vec3 bsdf =eval_bsdf(materials.m[material_idx], event);
                 result += light_sample.indensity  * bsdf * light_mis_weight / light_sample.pdf;
-                if (luminance(result) > 1000){
-                    //    debugPrintfEXT("light_sample.indensity %f %f %f\n", light_sample.indensity.x, light_sample.indensity.y, light_sample.indensity.z);
-                    //  debugPrintfEXT("bsdf %f %f %f\n", bsdf.x, bsdf.y, bsdf.z);
-                    //                    debugPrintfEXT("light_mis_weight %f\n", light_mis_weight);
-                    //                    debugPrintfEXT("light_sample.pdf %f\n", light_sample.pdf);
-                    //                    debugPrintfEXT("bsdf_pdf %f\n", bsdf_pdf);
-                    //                    debugPrintfEXT("result %f %f %f\n", result.x, result.y, result.z);
+                if (hasNaN(result)){
+                    debugPrintfEXT("light L %f %f %f\n", light.L.x, light.L.y, light.L.z);
+                    debugPrintfEXT("bsdf %f %f %f\n", bsdf.x, bsdf.y, bsdf.z);
+                                        debugPrintfEXT("light_mis_weight %f\n", light_mis_weight);
+                                        debugPrintfEXT("light_sample.pdf %f\n", light_sample.pdf);
+                                        debugPrintfEXT("bsdf_pdf %f\n", bsdf_pdf);
+                                        debugPrintfEXT("result %f %f %f\n", result.x, result.y, result.z);
                 }
             }
         }
@@ -68,7 +68,7 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
                 float bsdf_mis_weight = enable_sample_light?power_heuristic(bsdf_pdf, light_pdf):1;
 
                 vec3 sample_bsdf_result = f * eval_light(light, hitPayload.p, hitPayload.n_g, world_wi) * bsdf_mis_weight / bsdf_pdf;
-                if (isnan(sample_bsdf_result.x) || isnan(sample_bsdf_result.y) || isnan(sample_bsdf_result.z)){
+                if (hasNaN(sample_bsdf_result)){
                     debugPrintfEXT("f %f %f %f\n", f.x, f.y, f.z);
                     debugPrintfEXT("eval_light %f %f %f\n", eval_light(light, hitPayload.p, hitPayload.n_g, world_wi).x, eval_light(light, hitPayload.p, hitPayload.n_g, world_wi).y, eval_light(light, hitPayload.p, hitPayload.n_g, world_wi).z);
                     debugPrintfEXT("bsdf_mis_weight %f\n", bsdf_mis_weight);
@@ -91,11 +91,7 @@ bool is_delta_material(const uint material_idx){
 
 
 vec3   uniform_sample_one_light(inout uvec4 seed, inout SurfaceScatterEvent event, const uint light_num, bool enable_sample_light, bool enable_sample_bsdf){
-
-    //    bool is_delta_material = is_delta_material(event.material_idx);
-    //    if (is_delta_material){
-    //        return vec3(0);
-    //    }
+    
     float light_choose_rand = rand1(seed);
 
     uint light_idx = uint(light_choose_rand * light_num);

@@ -186,7 +186,7 @@ void Camera::onShowInEditor() {
     ImGui::DragFloat("Far Plane", &m_farZ, 0.01f, 0.0f, 1000.0f);
     ImGui::DragFloat("Fov  Y", &m_fovY, 0.1f, 1.0f, 179.0f);
 
-    ImGui::SliderFloat("Move Speed", &mMoveSpeed, 0.0f, 10000.0f);
+    ImGui::SliderFloat("Move Speed", &mMoveSpeed, 0.0f, 100.0f);
     ImGui::Checkbox("Flip Y", &flipYTemp);
     if (flipYTemp != flipY) {
         flipY = flipYTemp;

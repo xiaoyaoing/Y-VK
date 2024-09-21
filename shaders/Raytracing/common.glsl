@@ -296,9 +296,7 @@ float get_primitive_area(const uint prim_idx){
 LightSample sample_li_area_light(const RTLight light, const SurfaceScatterEvent event, const vec3 rand){
 
     LightSample result;
-
-    result.indensity = light.L;
-
+    
     float pdf;
     //sample one point on primitive 
     MeshSampleRecord record  = uniform_sample_on_mesh(light.prim_idx, rand, light.world_matrix);
@@ -314,7 +312,7 @@ LightSample sample_li_area_light(const RTLight light, const SurfaceScatterEvent 
     dist -=  EPS;
 
     float cos_theta_light = dot(record.n, -wi);
-    if (cos_theta_light <= 0.0){
+    if (cos_theta_light <= 1e-4f){
         result.n = record.n;
         result.wi = wi;
         result.indensity  = vec3(0);
@@ -322,6 +320,10 @@ LightSample sample_li_area_light(const RTLight light, const SurfaceScatterEvent 
         return result;
     }
     pdf = record.pdf * dist * dist  / abs(cos_theta_light);
+
+    if(pdf > 1000000000){
+        debugPrintfEXT("pdf %f %f %f %f %f %f %f %f %f\n", pdf, cos_theta_light, dist, light_p.x, light_p.y, light_p.z, p.x, p.y, p.z);
+    }
 
     result.wi = wi;
     result.n = record.n;
@@ -392,7 +394,7 @@ LightSample sample_li_area_light_with_idx(const RTLight light, const SurfaceScat
     dist -=  EPS;
 
     float cos_theta_light = dot(record.n, -wi);
-    if (cos_theta_light <= 0.0){
+    if (cos_theta_light <= 1e-4f){
         result.n = record.n;
         result.wi = wi;
         result.indensity  = vec3(0);
@@ -400,6 +402,10 @@ LightSample sample_li_area_light_with_idx(const RTLight light, const SurfaceScat
         return result;
     }
     pdf = record.pdf * dist * dist  / abs(cos_theta_light);
+    
+    if(pdf > 1000000000){
+        debugPrintfEXT("pdf %f %f %f %f %f %f %f %f %f\n", pdf, cos_theta_light, dist, light_p.x, light_p.y, light_p.z, p.x, p.y, p.z);
+    }
 
     result.wi = wi;
     result.n = record.n;

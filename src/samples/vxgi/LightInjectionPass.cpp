@@ -20,11 +20,11 @@ void LightInjectionPass::render(RenderGraph& rg) {
 
     auto& commandBuffer = g_context->getGraphicCommandBuffer();
     {
-        auto clipRegions = g_manager->fetchPtr<std::vector<ClipmapRegion>>("clipmap_regions");
+        auto & clipRegions = VxgiContext::getClipmapRegions();
         for (uint32_t i = 0; i < CLIP_MAP_LEVEL_COUNT; i++) {
             // auto buffer = g_manager->fetchPtr<Buffer>("voxel_param_buffer");
             if (frameIndex % kUpdateRegionLevelOffsets[i] == 0 && injectLight[i]) {
-                ClipMapCleaner::clearClipMapRegions(rg, clipRegions->operator[](i), radiance, i);
+                ClipMapCleaner::clearClipMapRegions(rg, clipRegions[i], radiance, i);
             }
         }
     }
@@ -39,7 +39,7 @@ void LightInjectionPass::render(RenderGraph& rg) {
         desc.addSubpass({.inputAttachments =  {},.outputAttachments = {}});
             builder.declare(desc); }, [&](RenderPassContext& context) {
                 // return ;
-                auto clipRegions = g_manager->fetchPtr<std::vector<ClipmapRegion>>("clipmap_regions");
+                auto clipRegions = VxgiContext::getClipmapRegions();
                 auto& view       = *g_manager->fetchPtr<View>("view");
                 g_context->getPipelineState().setPipelineLayout(*mLightInjectionPipelineLayout);//.enableConservativeRasterization(g_context->getDevice().getPhysicalDevice());
                 view.bindViewBuffer().bindViewShading().bindViewGeom(context.commandBuffer);
@@ -48,7 +48,7 @@ void LightInjectionPass::render(RenderGraph& rg) {
                     // auto buffer = g_manager->fetchPtr<Buffer>("voxel_param_buffer");
                     if(frameIndex % kUpdateRegionLevelOffsets[i] == 0 &&  injectLight[i]) {
                         
-                        auto & clipRegion =  clipRegions->operator[](i);
+                        auto & clipRegion =  clipRegions[i];
                         auto voxelParam =  clipRegion.getVoxelizationParam();
                         voxelParam.clipmapLevel = i;
                         
@@ -58,7 +58,7 @@ void LightInjectionPass::render(RenderGraph& rg) {
                             if(i==0)
                                 return clipRegion.getBoundingBox().overlaps(primitive.getDimensions());
                             else {
-                                return primitive.getDimensions().overlaps(clipRegion.getBoundingBox(),clipRegions->operator[](i-1).getBoundingBox());
+                                return primitive.getDimensions().overlaps(clipRegion.getBoundingBox(),clipRegions[i-1].getBoundingBox());
                             }
                         });
 
@@ -75,8 +75,7 @@ void LightInjectionPass::init() {
     mLightInjectionImage = std::make_unique<SgImage>(
         g_context->getDevice(), std::string("voxelRadianceImage"), imageResolution, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_VIEW_TYPE_3D, VK_SAMPLE_COUNT_1_BIT, 1, 1, VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT);
     mLightInjectionImage->createImageView(VK_IMAGE_VIEW_TYPE_3D, VK_FORMAT_R32_UINT);
-    mClipmapUpdatePolicy = g_manager->fetchPtr<ClipmapUpdatePolicy>("clipmap_update_policy");
-
+    
     mVoxelParamBuffers.resize(CLIP_MAP_LEVEL_COUNT);
     for (uint32_t i = 0; i < CLIP_MAP_LEVEL_COUNT; i++) {
         mVoxelParamBuffers[i] = std::make_unique<Buffer>(g_context->getDevice(), sizeof(VoxelizationParamater), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);

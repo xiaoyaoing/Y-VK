@@ -1,6 +1,7 @@
 #include "ClipmapCleaner.h"
 
 #include "ClipmapRegion.h"
+#include "VxgiCommon.h"
 #include "Core/RenderContext.h"
 #include "RenderGraph/RenderGraph.h"
 struct ClipMapCleaner::ImageCleaningDesc {

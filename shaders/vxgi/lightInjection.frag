@@ -2,7 +2,7 @@
 #extension GL_GOOGLE_include_directive : require
 //#extension GLSL_EXT_shader_image_int64 : require
 #extension GL_EXT_debug_printf : enable
-
+#extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_ARB_shader_image_load_store : require
 
 precision mediump float;
@@ -10,11 +10,9 @@ precision mediump float;
 
 // #include "vxgi_common.h"
 #include "../PerFrame.glsl"
-#include "../PerFrameShading.glsl"
 #include "vxgi.glsl"
 #include "../shadow.glsl"
 #include "../brdf.glsl"
-#include "../lighting.glsl"
 layout(input_attachment_index = 0, binding = 0, set=2) uniform subpassInput gbuffer_diffuse_roughness;
 
 
@@ -81,7 +79,7 @@ void imageAtomicRGBA8Avg(ivec3 coords, vec4 value)
     uint prevStoredVal = 0;
     uint curStoredVal;
 
-    const int maxIterations = 255;
+    const int maxIterations = 10;
     int i = 0;
     vec4 curValF = vec4(0.0);
     while ((curStoredVal = imageAtomicCompSwap(radiance_image, coords, prevStoredVal, newVal)) != prevStoredVal && i < maxIterations)

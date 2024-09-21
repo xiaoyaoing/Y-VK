@@ -78,8 +78,10 @@ void Example::prepare() {
 
     sceneLoadingConfig.indexType = VK_INDEX_TYPE_UINT32;
     loadScene(FileUtils::getResourcePath("cars/car.gltf"));
+    scene->addDirectionalLight({0, -0.5f, -0.12f}, glm::vec3(1.0f), 1.5f,vec3(0,20,0));
+    RuntimeSceneManager::addPlane(*scene);
 
-    RenderPtrManangr::init();
+    RenderPtrManangr::Initalize();
     g_manager->putPtr("view", view.get());
 
     for (auto& pass : mRenderPasses) {
