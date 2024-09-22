@@ -7,10 +7,10 @@
 
 #include <App/Application.h>
 
-class Example : public Application {
+class VXGI : public Application {
 public:
     void drawFrame(RenderGraph& rg) override;
-    Example();
+    VXGI();
     void prepare() override;
     void onUpdateGUI() override;
 

@@ -69,13 +69,13 @@ float microfacetDistribution(PBRInfo pbrInputs)
 
 vec3 microfacetBRDF(PBRInfo pbrInputs)
 {
- //   return vec3(pbrInputs.alphaRoughness);
+    return diffuse(pbrInputs) * pbrInputs.NdotL;
+    
     vec3 F = FresnelSchlick(pbrInputs);
     float G = geometricOcclusion(pbrInputs);
     float D = microfacetDistribution(pbrInputs);
 
 
-  //  return F;
     //! Calculate the analytical lighting distribution
     vec3 diffuseContrib = (1.0 - F) * diffuse(pbrInputs);
     vec3 specContrib = F * G * D / (4.0 *  pbrInputs.NdotV);

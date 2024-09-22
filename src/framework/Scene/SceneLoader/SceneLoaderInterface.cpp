@@ -12,7 +12,9 @@ static std::unordered_map<std::string, std::function<std::unique_ptr<Scene>(Devi
 };
 std::unique_ptr<Scene> SceneLoaderInterface::LoadSceneFromFile(Device& device, const std::string& path, const SceneLoadingConfig& config) {
     std::string extension = path.substr(path.find_last_of(".") + 1);
-    return sceneLoaders[extension](device, path, config);
+    auto scene =  sceneLoaders[extension](device, path, config);
+    scene->setName(path.substr(path.find_last_of("/") + 1));
+    return scene;
 }
 
 std::unique_ptr<Primitive> SceneLoaderInterface::loadSpecifyTypePrimitive(Device& device, const std::string& type) {

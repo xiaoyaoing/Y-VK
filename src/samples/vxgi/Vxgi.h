@@ -10,17 +10,18 @@
 #include "App/Application.h"
 
 class PassBase;
-class Example : public Application {
+class VXGI : public Application {
 public:
     void prepare() override;
 
-    Example();
+    VXGI();
 
 protected:
     void onUpdateGUI() override;
     void drawFrame(RenderGraph& renderGraph) override;
     void drawVoxelVisualization(RenderGraph& renderGraph);
     void updateClipRegions();
+    void onSceneLoaded() override;
 
     BBox getBBox(uint32_t clipmapLevel);
 

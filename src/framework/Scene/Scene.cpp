@@ -66,6 +66,15 @@ BBox Scene::getSceneBBox() const {
     return sceneBBox;
 }
 
+void Scene::setName(const std::string& name) {
+    mName = name;
+}
+
+const std::string& Scene::getName() const {
+    return mName;
+}
+
+
 void Scene::setSceneBBox(const BBox& bbox) {
     sceneBBox = bbox;
 }

@@ -15,7 +15,7 @@
 #include "Scene/SceneLoader/SceneLoaderInterface.h"
 #include "Scene/SceneLoader/gltfloader.h"
 
-void Example::drawFrame(RenderGraph& rg) {
+void VXGI::drawFrame(RenderGraph& rg) {
     rg.setCutUnUsedResources(false);
     for (auto& pass : passes) {
         pass->render(rg);
@@ -105,7 +105,7 @@ void Example::drawFrame(RenderGraph& rg) {
     }
 }
 
-void Example::prepare() {
+void VXGI::prepare() {
     GlslCompiler::forceRecompile = true;
     Application::prepare();
     passes.emplace_back(std::make_unique<GBufferPass>());
@@ -148,12 +148,12 @@ void Example::prepare() {
     g_manager->putPtr("view", view.get());
 }
 
-Example::Example() : Application("Defered Rendering Sponza", 1920, 1080) {
+VXGI::VXGI() : Application("Defered Rendering Sponza", 1920, 1080) {
     addDeviceExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     GlslCompiler::forceRecompile = true;
 }
 
-void Example::onUpdateGUI() {
+void VXGI::onUpdateGUI() {
     gui->checkBox("Use subpasses", &useSubpass);
     for (auto& pass : passes) {
         pass->updateGui();
@@ -161,7 +161,7 @@ void Example::onUpdateGUI() {
 }
 
 int main() {
-    auto example = new Example();
+    auto example = new VXGI();
     example->prepare();
     example->mainloop();
     return 0;

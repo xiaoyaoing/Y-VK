@@ -321,9 +321,9 @@ LightSample sample_li_area_light(const RTLight light, const SurfaceScatterEvent 
     }
     pdf = record.pdf * dist * dist  / abs(cos_theta_light);
 
-    if(pdf > 1000000000){
-        debugPrintfEXT("pdf %f %f %f %f %f %f %f %f %f\n", pdf, cos_theta_light, dist, light_p.x, light_p.y, light_p.z, p.x, p.y, p.z);
-    }
+//    if(pdf > 1000000000){
+//        debugPrintfEXT("pdf %f %f %f %f %f %f %f %f %f\n", pdf, cos_theta_light, dist, light_p.x, light_p.y, light_p.z, p.x, p.y, p.z);
+//    }
 
     result.wi = wi;
     result.n = record.n;
@@ -403,9 +403,9 @@ LightSample sample_li_area_light_with_idx(const RTLight light, const SurfaceScat
     }
     pdf = record.pdf * dist * dist  / abs(cos_theta_light);
     
-    if(pdf > 1000000000){
-        debugPrintfEXT("pdf %f %f %f %f %f %f %f %f %f\n", pdf, cos_theta_light, dist, light_p.x, light_p.y, light_p.z, p.x, p.y, p.z);
-    }
+//    if(pdf > 1000000000){
+//        debugPrintfEXT("pdf %f %f %f %f %f %f %f %f %f\n", pdf, cos_theta_light, dist, light_p.x, light_p.y, light_p.z, p.x, p.y, p.z);
+//    }
 
     result.wi = wi;
     result.n = record.n;

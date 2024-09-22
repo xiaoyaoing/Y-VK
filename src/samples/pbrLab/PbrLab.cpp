@@ -24,7 +24,7 @@ struct SkyBoxPushConstant {
     float gamma;
 };
 
-void Example::drawFrame(RenderGraph& rg) {
+void VXGI::drawFrame(RenderGraph& rg) {
 
     view->IteratorPrimitives([](Primitive& primitive) {
       primitive.transform.setLocalToWorldMatrix(glm::rotate(0.005f, glm::vec3(0, 1, 0)) * primitive.transform.getLocalToWorldMatrix());
@@ -64,20 +64,21 @@ void Example::drawFrame(RenderGraph& rg) {
     }
 }
 
-void Example::prepare() {
+void VXGI::prepare() {
     Application::prepare();
     GlslCompiler::forceRecompile = true;
     
     g_context->setFlipViewport(true);
-  //  mRenderPasses.push_back(std::make_unique<GBufferPass>());
+    mRenderPasses.push_back(std::make_unique<GBufferPass>());
     mRenderPasses.push_back(std::make_unique<ShadowMapPass>());
-    mRenderPasses.push_back(std::make_unique<ForwardPass>());
-   // mRenderPasses.push_back(std::make_unique<IBLLightingPass>());
+    // mRenderPasses.push_back(std::make_unique<ForwardPass>());
+    mRenderPasses.push_back(std::make_unique<IBLLightingPass>());
     // mRenderPasses.push_back(std::make_unique<SSGIPass>());
 
 
-    sceneLoadingConfig.indexType = VK_INDEX_TYPE_UINT32;
-    loadScene(FileUtils::getResourcePath("cars/car.gltf"));
+    // sceneLoadingConfig.indexType = VK_INDEX_TYPE_UINT32;
+    // loadScene(FileUtils::getResourcePath("cars/car.gltf"));
+    loadScene("E:/code/car/resources/scenes/bistro/bistro.gltf");
     scene->addDirectionalLight({0, -0.5f, -0.12f}, glm::vec3(1.0f), 1.5f,vec3(0,20,0));
     RuntimeSceneManager::addPlane(*scene);
 
@@ -95,11 +96,11 @@ void Example::prepare() {
     ibl              = std::make_unique<IBL>(*device, environmentCube.get());
 }
 
-Example::Example() : Application("Pbr Lab", 1920, 1080) {
+VXGI::VXGI() : Application("Pbr Lab", 1920, 1080) {
     addDeviceExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
 }
 
-void Example::onUpdateGUI() {
+void VXGI::onUpdateGUI() {
     for (auto& pass : mRenderPasses) {
         pass->updateGui();
     }
@@ -119,7 +120,7 @@ void Example::onUpdateGUI() {
 }
 
 int main() {
-    auto example = new Example();
+    auto example = new VXGI();
     example->prepare();
     example->mainloop();
     return 0;

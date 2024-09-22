@@ -52,6 +52,10 @@ public:
             bool filpy = cameraJson["flipy"];
             camera.setFlipY(filpy);
         }
+        if (cameraJson.contains("speed")) {
+            float speed = cameraJson["speed"];
+            camera.setMoveSpeed(speed);
+        }
     }
     void cameraToConfig(const Camera& camera) {
         Json      cameraJson;
@@ -59,6 +63,7 @@ public:
         cameraJson["perspective"] = {perspective.x, perspective.y, perspective.z, perspective.w};
         cameraJson["transform"]   = to_json(*camera.getTransform());
         cameraJson["flipy"]       = camera.flipY;
+        cameraJson["speed"]       = camera.getMoveSpeed();
         json["camera"]            = cameraJson;
     }
 };

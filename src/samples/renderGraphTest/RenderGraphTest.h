@@ -6,11 +6,11 @@
 #include "App/Application.h"
 #include "RenderPasses/RenderPassBase.h"
 
-class Example : public Application {
+class VXGI : public Application {
 public:
     void prepare() override;
 
-    Example();
+    VXGI();
 
 protected:
     bool useSubpass{false};

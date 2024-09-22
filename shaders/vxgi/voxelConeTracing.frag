@@ -2,11 +2,10 @@
 
 #extension GL_GOOGLE_include_directive : enable 
 #extension GL_EXT_debug_printf : enable
-
+#extension GL_EXT_nonuniform_qualifier : enable
 
 #include "../perFrame.glsl"
-//#include "../shadow.glsl"
-#include "../lighting.glsl"
+#include "../shadow.glsl"
 #include "../brdf.glsl"
 
 precision highp float;
@@ -216,9 +215,13 @@ void main(){
         float cos_theta = dot(normal, DIFFUSE_CONE_DIRECTIONS_16[i]);
         if (cos_theta < 0.0)
             continue;
-
+        
         indirect_contribution += traceCone(world_pos, DIFFUSE_CONE_DIRECTIONS_16[i], DIFFUSE_CONE_APERTURE_16,
         MAX_TRACE_DISTANCE, min_level, 1).rgb * cos_theta;// / 3.141592;
+
+//        indirect_contribution += traceCone(world_pos,vec3(-1,0,0), DIFFUSE_CONE_APERTURE_16,
+//        MAX_TRACE_DISTANCE, min_level, 1).rgb * cos_theta;
+      //  break;
 
     }
     indirect_contribution /= DIFFUSE_CONE_COUNT_16;
@@ -287,11 +290,12 @@ void main(){
             pbr_info.VdotH = clamp(dot(view_dir, half_vector), 0.0, 1.0);
 
             // vec3 light_contribution = microfacetBRDF(pbr_info) * calcuate_light_intensity(lights_info.lights[i], world_pos) * calcute_shadow(lights_info.lights[i], world_pos);
-            vec3 light_contribution = apply_light(lights_info.lights[i], world_pos, normal) * pbr_info.diffuseColor;
+            vec3 light_contribution = apply_light(lights_info.lights[i], world_pos, normal) * microfacetBRDF(pbr_info) * calcute_shadow(lights_info.lights[i], world_pos);
             direct_contribution += light_contribution;
         }
         //  direct_contribution = vec3(1);
     }
+    
 //    direct_contribution = world_pos / 20.f;
     out_color = vec4(direct_contribution * uDirectLighting + indirect_contribution * uIndirectLighting, 1);
 }
@@ -351,11 +355,16 @@ ivec3 calculateVoxelFaceIndex(vec3 normal)
 
 vec4 traceCone(vec3 start_pos, vec3 direction, float aperture, float maxDistance, float startLevel, float stepFactor)
 {
+
+    
     vec4 result = vec4(0.0);
     float coneCoefficient = 2.0 * tan(aperture * 0.5);
 
     float curLevel = startLevel;
     float cur_voxel_size = voxel_size * exp2(curLevel);
+
+    start_pos += direction * cur_voxel_size  * 0.5 * uTraceStartOffset;
+
 
     //   start_pos += direction * cur_voxel_size  * 0.5;
 
@@ -408,6 +417,9 @@ vec4 traceCone(vec3 start_pos, vec3 direction, float aperture, float maxDistance
         float correction = curSegmentLength / cur_voxel_size;
         //todo what does correction do?
         radiance = radiance * correction;
+        
+        return clipmapSample;
+        
         opacity  = clamp(1.0 - pow(1.0 - opacity, correction), 0.0, 1.0);
         
         vec4 src = vec4(radiance.rgb, opacity);

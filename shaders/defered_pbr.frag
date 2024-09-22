@@ -37,13 +37,15 @@ vec4 SRGBtoLinear(vec4 srgbIn, float gamma)
 
 vec3 getNormal(const int texture_idx)
 {
-    if (texture_idx <0 || texture_idx>=129){
-        // debugPrintfEXT("Invalid texture index %d\n", texture_idx);
+    if (texture_idx <0){
+        return normalize(in_normal);
     }
     //    texture_idx = clamp(texture_idx, 0, 136);
     //    return texture(scene_textures[texture_idx], in_uv).xyz * 2.0 - 1.0;
     //    return vec3(0);
     // Perturb normal, see http://www.thetenthplanet.de/archives/1180
+    
+    
     vec3 tangentNormal = texture(scene_textures[texture_idx], in_uv).xyz * 2.0 - 1.0;
 
     vec3 q1 = dFdx(in_world_pos);
@@ -56,7 +58,7 @@ vec3 getNormal(const int texture_idx)
     vec3 B = -normalize(cross(N, T));
     mat3 TBN = mat3(T, B, N);
 
-    return in_normal;
+    //return in_normal;
     return normalize(TBN * tangentNormal);
 }
 
@@ -100,7 +102,7 @@ void main(void)
 
     o_diffuse_roughness  = vec4(diffuseColor, perceptualRoughness);
 
-    vec3 normal = material.normalTexture > -1 ? getNormal(material.normalTexture) : normalize(in_normal);
+    vec3 normal = getNormal(material.normalTexture);
 
     o_normal_metalic = vec4(normal * 0.5f  + 0.5f, metallic);
     vec3 emissionColor            = material.emissiveFactor;

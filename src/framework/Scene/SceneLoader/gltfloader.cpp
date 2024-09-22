@@ -841,7 +841,7 @@ void GLTFLoadingImpl::loadMaterials(tinygltf::Model& gltfModel) {
         }
        if(material.alphaMode == 2) {
             material.pbrBaseColorFactor.w = 0.2f;
-        }
+       }
     LOGI("base color factor {} {} {} {}", material.pbrBaseColorFactor.x, material.pbrBaseColorFactor.y, material.pbrBaseColorFactor.z, material.pbrBaseColorFactor.w);
         materials.emplace_back(material);
     }

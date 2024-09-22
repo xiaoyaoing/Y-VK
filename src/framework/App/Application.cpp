@@ -286,7 +286,7 @@ void Application::updateGUI() {
     ImGui::Checkbox("save exr", &imageSave.saveExr);
     ImGui::Checkbox("save camera config", &saveCamera);
 
-    auto file = gui->showFileDialog("Select a gltf file", {".gltf", ".json"});
+    auto file = gui->showFileDialog("Select gltf or json file", {".gltf", ".json"});
 
     if (file != "no file selected") {
         ctpl::thread_pool pool(1);
@@ -565,7 +565,6 @@ void Application::loadScene(const std::string& path) {
 void Application::onSceneLoaded() {
     camera = scene->getCameras()[0];
     initView();
-    Config::GetInstance();
     Config::GetInstance().CameraFromConfig(*camera);
     sceneFirstLoad = false;
 }

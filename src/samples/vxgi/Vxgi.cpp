@@ -14,10 +14,11 @@
 #include "Common/FIleUtils.h"
 #include "Core/Shader/GlslCompiler.h"
 #include "Core/Shader/Shader.h"
+#include "RenderPasses/ShadowMapPass.h"
 #include "Scene/SceneLoader/SceneLoaderInterface.h"
 #include "Scene/SceneLoader/gltfloader.h"
 
-void Example::drawFrame(RenderGraph& rg) {
+void VXGI::drawFrame(RenderGraph& rg) {
 
     updateClipRegions();
 
@@ -33,7 +34,7 @@ void Example::drawFrame(RenderGraph& rg) {
 
     rg.setCutUnUsedResources(false);
 }
-void Example::drawVoxelVisualization(RenderGraph& renderGraph) {
+void VXGI::drawVoxelVisualization(RenderGraph& renderGraph) {
     auto& regions = VxgiContext::getClipmapRegions();
     bool  clear   = true;
     for (uint32_t i = 0; i < CLIP_MAP_LEVEL_COUNT; i++) {
@@ -45,19 +46,19 @@ void Example::drawVoxelVisualization(RenderGraph& renderGraph) {
     }
 }
 
-BBox Example::getBBox(uint32_t clipmapLevel) {
+BBox VXGI::getBBox(uint32_t clipmapLevel) {
     float halfSize = 0.5f * m_clipRegionBBoxExtentL0 * std::exp2f(float(clipmapLevel));
     return {camera->getPosition() - halfSize, camera->getPosition() + halfSize};
 }
 
-void Example::prepare() {
+void VXGI::prepare() {
     Application::prepare();
 
     
-    sceneLoadingConfig.sceneScale = glm::vec3(0.008f);
+   sceneLoadingConfig.sceneScale = glm::vec3(0.08f);
    // loadScene(FileUtils::getResourcePath("sponza/Sponza01.gltf"));
-    loadScene("E:/code/moerengine-3dgs/asset/default/scenes/sponza/Sponza01.gltf");
-    //loadScene("E:/code/vkframeworklearn2/resources/cornell-box/cornellBox.gltf");
+   loadScene("E:/code/moerengine-3dgs/asset/default/scenes/sponza/Sponza01.gltf");
+    // loadScene("E:/code/vkframeworklearn2/resources/cornell-box/cornellBox.gltf");
     
     GlslCompiler::forceRecompile = false;
 
@@ -87,28 +88,13 @@ void Example::prepare() {
             }
         }
     }
-    scene->addDirectionalLight({0, -0.95f, 0.3f}, glm::vec3(1.0f), 1.5f);
-
-    camera        = scene->getCameras()[0];
-    camera->flipY = false;
-    camera->setPerspective(60.0f, (float)mWidth / (float)mHeight, 0.1f, 4000.f);
-   // camera->setMoveSpeed(0.05f);
-
-    camera->setPerspective(45.0f, float(mWidth), float(mHeight), 0.1f, 4000.f);
-    glm::vec3 cameraPositionOffset(0.46, 8.27, -1.54);
-    cameraPositionOffset = glm::vec3(0.89, 0.11, 15);
-    camera->getTransform()->setPosition(cameraPositionOffset);
-    camera->getTransform()->setRotation(glm::quat(1, 0, 0, 0));
-
-    view = std::make_unique<View>(*device);
-    view->setScene(scene.get());
-    view->setCamera(camera.get());
-
+    
     for (uint32_t i = 0; i < CLIP_MAP_LEVEL_COUNT; i++) {
         VxgiContext::getBBoxes().push_back(getBBox(i));
     }
 
     passes.emplace_back(std::make_unique<GBufferPass>());
+    passes.emplace_back(std::make_unique<ShadowMapPass>());
     passes.emplace_back(std::make_unique<VoxelizationPass>());
     passes.emplace_back(std::make_unique<LightInjectionPass>());
     passes.emplace_back(std::make_unique<CopyAlphaPass>());
@@ -127,14 +113,14 @@ void Example::prepare() {
     mVisualizeVoxelPass.init();
 }
 
-Example::Example() : Application("VXGI", 1920, 1080) {
+VXGI::VXGI() : Application("VXGI", 1920, 1080) {
     // addDeviceExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     addDeviceExtension(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME);
     addInstanceExtension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     addDeviceExtension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);//   addInstanceExtension(VK_EXT_debug_utils);
 }
 
-void Example::onUpdateGUI() {
+void VXGI::onUpdateGUI() {
     for (auto& pass : passes) {
         pass->updateGui();
     }
@@ -153,14 +139,18 @@ void Example::onUpdateGUI() {
     ImGui::Checkbox("Radiance", &mVisualizeRadiance);
 }
 
-void Example::updateClipRegions() {
+void VXGI::updateClipRegions() {
     for (uint32_t i = 0; i < CLIP_MAP_LEVEL_COUNT; i++) {
         VxgiContext::getBBoxes()[i] = getBBox(i);
     }
 }
+void VXGI::onSceneLoaded() {
+    scene->addDirectionalLight({0, -0.95f, 0.3f}, glm::vec3(1.0f), 1.5f);
+    Application::onSceneLoaded();
+}
 
 int main() {
-    auto example = new Example();
+    auto example = new VXGI();
     example->prepare();
     example->mainloop();
     return 0;

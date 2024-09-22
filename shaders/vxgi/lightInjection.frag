@@ -79,7 +79,7 @@ void imageAtomicRGBA8Avg(ivec3 coords, vec4 value)
     uint prevStoredVal = 0;
     uint curStoredVal;
 
-    const int maxIterations = 10;
+    const int maxIterations = 100;
     int i = 0;
     vec4 curValF = vec4(0.0);
     while ((curStoredVal = imageAtomicCompSwap(radiance_image, coords, prevStoredVal, newVal)) != prevStoredVal && i < maxIterations)
@@ -174,11 +174,6 @@ void main(){
 
         // diffuse_color = base_color.rgb * (vec3(1.0) - f0) * (1.0 - metallic);
         diffuse_color = base_color.rgb;
-        diffuse_color = texture(scene_textures[material.pbrBaseColorTexture], in_uv).xyz;
-        //  diffuse_color = vec3(fract(abs(in_uv.x)),fract(abs(in_uv.y)), 0);
-        //        diffuse_color = vec3(float(in_primitive_index) / 25, 0, 0);
-        //   diffuse_color = subpassLoad(gbuffer_diffuse_roughness).rgb;
-        //        diffuse_color = vec3(1,0,0,0);
 
         vec3 normal = normalize(in_normal);
 
@@ -208,8 +203,7 @@ void main(){
             pbr_info.VdotH = clamp(dot(view_dir, half_vector), 0.0, 1.0);
 
             light_contribution +=
-            //  apply_light(lights_info.lights[i], world_pos, normal) * 
-            pbr_info.diffuseColor;
+              apply_light(lights_info.lights[i], world_pos, normal) * microfacetBRDF(pbr_info) * calcute_shadow(lights_info.lights[i], world_pos);
         }
         if (all(equal(light_contribution.xyz, vec3(0.0))))
         {

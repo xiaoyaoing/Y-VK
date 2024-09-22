@@ -94,6 +94,8 @@ public:
 
     void addPrimitive(std::unique_ptr<Primitive> primitive);
     void addPrimitives(std::vector<std::unique_ptr<Primitive>>&& primitives);
+    void setName(const std::string& name);
+    const std::string& getName() const;
 
     SceneLoadCompleteInfo& getLoadCompleteInfo() const;
 
@@ -101,6 +103,7 @@ protected:
     friend GltfLoading;
     friend Jsonloader;
     friend RuntimeSceneManager;
+    std::string mName;
     std::vector<GltfMaterial> materials;
     std::vector<RTMaterial>   rtMaterials;
     BBox sceneBBox;

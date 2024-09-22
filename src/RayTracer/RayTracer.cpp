@@ -71,7 +71,8 @@ void RayTracer::prepare() {
                           .bufferForAccel          = true,
                           .bufferForStorage        = true,
                           .sceneScale              = glm::vec3(1.f)};
- loadScene(FileUtils::getResourcePath("kitchen/scene.json"));
+ //loadScene(FileUtils::getResourcePath("kitchen/scene.json"));
+ loadScene("E:/code/car/resources/scenes/bistro/bistro.gltf");
  // loadScene("E:/code/vk-raytracing-demo/resources/test-ball/scene.json");
  //   loadScene("E:/code/vk-raytracing-demo/resources/classroom/scene.json");
 }

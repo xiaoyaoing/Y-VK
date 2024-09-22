@@ -81,7 +81,8 @@ void FinalLightingPass::pushFinalLightingParam() {
 void FinalLightingPass::updateGui() {
     ImGui::InputInt("Direct intensity", &mVoxelParam.uDirectLighting);
     ImGui::InputInt("Indirect intensity", &mVoxelParam.uIndirectLighting);
-    ImGui::SliderFloat("Indirect Diffuse Intensity", &mVoxelParam.uIndirectDiffuseIntensity, 0.0f, 1.0f);
+    ImGui::SliderFloat("Opacity scale", &mVoxelParam.fopacityScale, 0.0f, 1.0f);
+    ImGui::SliderFloat("trace start offset", &mVoxelParam.uTraceStartOffset, 0.0f, 10.0f);
     // ImGui::Checkbox("useHigherLevel", &mVoxelParam.useHigherLevel);
     // ImGui::SameLine();
     // ImGui::Checkbox("useLowerLevel", &mVoxelParam.useLowerLevel);

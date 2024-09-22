@@ -1,9 +1,9 @@
 #include "App/Application.h"
 
-class Example : public  Application
+class VXGI : public  Application
 {
 public:
-    Example();
+    VXGI();
     void prepare() override;
 protected:
 
