@@ -24,23 +24,7 @@ DescriptorSet::DescriptorSet(Device& device, const DescriptorLayout& descriptorS
             buffer_info += "Element: " + std::to_string(elementIt.first) + " " + std::to_string(reinterpret_cast<unsigned long long>(elementIt.second.buffer)) + " " + std::to_string(elementIt.second.offset) + " " + std::to_string(elementIt.second.range) + " ";
         }
     }
-    // const auto& desc = _device.getResourceCache().getState().descriptorSets;
-    // for (const auto& desc_it : desc) {
-    //     if (desc_it.second == *this) {
-    //         int k = 1;
-    //     }
-    // }
-    // LOGI("Buffer Info: {}", buffer_info.c_str());
-    // const VkDescriptorSetLayout setLayout = descriptorSetLayout.getHandle();
-    // VkDescriptorSetAllocateInfo descSetAllocInfo{};
-    // descSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    // descSetAllocInfo.pNext = nullptr;
-    // descSetAllocInfo.descriptorPool = descriptorPool.;
-    // descSetAllocInfo.descriptorSetCount = 1;
-    // descSetAllocInfo.pSetLayouts = &setLayout;
-    // VK_CHECK_RESULT(vkAllocateDescriptorSets(device.getHandle(), &descSetAllocInfo, &_descriptorSet))
 
-    // _descriptorSet = descriptorPool.allocate();
     for (auto& bufferIt : bufferInfos) {
         auto  bindingIndex   = bufferIt.first;
         auto& bufferBindings = bufferIt.second;
@@ -111,9 +95,7 @@ DescriptorSet::DescriptorSet(Device& device, const DescriptorLayout& descriptorS
         }
     }
 }
-// DescriptorSet::DescriptorSet(const DescriptorSet& descriptorSet) : _device(descriptorSet._device) {
-//     int k = 1;
-// }
+
 
 DescriptorSet::DescriptorSet(DescriptorSet&& descriptorSet) : _device(descriptorSet._device), _descriptorSet(descriptorSet._descriptorSet), writeSets(std::move(descriptorSet.writeSets)), mUpdatedBindings(std::move(descriptorSet.mUpdatedBindings)),
                                                               bufferInfos(std::move(descriptorSet.bufferInfos)), imageInfos(std::move(descriptorSet.imageInfos)), accelerations(std::move(descriptorSet.accelerations)), descriptorSetLayout(descriptorSet.descriptorSetLayout), descriptorPool(descriptorSet.descriptorPool) {

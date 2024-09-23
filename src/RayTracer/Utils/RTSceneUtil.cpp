@@ -86,8 +86,7 @@ void RTSceneEntryImpl::initScene(Scene& scene_) {
     normalBuffer = &scene->getVertexBuffer(NORMAL_ATTRIBUTE_NAME);
     vertexBuffer = &scene->getVertexBuffer(POSITION_ATTRIBUTE_NAME);
 
-    textures.resize(scene->getTextures().size());
-    std::ranges::transform(scene->getTextures().begin(), scene->getTextures().end(), textures.begin(), [](const auto& texture) { return texture.get(); });
+ 
 
     if (!scene->getRTMaterials().empty())
         materials = scene->getRTMaterials();
@@ -119,6 +118,10 @@ void RTSceneEntryImpl::initScene(Scene& scene_) {
         }
     }
 
+    if(scene->getName().find("bistro")!=std::string::npos) {
+        scene->getLights().clear();
+    }
+    
     if (scene_.getLights().empty()) {
         LOGI("No lights in the scene Adding default light");
         std::string envPath    = FileUtils::getResourcePath("default.hdr");
@@ -128,6 +131,9 @@ void RTSceneEntryImpl::initScene(Scene& scene_) {
                                                              .texture_index = static_cast<uint32_t>(scene_.getTextures().size()) - 1,
                                                          }});
     }
+
+    textures.resize(scene->getTextures().size());
+    std::ranges::transform(scene->getTextures().begin(), scene->getTextures().end(), textures.begin(), [](const auto& texture) { return texture.get(); });
 
     // primitives.resize(1);
 

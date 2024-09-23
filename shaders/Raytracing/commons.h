@@ -76,6 +76,8 @@ struct RTMaterial {
 
     float ior;
     vec3  padding;
+
+    int roughness_texture_id;
 };
 
 struct RTLight {

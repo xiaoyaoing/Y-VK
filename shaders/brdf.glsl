@@ -69,7 +69,7 @@ float microfacetDistribution(PBRInfo pbrInputs)
 
 vec3 microfacetBRDF(PBRInfo pbrInputs)
 {
-    return diffuse(pbrInputs) * pbrInputs.NdotL;
+    //return diffuse(pbrInputs) * pbrInputs.NdotL;
     
     vec3 F = FresnelSchlick(pbrInputs);
     float G = geometricOcclusion(pbrInputs);

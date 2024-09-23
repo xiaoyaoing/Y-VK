@@ -5,6 +5,7 @@
 
 #include "RayTracer.h"
 
+#include "Common/Config.h"
 #include "Common/ResourceCache.h"
 #include "Common/VkCommon.h"
 #include "Core/Shader/GlslCompiler.h"
@@ -15,8 +16,7 @@
 #include "Scene/SceneLoader/SceneLoaderInterface.h"
 #include "Scene/SceneLoader/gltfloader.h"
 
-
-RayTracer::RayTracer(const RayTracerSettings& settings):Application("Real time Ray tracer",1920,1080) {
+RayTracer::RayTracer(const RayTracerSettings& settings) : Application("Real time Ray tracer", 1920, 1080) {
     addDeviceExtension(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     addDeviceExtension(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
     addDeviceExtension(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
@@ -47,7 +47,10 @@ void RayTracer::drawFrame(RenderGraph& renderGraph) {
     renderGraph.addImageCopyPass(renderGraph.getBlackBoard().getHandle(RT_IMAGE_NAME), renderGraph.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME));
 }
 void RayTracer::onSceneLoaded() {
-    Application::onSceneLoaded();
+    camera = scene->getCameras()[0];
+    Config::GetInstance().CameraFromConfig(*camera, scene->getName());
+    sceneFirstLoad = false;
+
     rtSceneEntry = RTSceneUtil::convertScene(*device, *scene);
     for (auto& integrator : integrators) {
         integrator.second->initScene(*rtSceneEntry);
@@ -63,18 +66,20 @@ void RayTracer::prepare() {
     integrators["path"]   = std::make_unique<PathIntegrator>(*device);
     integrators["restir"] = std::make_unique<RestirIntegrator>(*device);
     integratorNames       = {"path", "restir"};
-    currentIntegrator = "resitr";
+    currentIntegrator     = "resitr";
 
     sceneLoadingConfig = {.requiredVertexAttribute = {POSITION_ATTRIBUTE_NAME, INDEX_ATTRIBUTE_NAME, NORMAL_ATTRIBUTE_NAME, TEXCOORD_ATTRIBUTE_NAME},
+                          .enableMergeDrawCalls    = false,
                           .indexType               = VK_INDEX_TYPE_UINT32,
                           .bufferAddressAble       = true,
                           .bufferForAccel          = true,
                           .bufferForStorage        = true,
                           .sceneScale              = glm::vec3(1.f)};
- //loadScene(FileUtils::getResourcePath("kitchen/scene.json"));
- loadScene("E:/code/car/resources/scenes/bistro/bistro.gltf");
- // loadScene("E:/code/vk-raytracing-demo/resources/test-ball/scene.json");
- //   loadScene("E:/code/vk-raytracing-demo/resources/classroom/scene.json");
+    //loadScene(FileUtils::getResourcePath("kitchen/scene.json"));
+    loadScene("E:/code/car/resources/scenes/bistro/bistro.gltf");
+    // loadScene(FileUtils::getResourcePath("scenes/sponza/Sponza01.gltf"));
+    // loadScene("E:/code/vk-raytracing-demo/resources/test-ball/scene.json");
+    //   loadScene("E:/code/vk-raytracing-demo/resources/classroom/scene.json");
 }
 
 void RayTracer::onUpdateGUI() {
@@ -211,4 +216,5 @@ int main() {
     RayTracer rayTracer({});
     rayTracer.prepare();
     rayTracer.mainloop();
+    return 0;
 }

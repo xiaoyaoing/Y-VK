@@ -33,6 +33,10 @@ vec3 get_albedo(const RTMaterial mat, const vec2 uv){
     return mat.texture_id == -1 ? mat.albedo : texture(scene_textures[mat.texture_id], uv).rgb;
 }
 
+float get_roughness(const RTMaterial mat, const vec2 uv){
+    return mat.roughness_texture_id == -1 ? mat.roughness : texture(scene_textures[mat.roughness_texture_id], uv).r;
+}
+
 vec3 diffuse_f(const RTMaterial mat, const SurfaceScatterEvent event){
     // return INV_PI * vec3(max(0, get_cos_theta(event.wo)));
     vec3 albedo  = get_albedo(mat, event.uv);
@@ -81,6 +85,62 @@ float conductor_pdf(const RTMaterial mat, const SurfaceScatterEvent event){
     else {
         vec3 wh = normalize(event.wi + event.wo);
         return ggx_d(mat.roughness, wh, event.wi) * get_cos_theta(wh) / (4 * dot(wh, event.wo));
+    }
+}
+
+float conductor_albedo_pdf(const RTMaterial mat, const SurfaceScatterEvent event){
+    if (event.wi.z <= 0 || event.wo.z <= 0){
+        return 0;
+    }
+    if (mat.roughness <1e-3f){
+        return 0;
+    }
+    else {
+        vec3 wh = normalize(event.wi + event.wo);
+        return ggx_d(mat.roughness, wh, event.wi) * get_cos_theta(wh) / (4 * dot(wh, event.wo));
+    }
+}
+
+BsdfSampleRecord conductor_albedo_sample(const RTMaterial mat, const vec2 rand, inout SurfaceScatterEvent event){
+    BsdfSampleRecord record;
+    if (event.wo.z <= 0){
+        return invalid_record();
+    }
+    if (mat.roughness <1e-3f){
+        event.wi = my_reflect(event.wo);
+        record.f = conductorReflectanceVec3(mat.eta, mat.k, event.wo.z) * get_albedo(mat, event.uv);
+        record.pdf = 1;
+        record.sample_flags = RT_BSDF_LOBE_SPECULAR | RT_BSDF_LOBE_REFLECTION;
+        return record;
+    }
+    else {
+        vec3 wh = ggx_sample(mat.roughness, rand);
+        event.wi = my_reflect(event.wo, wh);
+        if (dot(event.wi, wh) <= 0){
+            return invalid_record();
+        }
+        record.pdf = ggx_d(mat.roughness, wh, event.wo) * get_cos_theta(wh) / (4 * dot(wh, event.wo));
+        float cos_o = dot(wh, event.wo);
+        vec3 conductor_fresnel = conductorReflectanceVec3(mat.eta, mat.k, cos_o);
+        record.f = get_albedo(mat, event.uv) *  conductor_fresnel * ggx_d(mat.roughness, wh, event.wi) * ggx_g(mat.roughness, event.wi, event.wo, wh) / (4 *  event.wo.z);
+        record.sample_flags = RT_BSDF_LOBE_GLOSSY | RT_BSDF_LOBE_REFLECTION;
+        return record;
+    }
+    return invalid_record();
+}
+
+vec3 conductor_albedo_f(const RTMaterial mat, const SurfaceScatterEvent event){
+    if (event.wi.z <= 0 || event.wo.z <= 0){
+        return vec3(0);
+    }
+    if (mat.roughness <= 1e-3f){
+        return vec3(0);
+    }
+    else {
+        vec3 wh = normalize(event.wi + event.wo);
+        float cos_o = dot(wh, event.wo);
+        vec3 conductor_fresnel = conductorReflectanceVec3(mat.eta, mat.k, cos_o);
+        return conductor_fresnel * get_albedo(mat, event.uv) * ggx_d(mat.roughness, wh, event.wi) * ggx_g(mat.roughness, event.wi, event.wo, wh) / (4 * event.wo.z);
     }
 }
 

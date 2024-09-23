@@ -5,8 +5,8 @@ class Config {
 public:
     void SaveConfig();
     Config static GetInstance();
-    void              CameraFromConfig(Camera& camera);
-    void              CameraToConfig(const Camera& camera);
+    void              CameraFromConfig(Camera& camera,const std::string & name);
+    void              CameraToConfig(const Camera& camera,const std::string & name);
     const std::string GetScenePath();
 
 protected:

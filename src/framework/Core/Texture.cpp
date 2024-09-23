@@ -68,11 +68,7 @@ static void initVKTexture(Device& device,
                         CommandBuffer& commandBuffer,
                         Buffer& imageBuffer,
                         uint32_t offset) {
-    // texture->image->generateMipMapOnCpu();
     texture->image->createVkImage(device);
-
-    // buffers.emplace_back(std::make_unique<Buffer>(device, texture->image->getBufferSize(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY));
-    // auto& imageBuffer = *buffers.back();
     imageBuffer.uploadData(static_cast<void*>(texture->image->getData().data()), texture->image->getBufferSize(), offset);
 
     std::vector<VkBufferImageCopy> imageCopyRegions;
@@ -264,10 +260,42 @@ std::unique_ptr<Texture> Texture::loadTextureArrayFromFile(Device& device, const
     queue.wait();
     return texture;
 }
+
+void initTexturesInBatch(std::vector<std::unique_ptr<Texture>>& textures,int start,int end) {
+    if(end <= start){
+        return;
+    }
+    CommandBuffer commandBuffer = g_context->getDevice().createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+    uint32_t      size{0}, offset{0};
+    for (int i = start; i < end; i++) {
+        size += textures[i]->image->getBufferSize();
+    }
+    auto buffer = Buffer(g_context->getDevice(), size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+    for (int i = start; i < end; i++) {
+        initVKTexture(g_context->getDevice(), textures[i], commandBuffer, buffer, offset);
+        offset += textures[i]->image->getBufferSize();
+    }
+    g_context->submit(commandBuffer);
+    for (int i = start; i < end; i++) {
+        //For hdr image,cpu date may be used in ray tracing scene,for accel construction
+        if (textures[i]->getImage().getFormat() != VK_FORMAT_R32G32B32A32_SFLOAT) {
+            textures[i]->image->freeImageCpuData();
+        }
+    }
+}
+
 void Texture::initTexturesInOneSubmit(std::vector<std::unique_ptr<Texture>>& textures) {
     if (textures.empty()) {
         return;
     }
+
+    int batchSize = 10;
+    for (int i = 0; i < textures.size(); i += batchSize) {
+        initTexturesInBatch(textures, i, std::min(i + batchSize, static_cast<int>(textures.size())));
+    }
+
+    return;
+    
     CommandBuffer commandBuffer = g_context->getDevice().createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
     uint32_t      size{0}, offset{0};
     for (auto& texture : textures) {
@@ -279,7 +307,6 @@ void Texture::initTexturesInOneSubmit(std::vector<std::unique_ptr<Texture>>& tex
         offset += texture->image->getBufferSize();
     }
     g_context->submit(commandBuffer);
-
     for (auto& texture : textures) {
         //For hdr image,cpu date may be used in ray tracing scene,for accel construction
         if (texture->getImage().getFormat() != VK_FORMAT_R32G32B32A32_SFLOAT) {

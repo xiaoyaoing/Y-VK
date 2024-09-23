@@ -30,6 +30,7 @@ public:
 
 protected:
     std::vector<std::unique_ptr<PassBase>> mRenderPasses;
+    std::vector<std::unique_ptr<PassBase>> mforwardRenderPasses;
     void                                   onUpdateGUI() override;
     void                                   drawFrame(RenderGraph& renderGraph) override;
     std::unique_ptr<IBL>                   ibl;

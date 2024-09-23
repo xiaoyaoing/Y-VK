@@ -91,6 +91,8 @@ public:
     void                                           setBufferRate(BufferRate rate);
     BufferRate                                     getBufferRate() const;
     void setTextures(std::vector<std::unique_ptr<Texture>>&& textures);
+    bool getMergeDrawCall() const;
+    void setMergeDrawCall(bool mergeDrawCall);
 
     void addPrimitive(std::unique_ptr<Primitive> primitive);
     void addPrimitives(std::vector<std::unique_ptr<Primitive>>&& primitives);
@@ -103,6 +105,7 @@ protected:
     friend GltfLoading;
     friend Jsonloader;
     friend RuntimeSceneManager;
+    bool mergeDrawCall = false;
     std::string mName;
     std::vector<GltfMaterial> materials;
     std::vector<RTMaterial>   rtMaterials;

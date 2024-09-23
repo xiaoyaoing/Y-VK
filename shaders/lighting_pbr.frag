@@ -2,11 +2,11 @@
 
 #extension GL_GOOGLE_include_directive : enable 
 #extension GL_EXT_debug_printf : enable
+#extension GL_EXT_nonuniform_qualifier : enable
 
 
 #include "perFrame.glsl"
-//#include "../shadow.glsl"
-#include "lighting.glsl"
+#include "shadow.glsl"
 #include "brdf.glsl"
 
 precision highp float;

@@ -88,6 +88,7 @@ void main()
         hitPayload.material_idx = -1;
 
         traceRayEXT(tlas, rayFlags, cullMask, 0, 0, 0, origin.xyz, tmin, direction.xyz, tmax, 0);
+        
 
         bool found_intersect = hitPayload.material_idx != -1;
         if (!found_intersect) {
@@ -107,6 +108,8 @@ void main()
             color += throughput *  Le(direction.xyz);;
         }
 
+        
+        
         if (depth >= pc_ray.min_depth)
         {
             vec3 light_sample = uniform_sample_one_light(seed, event, pc_ray.light_num, pc_ray.enable_sample_light>0, pc_ray.enable_sample_bsdf>0);
@@ -185,7 +188,6 @@ void main()
         vec4(mix(old_color, color, w), 1.f));
 
     } else {
-
         imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(color, 1.f));
     }
 }

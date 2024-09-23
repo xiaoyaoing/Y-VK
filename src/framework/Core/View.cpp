@@ -18,8 +18,6 @@ View::View(Device& device) {
 }
 void View::setScene(const Scene* scene) {
     mScene = scene;
-
- 
     
     for (const auto& primitive : mScene->getPrimitives()) {
         mVisiblePrimitives.emplace_back(primitive.get());
@@ -101,9 +99,21 @@ void View::drawPrimitives(CommandBuffer& commandBuffer) {
         return;
     }
     uint32_t instance_count = 0;
-    for (const auto& primitive : mVisiblePrimitives) {
-        g_context->flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, primitive->firstIndex, primitive->firstVertex, instance_count++);
+
+    if(mScene->getMergeDrawCall()) {
+        uint32 indexCount = 0;
+        for (const auto& primitive : mVisiblePrimitives) {
+            indexCount += primitive->indexCount;
+        }
+        g_context->flushAndDrawIndexed(commandBuffer, indexCount, 1, 0, 0, instance_count);
+
     }
+    else {
+        for (const auto& primitive : mVisiblePrimitives) {
+            g_context->flushAndDrawIndexed(commandBuffer, primitive->indexCount, 1, primitive->firstIndex, primitive->firstVertex, instance_count++);
+        }
+    }
+    
 }
 void View::drawPrimitives(CommandBuffer& commandBuffer, const PrimitiveSelectFunc& selectFunc) {
     int instance_count = 0;

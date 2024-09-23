@@ -377,11 +377,11 @@ RenderContext& RenderContext::bindScene(CommandBuffer& commandBuffer, const Scen
 
     if (scene.usePrimitiveIdBuffer()) {
         vertexInputState.attributes.push_back({.location = maxLoaction + 1, .binding = maxLoaction + 1, .format = VK_FORMAT_R32_UINT, .offset = 0});
-        vertexInputState.bindings.push_back({.binding = maxLoaction + 1, .stride = sizeof(uint32_t), .inputRate = VK_VERTEX_INPUT_RATE_INSTANCE});
+        vertexInputState.bindings.push_back({.binding = maxLoaction + 1, .stride = sizeof(uint32_t), .inputRate = scene.getMergeDrawCall()?VK_VERTEX_INPUT_RATE_VERTEX:VK_VERTEX_INPUT_RATE_INSTANCE});
         std::vector<const Buffer*> buffers = {&scene.getPrimitiveIdBuffer()};
         commandBuffer.bindVertexBuffer(maxLoaction + 1, buffers, {0});
     }
-
+                  
     commandBuffer.bindIndicesBuffer(scene.getIndexBuffer(), 0, scene.getIndexType());
 
     pipelineState.setVertexInputState(vertexInputState);

@@ -18,7 +18,12 @@ Queue::Queue(Device* device, int familyIndex, int queueIndex, bool canPresent, c
 
 void Queue::submit(const std::vector<VkSubmitInfo>& submit_infos, VkFence fence) const
 {
-    VK_CHECK_RESULT(vkQueueSubmit(_queue, uint32_t(submit_infos.size()), submit_infos.data(), fence));
+
+    auto result = vkQueueSubmit(_queue, uint32_t(submit_infos.size()), submit_infos.data(), fence);
+    if (result != VK_SUCCESS)
+    {
+        LOGI("Failed to submit command buffer to queue.");
+    }
 }
 
 

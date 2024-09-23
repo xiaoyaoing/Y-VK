@@ -237,12 +237,13 @@ void Application::update() {
 }
 
 void Application::updateScene() {
-    if (sceneAsync != nullptr) {
+    if (sceneAsync != nullptr && sceneAsync->getLoadCompleteInfo().GetSceneLoaded() ) {
         scene = std::move(sceneAsync);
         onSceneLoaded();
         sceneAsync = nullptr;
     }
-    view->perFrameUpdate();
+    if(view)
+        view->perFrameUpdate();
 }
 /**
  * @brief Update GUI
@@ -361,7 +362,7 @@ void Application::resetImageSave() {
     }
 
     if (saveCamera) {
-        Config::GetInstance().CameraToConfig(*camera);
+        Config::GetInstance().CameraToConfig(*camera,scene->getName());
         Config::GetInstance().SaveConfig();
         saveCamera = false;
     }
@@ -563,10 +564,13 @@ void Application::loadScene(const std::string& path) {
 }
 
 void Application::onSceneLoaded() {
+    
     camera = scene->getCameras()[0];
     initView();
-    Config::GetInstance().CameraFromConfig(*camera);
+    Config::GetInstance().CameraFromConfig(*camera,scene->getName());
     sceneFirstLoad = false;
+
+    
 }
 
 void Application::initView() {

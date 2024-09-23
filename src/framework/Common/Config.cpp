@@ -28,10 +28,10 @@ public:
         std::string path = FileUtils::getResourcePath("config.json");
         JsonUtil::toFile(path, json);
     }
-    void cameraFromConfig(Camera& camera) {
-        if (!json.contains("camera"))
+    void cameraFromConfig(Camera& camera,const std::string & name) {
+        if (!json.contains(name) ||  !json.contains("camera"))
             return;
-        const auto& cameraJson = json["camera"];
+        const auto& cameraJson = json[name]["camera"];
         if (cameraJson.contains("perspective")) {
             auto perspective              = cameraJson["perspective"];
             auto [fov, aspect, near, far] = perspective.get<std::tuple<float, float, float, float>>();
@@ -57,14 +57,15 @@ public:
             camera.setMoveSpeed(speed);
         }
     }
-    void cameraToConfig(const Camera& camera) {
+    void cameraToConfig(const Camera& camera,const std::string & name) {
         Json      cameraJson;
         glm::vec4 perspective     = camera.getPerspectiveParams();
         cameraJson["perspective"] = {perspective.x, perspective.y, perspective.z, perspective.w};
         cameraJson["transform"]   = to_json(*camera.getTransform());
         cameraJson["flipy"]       = camera.flipY;
         cameraJson["speed"]       = camera.getMoveSpeed();
-        json["camera"]            = cameraJson;
+        json[name] = Json();
+        json[name]["camera"]            = cameraJson;
     }
 };
 
@@ -77,11 +78,11 @@ Config Config::GetInstance() {
     }
     return *instance;
 }
-void Config::CameraFromConfig(Camera& camera) {
-    impl->cameraFromConfig(camera);
+void Config::CameraFromConfig(Camera& camera,const std::string & name) {
+    impl->cameraFromConfig(camera,name);
 }
-void Config::CameraToConfig(const Camera& camera) {
-    impl->cameraToConfig(camera);
+void Config::CameraToConfig(const Camera& camera,const std::string & name) {
+    impl->cameraToConfig(camera,name);
 }
 const std::string Config::GetScenePath() {
     return impl->json["scene"];

@@ -93,6 +93,13 @@ void main(void)
         metallic = clamp(metallic, 0.0, 1.0);
     }
 
+    if(per_frame.use_roughness_override > 0.0)
+    {
+        perceptualRoughness = per_frame.roughness_override;
+    }
+
+    perceptualRoughness *= per_frame.roughness_scale;
+
     baseColor = material.pbrBaseColorFactor;
     if (material.pbrBaseColorTexture > -1)
     {

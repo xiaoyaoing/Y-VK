@@ -20,6 +20,7 @@ out gl_PerVertex
 void main()
 {
     outUVW = position;
+    outUVW.y = -outUVW.y;
     //gl_Position = per_frame.view_proj * vec4(position.xyz, 1.0);
     gl_Position = per_frame.proj * vec4(mat3(per_frame.view) * position.xyz, 1.0);
 }

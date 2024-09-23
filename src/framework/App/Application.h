@@ -156,12 +156,14 @@ protected:
 
     void handleMouseMove(float x, float y);
 
+    protected:
+    bool sceneFirstLoad{true};
+
 private:
     std::string               mPresentTexture = RENDER_VIEW_PORT_IMAGE_NAME;
     std::vector<std::string>  mCurrentTextures{RENDER_VIEW_PORT_IMAGE_NAME};
     const char*               mAppName;
     std::unique_ptr<PassBase> mPostProcessPass{};
-    bool sceneFirstLoad{true};
     //Camera related  variable end
 
     VkFence fence{VK_NULL_HANDLE};

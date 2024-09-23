@@ -57,7 +57,7 @@ void PathIntegrator::initScene(RTSceneEntry& entry) {
     // sceneDescBuffer = std::make_unique<Buffer>(device, sizeof(SceneDesc), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, &desc);
 
     pcPath.light_num = entry_->lights.size();
-    pcPath.max_depth = 1;
+    pcPath.max_depth = 5;
     pcPath.min_depth = 0;
 }
 
@@ -97,6 +97,7 @@ PathIntegrator::PathIntegrator(Device& device_) : Integrator(device_) {
 
     tem_layout = std::make_unique<PipelineLayout>(device, std::vector<std::string>({"Raytracing/compute_triangle_area.comp"}));
 
-    pcPath.enable_sample_bsdf  = 0;
+    pcPath.enable_sample_bsdf  = 1;
     pcPath.enable_sample_light = 1;
+    pcPath.enable_accumulation = true;
 }

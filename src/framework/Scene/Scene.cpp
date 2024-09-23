@@ -163,6 +163,15 @@ void Scene::setTextures(std::vector<std::unique_ptr<Texture>>&& textures) {
 void Scene::setBufferRate(BufferRate rate) {
     bufferRate = rate;
 }
+void Scene::setMergeDrawCall(bool mergeDrawCall) {
+    this->mergeDrawCall = mergeDrawCall;
+}
+
+bool Scene::getMergeDrawCall() const {
+    return mergeDrawCall;
+}
+
+
 void Scene::addPrimitive(std::unique_ptr<Primitive> primitive) {
     primitives.push_back(std::move(primitive));
     updateScenePrimitiveIdBuffer();

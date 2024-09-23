@@ -116,7 +116,9 @@ void VXGI::prepare() {
         pass->init();
     }
     // sceneLoadingConfig.sceneScale = glm::vec3(0.001);
-    loadScene(Config::GetInstance().GetScenePath());
+    // loadScene(Config::GetInstance().GetScenePath());
+    loadScene("E:/code/rtrt/resources/sponza/Sponza01.gltf");
+
     auto light_pos   = glm::vec3(0.0f, 128.0f, -225.0f);
     auto light_color = glm::vec3(1.0, 1.0, 1.0);
 

@@ -11,8 +11,7 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
 
 
     LightSample light_sample = sample_li(light, event, light_sample_rand);
-
-
+    
     if (enable_sample_light)
     {
         if (!isBlack(light_sample.indensity) && light_sample.pdf != 0){
@@ -57,7 +56,7 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
             traceRayEXT(tlas,
             gl_RayFlagsOpaqueEXT,
             0xFF, 0, 0, 0, event.p + EPS * world_wi, 0, world_wi, 10000, 0);
-
+            
             bool same_light = light_sample.is_infinite? hitPayload.prim_idx == -1: hitPayload.prim_idx == light.prim_idx;
 
             if (same_light){
