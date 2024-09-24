@@ -74,6 +74,7 @@ void CommandBuffer::endRenderPass() {
 }
 
 CommandBuffer::~CommandBuffer() {
+    vkFreeCommandBuffers(mDevice, mCommandPool, 1, &mCommandBuffer);
 }
 
 void CommandBuffer::beginRenderPass(RenderPass& render_pass, FrameBuffer& frameBuffer, const std::vector<VkClearValue>& clear_values, VkSubpassContents contents) {

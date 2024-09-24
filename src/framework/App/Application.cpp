@@ -437,6 +437,18 @@ void Application::inputEvent(const InputEvent& inputEvent) {
                     case KeyCode::D:
                         camera->keys.right = true;
                         break;
+                    case KeyCode::Up:
+                        camera->keys.up = true;
+                        break;
+                    case KeyCode::Down:
+                        camera->keys.down = true;
+                        break;
+                    case KeyCode::Left:
+                        camera->keys.left = true;
+                        break;
+                    case KeyCode::Right:
+                        camera->keys.right = true;
+                        break;
                     default:
                         break;
                 }
@@ -453,6 +465,18 @@ void Application::inputEvent(const InputEvent& inputEvent) {
                         camera->keys.left = false;
                         break;
                     case KeyCode::D:
+                        camera->keys.right = false;
+                        break;
+                    case KeyCode::Up:
+                        camera->keys.up = false;
+                        break;
+                    case KeyCode::Down:
+                        camera->keys.down = false;
+                        break;
+                    case KeyCode::Left:
+                        camera->keys.left = false;
+                        break;
+                    case KeyCode::Right:
                         camera->keys.right = false;
                         break;
                     default:

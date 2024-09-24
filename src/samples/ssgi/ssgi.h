@@ -7,10 +7,10 @@
 
 #include <App/Application.h>
 
-class VXGI : public Application {
+class PBRLab : public Application {
 public:
     void drawFrame(RenderGraph& rg) override;
-    VXGI();
+    PBRLab();
     void prepare() override;
     void onUpdateGUI() override;
 

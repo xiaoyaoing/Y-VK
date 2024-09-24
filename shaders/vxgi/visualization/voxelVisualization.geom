@@ -64,10 +64,14 @@ void createQuad(vec4 v0, vec4 v1, vec4 v2, vec4 v3, vec4 color)
     Out.uv = vec2(1.0, 0.0);
     EmitVertex();
     gl_Position = v2;    Out.color = color;
-
+        
     Out.uv = vec2(1.0, 1.0);
     EmitVertex();
     EndPrimitive();
+    
+//    if(color.x <= EPSILON && color.y <= EPSILON && color.z <= EPSILON){
+//        debugPrintfEXT("color %f %f %f %f\n", color.x, color.y, color.z, color.a);
+//    }
 }
 
 bool GenerateVoxel(vec4 color){
@@ -81,7 +85,7 @@ void main()
 
     // Expecting u_prevRegionMin and u_prevVolumeMax in the voxel coordinates of the current region
     if (u_hasPrevClipmapLevel > 0 && (all(greaterThanEqual(posV, u_prevRegionMin)) && all(lessThan(posV, u_prevRegionMax))))
-    return;
+        return;
 
     if (u_clipmapLevel == 2){
         //  debugPrintfEXT("pos %d %d %d\n", pos.x, pos.y, pos.z);

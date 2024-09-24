@@ -14,6 +14,7 @@
 #include "Core/math.h"
 #include "Core/Shader/GlslCompiler.h"
 #include "RenderPasses/GBufferPass.h"
+#include "RenderPasses/HizPass.h"
 #include "RenderPasses/SSGIPass.h"
 #include "RenderPasses/ShadowMapPass.h"
 #include "Scene/SceneLoader/SceneLoaderInterface.h"
@@ -24,7 +25,7 @@ struct SkyBoxPushConstant {
     float gamma;
 };
 
-void VXGI::drawFrame(RenderGraph& rg) {
+void PBRLab::drawFrame(RenderGraph& rg) {
 
     // if (scene->getName().find("car.gltf") != std::string::npos) {
     //     view->IteratorPrimitives([](Primitive& primitive) {
@@ -72,7 +73,7 @@ void VXGI::drawFrame(RenderGraph& rg) {
     // }
 }
 
-void VXGI::prepare() {
+void PBRLab::prepare() {
     Application::prepare();
     GlslCompiler::forceRecompile = true;
 
@@ -80,15 +81,19 @@ void VXGI::prepare() {
     mforwardRenderPasses.push_back(std::make_unique<ShadowMapPass>());
     mforwardRenderPasses.push_back(std::make_unique<ForwardPass>());
 
+    
     mRenderPasses.push_back(std::make_unique<GBufferPass>());
+    mRenderPasses.push_back(std::make_unique<ShadowMapPass>());
     mRenderPasses.push_back(std::make_unique<IBLLightingPass>());
-    // mRenderPasses.push_back(std::make_unique<SSGIPass>());
+    mRenderPasses.push_back(std::make_unique<SSGIPass>());
 
     sceneLoadingConfig.indexType = VK_INDEX_TYPE_UINT32;
     // loadScene(FileUtils::getResourcePath("cars/car.gltf"));
-    loadScene("E:/code/car/resources/scenes/bistro/bistro.gltf");
+   // loadScene("E:/code/car/resources/scenes/bistro/bistro.gltf");
+    // loadScene("F:/bistro/bistro.gltf");
     // loadScene(FileUtils::getResourcePath("scenes/sponza/Sponza01.gltf"));
-    scene->addDirectionalLight({0, -0.5f, -0.12f}, glm::vec3(1.0f), 1.5f, vec3(0, 20, 0));
+    loadScene("E:/code/FidelityFX-SSSR/sample/media/Chess/scene.gltf");
+    scene->addDirectionalLight({0, -0.5f, -0.12f}, glm::vec3(1.0f), 1.5f, vec3(0, 50, 0));
 
     RenderPtrManangr::Initalize();
     g_manager->putPtr("view", view.get());
@@ -108,11 +113,11 @@ void VXGI::prepare() {
     ibl             = std::make_unique<IBL>(*device, environmentCube.get());
 }
 
-VXGI::VXGI() : Application("Pbr Lab", 1920, 1080) {
+PBRLab::PBRLab() : Application("Pbr Lab", 1920, 1080) {
     addDeviceExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
 }
 
-void VXGI::onUpdateGUI() {
+void PBRLab::onUpdateGUI() {
     for (auto& pass : mRenderPasses) {
         pass->updateGui();
     }
@@ -131,7 +136,7 @@ void VXGI::onUpdateGUI() {
 }
 
 int main() {
-    auto example = new VXGI();
+    auto example = new PBRLab();
     example->prepare();
     example->mainloop();
     return 0;

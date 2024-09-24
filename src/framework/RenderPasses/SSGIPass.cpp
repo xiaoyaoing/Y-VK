@@ -68,6 +68,7 @@ void SSGIPass::init() {
     PassBase::init();
     mResource       = std::make_unique<SSRResource>();
     mPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), std::vector<std::string>{"postprocess/ssgi.comp"});
+    mPushConstant.use_hiz = 2;
 }
 void SSGIPass::updateGui() {
     PassBase::updateGui();

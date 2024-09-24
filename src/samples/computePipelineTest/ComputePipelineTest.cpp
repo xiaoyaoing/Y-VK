@@ -5,11 +5,11 @@
 #include "Common/VkCommon.h"
 #define PARTICLES_PER_ATTRACTOR 4 * 1024
 
-VXGI::VXGI() {
+ComputePipelineTest::ComputePipelineTest() {
     // addDeviceExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
 }
 
-void VXGI::prepare() {
+void ComputePipelineTest::prepare() {
 
     Application::prepare();
     camera = std::make_shared<Camera>();
@@ -78,7 +78,7 @@ void VXGI::prepare() {
     uniformBuffer          = std::make_unique<Buffer>(*device, sizeof(ubo), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 }
 
-void VXGI::drawFrame(RenderGraph& rg) {
+void ComputePipelineTest::drawFrame(RenderGraph& rg) {
     graphics.ubo.projection = camera->proj();
     graphics.ubo.view       = camera->view();
     graphics.ubo.screenDim  = glm::vec2(static_cast<float>(mWidth), static_cast<float>(mHeight));
@@ -142,7 +142,7 @@ void VXGI::drawFrame(RenderGraph& rg) {
 }
 
 int main(int argc, char* argv[]) {
-    VXGI example;
+    ComputePipelineTest example;
     example.prepare();
     example.mainloop();
     return 0;

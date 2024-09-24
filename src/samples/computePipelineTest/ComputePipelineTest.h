@@ -1,9 +1,9 @@
 #include "App/Application.h"
 
-class VXGI : public  Application
+class ComputePipelineTest : public  Application
 {
 public:
-    VXGI();
+    ComputePipelineTest();
     void prepare() override;
 protected:
 

@@ -85,7 +85,6 @@ void Transform::setRotation(const glm::quat& rotation) {
 }
 void Transform::setRotation(const glm::mat4& rotationMatrix) {
     m_rotation = glm::toQuat(rotationMatrix);
-    auto t     = glm::toMat4(m_rotation);
     updateCache();
     m_eulerAnglesWorld = getEulerAngles();
 }

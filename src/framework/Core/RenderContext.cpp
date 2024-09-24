@@ -78,7 +78,7 @@ RenderContext::RenderContext(Device& device, VkSurfaceKHR surface, Window& windo
 
     for (uint32_t i = 0; i < getSwapChainImageCount(); i++) {
         frameResources.emplace_back(std::make_unique<FrameResource>(device));
-        frameResources.back()->graphicCommandBuffer = std::make_unique<CommandBuffer>(vkGraphicCommandBuffers[i], VK_QUEUE_GRAPHICS_BIT);
+        frameResources.back()->graphicCommandBuffer = std::make_unique<CommandBuffer>(device.getHandle(),device.getCommandPool().getHandle(),vkGraphicCommandBuffers[i], VK_QUEUE_GRAPHICS_BIT);
     }
 
     maxPushConstantSize = device.getProperties().limits.maxPushConstantsSize;

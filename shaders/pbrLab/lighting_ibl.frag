@@ -107,9 +107,9 @@ vec3 ibl_fragment_shader(const in PBRInfo pbr_info, vec3 n, vec3 reflection)
     specular *= scaleIBLAmbient;
 
     if(debugMode == DEBUG_MODEL_DIFFUSE)
-        return diffuseLight;
+        return diffuse;
     if(debugMode == DEBUG_MODEL_SPECULAR)
-        return specularLight;
+        return specular;
     return diffuse + specular;
 }
 
@@ -201,7 +201,7 @@ void main(){
         }
     }
 
-   // color =     vec3(calcute_shadow(lights_info.lights[0], world_pos));
+    color =   color *   vec3(calcute_shadow(lights_info.lights[0], world_pos));
 
     if (debugMode == DEBUG_MODEL_NORMAL)
     {

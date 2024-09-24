@@ -8,21 +8,7 @@
 #include "Core/Images/ImageView.h"
 
 #include "Core/Images/Image.h"
-
-struct Mipmap {
-    /// Mipmap level
-    uint32_t level = 0;
-
-    /// Byte offset used for uploading
-    uint32_t offset = 0;
-
-    /// Width depth and height of the mipmap
-    VkExtent3D extent = {0, 0, 0};
-
-    bool isInitialized() const {
-        return extent.width != 0 && extent.height != 0 && extent.depth != 0;
-    }
-};
+#include "IO/ImageIO.h"
 
 class SgImage {
 public:

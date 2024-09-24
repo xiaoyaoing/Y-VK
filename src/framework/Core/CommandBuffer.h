@@ -21,6 +21,7 @@ class Subpass;
 class FrameBuffer;
 
 class Pipeline;
+class CommandPoool;
 
 class CommandBuffer {
 public:
@@ -35,7 +36,8 @@ public:
     //Avoid right value can't be located.
     const VkCommandBuffer* getHandlePointer() const { return &mCommandBuffer; }
 
-    explicit CommandBuffer(VkCommandBuffer buffer, VkQueueFlags flag) : mCommandBuffer(buffer), mQueueFlag(flag) {
+    explicit CommandBuffer(VkDevice device,VkCommandPool commandPool,VkCommandBuffer buffer, VkQueueFlags flag) : mDevice(device), mCommandPool(commandPool),
+    mCommandBuffer(buffer), mQueueFlag(flag) {
     }
 
     void beginRecord(VkCommandBufferUsageFlags usage);
@@ -93,4 +95,6 @@ public:
 protected:
     VkQueueFlags    mQueueFlag{VK_QUEUE_GRAPHICS_BIT};
     VkCommandBuffer mCommandBuffer;
+    VkDevice         mDevice;
+    VkCommandPool   mCommandPool;
 };

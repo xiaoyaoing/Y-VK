@@ -51,5 +51,5 @@ CommandBuffer CommandPool::allocateCommandBuffer(VkCommandBufferLevel level, boo
         VK_CHECK_RESULT(vkBeginCommandBuffer(buffer, &beginInfo));
     }
 
-    return CommandBuffer(buffer, queueFlags);
+    return CommandBuffer(_device.getHandle(),_pool,buffer, queueFlags);
 }

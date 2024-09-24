@@ -147,4 +147,3 @@ target_sources(tiny_obj_loader PRIVATE ${TINY_OBJ_LOADER_FILES})
 
 add_subdirectory(volk)
 add_subdirectory(json)
-add_subdirectory(dds_image)

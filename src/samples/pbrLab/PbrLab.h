@@ -7,7 +7,7 @@
 #include "Rendering/IBL.h"
 #include "RenderPasses/RenderPassBase.h"
 /**
- * @class VXGI
+ * @class PBRLab
  * @brief A sample application demonstrating PBR (Physically Based Rendering) techniques.
  *
  * This class extends the Application base class to create a PBR rendering example.
@@ -22,11 +22,11 @@
  * It also provides methods for updating the GUI and drawing frames using a render graph.
  */
 
-class VXGI : public Application {
+class PBRLab : public Application {
 public:
     void prepare() override;
 
-    VXGI();
+    PBRLab();
 
 protected:
     std::vector<std::unique_ptr<PassBase>> mRenderPasses;

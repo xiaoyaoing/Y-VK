@@ -55,9 +55,9 @@ void VXGI::prepare() {
     Application::prepare();
 
     
-   sceneLoadingConfig.sceneScale = glm::vec3(0.08f);
+   sceneLoadingConfig.sceneScale = glm::vec3(0.3f);
    // loadScene(FileUtils::getResourcePath("sponza/Sponza01.gltf"));
-   loadScene("E:/code/moerengine-3dgs/asset/default/scenes/sponza/Sponza01.gltf");
+    loadScene("E:/code/moerengine-3dgs/asset/default/scenes/sponza/Sponza01.gltf");
     // loadScene("E:/code/vkframeworklearn2/resources/cornell-box/cornellBox.gltf");
     
     GlslCompiler::forceRecompile = false;
@@ -94,7 +94,7 @@ void VXGI::prepare() {
     }
 
     passes.emplace_back(std::make_unique<GBufferPass>());
-    passes.emplace_back(std::make_unique<ShadowMapPass>());
+    // passes.emplace_back(std::make_unique<ShadowMapPass>());
     passes.emplace_back(std::make_unique<VoxelizationPass>());
     passes.emplace_back(std::make_unique<LightInjectionPass>());
     passes.emplace_back(std::make_unique<CopyAlphaPass>());

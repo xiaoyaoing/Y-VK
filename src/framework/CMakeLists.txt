@@ -17,7 +17,6 @@ target_link_libraries(${target_name} PUBLIC
         imgui
         ktx
         astc
-        dds_image
         volk
         ctpl
         nlohmann_json

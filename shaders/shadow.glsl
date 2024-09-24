@@ -57,6 +57,11 @@ const mat4 biasMat = mat4(
 
 vec3  calcute_shadow(in Light light, vec3 world_pos){
     int shadow_map_index = int(light.info.z);
+    
+    if(shadow_map_index <0){
+        return vec3(1.0);
+    }
+    
     mat4 mvp = light.matrix;
     
     vec4 shadowCoord = biasMat * mvp * vec4(world_pos, 1.0);

@@ -8,181 +8,203 @@
 #include <stb_image_write.h>
 #include <vector>
 
-#include <dds.hpp>
+// #include <dds.hpp>
 
-VkFormat ConvertFormatFromDxgiFormat(DXGI_FORMAT format, bool alpha_flag) {
-    switch (format) {
-        case DXGI_FORMAT_BC1_UNORM: {
-            if (alpha_flag)
+#define TINYDDSLOADER_IMPLEMENTATION
+#include "tinyddsloader.h"
+
+namespace tinyddsloader{
+     VkFormat ConvertFormatFromDxgiFormat(DDSFile::DXGIFormat format) {
+        switch (format) {
+        case DDSFile::DXGIFormat::BC1_UNorm: {
                 return VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
-            else
-                return VK_FORMAT_BC1_RGB_UNORM_BLOCK;
+
         }
-        case DXGI_FORMAT_BC1_UNORM_SRGB: {
-            if (alpha_flag)
-                return VK_FORMAT_BC1_RGBA_SRGB_BLOCK;
-            else
+        case DDSFile::DXGIFormat::BC1_UNorm_SRGB: {
                 return VK_FORMAT_BC1_RGB_SRGB_BLOCK;
         }
 
-        case DXGI_FORMAT_BC2_UNORM:
+        case DDSFile::DXGIFormat::BC2_UNorm:
             return VK_FORMAT_BC2_UNORM_BLOCK;
-        case DXGI_FORMAT_BC2_UNORM_SRGB:
+        case DDSFile::DXGIFormat::BC2_UNorm_SRGB:
             return VK_FORMAT_BC2_SRGB_BLOCK;
-        case DXGI_FORMAT_BC3_UNORM:
+        case DDSFile::DXGIFormat::BC3_UNorm:
             return VK_FORMAT_BC3_UNORM_BLOCK;
-        case DXGI_FORMAT_BC3_UNORM_SRGB:
+        case DDSFile::DXGIFormat::BC3_UNorm_SRGB:
             return VK_FORMAT_BC3_SRGB_BLOCK;
-        case DXGI_FORMAT_BC4_UNORM:
+        case DDSFile::DXGIFormat::BC4_UNorm:
             return VK_FORMAT_BC4_UNORM_BLOCK;
-        case DXGI_FORMAT_BC4_SNORM:
+        case DDSFile::DXGIFormat::BC4_SNorm:
             return VK_FORMAT_BC4_SNORM_BLOCK;
-        case DXGI_FORMAT_BC5_UNORM:
+        case DDSFile::DXGIFormat::BC5_UNorm:
             return VK_FORMAT_BC5_UNORM_BLOCK;
-        case DXGI_FORMAT_BC5_SNORM:
+        case DDSFile::DXGIFormat::BC5_SNorm:
             return VK_FORMAT_BC5_SNORM_BLOCK;
-        case DXGI_FORMAT_BC7_UNORM:
+        case DDSFile::DXGIFormat::BC7_UNorm:
             return VK_FORMAT_BC7_UNORM_BLOCK;
-        case DXGI_FORMAT_BC7_UNORM_SRGB:
+        case DDSFile::DXGIFormat::BC7_UNorm_SRGB:
             return VK_FORMAT_BC7_SRGB_BLOCK;
 
         // 8-bit wide formats
-        case DXGI_FORMAT_R8_UNORM:
+        case DDSFile::DXGIFormat::R8_UNorm:
             return VK_FORMAT_R8_UNORM;
-        case DXGI_FORMAT_R8_UINT:
+        case DDSFile::DXGIFormat::R8_UInt:
             return VK_FORMAT_R8_UINT;
-        case DXGI_FORMAT_R8_SNORM:
+        case DDSFile::DXGIFormat::R8_SNorm:
             return VK_FORMAT_R8_SNORM;
-        case DXGI_FORMAT_R8_SINT:
+        case DDSFile::DXGIFormat::R8_SInt:
             return VK_FORMAT_R8_SINT;
 
         // 16-bit wide formats
-        case DXGI_FORMAT_R8G8_UNORM:
+        case DDSFile::DXGIFormat::R8G8_UNorm:
             return VK_FORMAT_R8G8_UNORM;
-        case DXGI_FORMAT_R8G8_UINT:
+        case DDSFile::DXGIFormat::R8G8_UInt:
             return VK_FORMAT_R8G8_SINT;
-        case DXGI_FORMAT_R8G8_SNORM:
+        case DDSFile::DXGIFormat::R8G8_SNorm:
             return VK_FORMAT_R8G8_SNORM;
-        case DXGI_FORMAT_R8G8_SINT:
+        case DDSFile::DXGIFormat::R8G8_SInt:
             return VK_FORMAT_R8G8_SINT;
 
-        case DXGI_FORMAT_R16_FLOAT:
+        case DDSFile::DXGIFormat::R16_Float:
             return VK_FORMAT_R16_SFLOAT;
-        case DXGI_FORMAT_R16_UNORM:
+        case DDSFile::DXGIFormat::R16_UNorm:
             return VK_FORMAT_R16_UNORM;
-        case DXGI_FORMAT_R16_UINT:
+        case DDSFile::DXGIFormat::R16_UInt:
             return VK_FORMAT_R16_UINT;
-        case DXGI_FORMAT_R16_SNORM:
+        case DDSFile::DXGIFormat::R16_SNorm:
             return VK_FORMAT_R16_SNORM;
-        case DXGI_FORMAT_R16_SINT:
+        case DDSFile::DXGIFormat::R16_SInt:
             return VK_FORMAT_R16_SINT;
 
-        case DXGI_FORMAT_B5G5R5A1_UNORM:
+        case DDSFile::DXGIFormat::B5G5R5A1_UNorm:
             return VK_FORMAT_B5G5R5A1_UNORM_PACK16;
-        case DXGI_FORMAT_B5G6R5_UNORM:
+        case DDSFile::DXGIFormat::B5G6R5_UNorm:
             return VK_FORMAT_B5G6R5_UNORM_PACK16;
-        case DXGI_FORMAT_B4G4R4A4_UNORM:
+        case DDSFile::DXGIFormat::B4G4R4A4_UNorm:
             return VK_FORMAT_B4G4R4A4_UNORM_PACK16;
 
         // 32-bit wide formats
-        case DXGI_FORMAT_R8G8B8A8_UNORM:
+        case DDSFile::DXGIFormat::R8G8B8A8_UNorm:
             return VK_FORMAT_R8G8B8A8_UNORM;
-        case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
+        case DDSFile::DXGIFormat::R8G8B8A8_UNorm_SRGB:
             return VK_FORMAT_R8G8B8A8_SRGB;
-        case DXGI_FORMAT_R8G8B8A8_UINT:
+        case DDSFile::DXGIFormat::R8G8B8A8_UInt:
             return VK_FORMAT_R8G8B8A8_UINT;
-        case DXGI_FORMAT_R8G8B8A8_SNORM:
+        case DDSFile::DXGIFormat::R8G8B8A8_SNorm:
             return VK_FORMAT_R8G8B8A8_SNORM;
-        case DXGI_FORMAT_R8G8B8A8_SINT:
+        case DDSFile::DXGIFormat::R8G8B8A8_SInt:
             return VK_FORMAT_R8G8B8A8_SINT;
-        case DXGI_FORMAT_B8G8R8A8_UNORM:
+        case DDSFile::DXGIFormat::B8G8R8A8_UNorm:
             return VK_FORMAT_B8G8R8A8_UNORM;
-        case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
+        case DDSFile::DXGIFormat::B8G8R8A8_UNorm_SRGB:
             return VK_FORMAT_B8G8R8A8_SRGB;
 
-        case DXGI_FORMAT_R16G16_FLOAT:
+        case DDSFile::DXGIFormat::R16G16_Float:
             return VK_FORMAT_R16G16_SFLOAT;
-        case DXGI_FORMAT_R16G16_UNORM:
+        case DDSFile::DXGIFormat::R16G16_UNorm:
             return VK_FORMAT_R16G16_UNORM;
-        case DXGI_FORMAT_R16G16_UINT:
+        case DDSFile::DXGIFormat::R16G16_UInt:
             return VK_FORMAT_R16G16_UINT;
-        case DXGI_FORMAT_R16G16_SNORM:
+        case DDSFile::DXGIFormat::R16G16_SNorm:
             return VK_FORMAT_R16G16_SNORM;
-        case DXGI_FORMAT_R16G16_SINT:
+        case DDSFile::DXGIFormat::R16G16_SInt:
             return VK_FORMAT_R16G16_SINT;
 
-        case DXGI_FORMAT_R32_FLOAT:
+        case DDSFile::DXGIFormat::R32_Float:
             return VK_FORMAT_R32_SFLOAT;
-        case DXGI_FORMAT_R32_UINT:
+        case DDSFile::DXGIFormat::R32_UInt:
             return VK_FORMAT_R32_UINT;
-        case DXGI_FORMAT_R32_SINT:
+        case DDSFile::DXGIFormat::R32_SInt:
             return VK_FORMAT_R32_SINT;
 
-        case DXGI_FORMAT_R9G9B9E5_SHAREDEXP:
+        case DDSFile::DXGIFormat::R9G9B9E5_SHAREDEXP:
             return VK_FORMAT_E5B9G9R9_UFLOAT_PACK32;
-        case DXGI_FORMAT_R10G10B10A2_UNORM:
+        case DDSFile::DXGIFormat::R10G10B10A2_UNorm:
             return VK_FORMAT_A2B10G10R10_UNORM_PACK32;
-        case DXGI_FORMAT_R10G10B10A2_UINT:
+        case DDSFile::DXGIFormat::R10G10B10A2_UInt:
             return VK_FORMAT_A2B10G10R10_UINT_PACK32;
-        case DXGI_FORMAT_R11G11B10_FLOAT:
+        case DDSFile::DXGIFormat::R11G11B10_Float:
             return VK_FORMAT_B10G11R11_UFLOAT_PACK32;
 
         // 64-bit wide formats
-        case DXGI_FORMAT_R16G16B16A16_FLOAT:
+        case DDSFile::DXGIFormat::R16G16B16A16_Float:
             return VK_FORMAT_R16G16B16A16_SFLOAT;
-        case DXGI_FORMAT_R16G16B16A16_SINT:
+        case DDSFile::DXGIFormat::R16G16B16A16_SInt:
             return VK_FORMAT_R16G16B16A16_SINT;
-        case DXGI_FORMAT_R16G16B16A16_UINT:
+        case DDSFile::DXGIFormat::R16G16B16A16_UInt:
             return VK_FORMAT_R16G16B16A16_UINT;
-        case DXGI_FORMAT_R16G16B16A16_UNORM:
+        case DDSFile::DXGIFormat::R16G16B16A16_UNorm:
             return VK_FORMAT_R16G16B16A16_UNORM;
-        case DXGI_FORMAT_R16G16B16A16_SNORM:
+        case DDSFile::DXGIFormat::R16G16B16A16_SNorm:
             return VK_FORMAT_R16G16B16A16_SNORM;
 
-        case DXGI_FORMAT_R32G32_FLOAT:
+        case DDSFile::DXGIFormat::R32G32_Float:
             return VK_FORMAT_R32G32_SFLOAT;
-        case DXGI_FORMAT_R32G32_UINT:
+        case DDSFile::DXGIFormat::R32G32_UInt:
             return VK_FORMAT_R32G32_UINT;
-        case DXGI_FORMAT_R32G32_SINT:
+        case DDSFile::DXGIFormat::R32G32_SInt:
             return VK_FORMAT_R32G32_SINT;
 
         // 96-bit wide formats
-        case DXGI_FORMAT_R32G32B32_FLOAT:
+        case DDSFile::DXGIFormat::R32G32B32_Float:
             return VK_FORMAT_R32G32B32_SFLOAT;
-        case DXGI_FORMAT_R32G32B32_UINT:
+        case DDSFile::DXGIFormat::R32G32B32_UInt:
             return VK_FORMAT_R32G32B32_UINT;
-        case DXGI_FORMAT_R32G32B32_SINT:
+        case DDSFile::DXGIFormat::R32G32B32_SInt:
             return VK_FORMAT_R32G32B32_SINT;
 
         // 128-bit wide formats
-        case DXGI_FORMAT_R32G32B32A32_FLOAT:
+        case DDSFile::DXGIFormat::R32G32B32A32_Float:
             return VK_FORMAT_R32G32B32A32_SFLOAT;
-        case DXGI_FORMAT_R32G32B32A32_UINT:
+        case DDSFile::DXGIFormat::R32G32B32A32_UInt:
             return VK_FORMAT_R32G32B32A32_UINT;
-        case DXGI_FORMAT_R32G32B32A32_SINT:
+        case DDSFile::DXGIFormat::R32G32B32A32_SInt:
             return VK_FORMAT_R32G32B32A32_SINT;
 
-        case DXGI_FORMAT_R8G8_B8G8_UNORM:
-        case DXGI_FORMAT_G8R8_G8B8_UNORM:
-        case DXGI_FORMAT_YUY2:
+        case DDSFile::DXGIFormat::R8G8_B8G8_UNorm:
+        case DDSFile::DXGIFormat::G8R8_G8B8_UNorm:
+        case DDSFile::DXGIFormat::YUY2:
         default:
             return VK_FORMAT_UNDEFINED;
+                
+        }
     }
 }
 
 ImageIO::ImageDesc ImageIO::loadImage(const std::string& path) {
     auto ext = FileUtils::getFileExt(path);
     if (ext == "dds") {
-        LOGI("Loading DDS image from {}", path.c_str());
+        // LOGI("Loading DDS image from {}", path.c_str());
         ImageDesc  desc;
-        dds::Image image;
-        auto       result = dds::readFile(path, &image);
-        assert(result == dds::Success);
-        desc.extent = {image.width, image.height, image.depth};
-        desc.data.resize(image.data.size());
-        memcpy(desc.data.data(), image.data.data(), image.data.size());
-        desc.format              = ConvertFormatFromDxgiFormat(image.format, image.supportsAlpha);
-        desc.needGenerateMipmaps = false;
+        
+        tinyddsloader::DDSFile dds;
+        auto ret = dds.Load(path.c_str());
+        if (tinyddsloader::Result::Success != ret) {
+            LOGE("Failed to load dds file: {}", path.c_str());
+        }
+
+        int datasize = 0;
+        desc.mipmaps.resize(dds.GetMipCount() * dds.GetArraySize());
+        for (uint32_t arrayIdx = 0; arrayIdx < dds.GetArraySize(); arrayIdx++) {
+            for (uint32_t mipIdx = 0; mipIdx < dds.GetMipCount(); mipIdx++) {
+                const auto* imageData = dds.GetImageData(mipIdx, arrayIdx);
+                desc.mipmaps[arrayIdx * dds.GetMipCount() + mipIdx].level = mipIdx;
+                desc.mipmaps[arrayIdx * dds.GetMipCount() + mipIdx].extent.width = imageData->m_width;
+                desc.mipmaps[arrayIdx * dds.GetMipCount() + mipIdx].extent.height = imageData->m_height;
+                desc.mipmaps[arrayIdx * dds.GetMipCount() + mipIdx].extent.depth = imageData->m_depth;
+                datasize += imageData->m_memSlicePitch;
+            }
+        }
+        desc.data.resize(datasize);
+        for (uint32_t arrayIdx = 0; arrayIdx < dds.GetArraySize(); arrayIdx++) {
+            for (uint32_t mipIdx = 0; mipIdx < dds.GetMipCount(); mipIdx++) {
+                const auto* imageData = dds.GetImageData(mipIdx, arrayIdx);
+                memcpy(desc.data.data() + desc.mipmaps[arrayIdx * dds.GetMipCount() + mipIdx].offset, imageData->m_mem, imageData->m_memSlicePitch);
+            }
+        }
+        desc.needGenerateMipmaps = dds.GetMipCount() == 1;
+        desc.format = ConvertFormatFromDxgiFormat(dds.GetFormat());
+        desc.extent = VkExtent3D{dds.GetWidth(), dds.GetHeight(), dds.GetDepth()};
         return desc;
     }
 }

@@ -62,7 +62,6 @@ const Sampler& Texture::getSampler() const {
 //     g_context->submit(commandBuffer);
 //     texture->sampler = std::make_unique<Sampler>(device, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, mipmaps.size());
 // }
-
 static void initVKTexture(Device& device, 
                         std::unique_ptr<Texture>& texture,
                         CommandBuffer& commandBuffer,
@@ -75,7 +74,8 @@ static void initVKTexture(Device& device,
 
     uint32_t layerCount = texture->image->getArrayLayerCount();
     auto&    mipmaps    = texture->image->getMipMaps();
-    for (int i = 0; i < mipmaps.size(); i++) {
+    
+    for (int i = 0; i <  mipmaps.size(); i++) {
         VkBufferImageCopy imageCopy{};
         imageCopy.bufferRowLength                 = 0;
         imageCopy.bufferImageHeight               = 0;
@@ -265,12 +265,13 @@ void initTexturesInBatch(std::vector<std::unique_ptr<Texture>>& textures,int sta
     if(end <= start){
         return;
     }
-    CommandBuffer commandBuffer = g_context->getDevice().createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+    // start = 31;end =32;
+    CommandBuffer commandBuffer = g_context->getDevice().createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true,VK_QUEUE_TRANSFER_BIT);
     uint32_t      size{0}, offset{0};
     for (int i = start; i < end; i++) {
         size += textures[i]->image->getBufferSize();
     }
-    auto buffer = Buffer(g_context->getDevice(), size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+    auto buffer = Buffer(g_context->getDevice(), size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
     for (int i = start; i < end; i++) {
         initVKTexture(g_context->getDevice(), textures[i], commandBuffer, buffer, offset);
         offset += textures[i]->image->getBufferSize();
