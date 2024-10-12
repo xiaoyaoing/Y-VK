@@ -13,10 +13,6 @@ precision mediump float;
 #include "vxgi.glsl"
 #include "../shadow.glsl"
 #include "../brdf.glsl"
-layout(input_attachment_index = 0, binding = 0, set=2) uniform subpassInput gbuffer_diffuse_roughness;
-
-
-
 
 
 layout(std430, set = 0, binding = 2) readonly buffer _GlobalPrimitiveUniform {
@@ -34,8 +30,8 @@ layout (location = 3) flat in uint in_primitive_index;
 
 
 
-layout(binding = 2, set = 2,r32ui) volatile uniform uimage3D radiance_image;
- 
+layout(binding = 2, set = 2, r32ui) volatile uniform uimage3D radiance_image;
+
 layout(binding = 4, set = 0) uniform LightsInfo
 {
     Light lights[MAX_LIGHTS];
@@ -120,14 +116,14 @@ void main(){
     vec3 world_pos = in_position;
 
 
-    if(isOutsideVoxelizationRegion(world_pos)){
+    if (isOutsideVoxelizationRegion(world_pos)){
         discard;
     }
-    if(isInsideDownsampleRegion(world_pos)){
+    if (isInsideDownsampleRegion(world_pos)){
         discard;
     }
 
-    
+
     ivec3 image_coords = computeImageCoords(world_pos);
 
     uint material_index = primitive_infos[in_primitive_index].material_index;
@@ -197,17 +193,17 @@ void main(){
             pbr_info.VdotH = clamp(dot(view_dir, half_vector), 0.0, 1.0);
 
             light_contribution +=
-              apply_light(lights_info.lights[i], world_pos, normal) * diffuse(pbr_info) * calcute_shadow(lights_info.lights[i], world_pos);
+            apply_light(lights_info.lights[i], world_pos, normal) * diffuse(pbr_info) * calcute_shadow(lights_info.lights[i], world_pos);
         }
 
         if (all(equal(light_contribution.xyz, vec3(0.0))))
         {
             discard;
         }
-    
+
         ivec3 faceIndex = calculateVoxelFaceIndex(-normal);
         light_contribution = clamp(light_contribution, vec3(0.0), vec3(1.0));
-        voxelAtomicRGBA8Avg(image_coords, faceIndex, vec4(light_contribution, 1.0),abs(normal));
+        voxelAtomicRGBA8Avg(image_coords, faceIndex, vec4(light_contribution, 1.0), abs(normal));
     }
 }
 

@@ -22,15 +22,15 @@ layout(binding = 4, set = 0) uniform LightsInfo
     Light lights[MAX_LIGHTS];
 }lights_info;
 
-#define DEBUG_DIFFUSE_ONLY   				0
-#define DEBUG_SPECULAR_ONLY  				1
-#define DEBUG_NORMAL_ONLY 					2
-#define DEBUG_MIN_LEVEL_ONLY				3
-#define DEBUG_DIRECT_CONTRIBUTION_ONLY 		4
-#define DEBUG_INDIRECT_DIFFUSE_ONLY 		5
-#define DEBUG_INDIRECT_SPECULAR_ONLY 		6
-#define DEBUG_AMBIENT_OCCLUSION_ONLY 		7
-#define DEBUG_GI_OUTPUT 					8
+#define DEBUG_DIFFUSE_ONLY                0
+#define DEBUG_SPECULAR_ONLY                1
+#define DEBUG_NORMAL_ONLY                    2
+#define DEBUG_MIN_LEVEL_ONLY                3
+#define DEBUG_DIRECT_CONTRIBUTION_ONLY        4
+#define DEBUG_INDIRECT_DIFFUSE_ONLY        5
+#define DEBUG_INDIRECT_SPECULAR_ONLY        6
+#define DEBUG_AMBIENT_OCCLUSION_ONLY        7
+#define DEBUG_GI_OUTPUT                    8
 
 layout (push_constant) uniform PushConstants
 {
@@ -45,8 +45,7 @@ layout (push_constant) uniform PushConstants
     float uIndirectSpecularIntensity;// 44
     float uOcclusionDecay;// 48
     int   uEnable32Cones;// 52
-    int   uDirectLighting;//56
-    int   uIndirectLighting;//60
+    float   uDirectLighting;//56
     float fopacityScale;
     float fmaxTraceDistance;
     uint  debugMode;
@@ -75,6 +74,7 @@ layout (push_constant) uniform PushConstants
 
 #define  CLIP_LEVEL_COUNT 6
 #define  VOXEL_FACE_COUNT 6
+const float MIN_SPECULAR_APERTURE = 0.05;
 
 
 
@@ -169,12 +169,12 @@ vec4  minLevelToColor    (float min_level);
 float getMinLevel(vec3 posW)
 {
     float distanceToCenter = length(volume_center - posW);
-//    float distanceToCenter = length(posW);
+    //    float distanceToCenter = length(posW);
     float minRadius = voxel_size * clip_map_resoultion * 0.5;
     float minLevel = log2(distanceToCenter / minRadius);
     minLevel = max(0.0, minLevel);
-    
-//    return minLevel;
+
+    //    return minLevel;
 
     float radius = minRadius * exp2(ceil(minLevel));
     float f = distanceToCenter / radius;
@@ -203,66 +203,71 @@ void main(){
     vec3 world_pos = worldPosFromDepth(in_uv, depth);
 
     //diffuse cone 
-    vec4 indirect_contribution = vec4(0,0,0,1);
+    vec4 indirect_diffuse_contribution = vec4(0, 0, 0, 1);
     float min_level = getMinLevel(world_pos);
     float cur_voxel_size = voxel_size * exp2(min_level);
 
     vec3 start_pos = world_pos + cur_voxel_size * normal * uTraceStartOffset;// * 3;
 
 
-    if(uEnable32Cones > 0 )
-    {for (int i = 0; i < DIFFUSE_CONE_COUNT_32; ++i)
+    if (uEnable32Cones > 0)
+    { for (int i = 0; i < DIFFUSE_CONE_COUNT_32; ++i)
     {
         float cos_theta = dot(normal, DIFFUSE_CONE_DIRECTIONS_32[i]);
-        
+
         //cos_theta = abs(cos_theta);
         if (cos_theta < 0.0)
-            continue;
+        continue;
 
-        indirect_contribution += 
+        indirect_diffuse_contribution +=
         traceCone(start_pos, DIFFUSE_CONE_DIRECTIONS_32[i], DIFFUSE_CONE_APERTURE_32,
-        fmaxTraceDistance, min_level, 1) * 
+        fmaxTraceDistance, min_level, 1) *
         cos_theta;// / 3.141592;
     }
-    indirect_contribution /= DIFFUSE_CONE_COUNT_32;}
+        indirect_diffuse_contribution /= DIFFUSE_CONE_COUNT_32; }
     else {
         for (int i = 0; i < DIFFUSE_CONE_COUNT_16; ++i)
         {
             float cos_theta = dot(normal, DIFFUSE_CONE_DIRECTIONS_16[i]);
-          //  cos_theta = abs(cos_theta);
+            //  cos_theta = abs(cos_theta);
 
             if (cos_theta < 0.0)
-                continue;
+            continue;
 
-            indirect_contribution += traceCone(start_pos, DIFFUSE_CONE_DIRECTIONS_16[i], DIFFUSE_CONE_APERTURE_16,
+            indirect_diffuse_contribution += traceCone(start_pos, DIFFUSE_CONE_DIRECTIONS_16[i], DIFFUSE_CONE_APERTURE_16,
             fmaxTraceDistance, min_level, 1) * cos_theta;// / 3.141592;
         }
-        indirect_contribution /= DIFFUSE_CONE_COUNT_16;
+        indirect_diffuse_contribution /= DIFFUSE_CONE_COUNT_16;
     }
-    
-//    indirect_contribution = traceCone(start_pos, DIFFUSE_CONE_DIRECTIONS_32[0], DIFFUSE_CONE_APERTURE_32,
-//    fmaxTraceDistance, min_level, 1);
-
-
 
     vec3 diffuse_color = diffuse_roughness.xyz;
     float perceptual_roughness = diffuse_roughness.a;
+    float roughness = sqrt(2.0 / (metallic + 2.0));
+
 
     vec3 view_dir = per_frame.camera_pos - world_pos;
-    vec3 indirect_specular_contribution = vec3(0.0);
-    float roughness = sqrt(2.0 / (metallic + 2.0));
+    vec3 specular_reflect_dir = reflect(-view_dir, normal);
+    specular_reflect_dir = normalize(specular_reflect_dir);
+
+    vec4 indirect_specular_contribution= traceCone(start_pos, specular_reflect_dir, max(roughness, MIN_SPECULAR_APERTURE), fmaxTraceDistance, min_level, 1) * uIndirectSpecularIntensity;
+    indirect_specular_contribution.rgb *=  mix(vec3(0.04), diffuse_color, metallic);
+
+
+
+
+
     //specular cone 
-  //  indirect_contribution += indirect_specular_contribution;
+    //  indirect_contribution += indirect_specular_contribution;
 
     //calcuate sppecular contribution
     vec3 direct_contribution = vec3(0.0);
 
     bool has_emission = any(greaterThan(emission, vec3(1e-6)));
-    //    if (has_emission)
-    //    {
-    //        direct_contribution+= emission;
-    //    }
-    //    else
+    if (has_emission)
+    {
+        direct_contribution+= emission;
+    }
+    else
     {
         // calculate Microfacet BRDF model
         // Roughness is authored as perceptual roughness; as is convention
@@ -297,56 +302,55 @@ void main(){
 
             // vec3 light_contribution = microfacetBRDF(pbr_info) * calcuate_light_intensity(lights_info.lights[i], world_pos) * calcute_shadow(lights_info.lights[i], world_pos);
             vec3 light_contribution = apply_light(lights_info.lights[i], world_pos, normal) * microfacetBRDF(pbr_info) * calcute_shadow(lights_info.lights[i], world_pos);
-//            light_contribution = calcute_shadow(lights_info.lights[i], world_pos);
+            //            light_contribution = calcute_shadow(lights_info.lights[i], world_pos);
             direct_contribution += light_contribution;
         }
         //  direct_contribution = vec3(1);
     }
-    direct_contribution *= indirect_contribution.a;
-    
+    direct_contribution *= indirect_diffuse_contribution.a;
     direct_contribution *= uDirectLighting;
-    indirect_contribution.rgb *= uIndirectLighting;
-    indirect_contribution.rgb *= diffuse_color;
-    //    direct_contribution = world_pos / 20.f;
-//    out_color = vec4(direct_contribution * uDirectLighting + indirect_contribution.rgb * uIndirectLighting, 1);
-    if(debugMode == DEBUG_DIFFUSE_ONLY)
+
+    indirect_diffuse_contribution.rgb *= uIndirectDiffuseIntensity;
+    indirect_diffuse_contribution.rgb *= diffuse_color;
+
+    if (debugMode == DEBUG_DIFFUSE_ONLY)
     {
-        out_color = vec4(indirect_contribution.rgb, 1);
+        out_color = vec4(indirect_diffuse_contribution.rgb, 1);
     }
-    else if(debugMode == DEBUG_SPECULAR_ONLY)
+    else if (debugMode == DEBUG_SPECULAR_ONLY)
     {
         out_color = vec4(direct_contribution, 1);
     }
-    else if(debugMode == DEBUG_NORMAL_ONLY)
+    else if (debugMode == DEBUG_NORMAL_ONLY)
     {
         out_color = vec4(normal * 0.5 + 0.5, 1);
     }
-    else if(debugMode == DEBUG_MIN_LEVEL_ONLY)
+    else if (debugMode == DEBUG_MIN_LEVEL_ONLY)
     {
         out_color = minLevelToColor(min_level);
     }
-    else if(debugMode == DEBUG_DIRECT_CONTRIBUTION_ONLY)
+    else if (debugMode == DEBUG_DIRECT_CONTRIBUTION_ONLY)
     {
         out_color = vec4(direct_contribution, 1);
     }
-    else if(debugMode == DEBUG_INDIRECT_DIFFUSE_ONLY)
+    else if (debugMode == DEBUG_INDIRECT_DIFFUSE_ONLY)
     {
-        out_color = vec4(indirect_contribution.rgb, 1);
+        out_color = vec4(indirect_diffuse_contribution.rgb, 1);
     }
-    else if(debugMode == DEBUG_INDIRECT_SPECULAR_ONLY)
+    else if (debugMode == DEBUG_INDIRECT_SPECULAR_ONLY)
     {
-        out_color = vec4(indirect_specular_contribution, 1);
+        out_color = vec4(indirect_specular_contribution.rgb, 1);
     }
-    else if(debugMode == DEBUG_AMBIENT_OCCLUSION_ONLY)
+    else if (debugMode == DEBUG_AMBIENT_OCCLUSION_ONLY)
     {
-        out_color = vec4(indirect_contribution.a);
+        out_color = vec4(indirect_diffuse_contribution.a);
     }
-    else if(debugMode == DEBUG_GI_OUTPUT)
+    else if (debugMode == DEBUG_GI_OUTPUT)
     {
-        out_color = vec4(direct_contribution * uDirectLighting + indirect_contribution.rgb * uIndirectLighting, 1);
+        out_color = vec4(direct_contribution + indirect_diffuse_contribution.rgb + indirect_specular_contribution.rgb, 1);
     }
-    
-//    out_color.rgb = world_pos/20.f;
+
+    //    out_color.rgb = world_pos/20.f;
 }
 
 
@@ -377,7 +381,7 @@ vec4 sampleClipmapLinear(sampler3D clipmap, vec3 worldPos, float curLevel, ivec3
     vec3 faceOffset  = vec3(faceIndex) / VOXEL_FACE_COUNT;
     vec4 lowerSample = sampleClipmap(clipmap, worldPos, lowerLevel, faceOffset, weight);
     vec4 upperSample = sampleClipmap(clipmap, worldPos, upperLevel, faceOffset, weight);
-    
+
     return mix(lowerSample, upperSample, fract(curLevel));
 }
 
@@ -416,7 +420,7 @@ vec4 traceCone(vec3 start_pos, vec3 direction, float aperture, float maxDistance
     float curSegmentLength    = cur_voxel_size;
     float minRadius        = voxel_size  * 0.5 * clip_map_resoultion;
 
-//    maxDistance = 1000.f;
+    //    maxDistance = 1000.f;
     while ((step < maxDistance) && (occlusion < 0.95))
     {
         vec3  position                = start_pos + direction * step;
@@ -426,7 +430,7 @@ vec4 traceCone(vec3 start_pos, vec3 direction, float aperture, float maxDistance
         curLevel = log2(diameter / voxel_size);
         //curLevel = min_level
         curLevel = min(max(max(startLevel, curLevel), min_level), CLIP_LEVEL_COUNT - 1);
-        
+
 
         min_level = curLevel;
         //        if (min_level_int == 0) return vec4(1, 0, 0, 1);
@@ -436,12 +440,12 @@ vec4 traceCone(vec3 start_pos, vec3 direction, float aperture, float maxDistance
         //        if (min_level_int ==4) return vec4(1, 0, 1, 1);
         //        if (min_level_int ==5) return vec4(1, 1, 1, 1);
         vec4 clipmapSample = sampleClipmapLinear(radiance_map, position, curLevel, faceIndex, weight);
-        
-        
-       // return clipmapSample;
-        
+
+
+        // return clipmapSample;
+
         vec3 radiance = clipmapSample.rgb;
-//        clipmapSample.a = 1;
+        //        clipmapSample.a = 1;
 
         float opacity = clipmapSample.a * fopacityScale;
 
@@ -450,15 +454,15 @@ vec4 traceCone(vec3 start_pos, vec3 direction, float aperture, float maxDistance
         float correction = curSegmentLength / cur_voxel_size;
         //todo what does correction do?
         radiance = radiance * correction;
-        
-//        if(step>2.f && radiance.x > 0)
-//            debugPrintfEXT("radiance %f %f %f\n", radiance.r, radiance.g, radiance.b); 
-//        if(step>2.f)
-//            debugPrintfEXT("curlevel %f step %f cur_voxel_size %f\n", curLevel, step, cur_voxel_size);
 
-        float dist           = max(step * 0.3f,1);
+        //        if(step>2.f && radiance.x > 0)
+        //            debugPrintfEXT("radiance %f %f %f\n", radiance.r, radiance.g, radiance.b); 
+        //        if(step>2.f)
+        //            debugPrintfEXT("curlevel %f step %f cur_voxel_size %f\n", curLevel, step, cur_voxel_size);
+
+        float dist           = max(step * 0.3f, 1);
         float atten          = 1.0 / (dist * dist);
-       // radiance.rgb *= atten;
+        // radiance.rgb *= atten;
 
         //  return clipmapSample;
 
@@ -474,9 +478,9 @@ vec4 traceCone(vec3 start_pos, vec3 direction, float aperture, float maxDistance
         curSegmentLength = (step - prevStep);
         diameter = step * coneCoefficient;
     }
-//    debugPrintfEXT("result rgb occlusion %f %f %f %f\n", result.r, result.g, result.b, occlusion);
-//    step = step/30.f;
-//    return vec4(step,step,step,1.0);
+    //    debugPrintfEXT("result rgb occlusion %f %f %f %f\n", result.r, result.g, result.b, occlusion);
+    //    step = step/30.f;
+    //    return vec4(step,step,step,1.0);
     return vec4(result.rgb, 1.0 - occlusion);
 }
 
