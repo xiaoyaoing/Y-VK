@@ -51,6 +51,28 @@ vec3 toWorld(ivec3 p)
 
 void createQuad(vec4 v0, vec4 v1, vec4 v2, vec4 v3, vec4 color)
 {
+
+    if(color.x <= EPSILON && color.y <= EPSILON && color.z <= EPSILON){
+        return;
+        color.xyz = vec3(0,1,0);
+    }
+    
+//    if(u_clipmapLevel == 0 ){
+//        color.xyz = vec3(1,0,0);
+//    }
+//    if(u_clipmapLevel == 1 ){
+//        color.xyz = vec3(0,1,0);
+//    }
+//    if(u_clipmapLevel == 2 ){
+//        color.xyz = vec3(0,0,1);
+//    }
+//    if(u_clipmapLevel == 3 ){
+//        color.xyz = vec3(1,1,0);
+//    }
+//    if(u_clipmapLevel == 4 ){
+//        color.xyz = vec3(1,0,1);
+//    }
+    
     gl_Position = v0;
     Out.color = color;
     Out.uv = vec2(0.0, 0.0);
@@ -69,9 +91,7 @@ void createQuad(vec4 v0, vec4 v1, vec4 v2, vec4 v3, vec4 color)
     EmitVertex();
     EndPrimitive();
     
-//    if(color.x <= EPSILON && color.y <= EPSILON && color.z <= EPSILON){
-//        debugPrintfEXT("color %f %f %f %f\n", color.x, color.y, color.z, color.a);
-//    }
+
 }
 
 bool GenerateVoxel(vec4 color){
@@ -84,15 +104,16 @@ void main()
     ivec3 posV = pos + u_regionMin;
 
     // Expecting u_prevRegionMin and u_prevVolumeMax in the voxel coordinates of the current region
-    if (u_hasPrevClipmapLevel > 0 && (all(greaterThanEqual(posV, u_prevRegionMin)) && all(lessThan(posV, u_prevRegionMax))))
-        return;
+//    if (u_hasPrevClipmapLevel > 0 && (all(greaterThanEqual(posV, u_prevRegionMin)) && all(lessThan(posV, u_prevRegionMax))))
+//        return;
 
     if (u_clipmapLevel == 2){
         //  debugPrintfEXT("pos %d %d %d\n", pos.x, pos.y, pos.z);
     }
 
     // Same as: (u_imageMin + pos) % u_clipmapResolution - the bitwise version is faster than %
-    ivec3 samplePos = (u_imageMin + pos) & (u_clipmapResolution - 1);
+    ivec3 samplePos = (u_imageMin + pos) % u_clipmapResolution;
+//    samplePos = pos;
 
     int resolution = u_clipmapResolution;
 
@@ -114,8 +135,12 @@ void main()
     else
     {
         vec4 color = texelFetch(u_3dTexture, samplePos, 0);
+//        color = vec4(0.5,0.5,0.5,1);
         colors = vec4[6] (color, color, color, color, color, color);
     }
+    
+//    if(colors[0].r !=1.0f && colors[0].r != 0.0f)
+//        debugPrintfEXT("color %f %f %f %f\n", colors[0].r, colors[0].g, colors[0].b, colors[0].a);
 
     vec4 v0 = u_viewProj * vec4(toWorld(posV), 1.0);
     vec4 v1 = u_viewProj * vec4(toWorld(posV + ivec3(1, 0, 0)), 1.0);

@@ -22,6 +22,15 @@ layout(binding = 4, set = 0) uniform LightsInfo
     Light lights[MAX_LIGHTS];
 }lights_info;
 
+#define DEBUG_DIFFUSE_ONLY   				0
+#define DEBUG_SPECULAR_ONLY  				1
+#define DEBUG_NORMAL_ONLY 					2
+#define DEBUG_MIN_LEVEL_ONLY				3
+#define DEBUG_DIRECT_CONTRIBUTION_ONLY 		4
+#define DEBUG_INDIRECT_DIFFUSE_ONLY 		5
+#define DEBUG_INDIRECT_SPECULAR_ONLY 		6
+#define DEBUG_AMBIENT_OCCLUSION_ONLY 		7
+#define DEBUG_GI_OUTPUT 					8
 
 layout (push_constant) uniform PushConstants
 {
@@ -36,9 +45,11 @@ layout (push_constant) uniform PushConstants
     float uIndirectSpecularIntensity;// 44
     float uOcclusionDecay;// 48
     int   uEnable32Cones;// 52
-    int       uDirectLighting;//56
-    int       uIndirectLighting;//60
+    int   uDirectLighting;//56
+    int   uIndirectLighting;//60
     float fopacityScale;
+    float fmaxTraceDistance;
+    uint  debugMode;
 //    bool useLowerLevel;
 //    bool useHigherLevel;
 //    bool usemix;
@@ -136,7 +147,6 @@ vec3(-0.182696, 0.388844, 0.903007),
 vec3(0.182696, -0.388844, 0.903007)
 };
 
-const float MAX_TRACE_DISTANCE = 300.f;
 const float MIN_SPECULAR_FACTOR  = 0.05f;
 
 
@@ -153,30 +163,22 @@ vec3(0, 1, 1)
 vec3  worldPosFromDepth    (float depth);
 vec4  traceCone            (vec3 startPos, vec3 direction, float aperture,
 float maxDistance, float startLevel, float stepFactor);
-float calcmin_level        (vec3 worldPos);
-vec4  min_levelToColor    (float min_level);
+//float calcmin_level        (vec3 worldPos);
+vec4  minLevelToColor    (float min_level);
 
 float getMinLevel(vec3 posW)
 {
     float distanceToCenter = length(volume_center - posW);
+//    float distanceToCenter = length(posW);
     float minRadius = voxel_size * clip_map_resoultion * 0.5;
     float minLevel = log2(distanceToCenter / minRadius);
     minLevel = max(0.0, minLevel);
+    
+//    return minLevel;
 
     float radius = minRadius * exp2(ceil(minLevel));
     float f = distanceToCenter / radius;
 
-    //debugPrintfEXT("My float is %f %f %f", f, minLevel, minRadius);
-    //   debugPrintfEXT("posw is %f %f %f", distanceToCenter / minRadius, minLevel, minRadius);
-    // debugPrintfEXT("posw is %f %f %f", distanceToCenter, minRadius, volume_center.x);
-    vec3 l = volume_center - posW;
-    // l = vec3(1.f);
-    //   debugPrintfEXT("posw is %f %f %f %f", l.x, l.y, l.z, length(l));
-    //    debugPrintfEXT("posw is %f %f %f %f", l.x, l.y, l.z, length(l));
-    //  debugPrintfEXT("center is %f %f %f", volume_center.x, volume_center.y, volume_center.z);
-
-
-    // Smoothly transition from current level to the next level
     float transitionStart = 0.5;
     float c = 1.0 / (1.0 - transitionStart);
 
@@ -192,42 +194,55 @@ void main(){
     vec3  emission = subpassLoad(gbuffer_emission).rgb;
     float depth    = subpassLoad(gbuffer_depth).x;
 
+    if (depth == 1.0)
+    {
+        out_color = vec4(0.0);
+        return;
+    }
+
     vec3 world_pos = worldPosFromDepth(in_uv, depth);
-    vec3 start_pos = world_pos + voxel_size * normal;
 
     //diffuse cone 
-    vec3 indirect_contribution = vec3(0.0);
+    vec4 indirect_contribution = vec4(0,0,0,1);
     float min_level = getMinLevel(world_pos);
+    float cur_voxel_size = voxel_size * exp2(min_level);
 
-    uint min_levl_uint = uint(min_level);
-
-    //    out_color = vec4(SIX_LEVEL_DEBUG_COLORS[min_levl_uint], 1);
-    //    return;
-
-    //    out_color = vec4(length(world_pos) / 500.f);
-    //    .//out_color = vec4(world_pos / 500.f,1.f);
-    //    return;
+    vec3 start_pos = world_pos + cur_voxel_size * normal * uTraceStartOffset;// * 3;
 
 
-
-    for (int i = 0; i < DIFFUSE_CONE_COUNT_16; ++i)
+    if(uEnable32Cones > 0 )
+    {for (int i = 0; i < DIFFUSE_CONE_COUNT_32; ++i)
     {
-        float cos_theta = dot(normal, DIFFUSE_CONE_DIRECTIONS_16[i]);
+        float cos_theta = dot(normal, DIFFUSE_CONE_DIRECTIONS_32[i]);
+        
+        //cos_theta = abs(cos_theta);
         if (cos_theta < 0.0)
             continue;
-        
-        indirect_contribution += traceCone(world_pos, DIFFUSE_CONE_DIRECTIONS_16[i], DIFFUSE_CONE_APERTURE_16,
-        MAX_TRACE_DISTANCE, min_level, 1).rgb * cos_theta;// / 3.141592;
 
-//        indirect_contribution += traceCone(world_pos,vec3(-1,0,0), DIFFUSE_CONE_APERTURE_16,
-//        MAX_TRACE_DISTANCE, min_level, 1).rgb * cos_theta;
-      //  break;
-
+        indirect_contribution += 
+        traceCone(start_pos, DIFFUSE_CONE_DIRECTIONS_32[i], DIFFUSE_CONE_APERTURE_32,
+        fmaxTraceDistance, min_level, 1) * 
+        cos_theta;// / 3.141592;
     }
-    indirect_contribution /= DIFFUSE_CONE_COUNT_16;
+    indirect_contribution /= DIFFUSE_CONE_COUNT_32;}
+    else {
+        for (int i = 0; i < DIFFUSE_CONE_COUNT_16; ++i)
+        {
+            float cos_theta = dot(normal, DIFFUSE_CONE_DIRECTIONS_16[i]);
+          //  cos_theta = abs(cos_theta);
 
-    //    indirect_contribution  = traceCone(start_pos, DIFFUSE_CONE_DIRECTIONS_16[0], DIFFUSE_CONE_APERTURE_16,
-    //    MAX_TRACE_DISTANCE, min_level, 1).rgb;
+            if (cos_theta < 0.0)
+                continue;
+
+            indirect_contribution += traceCone(start_pos, DIFFUSE_CONE_DIRECTIONS_16[i], DIFFUSE_CONE_APERTURE_16,
+            fmaxTraceDistance, min_level, 1) * cos_theta;// / 3.141592;
+        }
+        indirect_contribution /= DIFFUSE_CONE_COUNT_16;
+    }
+    
+//    indirect_contribution = traceCone(start_pos, DIFFUSE_CONE_DIRECTIONS_32[0], DIFFUSE_CONE_APERTURE_32,
+//    fmaxTraceDistance, min_level, 1);
+
 
 
     vec3 diffuse_color = diffuse_roughness.xyz;
@@ -236,17 +251,8 @@ void main(){
     vec3 view_dir = per_frame.camera_pos - world_pos;
     vec3 indirect_specular_contribution = vec3(0.0);
     float roughness = sqrt(2.0 / (metallic + 2.0));
-    //    if (metallic > 1e-6)
-    //    {
-    //        vec3 specular_cone_direction = reflect(-view_dir, normal);
-    //        indirect_specular_contribution += traceCone(
-    //        start_pos, specular_cone_direction,
-    //        MIN_SPECULAR_FACTOR,
-    //        MAX_TRACE_DISTANCE, min_level, voxel_size
-    //        ).rgb;
-    //    }
     //specular cone 
-    indirect_contribution += indirect_specular_contribution;
+  //  indirect_contribution += indirect_specular_contribution;
 
     //calcuate sppecular contribution
     vec3 direct_contribution = vec3(0.0);
@@ -291,13 +297,56 @@ void main(){
 
             // vec3 light_contribution = microfacetBRDF(pbr_info) * calcuate_light_intensity(lights_info.lights[i], world_pos) * calcute_shadow(lights_info.lights[i], world_pos);
             vec3 light_contribution = apply_light(lights_info.lights[i], world_pos, normal) * microfacetBRDF(pbr_info) * calcute_shadow(lights_info.lights[i], world_pos);
+//            light_contribution = calcute_shadow(lights_info.lights[i], world_pos);
             direct_contribution += light_contribution;
         }
         //  direct_contribution = vec3(1);
     }
+    direct_contribution *= indirect_contribution.a;
     
-//    direct_contribution = world_pos / 20.f;
-    out_color = vec4(direct_contribution * uDirectLighting + indirect_contribution * uIndirectLighting, 1);
+    direct_contribution *= uDirectLighting;
+    indirect_contribution.rgb *= uIndirectLighting;
+    indirect_contribution.rgb *= diffuse_color;
+    //    direct_contribution = world_pos / 20.f;
+//    out_color = vec4(direct_contribution * uDirectLighting + indirect_contribution.rgb * uIndirectLighting, 1);
+    if(debugMode == DEBUG_DIFFUSE_ONLY)
+    {
+        out_color = vec4(indirect_contribution.rgb, 1);
+    }
+    else if(debugMode == DEBUG_SPECULAR_ONLY)
+    {
+        out_color = vec4(direct_contribution, 1);
+    }
+    else if(debugMode == DEBUG_NORMAL_ONLY)
+    {
+        out_color = vec4(normal * 0.5 + 0.5, 1);
+    }
+    else if(debugMode == DEBUG_MIN_LEVEL_ONLY)
+    {
+        out_color = minLevelToColor(min_level);
+    }
+    else if(debugMode == DEBUG_DIRECT_CONTRIBUTION_ONLY)
+    {
+        out_color = vec4(direct_contribution, 1);
+    }
+    else if(debugMode == DEBUG_INDIRECT_DIFFUSE_ONLY)
+    {
+        out_color = vec4(indirect_contribution.rgb, 1);
+    }
+    else if(debugMode == DEBUG_INDIRECT_SPECULAR_ONLY)
+    {
+        out_color = vec4(indirect_specular_contribution, 1);
+    }
+    else if(debugMode == DEBUG_AMBIENT_OCCLUSION_ONLY)
+    {
+        out_color = vec4(indirect_contribution.a);
+    }
+    else if(debugMode == DEBUG_GI_OUTPUT)
+    {
+        out_color = vec4(direct_contribution * uDirectLighting + indirect_contribution.rgb * uIndirectLighting, 1);
+    }
+    
+//    out_color.rgb = world_pos/20.f;
 }
 
 
@@ -309,7 +358,7 @@ vec4 sampleClipmap(sampler3D clipmap, vec3 worldPos, int clipmapLevel, vec3 face
     float cur_level_voxel_size = voxel_size * exp2(clipmapLevel);
     float extent    =  cur_level_voxel_size * clip_map_resoultion;
 
-    vec3 samplePos = (fract(worldPos / extent) * clip_map_resoultion) / (float(clip_map_resoultion) + 2.0);
+    vec3 samplePos = (fract(worldPos / extent) * clip_map_resoultion) / (float(clip_map_resoultion));
 
     samplePos.y += clipmapLevel;
     samplePos.y /= CLIP_LEVEL_COUNT;
@@ -328,17 +377,7 @@ vec4 sampleClipmapLinear(sampler3D clipmap, vec3 worldPos, float curLevel, ivec3
     vec3 faceOffset  = vec3(faceIndex) / VOXEL_FACE_COUNT;
     vec4 lowerSample = sampleClipmap(clipmap, worldPos, lowerLevel, faceOffset, weight);
     vec4 upperSample = sampleClipmap(clipmap, worldPos, upperLevel, faceOffset, weight);
-
-    return lowerSample;
-
-    //    if (useLowerLevel)
-    //    {
-    //        return lowerSample;
-    //    }
-    //    if (useHigherLevel)
-    //    {
-    //        return upperSample;
-    //    }
+    
     return mix(lowerSample, upperSample, fract(curLevel));
 }
 
@@ -356,7 +395,7 @@ ivec3 calculateVoxelFaceIndex(vec3 normal)
 vec4 traceCone(vec3 start_pos, vec3 direction, float aperture, float maxDistance, float startLevel, float stepFactor)
 {
 
-    
+
     vec4 result = vec4(0.0);
     float coneCoefficient = 2.0 * tan(aperture * 0.5);
 
@@ -365,9 +404,7 @@ vec4 traceCone(vec3 start_pos, vec3 direction, float aperture, float maxDistance
 
     start_pos += direction * cur_voxel_size  * 0.5 * uTraceStartOffset;
 
-
     //   start_pos += direction * cur_voxel_size  * 0.5;
-
     float step         = 0.0;
     float diameter     = max(step * coneCoefficient, voxel_size);
     float occlusion  = 0.0;
@@ -378,24 +415,20 @@ vec4 traceCone(vec3 start_pos, vec3 direction, float aperture, float maxDistance
 
     float curSegmentLength    = cur_voxel_size;
     float minRadius        = voxel_size  * 0.5 * clip_map_resoultion;
-    
-    while ((step < maxDistance) && (occlusion < 1.0))
+
+//    maxDistance = 1000.f;
+    while ((step < maxDistance) && (occlusion < 0.95))
     {
         vec3  position                = start_pos + direction * step;
         float distanceToVoxelCenter = length(volume_center - position);
         float min_level                = ceil(log2(distanceToVoxelCenter / minRadius));
-        
+
         curLevel = log2(diameter / voxel_size);
+        //curLevel = min_level
         curLevel = min(max(max(startLevel, curLevel), min_level), CLIP_LEVEL_COUNT - 1);
-
-        //  debugPrintfEXT("My float is %f %f %f", distanceToVoxelCenter, min_level, diameter);
-
+        
 
         min_level = curLevel;
-
-
-        int min_level_int = int(min_level);
-
         //        if (min_level_int == 0) return vec4(1, 0, 0, 1);
         //        if (min_level_int ==1) return vec4(0, 1, 0, 1);
         //        if (min_level_int ==2) return vec4(0, 0, 1, 1);
@@ -403,12 +436,12 @@ vec4 traceCone(vec3 start_pos, vec3 direction, float aperture, float maxDistance
         //        if (min_level_int ==4) return vec4(1, 0, 1, 1);
         //        if (min_level_int ==5) return vec4(1, 1, 1, 1);
         vec4 clipmapSample = sampleClipmapLinear(radiance_map, position, curLevel, faceIndex, weight);
+        
+        
+       // return clipmapSample;
+        
         vec3 radiance = clipmapSample.rgb;
-
-        //  if (radiance.x!=0 || radiance.y!=0 || radiance.z!=0)
-        //  debugPrintfEXT("My float is %f %f %f", radiance.x, radiance.y, radiance.z);
-
-        //  return clipmapSample;
+//        clipmapSample.a = 1;
 
         float opacity = clipmapSample.a * fopacityScale;
 
@@ -418,10 +451,19 @@ vec4 traceCone(vec3 start_pos, vec3 direction, float aperture, float maxDistance
         //todo what does correction do?
         radiance = radiance * correction;
         
-        return clipmapSample;
-        
+//        if(step>2.f && radiance.x > 0)
+//            debugPrintfEXT("radiance %f %f %f\n", radiance.r, radiance.g, radiance.b); 
+//        if(step>2.f)
+//            debugPrintfEXT("curlevel %f step %f cur_voxel_size %f\n", curLevel, step, cur_voxel_size);
+
+        float dist           = max(step * 0.3f,1);
+        float atten          = 1.0 / (dist * dist);
+       // radiance.rgb *= atten;
+
+        //  return clipmapSample;
+
         opacity  = clamp(1.0 - pow(1.0 - opacity, correction), 0.0, 1.0);
-        
+
         vec4 src = vec4(radiance.rgb, opacity);
         // Alpha blending
         result      += clamp(1.0 - result.a, 0.0, 1.0) * src;
@@ -432,9 +474,25 @@ vec4 traceCone(vec3 start_pos, vec3 direction, float aperture, float maxDistance
         curSegmentLength = (step - prevStep);
         diameter = step * coneCoefficient;
     }
-
+//    debugPrintfEXT("result rgb occlusion %f %f %f %f\n", result.r, result.g, result.b, occlusion);
+//    step = step/30.f;
+//    return vec4(step,step,step,1.0);
     return vec4(result.rgb, 1.0 - occlusion);
 }
 
-float calcmin_level        (vec3 worldPos);
-vec4  min_levelToColor    (float min_level);
+vec4 minLevelToColor(float minLevel)
+{
+    vec4 colors[] = {
+    vec4(1.0, 0.0, 0.0, 1.0),
+    vec4(0.0, 1.0, 0.0, 1.0),
+    vec4(0.0, 0.0, 1.0, 1.0),
+    vec4(1.0, 1.0, 0.0, 1.0),
+    vec4(0.0, 1.0, 1.0, 1.0),
+    vec4(1.0, 0.0, 1.0, 1.0),
+    vec4(1.0, 1.0, 1.0, 1.0)
+    };
+
+    int lowerLevel = int(floor(minLevel));
+    vec4 minLevelColor = vec4(mix(colors[lowerLevel], colors[lowerLevel + 1], fract(minLevel)));
+    return minLevelColor * 0.5;
+}

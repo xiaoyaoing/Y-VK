@@ -34,8 +34,8 @@ layout (location = 3) flat in uint in_primitive_index;
 
 
 
-layout(binding = 2, set = 2, r32ui) volatile uniform uimage3D radiance_image;
-
+layout(binding = 2, set = 2,r32ui) volatile uniform uimage3D radiance_image;
+ 
 layout(binding = 4, set = 0) uniform LightsInfo
 {
     Light lights[MAX_LIGHTS];
@@ -44,6 +44,7 @@ layout(binding = 4, set = 0) uniform LightsInfo
 layout(push_constant) uniform PushConstant
 {
     uint frame_index;
+    uint max_iterations;
 };
 
 
@@ -68,23 +69,13 @@ vec4 convRGBA8ToVec4(uint val)
 
 void imageAtomicRGBA8Avg(ivec3 coords, vec4 value)
 {
-    imageStore(radiance_image, coords, uvec4(1));
-
-    //value = vec4(1, 0, 0, 1);
-    if (all(equal(value.xyz, vec3(0.001))))
-    {
-        return;
-    }
     value.rgb *= 255.0;
     uint newVal = convVec4ToRGBA8(value);
-
     uint prevStoredVal = 0;
     uint curStoredVal;
-
-    const int maxIterations = 255;
     int i = 0;
     vec4 curValF = vec4(0.0);
-    while ((curStoredVal = imageAtomicCompSwap(radiance_image, coords, prevStoredVal, newVal)) != prevStoredVal && i < maxIterations)
+    while ((curStoredVal = imageAtomicCompSwap(radiance_image, coords, prevStoredVal, newVal)) != prevStoredVal)// && i < max_iterations)
     {
         i++;
         prevStoredVal = curStoredVal;
@@ -94,31 +85,13 @@ void imageAtomicRGBA8Avg(ivec3 coords, vec4 value)
         curValF.xyz /= (curValF.w);// Renormalize
         newVal = convVec4ToRGBA8(curValF);
     }
-    
-    uint v = imageLoad(radiance_image, coords).x;
-    vec4 curVal = convRGBA8ToVec4(v);
-   // if (curVal.x <= 1e-3f && curVal.y <= 1e-3f && curVal.z <= 1e-3f)
-//    {
-//        debugPrintfEXT("curValF %f %f %f %f val %f %f %f %f iterations %d newval coord %d %d %d \n", curValF.x, curValF.y, curValF.z, curValF.w, value.x, value.y, value.z, value.w, i, coords.x, coords.y, coords.z);
-//    }
-    
-//    if(curValF.x <= 1e-3f && curValF.y <= 1e-3f && curValF.z <= 1e-3f)
-//    { 
-//        debugPrintfEXT("curValF %f %f %f %f val %f %f %f %f iterations %d newval coord %d %d %d \n", curValF.x, curValF.y, curValF.z, curValF.w, value.x, value.y, value.z, value.w, i, coords.x, coords.y, coords.z);
-//    }
-    //    if (coords.x == 45 && coords.y == 77 && coords.z == 111)
-    //    debugPrintfEXT("curValF %f %f %f %f val %f %f %f %f iterations %d newval coord %d %d %d \n", curValF.x, curValF.y, curValF.z, curValF.w, value.x, value.y, value.z, value.w, i, coords.x, coords.y, coords.z);
 }
 
 void voxelAtomicRGBA8Avg(ivec3 imageCoord, ivec3 faceIndex, vec4 color, vec3 weight)
 {
-    vec4 c = vec4(color.xyz * weight.x, 1.0);
-    // debugPrintfEXT("color %f %f %f %f  weight %f %f %f \n", color.x, color.y, color.z, color.w, weight.x, weight.y, weight.z);
     imageAtomicRGBA8Avg(imageCoord + ivec3((clip_map_resoultion) * faceIndex.x, 0, 0), vec4(color.xyz * weight.x, 1.0));
     imageAtomicRGBA8Avg(imageCoord + ivec3((clip_map_resoultion) * faceIndex.y, 0, 0), vec4(color.xyz * weight.y, 1.0));
     imageAtomicRGBA8Avg(imageCoord + ivec3((clip_map_resoultion) * faceIndex.z, 0, 0), vec4(color.xyz * weight.z, 1.0));
-    
-    
 }
 
 void voxelAtomicRGBA8Avg6Faces(ivec3 imageCoord, vec4 color)
@@ -146,10 +119,15 @@ void main(){
 
     vec3 world_pos = in_position;
 
-    if (!pos_in_clipmap(world_pos)){
+
+    if(isOutsideVoxelizationRegion(world_pos)){
+        discard;
+    }
+    if(isInsideDownsampleRegion(world_pos)){
         discard;
     }
 
+    
     ivec3 image_coords = computeImageCoords(world_pos);
 
     uint material_index = primitive_infos[in_primitive_index].material_index;
@@ -219,16 +197,17 @@ void main(){
             pbr_info.VdotH = clamp(dot(view_dir, half_vector), 0.0, 1.0);
 
             light_contribution +=
-              apply_light(lights_info.lights[i], world_pos, normal) * microfacetBRDF(pbr_info) * calcute_shadow(lights_info.lights[i], world_pos);
+              apply_light(lights_info.lights[i], world_pos, normal) * diffuse(pbr_info) * calcute_shadow(lights_info.lights[i], world_pos);
         }
-        
-     //   light_contribution = vec3(1,0,0);
+
         if (all(equal(light_contribution.xyz, vec3(0.0))))
         {
             discard;
         }
+    
         ivec3 faceIndex = calculateVoxelFaceIndex(-normal);
-        voxelAtomicRGBA8Avg(image_coords, faceIndex, vec4(light_contribution, 1.0), vec3(1));
+        light_contribution = clamp(light_contribution, vec3(0.0), vec3(1.0));
+        voxelAtomicRGBA8Avg(image_coords, faceIndex, vec4(light_contribution, 1.0),abs(normal));
     }
 }
 
