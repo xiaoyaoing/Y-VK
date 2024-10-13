@@ -22,6 +22,7 @@ struct RenderGraphSubpassInfo {
 struct RenderGraphPassDescriptor {
     std::vector<RenderGraphHandle>      textures;
     std::vector<RenderGraphSubpassInfo> subpasses;
+    VkExtent2D extent2D = {0, 0};
 
     size_t getSubpassCount() const {
         return subpasses.size();
@@ -69,15 +70,15 @@ protected:
     RenderGraphHandle src, dst;
 };
 
-class RenderPassNode final : public PassNode {
+class GraphicsPassNode final : public PassNode {
     virtual void declareRenderTarget(const std::string& name, const RenderGraphPassDescriptor& descriptor);
 
 public:
     void execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) override;
 
-    RenderPassNode(RenderGraph& renderGraph, const std::string& name, RenderGraphPassBase* base);
+    GraphicsPassNode(RenderGraph& renderGraph, const std::string& name, RenderGraphPassBase* base);
 
-    ~RenderPassNode() override {
+    ~GraphicsPassNode() override {
         delete mRenderPass;
     }
 
@@ -94,7 +95,7 @@ private:
 
         RenderGraphPassDescriptor desc;
 
-        void devirtualize(RenderGraph& renderGraph, const RenderPassNode& node);
+        void devirtualize(RenderGraph& renderGraph, const GraphicsPassNode& node);
 
         std::unique_ptr<RenderTarget> renderTarget;
 

@@ -103,7 +103,8 @@ public:
     }
     template<>
     RenderContext& bindPushConstants<std::vector<uint8_t>>(const std::vector<uint8_t>& pushConstants);
-
+    
+    RenderContext & bindShaders(const std::vector<std::string>& shaderPaths);
     void flushPipelineState(CommandBuffer& commandBuffer);
 
     void flushPushConstantStage(CommandBuffer& commandBuffer);
@@ -158,6 +159,8 @@ public:
     void flush(CommandBuffer& commandBuffer);
 
     void endRenderPass(CommandBuffer& commandBuffer, RenderTarget& renderTarget);
+
+    void resetViewport(CommandBuffer& commandBuffer);
 
     //Allocate Buffer in Buffer Pool
     //It's good design at first

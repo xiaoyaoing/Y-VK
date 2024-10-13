@@ -12,6 +12,16 @@
 
 namespace FileUtils {
 
+    template<typename... Args>
+    std::string stringFormat(const char* format, Args... args) {
+        int size_s = std::snprintf(nullptr, 0, format, args...) + 1;
+        if (size_s <= 0) { throw std::runtime_error("Error during formatting."); }
+        auto                    size = static_cast<size_t>(size_s);
+        std::unique_ptr<char[]> buf(new char[size]);
+        std::snprintf(buf.get(), size, format, args...);
+        return std::string(buf.get(), buf.get() + size - 1);
+    }
+
     std::vector<uint8_t> read_binary_file(const std::string& filename, const uint32_t count) {
         std::vector<uint8_t> data;
 
@@ -37,6 +47,17 @@ namespace FileUtils {
         return data;
     }
 
+    std::string FileUtils::getFilePath(const std::string& path, const std::string& suffix, bool overwrite) {
+        std::string destPath = path + "." + suffix;
+        if (overwrite)
+            return std::move(destPath);
+        int count = 1;
+        while (fileExists(destPath)) {
+            destPath = stringFormat("%s%d.%s", path.c_str(), count++, suffix.c_str());
+        }
+        return std::move(destPath);
+    }
+
     std::string getFileTimeStr(const std::string& path, const std::string& format) {
         const auto fileTime   = std::filesystem::last_write_time(path);
         const auto systemTime = std::chrono::clock_cast<std::chrono::system_clock>(fileTime);
@@ -58,6 +79,7 @@ namespace FileUtils {
     std::vector<uint8_t> readShaderBinary(const std::string filename) {
         return read_binary_file(filename, 0);
     }
+
 
     std::string getFileExt(const std::string& filepath) {
         return filepath.substr(filepath.find('.') + 1);

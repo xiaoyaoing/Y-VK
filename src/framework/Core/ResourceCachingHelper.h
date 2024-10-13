@@ -118,6 +118,16 @@ namespace std {
     };
 
     template<>
+    struct hash<VkExtent2D> {
+        std::size_t operator()(const VkExtent2D extent2d) const noexcept {
+            std::size_t result;
+            hash_combine(result, extent2d.width);
+            hash_combine(result, extent2d.height);
+            return result;
+        }
+    };
+
+    template<>
     struct hash<ShaderResource> {
         std::size_t operator()(const ShaderResource& shader_resource) const {
             std::size_t result = 0;
@@ -162,6 +172,7 @@ namespace std {
                 hash_combine(res, attachment->getVkImage().getHandle());
                 hash_combine(res, attachment->getVkImageView().getHandle());
             }
+            hash_combine(res, renderTarget.getExtent());
             return res;
         }
     };

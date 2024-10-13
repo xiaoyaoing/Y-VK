@@ -6,6 +6,14 @@
 #define Point_LIGHT_TYPE 2
 #define Spot_LIGHT_TYPE 3
 
+struct DirectionalLightShadowDesc {
+    mat4 view;        // 16
+    mat4 proj;		  // 32
+    float zNear;	  // 36
+    float zFar;		  // 40
+    vec2 padding;	  // 48
+};
+
 struct  Light
 {
     vec4 color;// color.w represents light intensity
@@ -13,6 +21,8 @@ struct  Light
     vec4 direction;// direction.w represents range
     vec4 info;// (only used for spot lights) info.x represents light inner cone angle, info.y represents light outer cone angle
     mat4 matrix;
+
+    DirectionalLightShadowDesc shadow_desc;
 };
 
 vec3 apply_directional_light(Light light, vec3 normal)

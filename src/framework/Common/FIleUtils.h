@@ -20,6 +20,8 @@ namespace FileUtils {
 
     std::vector<uint8_t> readShaderBinary(const std::string filename);
 
+    std::string getFilePath(const std::string& path, const std::string& suffix, bool overwrite = false);
+
     std::string getFileTimeStr(const std::string &path,const std::string & format = "%Y-%m-%d %H:%M:%S");
 
     bool fileExists(const std::string &path);

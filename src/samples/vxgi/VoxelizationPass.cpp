@@ -2,14 +2,35 @@
 
 #include "ClipmapCleaner.h"
 #include "VxgiCommon.h"
+#include "Common/VkCommon.h"
 #include "imgui.h"
 #include "Core/RenderContext.h"
 #include "Core/View.h"
+#include "Core/math.h"
+
+struct ViewPortMatrix {
+    mat4 uViewProj[3];
+    mat4 uViewProjIt[3];
+};
+
+static std::pair<int, int> getFirstAndLastLevelTOUpdate(std::vector<std::vector<ClipmapRegion>>& mRevoxelizationRegions) {
+    int firstLevel = -1;
+    int lastLevel  = -1;
+    for (int i = 0; i < CLIP_MAP_LEVEL_COUNT; i++) {
+        if (!mRevoxelizationRegions[i].empty()) {
+            if (firstLevel == -1) {
+                firstLevel = i;
+            }
+            lastLevel = i;
+        }
+    }
+    return {firstLevel, lastLevel};
+}
 
 void VoxelizationPass::initClipRegions() {
 
     mClipRegions.resize(CLIP_MAP_LEVEL_COUNT);
-    constexpr float extentWorldLevel0 = 16.f;
+    constexpr float extentWorldLevel0 = 16;//* 4;
 
     int extent     = VOXEL_RESOLUTION;
     int halfExtent = extent / 2;
@@ -36,9 +57,8 @@ void VoxelizationPass::initClipRegions() {
 void VoxelizationPass::init() {
     initClipRegions();
 
-    Device& device = g_context->getDevice();
-
-    mVoxelizationPipelineLayout = std::make_unique<PipelineLayout>(device, std::vector<std::string>{"vxgi/voxelization.vert", "vxgi/voxelization.frag"});
+    Device& device              = g_context->getDevice();
+    mVoxelizationPipelineLayout = std::make_unique<PipelineLayout>(device, std::vector<std::string>{"vxgi/voxelization.vert", "vxgi/voxelization.geom", "vxgi/voxelization.frag"});
 
     VkExtent3D imageResolution = {VOXEL_RESOLUTION * 6,
                                   VOXEL_RESOLUTION * CLIP_MAP_LEVEL_COUNT,
@@ -54,9 +74,14 @@ void VoxelizationPass::init() {
     g_manager->putPtr("clipmap_regions", &mClipRegions);
 
     mVoxelParamBuffers.resize(CLIP_MAP_LEVEL_COUNT);
+    mVoxelViewProjBuffer.resize(CLIP_MAP_LEVEL_COUNT);
+
     for (uint32_t i = 0; i < CLIP_MAP_LEVEL_COUNT; i++) {
-        mVoxelParamBuffers[i] = std::make_unique<Buffer>(device, sizeof(VoxelizationParamater), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+        mVoxelParamBuffers[i]   = std::make_unique<Buffer>(device, sizeof(VoxelizationParamater), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+        mVoxelViewProjBuffer[i] = std::make_unique<Buffer>(device, sizeof(ViewPortMatrix), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
     }
+
+    // updateVoxelization();
 }
 
 void VoxelizationPass::render(RenderGraph& rg) {
@@ -72,43 +97,46 @@ void VoxelizationPass::render(RenderGraph& rg) {
         }
     }
 
-    Blackboard& blackboard    = rg.getBlackBoard();
-    auto&       commandBuffer = g_context->getGraphicCommandBuffer();
+    auto [firstLevel, lastLevel] = getFirstAndLastLevelTOUpdate(mRevoxelizationRegions);
     rg.addGraphicPass(
         "voxelization pass",
         [&](auto& builder, auto& setting) {
             auto opacity = rg.getBlackBoard().getHandle("opacity");
             builder.writeTexture(opacity);
             // builder.writeTexture(radiance);
-            RenderGraphPassDescriptor desc({opacity}, {.outputAttachments = {}});
+            RenderGraphPassDescriptor desc({}, {.outputAttachments = {}});
+            desc.extent2D = {VOXEL_RESOLUTION * 1, VOXEL_RESOLUTION * 1};
             builder.declare(desc);
         },
-        [&](auto& context) {
+        [this, firstLevel, lastLevel, &rg](auto& context) {
+            auto& commandBuffer = context.commandBuffer;
+
             g_context->bindImage(1, rg.getBlackBoard().getImageView("opacity")).getPipelineState().setPipelineLayout(*mVoxelizationPipelineLayout);//enableConservativeRasterization(g_context->getDevice().getPhysicalDevice());//.bindImage(2, rg.getBlackBoard().getImageView("radiance"));
             g_manager->fetchPtr<View>("view")->bindViewBuffer().bindViewGeom(context.commandBuffer);
             for (int i = 0; i < CLIP_MAP_LEVEL_COUNT; i++) {
 
                 for (auto& clipRegion : mRevoxelizationRegions[i]) {
 
-                    mVoxelParam.clipmapLevel       = i;
-                    mVoxelParam.clipmapMinWorldPos = clipRegion.getMinPosWorld();
-                    mVoxelParam.clipmapMaxWorldPos = clipRegion.getMaxPosWorld();
-                    mVoxelParam.voxelSize          = clipRegion.voxelSize;
-                    mVoxelParam.maxExtentWorld     = clipRegion.getExtentWorld().x;
-                    mVoxelParam.voxelResolution    = VOXEL_RESOLUTION;
-
+                    mVoxelParam              = clipRegion.getVoxelizationParam(i == 0 ? nullptr : &mClipRegions[i - 1]);
+                    mVoxelParam.clipmapLevel = i;
                     mVoxelParamBuffers[i]->uploadData(&mVoxelParam, sizeof(VoxelizationParamater));
                     g_context->bindBuffer(5, *mVoxelParamBuffers[i], 0, sizeof(VoxelizationParamater), 3);
+
+                    if (i == firstLevel)
+                        VxgiContext::SetVoxelzationViewPortPipelineState(commandBuffer, clipRegion.extent * 1);
+                    g_context->bindBuffer(1, * VxgiContext::GetVoxelProjectionBuffer(i), 0, sizeof(ViewPortMatrix), 3);
+
                     g_manager->fetchPtr<View>("view")->drawPrimitives(commandBuffer, [&](const Primitive& primitive) {
-                        return true;
-                        if(i==0)
-                            return clipRegion.getBoundingBox().overlaps(primitive.getDimensions());
-                        else {
-                            return primitive.getDimensions().overlaps(clipRegion.getBoundingBox(),mClipRegions[i-1].getBoundingBox());
-                        } });
+                        return clipRegion.getBoundingBox().overlaps(primitive.getDimensions());
+                    });
+
+                    if (i == lastLevel)
+                        g_context->resetViewport(commandBuffer);
                 }
             }
         });
+
+    ClipMapCleaner::downSampleOpacity(rg, rg.getBlackBoard().getHandle("opacity"));
 }
 
 //Returns the difference between the current BoundingBox and the previous frame clip region in voxel coordinates.
@@ -131,12 +159,10 @@ glm::ivec3 VoxelizationPass::computeChangeDeltaV(uint32_t clipmapLevel) {
 
 //see https://zhuanlan.zhihu.com/p/549938187
 void VoxelizationPass::fillRevoxelizationRegions(uint32_t clipLevel, const BBox& boundingBox) {
-    auto        delta = computeChangeDeltaV(clipLevel);
-    const auto& bb    = VxgiContext::getBBoxes()[clipLevel];
-    //    LOGI("delta {} {} {} {} {} {}", delta.x, delta.y, delta.z, bb.center().x, bb.center().y, bb.center().z);
+    auto  delta      = computeChangeDeltaV(clipLevel);
     auto& clipRegion = mClipRegions[clipLevel];
-
     clipRegion.minCoord += delta;
+
     //  LOGI("delta {} {} {} {} {} {} {}", delta.x, delta.y, delta.z, clipRegion.minCoord.x, clipRegion.minCoord.y, clipRegion.minCoord.z, clipRegion.voxelSize);
 
     auto absDelta = glm::abs(delta);
@@ -175,23 +201,26 @@ void VoxelizationPass::fillRevoxelizationRegions(uint32_t clipLevel, const BBox&
 }
 
 void VoxelizationPass::updateVoxelization() {
-    //update camera bounding box
-    // for(uint32_t clipmapLevel = 0; clipmapLevel < CLIP_MAP_LEVEL; ++clipmapLevel) {
-    //     fillRevoxelizationRegions(clipmapLevel, mBBoxes->at(clipmapLevel));
-    // }
+
     mRevoxelizationRegions.clear();
     mRevoxelizationRegions.resize(CLIP_MAP_LEVEL_COUNT, {});
 
     //   mFullRevoxelization = true;
 
     if (mFullRevoxelization || mFrameIndex++ < 2) {
-        initClipRegions();
+        if (!mInitVoxelization) {
+            initClipRegions();
+        }
+        // initClipRegions();
         for (uint32_t clipmapLevel = 0; clipmapLevel < CLIP_MAP_LEVEL_COUNT; ++clipmapLevel) {
             mRevoxelizationRegions[clipmapLevel].emplace_back(mClipRegions[clipmapLevel]);
         }
         mInitVoxelization = true;
     } else {
-        // return;
+        //Todo:
+        // Below code will not be executed in this version
+        // revoxel partially effect not god
+        // perframe voxelize full region
         for (uint32_t clipmapLevel = 0; clipmapLevel < CLIP_MAP_LEVEL_COUNT; ++clipmapLevel) {
             mRevoxelizationRegions[clipmapLevel].clear();
             fillRevoxelizationRegions(clipmapLevel, VxgiContext::getBBoxes()[clipmapLevel]);
@@ -205,3 +234,5 @@ void VoxelizationPass::updateGui() {
     ImGui::Text("clip region 3 min coord: %d %d %d", mClipRegions[3].minCoord.x, mClipRegions[3].minCoord.y, mClipRegions[3].minCoord.z);
     ImGui::Checkbox("Full Revoxelization", &mFullRevoxelization);
 }
+
+

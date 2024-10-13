@@ -8,8 +8,8 @@ VkExtent2D FrameBuffer::getExtent() const {
     return extent;
 }
 
-FrameBuffer::FrameBuffer(Device &device, RenderTarget &renderTarget, RenderPass &renderPass) : device(device),
-                                                                                               extent(renderTarget.getExtent()) {
+FrameBuffer::FrameBuffer(Device &device, RenderTarget &renderTarget, RenderPass &renderPass,VkExtent2D extent2D) : device(device),
+                                                                                               extent(extent2D){
 
     
     VkFramebufferCreateInfo createInfo{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};

@@ -79,8 +79,8 @@ DescriptorLayout& ResourceCache::requestDescriptorLayout(uint32_t setIdx, const 
     return requestResource(device, descriptorLayoutMutex, state.descriptor_set_layouts, setIdx, shaderResources);
 }
 
-FrameBuffer& ResourceCache::requestFrameBuffer(RenderTarget& renderTarget, RenderPass& renderPass) {
-    return requestResource(device, frameBufferMutex, state.frameBuffers, renderTarget, renderPass);
+FrameBuffer& ResourceCache::requestFrameBuffer(RenderTarget& renderTarget, RenderPass& renderPass, VkExtent2D extent){
+    return requestResource(device, frameBufferMutex, state.frameBuffers, renderTarget, renderPass, extent);
 }
 
 DescriptorSet& ResourceCache::requestDescriptorSet(const DescriptorLayout&                                         descriptorSetLayout,

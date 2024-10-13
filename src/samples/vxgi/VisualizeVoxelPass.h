@@ -1,5 +1,6 @@
 #pragma once
 #include "ClipmapRegion.h"
+#include "VxgiCommon.h"
 #include "Core/Buffer.h"
 #include "Core/PipelineLayout.h"
 #include "RenderGraph/RenderGraphId.h"

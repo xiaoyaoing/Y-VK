@@ -9,7 +9,13 @@ enum class LIGHT_TYPE : uint8_t {
     // Insert new light type here
     Max
 };
-
+struct DirectionalLightShadowDesc {
+    glm::mat4 view;        // 16
+    glm::mat4 proj;		  // 32
+    float zNear;	  // 36
+    float zFar;		  // 40
+    glm::vec2 padding;	  // 48
+};
 struct LightProperties {
     glm::vec3 direction{0.0f, 0.0f, -1.0f};
 
@@ -32,13 +38,23 @@ struct LightProperties {
     uint32_t texture_index{0};
     glm::mat4 world_matrix{1.0f};
     glm::mat4 shadow_matrix{1.0f};
+
+    bool use_shadow{true};
+
+    DirectionalLightShadowDesc shadow_desc;
     
 };
+
+
+
+
+
 
 struct SgLight {
     LIGHT_TYPE      type;
     LightProperties lightProperties;
 };
+
 
 struct alignas(16) LightUib {
     glm::vec4 color{0};    // color.w represents light intensity
@@ -46,6 +62,7 @@ struct alignas(16) LightUib {
     glm::vec4 direction{0};// direction.w represents range
     glm::vec4 info{0};
     glm::mat4 shadow_matrix{1.0f};  // (only used for directional and spot lights)
+    DirectionalLightShadowDesc shadow_desc; // (only used for directional lights)
     // (only used for spot lights) info.x represents light inner cone angle, info.y represents light outer cone angle
 };
 

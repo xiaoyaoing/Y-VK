@@ -1,49 +1,42 @@
 #include "DDGI.h"
 
-static constexpr  std::string kRaygen = "ddgi/raygen.rgen";
-static constexpr  std::string kClassify = "ddgi/classify.comp";
-static constexpr  std::string kSampleProbe = "ddgi/sampleProbe.comp";
-static constexpr  std::string kClosestHit =  "Raytracing/PT/closesthit.rchit";
-static constexpr  std::string kMiss = "Raytracing/PT/miss.rmiss";
-static constexpr  std::string kMissShadow = "Raytracing/PT/miss_shadow.rmiss";
-static constexpr  std::string kRayAnyHit = "Raytracing/ray.rahit";
+static  std::string kRaygen = "ddgi/raygen.rgen";
+static  std::string kClassify = "ddgi/classify.comp";
+static  std::string kSampleProbe = "ddgi/sampleProbe.comp";
+static  std::string kClosestHit = "Raytracing/PT/closesthit.rchit";
+static  std::string kMiss = "Raytracing/PT/miss.rmiss";
+static  std::string kMissShadow = "Raytracing/PT/miss_shadow.rmiss";
+static  std::string kRayAnyHit = "Raytracing/ray.rahit";
 
-static constexpr  std::vector<std::string> GeneratePorbeRays = {
-    kRaygen,kMiss,kMissShadow,kClosestHit,kRayAnyHit
+static  std::vector<std::string> GeneratePorbeRays = {
+    kRaygen,
+    kMiss,
+    kMissShadow,
+    kClosestHit,
+    kRayAnyHit
 };
 
-class DDGI::Impl {
-    friend class DDGI;
-    void render(RenderGraph& renderGraph) {
-        // Render the graph
-        renderGraph.addRaytracingPass(
-                "PT pass", [&](RenderGraph::Builder& builder, RaytracingPassSettings& settings) {
-                settings.accel = &entry_->tlas;
-                settings.pipelineLayout = layout.get();
-                settings.rTPipelineSettings.dims = {width,height,1};
-                settings.rTPipelineSettings.maxDepth = 5;
-    
-    
-                auto output = renderGraph.createTexture(RT_IMAGE_NAME,{width,height,TextureUsage::STORAGE | TextureUsage::TRANSFER_SRC | TextureUsage::SAMPLEABLE,VK_FORMAT_R32G32B32A32_SFLOAT});
-                builder.writeTexture(output,TextureUsage::STORAGE); }, [&](RenderPassContext& context) {
-                    bindRaytracingResources(commandBuffer);
-    
-                    auto pushConstant = toBytes(pcPath);
-                    renderContext->bindPushConstants(pushConstant);
-                    renderContext->bindImage(0, renderGraph.getBlackBoard().getImageView(RT_IMAGE_NAME));
-                    renderContext->traceRay(commandBuffer, {width, height, 1});
-    
-                    pcPath.frame_num++; });    }
-    Impl() {
-        
-    }
-};
+void DDGI::render(RenderGraph& renderGraph) {
+    renderGraph.addRaytracingPass(
+        "ddgi_probe_trace", 
+        [&](RenderGraph::Builder& builder, RaytracingPassSettings& settings) {
+            settings.accel = &entry_->tlas;
+            settings.shaderPaths = GeneratePorbeRays;
+            settings.rTPipelineSettings.dims = {width,height,1};
+            settings.rTPipelineSettings.maxDepth = 5;
+ 
+            auto output = renderGraph.createTexture(
+                RT_IMAGE_NAME,
+                {width,height,TextureUsage::STORAGE | TextureUsage::TRANSFER_SRC | TextureUsage::SAMPLEABLE,VK_FORMAT_R32G32B32A32_SFLOAT}
+            );
+            builder.writeTexture(output,TextureUsage::STORAGE); 
+        }, 
+        [&](RenderPassContext& context) {
+            auto commandBuffer = context.commandBuffer;
 
- DDGI::DDGI() {
-    impl = new Impl();
+            bindRaytracingResources(commandBuffer);
+            renderContext->bindImage(0, renderGraph.getBlackBoard().getImageView(RT_IMAGE_NAME));
+            renderContext->traceRay(commandBuffer, {width, height, 1}); 
+        }
+    );
 }
-
-void DDGI::render(RenderGraph& graph) {
-    impl->render(graph);
-}
-

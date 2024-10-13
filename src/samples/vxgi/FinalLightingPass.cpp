@@ -24,9 +24,6 @@ void FinalLightingPass::init() {
     mFinalLightingPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), shaderPaths);
     mRadianceMapSampler          = std::make_unique<Sampler>(g_context->getDevice(), VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, 0.0f);
     g_manager->putPtr("radiance_map_sampler", mRadianceMapSampler.get());
-
-    mVoxelParam.uDirectLighting   = 1;
-    mVoxelParam.uIndirectLighting = 1;
 }
 void FinalLightingPass::render(RenderGraph& rg) {
     rg.addGraphicPass(
@@ -35,10 +32,9 @@ void FinalLightingPass::render(RenderGraph& rg) {
             auto& blackBoard = rg.getBlackBoard();
             auto  radiance   = blackBoard.getHandle("radiance");
             auto  diffuse    = blackBoard.getHandle("diffuse");
-            //    auto  specular   = blackBoard.getHandle("specular");
-            auto normal   = blackBoard.getHandle("normal");
-            auto depth    = blackBoard.getHandle("depth");
-            auto emission = blackBoard.getHandle("emission");
+            auto  normal     = blackBoard.getHandle("normal");
+            auto  depth      = blackBoard.getHandle("depth");
+            auto  emission   = blackBoard.getHandle("emission");
 
             auto output = blackBoard.getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
 
@@ -63,8 +59,6 @@ void FinalLightingPass::render(RenderGraph& rg) {
                 .bindImageSampler(0, radianceMap.getVkImageView(), *mRadianceMapSampler);
             pushFinalLightingParam();
             g_context->flushAndDraw(context.commandBuffer, 3, 1, 0, 0);
-            // g_context->bindImage()
-            //todo
         });
 }
 
@@ -74,18 +68,23 @@ void FinalLightingPass::pushFinalLightingParam() {
     mVoxelParam.volume_center       = region.getBoundingBox().center();
     mVoxelParam.voxel_size          = region.voxelSize;
     mVoxelParam.clip_map_resoultion = VOXEL_RESOLUTION;
+    mVoxelParam.debugMode           = static_cast<uint32_t>(_renderingMode);
 
     g_context->bindPushConstants(mVoxelParam);
 }
 
 void FinalLightingPass::updateGui() {
-    ImGui::InputInt("Direct intensity", &mVoxelParam.uDirectLighting);
-    ImGui::InputInt("Indirect intensity", &mVoxelParam.uIndirectLighting);
-    ImGui::SliderFloat("Opacity scale", &mVoxelParam.fopacityScale, 0.0f, 1.0f);
+    ImGui::SliderFloat("Direct Lighting", &mVoxelParam.uDirectLighting, 0.0f, 10.0f);
+    ImGui::SliderFloat("Indirect diffuse intensity", &mVoxelParam.uIndirectDiffuseIntensity, 0.0f, 20.0f);
+    ImGui::SliderFloat("Indirct specular intensity", &mVoxelParam.uIndirectSpecularIntensity, 0.0f, 10.0f);
+    ImGui::SliderFloat("Opacity scale", &mVoxelParam.fopacityScale, 0.0f, 10.0f);
     ImGui::SliderFloat("trace start offset", &mVoxelParam.uTraceStartOffset, 0.0f, 10.0f);
-    // ImGui::Checkbox("useHigherLevel", &mVoxelParam.useHigherLevel);
-    // ImGui::SameLine();
-    // ImGui::Checkbox("useLowerLevel", &mVoxelParam.useLowerLevel);
-    // ImGui::SameLine();
-    // ImGui::Checkbox("mix", &mVoxelParam.mix);
+    ImGui::SliderFloat("max trace distance", &mVoxelParam.maxTraceDistance, 0.0f, 50.0f);
+    ImGui::Checkbox("Enable 32 cones", reinterpret_cast<bool*>(&mVoxelParam.uEnable32Cones));
+    constexpr const char* kRenderingModeLabels[] = {
+        "Diffuse-Only", "Specular-Only", "Normal-Only", "VCT-Start-Level-Only", "DirectContribution", "IndirectDiffuse", "IndirectSpecular", "AmbientOcclsion", "CombinedGI"};
+    static int currentItem{static_cast<int>(RenderingMode::CombinedGI)};
+
+    ImGui::Combo("VCT Rendering Mode", &currentItem, kRenderingModeLabels, sizeof(kRenderingModeLabels) / sizeof(const char*));
+    _renderingMode = static_cast<RenderingMode>(currentItem);
 }

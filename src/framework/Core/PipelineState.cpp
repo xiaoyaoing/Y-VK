@@ -120,6 +120,8 @@ void PipelineState::reset() {
 
     rasterizationState = {};
 
+    viewportState = {};
+
     multisampleState = {};
 
     depthStencilState = {};

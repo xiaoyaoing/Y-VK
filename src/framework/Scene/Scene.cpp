@@ -180,6 +180,12 @@ void Scene::addPrimitives(std::vector<std::unique_ptr<Primitive>>&& _primitives)
     primitives.insert(primitives.end(), std::make_move_iterator(_primitives.begin()), std::make_move_iterator(_primitives.end()));
     updateScenePrimitiveIdBuffer();
 }
+const std::filesystem::path& Scene::getPath() const {
+    return mPath;
+}
+void Scene::setPath(const std::filesystem::path& path) {
+    mPath = path;
+}
 SceneLoadCompleteInfo& Scene::getLoadCompleteInfo() const {
     return *loadCompleteInfo;
 }

@@ -18,6 +18,7 @@ public:
     void       updateVoxelization();
     void       updateGui() override;
 
+
 private:
     std::vector<BBox>*                      mBBoxes{};
     std::vector<ClipmapRegion>              mClipRegions{};
@@ -33,10 +34,12 @@ private:
     std::unique_ptr<SgImage>        mVoxelRadianceImage{nullptr};
     std::unique_ptr<PipelineLayout> mVoxelizationPipelineLayout{nullptr};
 
-    bool  mFullRevoxelization{false};
+    bool  mFullRevoxelization{true};
     bool  mInitVoxelization{false};
     uint  mFrameIndex{0};
     ivec3 mMinVoxelChange{2, 2, 2};
+    std::vector<std::unique_ptr<Buffer>> mVoxelViewProjBuffer{};
+
 
     // std::unique_ptr<ClipMapCleaner> mClipMapCleaner{nullptr};
 };

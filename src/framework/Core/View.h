@@ -32,7 +32,7 @@ public:
     void drawPrimitives(CommandBuffer& commandBuffer);
 
     using PrimitiveSelectFunc = std::function<bool(const Primitive& primitive)>;
-    void drawPrimitives(CommandBuffer& commandBuffer, const PrimitiveSelectFunc& selectFunc);
+    void drawPrimitives(CommandBuffer& commandBuffer, const PrimitiveSelectFunc& selectFunc,bool forceSelect = false);
 
     void drawPrimitivesUseSeparateBuffers(CommandBuffer& commandBuffer);
     void setLightDirty(bool dirty) { lightDirty = dirty; }

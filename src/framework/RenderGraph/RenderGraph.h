@@ -81,8 +81,8 @@ public:
     RenderGraphTexture* getTexture(RenderGraphHandle handle) const;
     RenderGraphBuffer*  getBuffer(RenderGraphHandle handle) const;
 
-    bool isWrite(RenderGraphHandle handle, const RenderPassNode* passNode) const;
-    bool isRead(RenderGraphHandle handle, const RenderPassNode* passNode) const;
+    bool isWrite(RenderGraphHandle handle, const GraphicsPassNode* passNode) const;
+    bool isRead(RenderGraphHandle handle, const GraphicsPassNode* passNode) const;
 
     void setUp();
 
@@ -154,7 +154,7 @@ private:
     std::vector<RenderGraphNode*> getOutComingNodes(RenderGraphNode* node) const;
 
     PassNode* addPassImpl(const std::string& name, RenderGraphPassBase* base) {
-        auto node = new RenderPassNode(*this, name, base);
+        auto node = new GraphicsPassNode(*this, name, base);
         mPassNodes.emplace_back(node);
         return node;
     }

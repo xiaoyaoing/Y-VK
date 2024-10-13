@@ -14,6 +14,7 @@ std::unique_ptr<Scene> SceneLoaderInterface::LoadSceneFromFile(Device& device, c
     std::string extension = path.substr(path.find_last_of(".") + 1);
     auto scene =  sceneLoaders[extension](device, path, config);
     scene->setName(path.substr(path.find_last_of("/") + 1));
+    scene->setPath(path);
     return scene;
 }
 

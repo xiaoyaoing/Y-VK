@@ -68,7 +68,7 @@ void ForwardPass::render(RenderGraph& rg) {
             builder.declare(desc); }, [&](RenderPassContext& context) {
             auto view = g_manager->fetchPtr<View>("view");
 
-                g_context->getPipelineState().setPipelineLayout(*mPipelineLayout);
+            g_context->getPipelineState().setPipelineLayout(*mPipelineLayout);
             view->bindViewBuffer().bindViewShading().bindViewGeom(context.commandBuffer);
 
             auto& blackBoard     = rg.getBlackBoard();

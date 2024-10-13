@@ -37,6 +37,7 @@ struct RaytracingPassSettings {
     RENDER_GRAPH_PASS_TYPE type = RENDER_GRAPH_PASS_TYPE::RAYTRACING;
     Accel*                 accel{nullptr};
     PipelineLayout*        pipelineLayout{nullptr};
+    std::vector<std::string> shaderPaths;
 
     std::vector<RenderGraphHandle> inBuffer;
     std::vector<RenderGraphHandle> outBuffer;

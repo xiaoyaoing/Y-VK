@@ -20,5 +20,6 @@ struct SceneLoadingConfig {
     glm::vec3                       sceneTranslation{0.0f};
     glm::quat                       sceneRotation{1.0f, 0.0f, 0.0f, 0.0f};
     glm::vec3                       sceneScale{1.0f};
+    bool loadLight{true};
     LoadCallback                    loadCallback{nullptr};
 };

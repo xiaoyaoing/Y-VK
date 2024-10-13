@@ -11,27 +11,26 @@
 #include "LightInjectionPass.h"
 #include "VoxelizationPass.h"
 #include "../../framework/Common/VkCommon.h"
+#include "Common/Config.h"
 #include "Common/FIleUtils.h"
 #include "Core/Shader/GlslCompiler.h"
-#include "Core/Shader/Shader.h"
 #include "RenderPasses/ShadowMapPass.h"
 #include "Scene/SceneLoader/SceneLoaderInterface.h"
 #include "Scene/SceneLoader/gltfloader.h"
 
 void VXGI::drawFrame(RenderGraph& rg) {
 
+    VxgiContext::OnFrameBegin();
     updateClipRegions();
 
-    auto& commandBuffer = renderContext->getGraphicCommandBuffer();
-    auto& blackBoard    = rg.getBlackBoard();
+    // view->getLights()[0].lightProperties.direction.x = sin(glfwGetTime() * 0.1f);
+    // view->getLights()[0].lightProperties.direction.z = cos(glfwGetTime() * 0.1f);
+    // view->setLightDirty(true);
 
-    //    if (frameCounter++ < 2) {
     for (auto& pass : passes) {
         pass->render(rg);
     }
     drawVoxelVisualization(rg);
-    //  }
-
     rg.setCutUnUsedResources(false);
 }
 void VXGI::drawVoxelVisualization(RenderGraph& renderGraph) {
@@ -54,52 +53,26 @@ BBox VXGI::getBBox(uint32_t clipmapLevel) {
 void VXGI::prepare() {
     Application::prepare();
 
-    
-   sceneLoadingConfig.sceneScale = glm::vec3(0.3f);
-   // loadScene(FileUtils::getResourcePath("sponza/Sponza01.gltf"));
-    loadScene("E:/code/moerengine-3dgs/asset/default/scenes/sponza/Sponza01.gltf");
-    // loadScene("E:/code/vkframeworklearn2/resources/cornell-box/cornellBox.gltf");
-    
-    GlslCompiler::forceRecompile = false;
+    sceneLoadingConfig.sceneScale = glm::vec3(0.008f);
+    sceneLoadingConfig.indexType  = VK_INDEX_TYPE_UINT32;
+    sceneLoadingConfig.loadLight  = false;
+    loadScene(FileUtils::getResourcePath("scenes/sponza/Sponza01.gltf"));
+    // loadScene("F:/bistro/bistro.gltf");
 
-    auto light_pos   = glm::vec3(0.0f, 128.0f, -225.0f);
-    auto light_color = glm::vec3(1.0, 1.0, 1.0);
+    GlslCompiler::forceRecompile = true;
 
-    for (int i = -4; i < 4; ++i) {
-        for (int j = 0; j < 2; ++j) {
-            glm::vec3 pos = light_pos;
-            pos.x += i * 400;
-            pos.z += j * (225 + 140);
-            pos.y = 8;
-
-            for (int k = 0; k < 3; ++k) {
-                pos.y = pos.y + (k * 100);
-
-                light_color.x = static_cast<float>(rand()) / (RAND_MAX);
-                light_color.y = static_cast<float>(rand()) / (RAND_MAX);
-                light_color.z = static_cast<float>(rand()) / (RAND_MAX);
-
-                LightProperties props;
-                props.color     = light_color;
-                props.intensity = 0.2f;
-                props.position  = pos;
-
-                //  scene->addLight(SgLight{.type = LIGHT_TYPE::Point, .lightProperties = props});
-            }
-        }
-    }
-    
     for (uint32_t i = 0; i < CLIP_MAP_LEVEL_COUNT; i++) {
         VxgiContext::getBBoxes().push_back(getBBox(i));
     }
+    updateClipRegions();
 
     passes.emplace_back(std::make_unique<GBufferPass>());
-    // passes.emplace_back(std::make_unique<ShadowMapPass>());
+    passes.emplace_back(std::make_unique<ShadowMapPass>());
     passes.emplace_back(std::make_unique<VoxelizationPass>());
     passes.emplace_back(std::make_unique<LightInjectionPass>());
     passes.emplace_back(std::make_unique<CopyAlphaPass>());
     passes.emplace_back(std::make_unique<FinalLightingPass>());
-    
+
     g_manager->putPtr("scene", scene.get());
     g_manager->putPtr("view", view.get());
     g_manager->putPtr("camera", camera.get());
@@ -124,7 +97,7 @@ void VXGI::onUpdateGUI() {
     for (auto& pass : passes) {
         pass->updateGui();
     }
-    ImGui::Checkbox("C1", &m_visualizeClipRegion[0]); 
+    ImGui::Checkbox("C1", &m_visualizeClipRegion[0]);
     ImGui::SameLine();
     ImGui::Checkbox("C2", &m_visualizeClipRegion[1]);
     ImGui::SameLine();
@@ -137,6 +110,8 @@ void VXGI::onUpdateGUI() {
     ImGui::Checkbox("C6", &m_visualizeClipRegion[5]);
     ImGui::SameLine();
     ImGui::Checkbox("Radiance", &mVisualizeRadiance);
+
+    VxgiContext::Gui();
 }
 
 void VXGI::updateClipRegions() {
@@ -145,7 +120,7 @@ void VXGI::updateClipRegions() {
     }
 }
 void VXGI::onSceneLoaded() {
-    scene->addDirectionalLight({0, -0.95f, 0.3f}, glm::vec3(1.0f), 1.5f);
+    scene->addDirectionalLight({0, -1.f, 0}, glm::vec3(1.0f), 1.5f, vec3(0.0f, 20, -5.f));
     Application::onSceneLoaded();
 }
 

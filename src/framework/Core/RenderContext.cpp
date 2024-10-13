@@ -581,7 +581,7 @@ void RenderContext::flushAndDispatch(CommandBuffer& commandBuffer, uint32_t grou
 void RenderContext::beginRenderPass(CommandBuffer& commandBuffer, RenderTarget& renderTarget, const std::vector<SubpassInfo>& subpassInfos) {
     auto& renderPass  = device.getResourceCache().requestRenderPass(renderTarget.getAttachments(), subpassInfos);
     auto& framebuffer = device.getResourceCache().requestFrameBuffer(
-        renderTarget, renderPass);
+        renderTarget, renderPass,renderTarget.getExtent());
 
     commandBuffer.beginRenderPass(renderPass, framebuffer, renderTarget.getDefaultClearValues(), {});
 
@@ -591,6 +591,8 @@ void RenderContext::beginRenderPass(CommandBuffer& commandBuffer, RenderTarget& 
 
     pipelineState.setRenderPass(renderPass);
     pipelineState.setSubpassIndex(0);
+
+    
 }
 
 void RenderContext::nextSubpass(CommandBuffer& commandBuffer) {
@@ -637,6 +639,10 @@ void RenderContext::endRenderPass(CommandBuffer& commandBuffer, RenderTarget& re
 
     pipelineState.reset();
 }
+void RenderContext::resetViewport(CommandBuffer& commandBuffer) {
+    commandBuffer.setViewport(0, {vkCommon::initializers::viewport(float(getViewPortExtent().width), float(getViewPortExtent().height), 0.0f, 1.0f, flipViewport)});
+    commandBuffer.setScissor(0, {vkCommon::initializers::rect2D(float(getViewPortExtent().width), float(getViewPortExtent().height), 0, 0)});
+}
 
 void RenderContext::clearPassResources() {
     resourceSets.clear();
@@ -650,6 +656,11 @@ RenderContext& RenderContext::bindPushConstants(const std::vector<uint8_t>& push
         LOGE("Push Constant Size is too large,device support {},but current size is {}", maxPushConstantSize, size);
     }
     storePushConstants.insert(storePushConstants.end(), pushConstants.begin(), pushConstants.end());
+    return *this;
+}
+RenderContext &  RenderContext::bindShaders(const std::vector<std::string>& shaderPaths) {
+    auto & pipelineLayout = device.getResourceCache().requestPipelineLayout(shaderPaths);
+    pipelineState.setPipelineLayout(pipelineLayout);
     return *this;
 }
 

@@ -115,7 +115,13 @@ void View::drawPrimitives(CommandBuffer& commandBuffer) {
     }
     
 }
-void View::drawPrimitives(CommandBuffer& commandBuffer, const PrimitiveSelectFunc& selectFunc) {
+void View::drawPrimitives(CommandBuffer& commandBuffer, const PrimitiveSelectFunc& selectFunc,bool forceSelect) {
+    if(mScene->getMergeDrawCall()) {
+        if(forceSelect)
+            LOGE("forceSelect is not supported in merge draw call mode");
+        return drawPrimitives(commandBuffer);
+    }
+    
     int instance_count = 0;
     for (const auto& primitive : mVisiblePrimitives) {
         if (selectFunc(*primitive)) {
@@ -144,6 +150,9 @@ void View::updateGui() {
         //todo fix this only one dir now
         static float dir[3] = {light.lightProperties.direction.x, light.lightProperties.direction.y, light.lightProperties.direction.z};
         ImGui::SliderFloat3("Direction", dir, -1, 1, "%.2f");
+        static float pos[3] = {light.lightProperties.position.x, light.lightProperties.position.y, light.lightProperties.position.z};
+        ImGui::SliderFloat3("Position", pos, -100, 100, "%.2f");
+        ImGui::Checkbox("Use shadow", &light.lightProperties.use_shadow);
         light.lightProperties.direction = glm::normalize(glm::vec3(dir[0], dir[1], dir[2]));
     }
     ImGui::SliderFloat("Rough Scale", &mPerViewUniform.roughnessScale, 0.0f, 5.0f);
@@ -216,6 +225,7 @@ void View::updateLight(bool updateAllLightBuffer) {
         }
         lightUib.info.z = light.lightProperties.shadow_index;
         lightUib.shadow_matrix = light.lightProperties.shadow_matrix;
+        lightUib.shadow_desc = light.lightProperties.shadow_desc;
         lights.emplace_back(lightUib);
     }
     if(!updateAllLightBuffer) {

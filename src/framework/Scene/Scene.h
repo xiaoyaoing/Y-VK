@@ -11,6 +11,8 @@
 #include "../shaders/gltfMaterial.glsl"
 #include "Raytracing/commons.h"
 
+#include <filesystem>
+
 class Camera;
 
 class GltfLoading;
@@ -98,6 +100,8 @@ public:
     void addPrimitives(std::vector<std::unique_ptr<Primitive>>&& primitives);
     void setName(const std::string& name);
     const std::string& getName() const;
+    void setPath(const std::filesystem::path& path);
+    const std::filesystem::path& getPath() const;
 
     SceneLoadCompleteInfo& getLoadCompleteInfo() const;
 
@@ -107,6 +111,7 @@ protected:
     friend RuntimeSceneManager;
     bool mergeDrawCall = false;
     std::string mName;
+    std::filesystem::path mPath;
     std::vector<GltfMaterial> materials;
     std::vector<RTMaterial>   rtMaterials;
     BBox sceneBBox;

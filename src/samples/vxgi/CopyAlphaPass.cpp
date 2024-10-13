@@ -1,5 +1,6 @@
 #include "CopyAlphaPass.h"
 
+#include "ClipmapCleaner.h"
 #include "Core/RenderContext.h"
 
 struct CopyAlphaPassData {
@@ -26,6 +27,8 @@ void CopyAlphaPass::render(RenderGraph& rg) {
                 g_context->bindPushConstants(data).flushAndDispatch(context.commandBuffer, groupCount, groupCount, groupCount);
             }
         });
+
+    ClipMapCleaner::downSampleRadiace(rg, rg.getBlackBoard().getHandle("radiance"));
 }
 void CopyAlphaPass::init() {
     mPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), std::vector<std::string>{"vxgi/copyAlpha.comp"});

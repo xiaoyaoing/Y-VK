@@ -351,11 +351,14 @@ void Application::resetImageSave() {
         auto width  = g_context->getViewPortExtent().width;
         auto height = g_context->getViewPortExtent().height;
 
-        std::shared_ptr<std::vector<uint8_t>> data   = std::make_shared<std::vector<uint8_t>>(width * height * 4);
+        std::shared_ptr<std::vector<uint8_t>> data   = std::make_shared<std::vector<uint8_t>>(imageSave.buffer->getSize());
         auto                                  mapped = imageSave.buffer->map();
         memcpy(data->data(), mapped, data->size());
         imageSave.buffer->unmap();
-        ImageIO::saveImage("output.png", data, width, height, 4, imageSave.savePng, imageSave.saveExr);
+
+        auto sceneFolderPath = scene->getPath().parent_path().string();
+        auto imagePath = sceneFolderPath + "/output";
+        ImageIO::saveImage(imagePath.c_str(), data, width, height, 4, imageSave.savePng, imageSave.saveExr);
 
         imageSave.saveExr = false;
         imageSave.savePng = false;

@@ -85,7 +85,7 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkInstance
                 LOGW("Optional device extension {} not available, some features may be disabled", extension);
             } else {
                 LOGE("Required device extension {} not available, cannot run", extension);
-                error = true;
+                error = VK_TRUE;
             }
         }
 
@@ -126,16 +126,17 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkInstance
 
     //todo check if this is needed
     device_features2.features.geometryShader    = VK_TRUE;
-    device_features2.features.shaderInt64       = true;
+    device_features2.features.shaderInt64       = VK_TRUE;
+    device_features2.features.multiViewport     = VK_TRUE;
     VkPhysicalDeviceVulkan12Features features12 = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};
-    features12.runtimeDescriptorArray           = true;
-    features12.bufferDeviceAddress              = true;
-    features12.descriptorIndexing               = true;
+    features12.runtimeDescriptorArray           = VK_TRUE;
+    features12.bufferDeviceAddress              = VK_TRUE;
+    features12.descriptorIndexing               = VK_TRUE;
 
     VkPhysicalDeviceSynchronization2FeaturesKHR syncronization2_features = {
         VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR};
 
-    syncronization2_features.synchronization2 = true;
+    syncronization2_features.synchronization2 = VK_TRUE;
 
     if (enableRayTracing) {
         VkPhysicalDeviceRayTracingPipelineFeaturesKHR rt_fts{
@@ -146,9 +147,9 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkInstance
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT};
 
         VkPhysicalDeviceVulkan13Features features13 = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES};
-        features13.dynamicRendering                 = true;
-        features13.synchronization2                 = true;
-        features13.maintenance4                     = true;
+        features13.dynamicRendering                 = VK_TRUE;
+        features13.synchronization2                 = VK_TRUE;
+        features13.maintenance4                     = VK_TRUE;
 
         VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_feature = {
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR};
@@ -156,27 +157,27 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkInstance
         VkPhysicalDeviceMaintenance4FeaturesKHR maintenance4_fts = {
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES_KHR};
 
-        atomic_fts.shaderBufferFloat32AtomicAdd              = true;
-        atomic_fts.shaderBufferFloat32Atomics                = true;
-        atomic_fts.shaderSharedFloat32AtomicAdd              = true;
-        atomic_fts.shaderSharedFloat32Atomics                = true;
+        atomic_fts.shaderBufferFloat32AtomicAdd              = VK_TRUE;
+        atomic_fts.shaderBufferFloat32Atomics                = VK_TRUE;
+        atomic_fts.shaderSharedFloat32AtomicAdd              = VK_TRUE;
+        atomic_fts.shaderSharedFloat32Atomics                = VK_TRUE;
         atomic_fts.pNext                                     = nullptr;
-        accel_fts.accelerationStructure                      = true;
+        accel_fts.accelerationStructure                      = VK_TRUE;
         accel_fts.pNext                                      = &atomic_fts;
-        rt_fts.rayTracingPipeline                            = true;
+        rt_fts.rayTracingPipeline                            = VK_TRUE;
         rt_fts.pNext                                         = &accel_fts;
-        features12.shaderSampledImageArrayNonUniformIndexing = true;
-        features12.scalarBlockLayout                         = true;
+        features12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+        features12.scalarBlockLayout                         = VK_TRUE;
 
-        dynamic_rendering_feature.dynamicRendering = true;
-        maintenance4_fts.maintenance4              = true;
+        dynamic_rendering_feature.dynamicRendering = VK_TRUE;
+        maintenance4_fts.maintenance4              = VK_TRUE;
         syncronization2_features.pNext             = &maintenance4_fts;
         maintenance4_fts.pNext                     = &dynamic_rendering_feature;
         dynamic_rendering_feature.pNext            = &rt_fts;
 
-        device_features2.features.samplerAnisotropy = true;
+        device_features2.features.samplerAnisotropy = VK_TRUE;
         //
-        device_features2.features.vertexPipelineStoresAndAtomics = true;
+        device_features2.features.vertexPipelineStoresAndAtomics = VK_TRUE;
         //
 
         VkPhysicalDeviceProperties2 device_properties{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2};
@@ -187,10 +188,10 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkInstance
     features12.pNext       = &syncronization2_features;
     device_features2.pNext = &features12;
 
-    bool enableFragmentStoresAndAtomics = true;
+    bool enableFragmentStoresAndAtomics = VK_TRUE;
 
     if (enableFragmentStoresAndAtomics) {
-        device_features2.features.fragmentStoresAndAtomics = true;
+        device_features2.features.fragmentStoresAndAtomics = VK_TRUE;
     }
 
     createInfo.pNext = &device_features2;

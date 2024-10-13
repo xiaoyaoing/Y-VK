@@ -23,7 +23,7 @@ struct VisualizeParams {
 };
 
 struct alignas(16) VisualizeFragConstant {
-    float     u_borderWidth{0.05f};
+    float     u_borderWidth{0.2f};
     float     u_alpha{1.f};
     glm::vec4 u_borderColor{glm::vec4(0.5f, 0.5f, 0.5f, 1.f)};
 };
@@ -65,7 +65,6 @@ void VisualizeVoxelPass::render(RenderGraph& rg) {
 void VisualizeVoxelPass::visualize3DClipmapGS(RenderGraph& rg, RenderGraphHandle texture, const ClipmapRegion& region, uint32_t clipmapLevel, ClipmapRegion* prevRegion, bool hasMultipleFaces, int numColorComponents, bool clearDepth) {
     VisualizeParams params;
     params.u_viewProj            = g_manager->fetchPtr<View>("view")->getCamera()->viewProj();
-    auto t                       = params.u_viewProj * glm::vec4(g_manager->fetchPtr<View>("view")->getCamera()->getPosition(), 1);
     params.u_imageMin            = region.getMinPosImage(region.extent);
     params.u_regionMin           = region.minCoord;
     params.u_hasPrevClipmapLevel = prevRegion ? 1 : 0;

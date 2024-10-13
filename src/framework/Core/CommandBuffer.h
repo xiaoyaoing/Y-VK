@@ -30,7 +30,9 @@ public:
         ResetIndividually,
         AlwaysAllocate,
     };
-
+    CommandBuffer operator=(const CommandBuffer&) = delete;
+    CommandBuffer(const CommandBuffer&) = delete;
+    
     VkCommandBuffer getHandle() const { return mCommandBuffer; }
 
     //Avoid right value can't be located.

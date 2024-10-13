@@ -14,7 +14,7 @@ std::string getPassName(const std::string& passType, const std::string& passName
     return std::string(passType) + " " + passName;
 }
 
-void RenderPassNode::RenderPassData::devirtualize(RenderGraph& renderGraph, const RenderPassNode& node) {
+void GraphicsPassNode::RenderPassData::devirtualize(RenderGraph& renderGraph, const GraphicsPassNode& node) {
     std::vector<SgImage*>   images;
     std::vector<Attachment> attachments;
 
@@ -36,12 +36,10 @@ void RenderPassNode::RenderPassData::devirtualize(RenderGraph& renderGraph, cons
     for (const auto& color : desc.textures) {
         if (!attachment_textures_set.contains(color))
             continue;
-        // auto color = pair.first;
 
         auto texture   = renderGraph.getTexture(color);
         auto hwTexture = texture->getHwTexture();
 
-        auto undefined = texture->first == &node && !texture->imported;
         auto write     = renderGraph.isWrite(color, &node);
         auto read      = renderGraph.isRead(color, &node);
 
@@ -64,16 +62,18 @@ void RenderPassNode::RenderPassData::devirtualize(RenderGraph& renderGraph, cons
         attachments.push_back(attachment);
         attachment_textures[color] = index++;
     }
-    renderTarget = std::make_unique<RenderTarget>(images, attachments, g_context->getViewPortExtent());
+
+    VkExtent2D extent = (desc.extent2D.width == 0 && desc.extent2D.height == 0) ? g_context->getViewPortExtent() : desc.extent2D;
+    renderTarget = std::make_unique<RenderTarget>(images, attachments, extent);
 }
 
-RenderTarget& RenderPassNode::RenderPassData::getRenderTarget() {
+RenderTarget& GraphicsPassNode::RenderPassData::getRenderTarget() {
     return *renderTarget;
 }
 
 VkPipeline pipeline = VK_NULL_HANDLE;
 
-void RenderPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) {
+void GraphicsPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) {
     renderPassData.devirtualize(renderGraph, *this);
 
     auto& renderTarget = renderPassData.getRenderTarget();
@@ -121,20 +121,21 @@ void RenderPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuf
     DebugUtils::CmdEndLabel(context.commandBuffer.getHandle());
 
     g_context->endRenderPass(commandBuffer, renderTarget);
+    g_context->clearPassResources(); 
 }
 
-void RenderPassNode::declareRenderTarget(const std::string& name, const RenderGraphPassDescriptor& descriptor) {
+void GraphicsPassNode::declareRenderTarget(const std::string& name, const RenderGraphPassDescriptor& descriptor) {
     renderPassData.name = name;
 
     renderPassData.desc = descriptor;
 }
 
-RenderPassNode::RenderPassNode(RenderGraph& renderGraph, const std::string& name, RenderGraphPassBase* base) : PassNode(name), mRenderPass(
+GraphicsPassNode::GraphicsPassNode(RenderGraph& renderGraph, const std::string& name, RenderGraphPassBase* base) : PassNode(name), mRenderPass(
                                                                                                                                    base),
                                                                                                                name(name) {
 }
 
-void RenderPassNode::declareRenderPass(const RenderGraphPassDescriptor& descriptor) {
+void GraphicsPassNode::declareRenderPass(const RenderGraphPassDescriptor& descriptor) {
     renderPassData.desc = descriptor;
 }
 
@@ -206,7 +207,13 @@ void ComputePassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBu
 
 void RayTracingPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) {
     auto& settings = mPass->getData();
-    g_context->getPipelineState().setPipelineType(PIPELINE_TYPE::E_RAY_TRACING).setPipelineLayout(*settings.pipelineLayout).setrTPipelineSettings(settings.rTPipelineSettings);
+    g_context->getPipelineState().setPipelineType(PIPELINE_TYPE::E_RAY_TRACING).setrTPipelineSettings(settings.rTPipelineSettings);
+    if(settings.pipelineLayout)
+        g_context->getPipelineState().setPipelineLayout(*settings.pipelineLayout);
+    else {
+        CHECK_RESULT(settings.shaderPaths.size() > 0, "No shader paths provided for ray tracing pass");
+        g_context->bindShaders(settings.shaderPaths);
+    }
     g_context->bindAcceleration(0, *settings.accel, 0, 0);
     RenderPassContext context{.commandBuffer = commandBuffer, .renderGraph = renderGraph};
 
@@ -226,7 +233,7 @@ ComputePassNode::ComputePassNode(RenderGraph& renderGraph, const std::string& na
 RayTracingPassNode::RayTracingPassNode(RenderGraph& renderGraph, const std::string& name, RaytracingRenderGraphPass* base) : PassNode(name), mPass(base) {
 }
 
-RENDER_GRAPH_PASS_TYPE RenderPassNode::getType() const {
+RENDER_GRAPH_PASS_TYPE GraphicsPassNode::getType() const {
     return RENDER_GRAPH_PASS_TYPE::GRAPHICS;
 }
 RENDER_GRAPH_PASS_TYPE ComputePassNode::getType() const {

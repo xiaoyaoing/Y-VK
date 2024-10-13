@@ -15,7 +15,7 @@
 // }
 
 void RenderGraph::Builder::declare(const RenderGraphPassDescriptor& desc) {
-    auto rNode = static_cast<RenderPassNode*>(node);
+    auto rNode = static_cast<GraphicsPassNode*>(node);
     rNode->declareRenderPass(desc);
 
     for (const auto& subpass : desc.subpasses) {
@@ -188,7 +188,7 @@ RenderGraphHandle RenderGraph::addTexture(RenderGraphTexture* texture) {
     return handle;
 }
 
-bool RenderGraph::isWrite(RenderGraphHandle handle, const RenderPassNode* passNode) const {
+bool RenderGraph::isWrite(RenderGraphHandle handle, const GraphicsPassNode* passNode) const {
     for (const auto& edge : edges) {
         if (edge.pass == passNode && edge.resource == getResource(handle)) {
             if (!edge.read)
@@ -198,7 +198,7 @@ bool RenderGraph::isWrite(RenderGraphHandle handle, const RenderPassNode* passNo
     return false;
 }
 
-bool RenderGraph::isRead(RenderGraphHandle handle, const RenderPassNode* passNode) const {
+bool RenderGraph::isRead(RenderGraphHandle handle, const GraphicsPassNode* passNode) const {
     for (const auto& edge : edges) {
         if (edge.pass == passNode && edge.resource == getResource(handle)) {
             if (edge.read)
@@ -218,7 +218,7 @@ ResourceNode* RenderGraph::getResource(RenderGraphHandle handle) const {
 void RenderGraph::addGraphicPass(const std::string& name, const GraphicSetup& setup, GraphicsExecute&& execute) {
 
     GraphicRenderGraphPass* pass = new GraphicRenderGraphPass(std::move(execute));
-    auto                    node = new RenderPassNode(*this, name, pass);
+    auto                    node = new GraphicsPassNode(*this, name, pass);
     mPassNodes.emplace_back(node);
     Builder builder(node, *this);
     setup(builder, pass->getData());

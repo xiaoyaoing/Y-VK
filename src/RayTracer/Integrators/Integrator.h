@@ -3,11 +3,6 @@
 #include "Core/RenderContext.h"
 #include <Raytracing/commons.h>
 
-// struct RTModel
-// {
-//     std::vector<glm::vec3> position;
-//
-// };
 
 class Integrator {
 public:

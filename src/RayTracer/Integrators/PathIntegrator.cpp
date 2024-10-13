@@ -92,7 +92,6 @@ PathIntegrator::PathIntegrator(Device& device_) : Integrator(device_) {
                                                           "Raytracing/PT/miss_shadow.rmiss",
                                                           "Raytracing/PT/closesthit.rchit",
                                                           "Raytracing/ray.rahit",
-
                                                       });
 
     tem_layout = std::make_unique<PipelineLayout>(device, std::vector<std::string>({"Raytracing/compute_triangle_area.comp"}));
