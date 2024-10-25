@@ -1,5 +1,6 @@
 #pragma once
 #include "Integrator.h"
+#include "Raytracing/ddgi/ddgi_commons.h"
 #include "RenderGraph/RenderGraph.h"
 
 #include <variant>
@@ -27,8 +28,18 @@ using Renderer = std::variant<IBLRenderer, RayTracerRenderer, DeferredRenderer, 
 
 class DDGI : public Integrator {
     void render(RenderGraph& graph) override;
-    DDGI();
+
+public:
+    void init() override;
+    void initScene(RTSceneEntry& entry) override;
+    DDGI(DDGIConfig _config,Device & device) : Integrator(device),config(_config) {}
+
 protected:
+    DDGIConfig config;
+    struct DDGIBuffers;
+    DDGIBuffers * buffers{nullptr};
+    DDGIUbo ubo;
+
     // class Impl;
     // Impl* impl;
 };

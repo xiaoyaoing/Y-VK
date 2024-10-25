@@ -1,0 +1,99 @@
+#version 460
+#extension GL_EXT_ray_tracing : require
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_scalar_block_layout : enable
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_debug_printf : enable
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
+#extension GL_EXT_buffer_reference2 : require
+#extension GL_EXT_shader_atomic_float : require
+
+
+layout(binding = 0, set = 2, rgba32f) uniform image2D direct_lighting_image;
+layout(buffer_reference, std430, buffer_reference_align = 4) readonly buffer GBuffer_{ DDGIGBuffer r[]; };
+GBuffer_ gbuffer = GBuffer_(scene_desc.gbuffer_addr);
+
+
+#include "../common.glsl"
+#include  "../bsdf.glsl"
+#include "path_commons.h"
+
+layout(location = 0) rayPayloadEXT HitPayload hitPayload;
+layout(location = 1) rayPayloadEXT AnyHitPayload any_hit_payload;
+layout(push_constant) uniform _PushConstantRay { PCPath pc_ray; };
+
+
+#include "../trace_common.glsl"
+
+uvec4 seed = init_rng(gl_LaunchIDEXT.xy, gl_LaunchSizeEXT.xy, pc_ray.frame_num);
+
+
+vec3 Le(vec3 dir_to_light){
+    uint light_idx = prim_infos.p[hitPayload.prim_idx].light_index;
+    if (light_idx == -1 || light_idx>pc_ray.light_num-1){
+        return vec3(0);
+    }
+    return eval_light(lights[light_idx], hitPayload.p, hitPayload.n_g, dir_to_light);
+}
+
+vec3 eval_env(vec3 dir){
+    dir = normalize(dir);
+    if (scene_desc.envmap_idx == -1){
+        return vec3(0);
+    }
+    mat4  m = transpose(lights[scene_desc.envmap_idx].world_matrix);
+    vec2 dir_uv = envdir_to_uv(m, dir);
+    return texture(scene_textures[lights[scene_desc.envmap_idx].light_texture_id], dir_uv).xyz;
+}
+
+void main()
+{
+
+
+    const vec2 pixelCenter = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
+    const vec2 inUV = pixelCenter/vec2(gl_LaunchSizeEXT.xy);
+    vec2 d = inUV * 2.0 - 1.0;
+    vec3 origin = (scene_ubo.viewInverse * vec4(0, 0, 0, 1)).xyz;
+    vec4 target = scene_ubo.projInverse * vec4(d.x, d.y, 1, 1);
+    vec4 direction = scene_ubo.viewInverse*vec4(normalize(target.xyz / target.w), 0);
+
+    uint rayFlags = gl_RayFlagsOpaqueEXT;
+    uint cullMask = 0xff;
+    float tmin = 0.001;
+    float tmax = 10000.0;
+    vec3 irradiance = vec3(0.f);
+    bool found_intersect = false;
+    SurfaceScatterEvent event;
+    {
+        hitPayload.material_idx = -1;
+
+        traceRayEXT(tlas, rayFlags, cullMask, 0, 0, 0, origin.xyz, tmin, direction.xyz, tmax, 0);
+
+
+        found_intersect = hitPayload.material_idx != -1;
+        if (!found_intersect) {
+            irradiance = throughput * eval_env(direction.xyz);
+            distance = 1000.f;
+        }
+        event = make_surface_scatter_event(hitPayload, -direction.xyz);
+        irradiance += throughput *  Le(direction.xyz);;
+
+        vec3 light_sample = uniform_sample_one_light(seed, event, pc_ray.light_num, pc_ray.enable_sample_light>0, pc_ray.enable_sample_bsdf>0);
+        irradiance +=  light_sample;
+    }
+    if (isnan(irradiance.x) || isnan(irradiance.y) || isnan(irradiance.z)){
+        debugPrintfEXT("nan irradiance %f %f %f\n", irradiance.x, irradiance.y, irradiance.z);
+    }
+    irradiance += Le(-direction.xyz);
+
+    imageStore(direct_lighting_image, ivec2(gl_LaunchIDEXT.xy), vec4(irradiance, 1.0));
+    if (found_intersect){
+        gbuffer.r[pixel_idx].normal = hitPayload.n_g;
+        gbuffer.r[pixel_idx].position = hitPayload.p;
+        gbuffer.r[pixel_idx].uv = hitPayload.uv;
+        gbuffer.r[pixel_idx].material_idx = hitPayload.material_idx; }
+    else {
+        gbuffer.r[pixel_idx].material_idx = -1;
+        gbuffer.r[pixel_idx].uv = vec2(1, 1);
+    }
+}

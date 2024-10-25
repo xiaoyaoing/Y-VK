@@ -1,0 +1,84 @@
+#version 460
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_scalar_block_layout : enable
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_debug_printf : enable
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
+#extension GL_EXT_buffer_reference2 : require
+#extension GL_EXT_shader_atomic_float : require
+#include "ddgi_commons.h"
+
+
+
+layout(set = 0, binding = 6) readonly buffer DDGIRayDataBuffer { DDGIRayData data[]; } ddgi_ray_data_buffer;
+layout(set = 1, binding = 0) uniform sampler2D prev_radiance_map;
+layout(set = 2, binding = 0) writeonly uniform image2D radiance_map;
+
+layout(set = 0, binding = 0) uniform _DDGIUboBuffer{ DDGIUbo ddgi_ubo; };
+
+#include "ddgi_sample.glsl"
+
+
+
+
+layout(local_size_x = NUM_THREADS_X, local_size_y = NUM_THREADS_Y,
+local_size_z = 1) in;
+shared DDGIRayData ray_radiance[CACHE_SIZE];
+
+const float tmax = 10000.0;
+void main(){
+
+
+    const uint probe_idx = gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x;
+
+    uint num_probes = ddgi_ubo.probe_counts.x * ddgi_ubo.probe_counts.y * ddgi_ubo.probe_counts.z;
+    if (probe_idx >= num_probes){
+        return;
+    }
+    const uvec3 probe_coord = get_probe_coord_by_index(probe_idx);
+
+    const uvec2 pixel_coord_top_left = get_pixel_coord_top_left(probe_coord);
+
+    const uvec2 pixel_coord_local = uvec2(gl_LocalInvocationID.xy);
+
+    const uvec2 pixel_current = pixel_coord_top_left + pixel_coord_local;
+    const uvec2 copy_coord = pixel_coord_top_left - 1;
+    vec3 texel_dir = oct_decode(normalized_oct_coord(pixel_coord_local));
+    float total_weight = 0.0;
+    vec3 result = vec3(0.0);
+    uint offset = 0;
+    uint remaining_rays = ddgi_ubo.rays_per_probe;
+
+
+    //debugPrintfEXT("probe_idx: %d remaining_rays: %d\n", probe_idx, remaining_rays);
+    while (remaining_rays > 0){
+        uint num_rays = min(remaining_rays, CACHE_SIZE);
+
+        //        return;
+
+        if (gl_LocalInvocationIndex.x < num_rays){
+            ray_radiance[gl_LocalInvocationIndex] = ddgi_ray_data_buffer.data[gl_LocalInvocationIndex + probe_idx * ddgi_ubo.rays_per_probe + offset];
+        }
+        barrier();
+
+        for (uint i = 0; i < num_rays; i++){
+            const vec3 dir = ray_radiance[i].direction;
+            const float dist = ray_radiance[i].dist;
+
+            float weight = clamp(dot(texel_dir, dir), 0.0, 1.0);
+            total_weight += weight;
+            result += ray_radiance[i].irradiance * weight;
+        }
+
+        remaining_rays -= num_rays;
+        offset += num_rays;
+        barrier();
+    }
+
+    if (total_weight>0.0)
+    result /= total_weight;
+
+    vec3 prev_radiance = texelFetch(prev_radiance_map, ivec2(pixel_current), 0).rgb;
+    result = mix(result, prev_radiance, 0.95f);
+    imageStore(radiance_map, ivec2(pixel_current), vec4(result, 1.0));
+}
