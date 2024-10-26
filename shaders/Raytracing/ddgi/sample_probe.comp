@@ -19,7 +19,7 @@ GBuffer_ gbuffer = GBuffer_(scene_desc.gbuffer_addr);
 
 layout(set = 2, binding = 0) uniform sampler2D radiance_map;
 layout(set = 0, binding = 0) uniform _DDGIUboBuffer{ DDGIUbo ddgi_ubo; };
-layout(push_constant) uniform _PushConstantRay { PCDDGI pc; };
+layout(push_constant) uniform _PushConstantRay { PCPath pc; };
 
 
 #include "ddgi_sample.glsl"

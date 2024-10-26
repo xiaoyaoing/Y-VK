@@ -4,28 +4,6 @@
 #include "../commons.h"
 
 
-struct PCDDGI {
-    mat4 probe_rotation;
-    
-    vec3 sky_col;
-    uint frame_num;
-    
-    uint size_x;
-    uint size_y;
-    uint time;
-    int max_depth;
-    
-    float total_light_area;
-    int light_triangle_count;
-    uint dir_light_idx;
-    int first_frame;
-    
-    int light_num;
-    uint enable_sample_bsdf;
-    uint enable_sample_light;
-    int pad;
-};
-
 struct DDGIUbo {
     ivec3 probe_counts;
     float hysteresis;
@@ -55,14 +33,14 @@ struct DDGIRayData{
     float dist;
 };
 
-struct DDGIGBuffer {
-    vec3 position;
-    uint material_idx;
-    vec2 uv;
-    vec2 pad;
-    vec3 normal;
-    uint pad2;
-};
+// struct DDGIGBuffer {
+//     vec3 position;
+//     uint material_idx;
+//     vec2 uv;
+//     vec2 pad;
+//     vec3 normal;
+//     uint pad2;
+// };
 
 // static const uint DDGI_COLOR_RESOLUTION = 6; // this should not be modified, border update code is fixed
 // static const uint DDGI_COLOR_TEXELS = 1 + DDGI_COLOR_RESOLUTION + 1; // with border. NOTE: this must be 4x4 block aligned for BC6!

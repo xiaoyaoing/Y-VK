@@ -2,7 +2,7 @@
 #define NUM_THREADS_Y 16
 #define PROBE_SIDE_LENGTH 16
 #define PROBE_WITH_BORDER_SIDE 18
-#define CACHE_SIZE 8
+#define CACHE_SIZE 32
 
 uvec3 get_probe_coord_by_index(uint probe_idx){
     uvec3 probe_counts  = ddgi_ubo.probe_counts;

@@ -16,7 +16,7 @@
 
 layout(location = 0) rayPayloadEXT HitPayload hitPayload;
 layout(location = 1) rayPayloadEXT AnyHitPayload any_hit_payload;
-layout(push_constant) uniform _PushConstantRay { PCDDGI pc_ray; };
+layout(push_constant) uniform _PushConstantRay { PCPath pc_ray; };
 layout(set = 0, binding = 0) uniform _DDGIUboBuffer{ DDGIUbo ddgi_ubo; };
 layout(set = 0, binding = 6, std430)  buffer DDGIRayDataBuffer { DDGIRayData data[]; } ddgi_ray_data_buffer;
 layout(set = 0, binding = 7)  buffer ProbeOffsets { vec3 d[]; } probe_offsets;
@@ -119,7 +119,7 @@ void main()
     ray_data.direction = direction;
     uint index = probe_index * ddgi_ubo.rays_per_probe + ray_index;
 
-    ddgi_ray_data_buffer.data[index].irradiance = irradiance;
+    ddgi_ray_data_buffer.data[index] = ray_data;
     return;
 
 

@@ -16,7 +16,7 @@
 
 layout(location = 0) rayPayloadEXT HitPayload hitPayload;
 layout(location = 1) rayPayloadEXT AnyHitPayload any_hit_payload;
-layout(push_constant) uniform _PushConstantRay { PCDDGI pc_ray; } pc_ray;
+layout(push_constant) uniform _PushConstantRay { PCPath pc_ray; } pc_ray;
 layout(set = 0, binding = 0) uniform _DDGIUboBuffer{ DDGIUbo ddgi_ubo; };
 layout(set = 0, binding = 6) writeonly buffer DDGIRayDataBuffer { DDGIRayData data[]; } ddgi_ray_data_buffer;
 layout(set = 0, binding = 7) uniform buffer ProbeOffsets { float d[]; } probe_offsets;

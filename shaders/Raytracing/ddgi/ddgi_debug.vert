@@ -4,6 +4,7 @@
 #extension GL_EXT_buffer_reference2 : require
 #extension GL_EXT_nonuniform_qualifier : require
 #extension GL_GOOGLE_include_directive : require
+#extension GL_EXT_debug_printf : enable
 
 #include "uvsphere.glsl"
 #include "ddgi_commons.h"
@@ -29,9 +30,11 @@ void main()
     vec3 probe_position = get_position_by_grid(probe_grid);
 
     normal = position;
+    
     position *= 0.05f;
     position += probe_position;
 
+//    debugPrintfEXT("probe_index: %d position: %f %f %f\n", probe_index, position.x, position.y, position.z);
     gl_Position = scene_ubo.proj * scene_ubo.view * vec4(position, 1.0);
   
 }

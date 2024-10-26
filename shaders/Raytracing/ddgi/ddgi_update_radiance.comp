@@ -49,20 +49,30 @@ void main(){
     uint offset = 0;
     uint remaining_rays = ddgi_ubo.rays_per_probe;
 
+    if (remaining_rays!=256){
+        debugPrintfEXT("probe_idx: %d remaining_rays: %d\n", probe_idx, remaining_rays);
+    }
+    //  remaining_rays = 256;
 
     //debugPrintfEXT("probe_idx: %d remaining_rays: %d\n", probe_idx, remaining_rays);
     while (remaining_rays > 0){
         uint num_rays = min(remaining_rays, CACHE_SIZE);
-
         //        return;
 
-        if (gl_LocalInvocationIndex.x < num_rays){
-            ray_radiance[gl_LocalInvocationIndex] = ddgi_ray_data_buffer.data[gl_LocalInvocationIndex + probe_idx * ddgi_ubo.rays_per_probe + offset];
+        if (gl_LocalInvocationIndex < num_rays){
+            uint index = gl_LocalInvocationIndex + probe_idx * ddgi_ubo.rays_per_probe + offset;
+            ray_radiance[gl_LocalInvocationIndex] = ddgi_ray_data_buffer.data[index];
         }
         barrier();
+        groupMemoryBarrier();
+        memoryBarrierBuffer();
 
         for (uint i = 0; i < num_rays; i++){
             const vec3 dir = ray_radiance[i].direction;
+            const vec3 radiance = ray_radiance[i].irradiance;
+
+
+
             const float dist = ray_radiance[i].dist;
 
             float weight = clamp(dot(texel_dir, dir), 0.0, 1.0);
@@ -72,12 +82,23 @@ void main(){
 
         remaining_rays -= num_rays;
         offset += num_rays;
+
         barrier();
+        groupMemoryBarrier();
+        memoryBarrierBuffer();
     }
 
+    if (pixel_current.x <0 || pixel_current.x >= ddgi_ubo.irradiance_width || pixel_current.y <0 || pixel_current.y >= ddgi_ubo.irradiance_height){
+        debugPrintfEXT("probe_idx: %d pixel_current: %d %d\n", probe_idx, pixel_current.x, pixel_current.y);
+        return;
+    }
     if (total_weight>0.0)
     result /= total_weight;
-
+    
+//    debugPrintfEXT("result: %f %f %f\n", result.x, result.y, result.z);
+//    
+//    return;
+    
     vec3 prev_radiance = texelFetch(prev_radiance_map, ivec2(pixel_current), 0).rgb;
     result = mix(result, prev_radiance, 0.95f);
     imageStore(radiance_map, ivec2(pixel_current), vec4(result, 1.0));

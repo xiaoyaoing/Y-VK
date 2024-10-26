@@ -14,7 +14,7 @@ layout(location = 0) out vec4 out_color;
 
 layout(set = 0, binding = 0) uniform _DDGIUboBuffer{ DDGIUbo ddgi_ubo; };
 layout(binding = 2, set = 0) uniform _SceneUboBuffer { SceneUbo scene_ubo; };
-layout(set = 2, binding = 0) uniform sampler2D radiance_map;
+layout(set = 1, binding = 0) uniform sampler2D radiance_map;
 
 #include  "ddgi_sample.glsl"
 
