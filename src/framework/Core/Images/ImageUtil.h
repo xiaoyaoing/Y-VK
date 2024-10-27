@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Vulkan.h"
+#include "RenderGraph/Enum.h"
 
 class ImageUtil {
 public:
@@ -35,10 +36,27 @@ public:
     //     return VulkanLayout::UNDEFINED;
     // }
 
-    static std::tuple<VkAccessFlags, VkAccessFlags, VkPipelineStageFlags, VkPipelineStageFlags, VkImageLayout, VkImageLayout>
+    static std::tuple<VkAccessFlags, VkAccessFlags, VkPipelineStageFlags2, VkPipelineStageFlags2, VkImageLayout, VkImageLayout>
     getVkTransition(VulkanLayout oldLayout, VulkanLayout newLayout);
 
     static VulkanLayout chooseVulkanLayout(VulkanLayout layout, VulkanLayout defaultLayout);
+
+
+    inline static VkPipelineStageFlags2 getStageFlags(RenderPassType type) {
+        VkPipelineStageFlags2 flags = 0;
+        switch(type) {
+            case RenderPassType::COMPUTE:
+                flags |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+            break;
+            case RenderPassType::GRAPHICS:
+                flags |= VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+            break;
+            case RenderPassType::RAYTRACING:
+                flags |= VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
+            break;
+        }
+        return flags;
+    }
 
     inline static VulkanLayout getDefaultLayout(TextureUsage usage) {
         if (any(usage & TextureUsage::STORAGE))

@@ -59,14 +59,14 @@ const Sampler& Texture::getSampler() const {
 //
 //     texture->getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY, subresourceRange);
 //
-//     g_context->submit(commandBuffer);
+//     g_context->submit(commandBuffer,true,VK_QUEUE_TRANSFER_BIT);
 //     texture->sampler = std::make_unique<Sampler>(device, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, mipmaps.size());
 // }
-static void initVKTexture(Device& device, 
-                        std::unique_ptr<Texture>& texture,
-                        CommandBuffer& commandBuffer,
-                        Buffer& imageBuffer,
-                        uint32_t offset) {
+static void initVKTexture(Device&                   device,
+                          std::unique_ptr<Texture>& texture,
+                          CommandBuffer&            commandBuffer,
+                          Buffer&                   imageBuffer,
+                          uint32_t                  offset) {
     texture->image->createVkImage(device);
     imageBuffer.uploadData(static_cast<void*>(texture->image->getData().data()), texture->image->getBufferSize(), offset);
 
@@ -74,8 +74,8 @@ static void initVKTexture(Device& device,
 
     uint32_t layerCount = texture->image->getArrayLayerCount();
     auto&    mipmaps    = texture->image->getMipMaps();
-    
-    for (int i = 0; i <  mipmaps.size(); i++) {
+
+    for (int i = 0; i < mipmaps.size(); i++) {
         VkBufferImageCopy imageCopy{};
         imageCopy.bufferRowLength                 = 0;
         imageCopy.bufferImageHeight               = 0;
@@ -100,7 +100,7 @@ static void initVKTexture(Device& device,
 
     commandBuffer.copyBufferToImage(imageBuffer, texture->image->getVkImage(), imageCopyRegions);
 
-  //  texture->getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY, subresourceRange);
+    //  texture->getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY, subresourceRange);
 
     if (texture->image->getMipMaps().size() == 1 && texture->image->needGenerateMipMapOnGpu()) {
         std::vector<VkImageBlit2> blits;
@@ -160,7 +160,7 @@ std::unique_ptr<Texture> Texture::loadTextureFromFile(Device& device, const std:
     CommandBuffer commandBuffer      = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
     auto          buffer             = Buffer(device, texture->image->getBufferSize(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
     initVKTexture(device, texture, commandBuffer, buffer, 0);
-    g_context->submit(commandBuffer);
+    g_context->submit(commandBuffer, true, VK_QUEUE_TRANSFER_BIT);
     return texture;
 }
 std::unique_ptr<Texture> Texture::loadTextureFromFileWitoutInit(Device& device, const std::string& path) {
@@ -176,7 +176,7 @@ std::unique_ptr<Texture> Texture::loadTextureFromMemory(Device& device, std::vec
     CommandBuffer commandBuffer      = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
     auto          buffer             = Buffer(device, texture->image->getBufferSize(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
     initVKTexture(device, texture, commandBuffer, buffer, 0);
-    g_context->submit(commandBuffer);
+    g_context->submit(commandBuffer, true, VK_QUEUE_TRANSFER_BIT);
     return texture;
 }
 
@@ -190,7 +190,7 @@ std::unique_ptr<Texture> Texture::loadTextureFromMemoryWithoutInit(Device& devic
 //     // CommandBuffer                        commandBuffer = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 //     // std::vector<std::unique_ptr<Buffer>> buffers;
 //     // initVKTexture(device, texture, commandBuffer, buffers);
-//     // g_context->submit(commandBuffer);
+//     // g_context->submit(commandBuffer,true,VK_QUEUE_TRANSFER_BIT);
 //     CommandBuffer                       commandBuffer = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 //     for(int i= 0 ;i< textures.size(); i++){
 //         std::vector<std::unique_ptr<Buffer>> buffers;
@@ -261,12 +261,12 @@ std::unique_ptr<Texture> Texture::loadTextureArrayFromFile(Device& device, const
     return texture;
 }
 
-void initTexturesInBatch(std::vector<std::unique_ptr<Texture>>& textures,int start,int end) {
-    if(end <= start){
+void initTexturesInBatch(std::vector<std::unique_ptr<Texture>>& textures, int start, int end) {
+    if (end <= start) {
         return;
     }
     // start = 31;end =32;
-    CommandBuffer commandBuffer = g_context->getDevice().createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true,VK_QUEUE_TRANSFER_BIT);
+    CommandBuffer commandBuffer = g_context->getDevice().createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true, VK_QUEUE_TRANSFER_BIT);
     uint32_t      size{0}, offset{0};
     for (int i = start; i < end; i++) {
         size += textures[i]->image->getBufferSize();
@@ -276,7 +276,7 @@ void initTexturesInBatch(std::vector<std::unique_ptr<Texture>>& textures,int sta
         initVKTexture(g_context->getDevice(), textures[i], commandBuffer, buffer, offset);
         offset += textures[i]->image->getBufferSize();
     }
-    g_context->submit(commandBuffer);
+    g_context->submit(commandBuffer, true, VK_QUEUE_TRANSFER_BIT);
     for (int i = start; i < end; i++) {
         //For hdr image,cpu date may be used in ray tracing scene,for accel construction
         if (textures[i]->getImage().getFormat() != VK_FORMAT_R32G32B32A32_SFLOAT) {
@@ -296,7 +296,7 @@ void Texture::initTexturesInOneSubmit(std::vector<std::unique_ptr<Texture>>& tex
     }
 
     return;
-    
+
     CommandBuffer commandBuffer = g_context->getDevice().createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
     uint32_t      size{0}, offset{0};
     for (auto& texture : textures) {
@@ -307,7 +307,7 @@ void Texture::initTexturesInOneSubmit(std::vector<std::unique_ptr<Texture>>& tex
         initVKTexture(g_context->getDevice(), texture, commandBuffer, buffer, offset);
         offset += texture->image->getBufferSize();
     }
-    g_context->submit(commandBuffer);
+    g_context->submit(commandBuffer, true, VK_QUEUE_TRANSFER_BIT);
     for (auto& texture : textures) {
         //For hdr image,cpu date may be used in ray tracing scene,for accel construction
         if (texture->getImage().getFormat() != VK_FORMAT_R32G32B32A32_SFLOAT) {

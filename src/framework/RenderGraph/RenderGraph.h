@@ -21,6 +21,28 @@
 // class RenderGraphPassBase;
 // class RenderGraph;
 
+class ResourceStateTracker {
+public:
+    void setResourceState(RenderGraphHandle resource, PassNode* pass, uint16_t usage) {
+        mResourceState[resource] = {pass, usage};
+    }
+    using LastResourceState = std::tuple<PassNode*, uint16_t>;
+
+    LastResourceState getResourceState(RenderGraphHandle resource) const {
+        auto it = mResourceState.find(resource);
+        if (it == mResourceState.end())
+            return {nullptr, 0};
+        return it->second;
+    }
+
+    void clear() {
+        mResourceState.clear();
+    }
+
+protected:
+    std::unordered_map<RenderGraphHandle, LastResourceState,RenderGraphHandle::Hash> mResourceState;
+};
+
 class CommandBuffer;
 
 class RenderGraph {
@@ -40,6 +62,14 @@ public:
         Builder& writeTexture(RenderGraphHandle         output,
                               RenderGraphTexture::Usage usage =
                                   RenderGraphTexture::Usage::NONE);
+
+        Builder& writeTexture(const std::string & name,
+                              RenderGraphTexture::Usage usage =
+                                  RenderGraphTexture::Usage::NONE);
+
+        Builder& readAndWriteTexture(RenderGraphHandle         input,
+                                     RenderGraphTexture::Usage usage =
+                                         RenderGraphTexture::Usage::NONE);
 
         Builder& readTextures(const std::vector<RenderGraphHandle>& inputs,
                               RenderGraphTexture::Usage             usage =
@@ -133,8 +163,8 @@ public:
 
     Device& getDevice() const;
 
-    std::vector<std::string> getResourceNames(RENDER_GRAPH_RESOURCE_TYPE type) const;
-    std::vector<std::string> getPasseNames(RENDER_GRAPH_PASS_TYPE type) const;
+    std::vector<std::string> getResourceNames(RenderResourceType type) const;
+    std::vector<std::string> getPasseNames(RenderPassType type) const;
 
     bool needToCutResource(ResourceNode* resourceNode) const;
 
@@ -145,7 +175,9 @@ public:
 
     bool getCutUnUsedResources() const;
     void setCutUnUsedResources(const bool cut_un_used_resources);
-
+    ResourceStateTracker& getResourceStateTracker(){
+        return resourceStateTracker;
+    }
 private:
     RenderGraphHandle addTexture(RenderGraphTexture* texture);
     RenderGraphHandle addBuffer(RenderGraphBuffer* buffer);
@@ -158,6 +190,8 @@ private:
         mPassNodes.emplace_back(node);
         return node;
     }
+
+    ResourceStateTracker resourceStateTracker;
 
     // Using union instead of directly use two type of struct may be better;
     // Using texture type and buffer type to avoid call get type function at runtime
@@ -211,3 +245,6 @@ private:
 
     // std::vector<std::unique_ptr<Vi>>
 };
+
+
+

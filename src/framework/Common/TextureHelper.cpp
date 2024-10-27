@@ -63,7 +63,7 @@ namespace TextureHelper {
             commandBuffer.copyBufferToImage(imageBuffer, blueNoise->getVkImage(), {imageCopy});
 
             blueNoise->getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY, subresourceRange);
-            g_context->submit(commandBuffer);
+            g_context->submit(commandBuffer,true,VK_QUEUE_TRANSFER_BIT);
             helperTextures[HELPERTEXTURE_BLUENOISE] = std::move(blueNoise);
         }
 

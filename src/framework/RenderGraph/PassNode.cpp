@@ -40,8 +40,8 @@ void GraphicsPassNode::RenderPassData::devirtualize(RenderGraph& renderGraph, co
         auto texture   = renderGraph.getTexture(color);
         auto hwTexture = texture->getHwTexture();
 
-        auto write     = renderGraph.isWrite(color, &node);
-        auto read      = renderGraph.isRead(color, &node);
+        auto write = renderGraph.isWrite(color, &node);
+        auto read  = renderGraph.isRead(color, &node);
 
         auto loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
         if (write && !read) {
@@ -54,9 +54,8 @@ void GraphicsPassNode::RenderPassData::devirtualize(RenderGraph& renderGraph, co
             .initial_layout = hwTexture->getVkImage().getLayout(hwTexture->getVkImageView().getSubResourceRange()),
             //todo fix this
             .loadOp = loadOp,
-            // .loadOp = desc.textures.size() == 1 ? VK_ATTACHMENT_LOAD_OP_LOAD : ((undefined | write) ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD),
-
-            .storeOp = VK_ATTACHMENT_STORE_OP_STORE};
+            .storeOp = VK_ATTACHMENT_STORE_OP_STORE
+        };
 
         images.push_back(hwTexture);
         attachments.push_back(attachment);
@@ -64,7 +63,7 @@ void GraphicsPassNode::RenderPassData::devirtualize(RenderGraph& renderGraph, co
     }
 
     VkExtent2D extent = (desc.extent2D.width == 0 && desc.extent2D.height == 0) ? g_context->getViewPortExtent() : desc.extent2D;
-    renderTarget = std::make_unique<RenderTarget>(images, attachments, extent);
+    renderTarget      = std::make_unique<RenderTarget>(images, attachments, extent);
 }
 
 RenderTarget& GraphicsPassNode::RenderPassData::getRenderTarget() {
@@ -121,7 +120,7 @@ void GraphicsPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandB
     DebugUtils::CmdEndLabel(context.commandBuffer.getHandle());
 
     g_context->endRenderPass(commandBuffer, renderTarget);
-    g_context->clearPassResources(); 
+    g_context->clearPassResources();
 }
 
 void GraphicsPassNode::declareRenderTarget(const std::string& name, const RenderGraphPassDescriptor& descriptor) {
@@ -131,8 +130,8 @@ void GraphicsPassNode::declareRenderTarget(const std::string& name, const Render
 }
 
 GraphicsPassNode::GraphicsPassNode(RenderGraph& renderGraph, const std::string& name, RenderGraphPassBase* base) : PassNode(name), mRenderPass(
-                                                                                                                                   base),
-                                                                                                               name(name) {
+                                                                                                                                       base),
+                                                                                                                   name(name) {
 }
 
 void GraphicsPassNode::declareRenderPass(const RenderGraphPassDescriptor& descriptor) {
@@ -143,17 +142,44 @@ PassNode::PassNode(const std::string& passName) {
     setName(passName);
 }
 
-void PassNode::resolveTextureUsages(RenderGraph& renderGraph, CommandBuffer& commandBuffer) {
-    for (auto& textureIt : mResourceUsage) {
-        textureIt.first->resloveUsage(commandBuffer, textureIt.second);
+void PassNode::resolveResourceUsages(RenderGraph& renderGraph, CommandBuffer& commandBuffer) {
+    ResourceBarrierInfo barrierInfo;
+    for (auto& resourceIt : mResourceUsage) {
+        auto  resource     = renderGraph.getResource(resourceIt.first);
+        auto& stateTracker = renderGraph.getResourceStateTracker();
+
+        auto state = stateTracker.getResourceState(resourceIt.first);
+
+        unsigned short srcUsage;
+        RenderPassType srcState;
+
+        if (std::get<0>(state) == nullptr) {
+            stateTracker.setResourceState(resourceIt.first, this, resourceIt.second);
+            srcState = getType();
+            srcUsage = 0;
+        } else {
+            srcState = std::get<0>(state)->getType();
+            srcUsage = std::get<1>(state);
+        }
+
+        resource->resloveUsage(barrierInfo, srcUsage, resourceIt.second, srcState, getType());
     }
+    VkDependencyInfo dependencyInfo{};
+    dependencyInfo.sType                    = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+    dependencyInfo.bufferMemoryBarrierCount = barrierInfo.bufferBarriers.size();
+    dependencyInfo.imageMemoryBarrierCount  = barrierInfo.imageBarriers.size();
+    dependencyInfo.memoryBarrierCount       = barrierInfo.memoryBarriers.size();
+    dependencyInfo.pBufferMemoryBarriers    = barrierInfo.bufferBarriers.data();
+    dependencyInfo.pImageMemoryBarriers     = barrierInfo.imageBarriers.data();
+    dependencyInfo.pMemoryBarriers          = barrierInfo.memoryBarriers.data();
+    vkCmdPipelineBarrier2(commandBuffer.getHandle(), &dependencyInfo);
 }
 
-void PassNode::addResourceUsage(ResourceNode* texture, uint16_t usage) {
-    if (mResourceUsage.contains(texture))
-        mResourceUsage[texture] |= usage;
+void PassNode::addResourceUsage(RenderGraphHandle handle, uint16_t usage) {
+    if (mResourceUsage.contains(handle))
+        mResourceUsage[handle] |= usage;
     else
-        mResourceUsage.emplace(texture, usage);
+        mResourceUsage.emplace(handle, usage);
 }
 
 void ImageCopyPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) {
@@ -208,13 +234,13 @@ void ComputePassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBu
 void RayTracingPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) {
     auto& settings = mPass->getData();
     g_context->getPipelineState().setPipelineType(PIPELINE_TYPE::E_RAY_TRACING).setrTPipelineSettings(settings.rTPipelineSettings);
-    if(settings.pipelineLayout)
+    if (settings.pipelineLayout)
         g_context->getPipelineState().setPipelineLayout(*settings.pipelineLayout);
     else {
         CHECK_RESULT(settings.shaderPaths.size() > 0, "No shader paths provided for ray tracing pass");
         g_context->bindShaders(settings.shaderPaths);
     }
-    g_context->bindAcceleration(0, *settings.accel, 0, 0);
+    g_context->bindAcceleration(0, *settings.accel);
     RenderPassContext context{.commandBuffer = commandBuffer, .renderGraph = renderGraph};
 
     auto passName = getPassName("RayTracing Pass", getName());
@@ -233,12 +259,12 @@ ComputePassNode::ComputePassNode(RenderGraph& renderGraph, const std::string& na
 RayTracingPassNode::RayTracingPassNode(RenderGraph& renderGraph, const std::string& name, RaytracingRenderGraphPass* base) : PassNode(name), mPass(base) {
 }
 
-RENDER_GRAPH_PASS_TYPE GraphicsPassNode::getType() const {
-    return RENDER_GRAPH_PASS_TYPE::GRAPHICS;
+RenderPassType GraphicsPassNode::getType() const {
+    return RenderPassType::GRAPHICS;
 }
-RENDER_GRAPH_PASS_TYPE ComputePassNode::getType() const {
-    return RENDER_GRAPH_PASS_TYPE::COMPUTE;
+RenderPassType ComputePassNode::getType() const {
+    return RenderPassType::COMPUTE;
 }
-RENDER_GRAPH_PASS_TYPE RayTracingPassNode::getType() const {
-    return RENDER_GRAPH_PASS_TYPE::RAYTRACING;
+RenderPassType RayTracingPassNode::getType() const {
+    return RenderPassType::RAYTRACING;
 }

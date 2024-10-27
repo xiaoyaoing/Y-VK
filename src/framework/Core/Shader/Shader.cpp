@@ -67,14 +67,14 @@ VkShaderStageFlagBits find_shader_stage(const std::string& ext) {
 
 static std::string SPV_CACHED_PATH = "spvcachedFiles/";
 
-static std::string GetSpvPathFromShaderPath(const std::string& path) {
+static std::string GetSpvPathFromShaderPath(const std::string& path, const std::string& shaderDefinitions) {
     static std::string shaderFolder = "shaders/";
     size_t             idx          = path.find(shaderFolder);
     if (idx == std::string::npos) {
         LOGE("Failed to find shaders folder in shader path: {}", path.c_str());
     }
     idx += shaderFolder.size();
-    return path.substr(0, idx) + SPV_CACHED_PATH + path.substr(idx) + ".spv";
+    return path.substr(0, idx) + SPV_CACHED_PATH + path.substr(idx) + shaderDefinitions + ".spv";
 }
 
 static std::ofstream OpenOrCreateFile(const std::string& path) {
@@ -93,48 +93,124 @@ static std::ofstream OpenOrCreateFile(const std::string& path) {
     }
     return std::ofstream(path, std::ios::binary);
 }
-Shader::Shader(Device& device, std::string path, VkShaderStageFlagBits spv_stage) : device(device) {
-    auto                  mode = getShaderMode(FileUtils::getFileExt(path));
+
+ShaderVariant::ShaderVariant(std::string&& preamble, std::vector<std::string>&& processes) : preamble{std::move(preamble)},
+                                                                                             processes{std::move(processes)} {
+    update_id();
+}
+
+size_t ShaderVariant::get_id() const {
+    return id;
+}
+
+void ShaderVariant::add_definitions(const std::vector<std::string>& definitions) {
+    for (auto& definition : definitions) {
+        add_define(definition);
+    }
+}
+
+void ShaderVariant::add_define(const std::string& def) {
+    processes.push_back("D" + def);
+
+    std::string tmp_def = def;
+
+    // The "=" needs to turn into a space
+    size_t pos_equal = tmp_def.find_first_of("=");
+    if (pos_equal != std::string::npos) {
+        tmp_def[pos_equal] = ' ';
+    }
+
+    preamble.append("#define " + tmp_def + "\n");
+
+    update_id();
+}
+
+void ShaderVariant::add_undefine(const std::string& undef) {
+    processes.push_back("U" + undef);
+
+    preamble.append("#undef " + undef + "\n");
+
+    update_id();
+}
+
+void ShaderVariant::add_runtime_array_size(const std::string& runtime_array_name, size_t size) {
+    if (runtime_array_sizes.find(runtime_array_name) == runtime_array_sizes.end()) {
+        runtime_array_sizes.insert({runtime_array_name, size});
+    } else {
+        runtime_array_sizes[runtime_array_name] = size;
+    }
+}
+
+void ShaderVariant::set_runtime_array_sizes(const std::unordered_map<std::string, size_t>& sizes) {
+    this->runtime_array_sizes = sizes;
+}
+
+const std::string& ShaderVariant::get_preamble() const {
+    return preamble;
+}
+
+const std::vector<std::string>& ShaderVariant::get_processes() const {
+    return processes;
+}
+
+const std::unordered_map<std::string, size_t>& ShaderVariant::get_runtime_array_sizes() const {
+    return runtime_array_sizes;
+}
+
+void ShaderVariant::clear() {
+    preamble.clear();
+    processes.clear();
+    runtime_array_sizes.clear();
+    update_id();
+}
+
+void ShaderVariant::update_id() {
+    std::hash<std::string> hasher{};
+    id = hasher(preamble);
+}
+
+Shader::Shader(Device& device, const ShaderKey& key, VkShaderStageFlagBits spv_stage) : device(device) {
+    std::string           shaderFilePath = FileUtils::getShaderPath(key.path);
+    auto                  mode           = getShaderMode(FileUtils::getFileExt(shaderFilePath));
     std::vector<uint32_t> spirvCode;
 
-    if (path.ends_with(".spv")) {
+    auto defineString = key.variant.get_preamble();
+
+    if (shaderFilePath.ends_with(".spv")) {
         mode  = SPV;
         stage = spv_stage;
     } else {
-        stage               = find_shader_stage(FileUtils::getFileExt(path));
-        std::string spvPath = GetSpvPathFromShaderPath(path);
+        stage               = find_shader_stage(FileUtils::getFileExt(shaderFilePath));
+        std::string spvPath = GetSpvPathFromShaderPath(shaderFilePath, defineString);
         if (std::filesystem::exists(spvPath)) {
             auto spvUpdateTime    = std::filesystem::last_write_time(spvPath);
-            auto shaderUpdateTime = std::filesystem::last_write_time(path);
+            auto shaderUpdateTime = std::filesystem::last_write_time(shaderFilePath);
             // localtime_s(spvUpdateTime);
             if (spvUpdateTime > shaderUpdateTime && !GlslCompiler::forceRecompile) {
-                mode = SPV;
-                path = spvPath;
-                LOGI("Cached shader spv found: {},Spv last update time {}", path, FileUtils::getFileTimeStr(spvPath));
+                mode           = SPV;
+                shaderFilePath = spvPath;
+                LOGI("Cached shader spv found: {},Spv last update time {}", shaderFilePath, FileUtils::getFileTimeStr(spvPath));
             }
         }
     }
 
     if (mode == SHADER_LOAD_MODE::SPV) {
-
-        auto shaderSource = FileUtils::readShaderBinary(path);
-
+        auto shaderSource = FileUtils::readShaderBinary(shaderFilePath);
         if (shaderSource.empty()) {
             mode = SHADER_LOAD_MODE::ORIGIN_SHADER;
         }
-
         spirvCode.assign(reinterpret_cast<const uint32_t*>(shaderSource.data()),
                          reinterpret_cast<const uint32_t*>(shaderSource.data() + shaderSource.size()));
     }
     if (mode == SHADER_LOAD_MODE::ORIGIN_SHADER) {
         std::string shaderLog;
-        auto        shaderBuffer = FileUtils::readShaderBinary(path);
-        if (!GlslCompiler::compileToSpirv(stage, shaderBuffer, "main", spirvCode, shaderLog, path)) {
-            LOGE("Failed to compile shader {}, Error: {}", path, shaderLog.c_str())
+        auto        shaderBuffer = FileUtils::readShaderBinary(shaderFilePath);
+        if (!GlslCompiler::compileToSpirv(stage, shaderBuffer, "main", spirvCode, shaderLog, shaderFilePath, key)) {
+            LOGE("Failed to compile shader {}, Error: {}", shaderFilePath, shaderLog.c_str())
         } else {
-            LOGI("Shader compiled from source code succrssfully {}", path.c_str());
+            LOGI("Shader compiled from source code succrssfully {}", shaderFilePath.c_str());
         }
-        std::string   spvPath = GetSpvPathFromShaderPath(path);
+        std::string   spvPath = GetSpvPathFromShaderPath(shaderFilePath, defineString);
         std::ofstream file    = OpenOrCreateFile(spvPath);
         file.write(reinterpret_cast<const char*>(spirvCode.data()), spirvCode.size() * sizeof(uint32_t));
         file.close();
@@ -151,7 +227,7 @@ Shader::Shader(Device& device, std::string path, VkShaderStageFlagBits spv_stage
                             reinterpret_cast<const char*>(spirvCode.data() + spirvCode.size())));
 
     if (!SpirvShaderReflection::reflectShaderResources(spirvCode, stage, resources)) {
-        LOGE("Failed to reflect shader resources,Shader path: {}", path.c_str())
+        LOGE("Failed to reflect shader resources,Shader path: {}", shaderFilePath.c_str())
     }
 }
 

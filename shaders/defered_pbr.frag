@@ -107,15 +107,16 @@ void main(void)
     }
     diffuseColor = baseColor.rgb;
 
-    o_diffuse_roughness  = vec4(diffuseColor, perceptualRoughness);
 
     vec3 normal = getNormal(material.normalTexture);
 
-    o_normal_metalic = vec4(normal * 0.5f  + 0.5f, metallic);
     vec3 emissionColor            = material.emissiveFactor;
     if (material.emissiveTexture > -1)
     {
         emissionColor *= SRGBtoLinear(texture(scene_textures[material.emissiveTexture], in_uv), 2.2).rgb;
     }
+
+    o_diffuse_roughness  = vec4(diffuseColor, perceptualRoughness);
+    o_normal_metalic = vec4(normal * 0.5f  + 0.5f, metallic);
     o_emssion = vec4(emissionColor, 1.0);
 }

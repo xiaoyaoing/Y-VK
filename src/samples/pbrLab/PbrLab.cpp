@@ -55,7 +55,7 @@ void PBRLab::drawFrame(RenderGraph& rg) {
             builder.declare(descriptor);
         },
         [&](RenderPassContext& context) {
-            renderContext->getPipelineState().setDepthStencilState({.depthTestEnable = false}).setRasterizationState({.depthClampEnable = VK_FALSE, .cullMode = VK_CULL_MODE_NONE}).setPipelineLayout(device->getResourceCache().requestPipelineLayout(std::vector<std::string>{"skybox.vert", "skybox.frag"}));
+            renderContext->getPipelineState().setDepthStencilState({.depthTestEnable = false}).setRasterizationState({.depthClampEnable = VK_FALSE, .cullMode = VK_CULL_MODE_NONE}).setPipelineLayout(device->getResourceCache().requestPipelineLayout(ShaderPipelineKey{"skybox.vert", "skybox.frag"}));
             view->bindViewBuffer();
 
             renderContext->bindPrimitiveGeom(context.commandBuffer, *cube).bindImageSampler(0, environmentCube->getImage().getVkImageView(), environmentCube->getSampler()).bindPushConstants(SkyBoxPushConstant{.exposure = exposure, .gamma = gamma});

@@ -40,7 +40,7 @@ static  std::string kdownsampleRadianceShader = "vxgi/radianceDownSample.comp";
 
 void ClipMapCleaner::init() {
     Device& device  = g_context->getDevice();
-    mPipelineLayout = std::make_unique<PipelineLayout>(device, std::vector<std::string>{"vxgi/clearClipmap.comp"});
+    mPipelineLayout = std::make_unique<PipelineLayout>(device, ShaderPipelineKey{"vxgi/clearClipmap.comp"});
 }
 void ClipMapCleaner::downSampleOpacity(RenderGraph& rg, RenderGraphHandle opacity) {
     if(VxgiContext::getConfig().useDownSample == false) {

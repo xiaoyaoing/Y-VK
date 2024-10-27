@@ -1,12 +1,2 @@
-#prgma once
-namespace Moer{
-
-
-
-
-
-
-
-
-
-}
+#pragma once
+#include <cstdint>

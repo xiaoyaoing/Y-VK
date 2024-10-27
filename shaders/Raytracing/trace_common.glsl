@@ -1,17 +1,24 @@
 vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event, bool enable_sample_light, bool enable_sample_bsdf, inout uvec4 seed){
 
+
+    
+    
     vec3 result = vec3(0);
 
     vec3 light_sample_rand = rand3(seed);
 
     if (is_specular_material(materials.m[event.material_idx])){
+        debugPrintfEXT("specular\n");
         return vec3(0, 0, 0);
     }
+
+    
     const RTLight light = lights[light_idx];
 
 
     LightSample light_sample = sample_li(light, event, light_sample_rand);
     
+
     if (enable_sample_light)
     {
         if (!isBlack(light_sample.indensity) && light_sample.pdf != 0){
@@ -33,10 +40,10 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
                 if (hasNaN(result)){
                     debugPrintfEXT("light L %f %f %f\n", light.L.x, light.L.y, light.L.z);
                     debugPrintfEXT("bsdf %f %f %f\n", bsdf.x, bsdf.y, bsdf.z);
-                                        debugPrintfEXT("light_mis_weight %f\n", light_mis_weight);
-                                        debugPrintfEXT("light_sample.pdf %f\n", light_sample.pdf);
-                                        debugPrintfEXT("bsdf_pdf %f\n", bsdf_pdf);
-                                        debugPrintfEXT("result %f %f %f\n", result.x, result.y, result.z);
+                    debugPrintfEXT("light_mis_weight %f\n", light_mis_weight);
+                    debugPrintfEXT("light_sample.pdf %f\n", light_sample.pdf);
+                    debugPrintfEXT("bsdf_pdf %f\n", bsdf_pdf);
+                    debugPrintfEXT("result %f %f %f\n", result.x, result.y, result.z);
                 }
             }
         }

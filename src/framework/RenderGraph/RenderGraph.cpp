@@ -47,6 +47,15 @@ RenderGraph::Builder& RenderGraph::Builder::writeTexture(RenderGraphHandle outpu
     renderGraph.edges.emplace_back(Edge{.pass = node, .resource = texture, .usage = static_cast<uint16_t>(usage), .read = false});
     return *this;
 }
+RenderGraph::Builder& RenderGraph::Builder::writeTexture(const std::string& name, RenderGraphTexture::Usage usage) {
+    auto handle = renderGraph.getBlackBoard().getHandle(name);
+    return writeTexture(handle, usage);
+}
+RenderGraph::Builder& RenderGraph::Builder::readAndWriteTexture(RenderGraphHandle input, RenderGraphTexture::Usage usage) {
+    readTexture(input, usage);
+    writeTexture(input, usage);
+    return *this;
+}
 RenderGraph::Builder& RenderGraph::Builder::readTextures(const std::vector<RenderGraphHandle>& inputs, RenderGraphTexture::Usage usage) {
     for (auto& input : inputs) {
         readTexture(input, usage);
@@ -84,13 +93,13 @@ RenderGraphHandle RenderGraph::importBuffer(const std::string& name, Buffer* hwB
 
 RenderGraphTexture* RenderGraph::getTexture(RenderGraphHandle handle) const {
     auto resource = getResource(handle);
-    CHECK_RESULT(resource->getType() == RENDER_GRAPH_RESOURCE_TYPE::ETexture);
+    CHECK_RESULT(resource->getType() == RenderResourceType::ETexture);
     return static_cast<RenderGraphTexture*>(resource);
 }
 
 RenderGraphBuffer* RenderGraph::getBuffer(RenderGraphHandle handle) const {
     auto resource = getResource(handle);
-    CHECK_RESULT(resource->getType() == RENDER_GRAPH_RESOURCE_TYPE::EBuffer);
+    CHECK_RESULT(resource->getType() == RenderResourceType::EBuffer);
     return static_cast<RenderGraphBuffer*>(resource);
 }
 
@@ -103,6 +112,10 @@ RenderGraphHandle RenderGraph::addBuffer(RenderGraphBuffer* buffer) {
 }
 
 RenderGraphHandle RenderGraph::createTexture(const std::string& name, const RenderGraphTexture::Descriptor& desc) {
+    if (mBlackBoard->contains(name)) {
+        LOGI("Texture with name {} already exists in render graph", name);
+        return mBlackBoard->getHandle(name);
+    }
     auto texture = new RenderGraphTexture(name, desc);
     return addTexture(texture);
 }
@@ -180,7 +193,7 @@ RenderGraphHandle RenderGraph::addTexture(RenderGraphTexture* texture) {
         LOGE("Texture with name %s already exists in render graph", texture->getName());
     }
     const RenderGraphHandle handle(mResources.size());
-    if (texture->getName() == "depth")
+    if (texture->getName() == DEPTH_IMAGE_NAME)
         texture->addRef();
     mBlackBoard->put(texture->getName(), handle);
     texture->handle = handle;
@@ -314,7 +327,7 @@ void RenderGraph::compile() {
         }
 
         for (const auto edge : getEdges(passNode)) {
-            passNode->addResourceUsage(edge->resource, edge->usage);
+            passNode->addResourceUsage(edge->resource->handle, edge->usage);
         }
     }
 
@@ -348,7 +361,7 @@ void RenderGraph::clearPass() {
 Device& RenderGraph::getDevice() const {
     return device;
 }
-std::vector<std::string> RenderGraph::getResourceNames(RENDER_GRAPH_RESOURCE_TYPE type) const {
+std::vector<std::string> RenderGraph::getResourceNames(RenderResourceType type) const {
     std::vector<std::string> names{};
     for (const auto& resource : mResources) {
         if (any(resource->getType() & type))
@@ -357,7 +370,7 @@ std::vector<std::string> RenderGraph::getResourceNames(RENDER_GRAPH_RESOURCE_TYP
     return names;
 }
 
-std::vector<std::string> RenderGraph::getPasseNames(RENDER_GRAPH_PASS_TYPE type) const {
+std::vector<std::string> RenderGraph::getPasseNames(RenderPassType type) const {
 
     std::vector<std::string> names{};
     for (const auto& passNode : mPassNodes) {
@@ -389,7 +402,7 @@ void RenderGraph::execute(CommandBuffer& commandBuffer) {
             resource->devirtualize();
             //getBlackBoard().put(resource->getName(), resource->handle);
         }
-        pass->resolveTextureUsages(*this, commandBuffer);
+        pass->resolveResourceUsages(*this, commandBuffer);
         pass->execute(*this, commandBuffer);
 
         for (const auto& resourceNode : pass->destroy) {

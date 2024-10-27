@@ -31,7 +31,7 @@ void CopyAlphaPass::render(RenderGraph& rg) {
     ClipMapCleaner::downSampleRadiace(rg, rg.getBlackBoard().getHandle("radiance"));
 }
 void CopyAlphaPass::init() {
-    mPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), std::vector<std::string>{"vxgi/copyAlpha.comp"});
+    mPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), ShaderPipelineKey{"vxgi/copyAlpha.comp"});
 
     mSampler = std::make_unique<Sampler>(g_context->getDevice(), VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, 0.0f);
 }

@@ -214,10 +214,10 @@ void Application::update() {
         }
         updateScene();
         drawFrame(graph);
-        mPostProcessPass->render(graph);
+        //mPostProcessPass->render(graph);
     }
 
-    mCurrentTextures = graph.getResourceNames(RENDER_GRAPH_RESOURCE_TYPE::ETexture);
+    mCurrentTextures = graph.getResourceNames(RenderResourceType::ETexture);
     graph.addImageCopyPass(graph.getBlackBoard().getHandle(mPresentTexture), graph.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME));
     handleSaveImage(graph);
 

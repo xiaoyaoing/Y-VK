@@ -52,7 +52,7 @@ std::unique_ptr<Primitive> GetVoxelPrimitive(int resolution) {
 
 void VisualizeVoxelPass::init() {
     mPipelineLayout = std::make_unique<PipelineLayout>(
-        g_context->getDevice(), std::vector<std::string>{"vxgi/visualization/voxelVisualization.vert", "vxgi/visualization/voxelVisualization.geom", "vxgi/visualization/voxelVisualization.frag"});
+        g_context->getDevice(), ShaderPipelineKey{"vxgi/visualization/voxelVisualization.vert", "vxgi/visualization/voxelVisualization.geom", "vxgi/visualization/voxelVisualization.frag"});
     mUniformBuffers.reserve(CLIP_MAP_LEVEL_COUNT);
     for (uint32_t i = 0; i < CLIP_MAP_LEVEL_COUNT; i++) {
         mUniformBuffers.emplace_back(g_context->getDevice(), sizeof(VisualizeParams), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
@@ -88,7 +88,7 @@ void VisualizeVoxelPass::visualize3DClipmapGS(RenderGraph& rg, RenderGraphHandle
         "VisualizeVoxelPass", [&](auto& builder, auto& settings) {
         RenderGraphPassDescriptor desc{};
             auto output = rg.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
-            auto depth  = rg.getBlackBoard().getHandle("depth");
+            auto depth  = rg.getBlackBoard().getHandle(DEPTH_IMAGE_NAME);
         desc.textures = {texture, output,depth};
         desc.addSubpass({.inputAttachments =  {},.outputAttachments = {output,depth}});
         builder.readTextures({texture,output}).writeTextures({output,depth});

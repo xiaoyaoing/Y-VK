@@ -9,6 +9,7 @@
 #include "Common/ResourceCache.h"
 #include "Common/VkCommon.h"
 #include "Core/Shader/GlslCompiler.h"
+#include "Integrators/DDGIIntegrator.h"
 #include "Integrators/PathIntegrator.h"
 #include "Integrators/RestirIntegrator.h"
 #include "Integrators/SimpleIntegrator.h"
@@ -38,14 +39,22 @@ void RayTracer::drawFrame(RenderGraph& renderGraph) {
     sceneUbo.proj        = camera->proj();
     sceneUbo.prev_view   = lastFrameSceneUbo.view;
     sceneUbo.prev_proj   = lastFrameSceneUbo.proj;
+    sceneUbo.z_near       = camera->getNearClipPlane();
+    sceneUbo.z_far        = camera->getFarClipPlane();
     rtSceneEntry->sceneUboBuffer->uploadData(&sceneUbo, sizeof(sceneUbo));
 
     lastFrameSceneUbo = sceneUbo;
+    renderGraph.createTexture(RT_IMAGE_NAME, {integrators[currentIntegrator]->width, integrators[currentIntegrator]->height, TextureUsage::STORAGE | TextureUsage::TRANSFER_SRC | TextureUsage::SAMPLEABLE | TextureUsage::COLOR_ATTACHMENT, VK_FORMAT_R32G32B32A32_SFLOAT});
     integrators[currentIntegrator]->render(renderGraph);
     // postProcess->render(renderGraph);
-
-    renderGraph.addImageCopyPass(renderGraph.getBlackBoard().getHandle(RT_IMAGE_NAME), renderGraph.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME));
+    if (renderGraph.getBlackBoard().contains(RT_IMAGE_NAME))
+        renderGraph.addImageCopyPass(renderGraph.getBlackBoard().getHandle(RT_IMAGE_NAME), renderGraph.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME));
 }
+
+static const std::string kPathIntegrator     = "path";
+static const std::string kRestirDIIntegrator = "restir";
+static const std::string kDDGIIntegrator     = "ddgi";
+
 void RayTracer::onSceneLoaded() {
     camera = scene->getCameras()[0];
     Config::GetInstance().CameraFromConfig(*camera, scene->getName());
@@ -56,17 +65,27 @@ void RayTracer::onSceneLoaded() {
         integrator.second->initScene(*rtSceneEntry);
         integrator.second->init();
     }
+
+    initView();
 }
 
 void RayTracer::prepare() {
     Application::prepare();
-    GlslCompiler::setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_5);
+    GlslCompiler::setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_6);
     GlslCompiler::forceRecompile = true;
 
-    integrators["path"]   = std::make_unique<PathIntegrator>(*device);
-    integrators["restir"] = std::make_unique<RestirIntegrator>(*device);
-    integratorNames       = {"path", "restir"};
-    currentIntegrator     = "resitr";
+    integrators[kPathIntegrator] = std::make_unique<PathIntegrator>(*device);
+    // integrators[kRestirDIIntegrator] = std::make_unique<RestirIntegrator>(*device);
+    // DDGIIntegrator a({},*device);
+    integrators[kDDGIIntegrator] = std::make_unique<DDGIIntegrator>(*device);
+    // integratorNames              = {kPathIntegrator, kRestirDIIntegrator, kDDGIIntegrator};
+
+    for (auto& integrator : integrators) {
+        integratorNames.push_back(integrator.first);
+    }
+
+    currentIntegrator = kDDGIIntegrator;
+    // currentIntegrator = kPathIntegrator;
 
     sceneLoadingConfig = {.requiredVertexAttribute = {POSITION_ATTRIBUTE_NAME, INDEX_ATTRIBUTE_NAME, NORMAL_ATTRIBUTE_NAME, TEXCOORD_ATTRIBUTE_NAME},
                           .enableMergeDrawCalls    = false,
@@ -74,7 +93,7 @@ void RayTracer::prepare() {
                           .bufferAddressAble       = true,
                           .bufferForAccel          = true,
                           .bufferForStorage        = true,
-                          .sceneScale              = glm::vec3(1.f)};
+                          .sceneScale              = glm::vec3(0.008f)};
     loadScene(FileUtils::getResourcePath("scenes/sponza/Sponza01.gltf"));
 }
 
@@ -98,7 +117,6 @@ void RayTracer::onUpdateGUI() {
 
     integrators[currentIntegrator]->onUpdateGUI();
 }
-
 
 int main() {
     RayTracer rayTracer({});

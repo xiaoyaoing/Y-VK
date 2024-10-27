@@ -38,7 +38,6 @@ const SgImage& Blackboard::getHwImage(const std::string& name) const noexcept {
 }
 
 const Buffer& Blackboard::getBuffer(const std::string& name) const noexcept {
-    LOGI("Blackboard::getBuffer {}", name);
     return *graph.getBuffer(getHandle(name))->getHwBuffer();
 }
 

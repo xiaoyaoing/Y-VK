@@ -63,11 +63,11 @@ void HizPass::render(RenderGraph& rg) {
     rg.addComputePass(
         "Hiz Pass",
         [&](RenderGraph::Builder& builder, ComputePassSettings& settings) {
-            auto depth           = rg.getBlackBoard().getHandle("depth");
+            auto depth           = rg.getBlackBoard().getHandle(DEPTH_IMAGE_NAME);
             auto depth_hierrachy = rg.getBlackBoard().getHandle("depth_hiz");
             //Layout will be handle explicitly
             builder.readTexture(depth, TextureUsage::SAMPLEABLE).writeTexture(depth_hierrachy, TextureUsage::NONE);
-            settings.pipelineLayout = &rg.getDevice().getResourceCache().requestPipelineLayout(std::vector<std::string>{"common/hiz.comp"});
+            settings.pipelineLayout = &rg.getDevice().getResourceCache().requestPipelineLayout(ShaderPipelineKey{"common/hiz.comp"});
         },
         [&](RenderPassContext& context) {
             auto&      hierrachy = rg.getBlackBoard().getHwImage("depth_hiz");
@@ -80,7 +80,7 @@ void HizPass::render(RenderGraph& rg) {
                 dependencyInfo.pImageMemoryBarriers    = barriers.data();
                 vkCmdPipelineBarrier2(context.commandBuffer.getHandle(), &dependencyInfo);
                 if (i == 0) {
-                    g_context->bindImageSampler(0, rg.getBlackBoard().getImageView("depth"), rg.getDevice().getResourceCache().requestSampler());
+                    g_context->bindImageSampler(0, rg.getBlackBoard().getImageView(DEPTH_IMAGE_NAME), rg.getDevice().getResourceCache().requestSampler());
                     g_context->bindImage(0, hierrachy.getVkImageView(VK_IMAGE_VIEW_TYPE_MAX_ENUM, VK_FORMAT_UNDEFINED, 0, 0, 1));
 
                 } else {

@@ -38,7 +38,7 @@ void RenderGraphTest::drawFrame(RenderGraph& rg) {
 
         RenderGraphHandle output;
 
-        RENDER_GRAPH_PASS_TYPE type = RENDER_GRAPH_PASS_TYPE::GRAPHICS;
+        RenderPassType type = RenderPassType::GRAPHICS;
     };
 
     if (useSubpass) {
@@ -60,7 +60,7 @@ void RenderGraphTest::drawFrame(RenderGraph& rg) {
     
                                                      });
     
-            auto depth = rg.createTexture("depth", {
+            auto depth = rg.createTexture(DEPTH_IMAGE_NAME, {
                            .extent = renderContext->getViewPortExtent(),
                            .useage = TextureUsage::SUBPASS_INPUT |
                                      TextureUsage::DEPTH_ATTACHMENT
@@ -80,7 +80,7 @@ void RenderGraphTest::drawFrame(RenderGraph& rg) {
             builder.declare( desc);
             blackBoard.put("albedo", albedo);
             blackBoard.put("normal", normal);
-            blackBoard.put("depth", depth);
+            blackBoard.put(DEPTH_IMAGE_NAME, depth);
             blackBoard.put(RENDER_VIEW_PORT_IMAGE_NAME, output); }, [&](RenderPassContext& context) {
     
             view->bindViewBuffer().bindViewShading();
@@ -96,7 +96,7 @@ void RenderGraphTest::drawFrame(RenderGraph& rg) {
             renderContext->getPipelineState().setDepthStencilState({.depthTestEnable = false});
     
                 
-            renderContext->bindImage(0, blackBoard.getImageView("albedo")).bindImage(1, blackBoard.getImageView("depth")).bindImage(2, blackBoard.getImageView("normal"));
+            renderContext->bindImage(0, blackBoard.getImageView("albedo")).bindImage(1, blackBoard.getImageView(DEPTH_IMAGE_NAME)).bindImage(2, blackBoard.getImageView("normal"));
                 
             renderContext->getPipelineState().setRasterizationState({
                                                                             .cullMode = VK_CULL_MODE_NONE

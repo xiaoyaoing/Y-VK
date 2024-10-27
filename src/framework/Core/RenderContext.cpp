@@ -154,9 +154,9 @@ void RenderContext::submitAndPresent(CommandBuffer& commandBuffer, VkFence fence
     queue.wait();
 }
 
-void RenderContext::submit(CommandBuffer& commandBuffer, bool waiteFence) {
+void RenderContext::submit(CommandBuffer& commandBuffer, bool waiteFence,VkQueueFlagBits queueFlags ) {
     commandBuffer.endRecord();
-    auto queue = device.getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0);
+    auto queue = device.getQueueByFlag(queueFlags, 0);
 
     VkSubmitInfo         submitInfo{VK_STRUCTURE_TYPE_SUBMIT_INFO};
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
@@ -230,7 +230,6 @@ RenderContext& RenderContext::bindBuffer(uint32_t binding, const Buffer& buffer,
 
 RenderContext& RenderContext::bindAcceleration(uint32_t binding, const Accel& acceleration, uint32_t setId, uint32_t array_element) {
     if (setId == -1)
-
         setId = static_cast<uint32_t>(DescriptorSetPoints::ACCELERATION);
     resourceSets[setId].bindAccel(acceleration, binding, array_element);
     resourceSetsDirty = true;
@@ -658,8 +657,8 @@ RenderContext& RenderContext::bindPushConstants(const std::vector<uint8_t>& push
     storePushConstants.insert(storePushConstants.end(), pushConstants.begin(), pushConstants.end());
     return *this;
 }
-RenderContext &  RenderContext::bindShaders(const std::vector<std::string>& shaderPaths) {
-    auto & pipelineLayout = device.getResourceCache().requestPipelineLayout(shaderPaths);
+RenderContext &  RenderContext::bindShaders(const ShaderPipelineKey& shaderKeys) {
+    auto & pipelineLayout = device.getResourceCache().requestPipelineLayout(shaderKeys);
     pipelineState.setPipelineLayout(pipelineLayout);
     return *this;
 }

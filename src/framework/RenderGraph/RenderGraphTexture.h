@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Enum.h"
+
 #include <memory>
 
 #include "ResourceNode.h"
@@ -37,7 +39,7 @@ public:
     static constexpr Usage DEFAULT_W_USAGE       = Usage::COLOR_ATTACHMENT;
     static constexpr Usage DEFAULT_DEPTH_W_USAGE = Usage::DEPTH_ATTACHMENT;
 
-    ~RenderGraphTexture() override = default;
+    ~RenderGraphTexture() override;
 
     RenderGraphTexture(const std::string& name, SgImage* hwTexture);
     RenderGraphTexture(const std::string& name, const Descriptor& descriptor);
@@ -55,11 +57,10 @@ public:
 
     void destroy() override;
 
-    RENDER_GRAPH_RESOURCE_TYPE getType() const override;
+    RenderResourceType getType() const override;
 
-    void resloveUsage(CommandBuffer& commandBuffer, uint16_t usage) override;
+    void resloveUsage(ResourceBarrierInfo& barrierInfo, uint16_t lastUsage, uint16_t nextUsage, RenderPassType lastPassType, RenderPassType nextPassType) override;
 
-public:
     bool             imported{false};
     const Descriptor mDescriptor;
 

@@ -58,7 +58,7 @@ void VoxelizationPass::init() {
     initClipRegions();
 
     Device& device              = g_context->getDevice();
-    mVoxelizationPipelineLayout = std::make_unique<PipelineLayout>(device, std::vector<std::string>{"vxgi/voxelization.vert", "vxgi/voxelization.geom", "vxgi/voxelization.frag"});
+    mVoxelizationPipelineLayout = std::make_unique<PipelineLayout>(device, ShaderPipelineKey{"vxgi/voxelization.vert", "vxgi/voxelization.geom", "vxgi/voxelization.frag"});
 
     VkExtent3D imageResolution = {VOXEL_RESOLUTION * 6,
                                   VOXEL_RESOLUTION * CLIP_MAP_LEVEL_COUNT,

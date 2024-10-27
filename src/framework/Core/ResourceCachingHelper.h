@@ -107,6 +107,18 @@ namespace std {
     };
 
     template<>
+    struct hash<ShaderKey> {
+        std::size_t operator()(const ShaderKey& shaderKey) const {
+            std::size_t result = 0;
+
+            hash_combine(result, shaderKey.path);
+            hash_combine(result, shaderKey.variant.get_id());
+
+            return result;
+        }
+    };
+
+    template<>
     struct hash<VkExtent3D> {
         std::size_t operator()(const VkExtent3D extent3d) const noexcept {
             std::size_t result;

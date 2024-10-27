@@ -15,6 +15,7 @@
 #include  "../bsdf.glsl"
 #include "path_commons.h"
 
+layout(binding = 0, set = 2, rgba32f) uniform image2D image;
 layout(location = 0) rayPayloadEXT HitPayload hitPayload;
 layout(location = 1) rayPayloadEXT AnyHitPayload any_hit_payload;
 layout(push_constant) uniform _PushConstantRay { PCPath pc_ray; };
@@ -59,7 +60,7 @@ void main()
 {
 
 
-    const vec2 pixelCenter = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
+    const vec2 pixelCenter = vec2(gl_LaunchIDEXT.xy) + rand2(seed);
     const vec2 inUV = pixelCenter/vec2(gl_LaunchSizeEXT.xy);
     vec2 d = inUV * 2.0 - 1.0;
     vec3 origin = (scene_ubo.viewInverse * vec4(0, 0, 0, 1)).xyz;

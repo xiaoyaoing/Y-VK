@@ -6,7 +6,7 @@ class DescriptorLayout;
 
 class PipelineLayout {
 public:
-    PipelineLayout(Device& device, const std::vector<std::string>& shaderPaths);
+    PipelineLayout(Device& device, const ShaderPipelineKey& shaderPaths);
 
     DescriptorLayout& getDescriptorSetLayout(std::size_t setIdx);
 

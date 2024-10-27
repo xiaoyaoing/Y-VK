@@ -9,6 +9,8 @@
 // #include "SPIRV/GlslangToSpv.h"
 // #include "ext/spirv-cross/spirv_glsl.hpp"
 
+#include "Shader.h"
+
 #include <filesystem>
 #include <SPIRV/GLSL.std.450.h>
 #include <SPIRV/GlslangToSpv.h>
@@ -69,7 +71,7 @@ inline EShLanguage FindShaderLanguage(VkShaderStageFlagBits stage) {
 glslang::EShTargetLanguage        GlslCompiler::env_target_language         = glslang::EShTargetSpv;
 glslang::EShTargetLanguageVersion GlslCompiler::env_target_language_version = glslang::EShTargetLanguageVersion::EShTargetSpv_1_5;
 
-bool GlslCompiler::compileToSpirv(VkShaderStageFlagBits stage, const std::vector<uint8_t>& glsl_source, const std::string& entry_point, std::vector<std::uint32_t>& spirv, std::string& info_log, const std::filesystem::path& shader_path) {
+bool GlslCompiler::compileToSpirv(VkShaderStageFlagBits stage, const std::vector<uint8_t>& glsl_source, const std::string& entry_point, std::vector<std::uint32_t>& spirv, std::string& info_log, const std::filesystem::path& shader_path, const ShaderKey& shaderKey) {
     //return false;
     // Initialize glslang library.
     glslang::InitializeProcess();
@@ -83,10 +85,15 @@ bool GlslCompiler::compileToSpirv(VkShaderStageFlagBits stage, const std::vector
     auto        shader_source     = reinterpret_cast<const char*>(source.data());
 
     glslang::TShader shader(language);
+
     shader.setStringsWithLengthsAndNames(&shader_source, nullptr, file_name_list, 1);
     shader.setEntryPoint(entry_point.c_str());
     shader.setSourceEntryPoint(entry_point.c_str());
 
+    // if (!definitions.empty()) {
+    shader.setPreamble(shaderKey.variant.get_preamble().c_str());
+    // }
+    shader.addProcesses(shaderKey.variant.get_processes());
     if (GlslCompiler::env_target_language != glslang::EShTargetLanguage::EShTargetNone)
         shader.setEnvTarget(GlslCompiler::env_target_language, GlslCompiler::env_target_language_version);
 

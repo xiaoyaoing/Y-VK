@@ -6,7 +6,7 @@
 
 void PostProcess::init() {
     PassBase::init();
-    mPipelineLayout = &g_context->getDevice().getResourceCache().requestPipelineLayout(std::vector<std::string>{
+    mPipelineLayout = &g_context->getDevice().getResourceCache().requestPipelineLayout(ShaderPipelineKey{
         "full_screen.vert",
         "postprocess/post.frag"});
     mSampler        = &g_context->getDevice().getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_FILTER_LINEAR, 1);

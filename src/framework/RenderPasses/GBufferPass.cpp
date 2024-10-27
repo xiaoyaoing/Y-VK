@@ -16,13 +16,13 @@ struct IBLLightingPassPushConstant {
 void GBufferPass::init() {
     // mNormal = std::make_unique<SgImage>(device,"normal",VKExt, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
     Device& device  = g_context->getDevice();
-    mPipelineLayout = std::make_unique<PipelineLayout>(device, std::vector<std::string>{"defered_one_scene_buffer.vert", "defered_pbr.frag"});
+    mPipelineLayout = std::make_unique<PipelineLayout>(device, ShaderPipelineKey{"defered_one_scene_buffer.vert", "defered_pbr.frag"});
 }
 void LightingPass::render(RenderGraph& rg) {
     rg.addGraphicPass(
         "LightingPass", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
             auto& blackBoard = rg.getBlackBoard();
-            auto  depth      = blackBoard["depth"];
+            auto  depth      = blackBoard[DEPTH_IMAGE_NAME];
             auto  normal     = blackBoard["normal"];
             auto  diffuse    = blackBoard["diffuse"];
             auto  emission   = blackBoard["emission"];
@@ -45,12 +45,12 @@ void LightingPass::render(RenderGraph& rg) {
             g_context->bindImage(0, blackBoard.getImageView("diffuse"))
                 .bindImage(1, blackBoard.getImageView("normal"))
                 .bindImage(2, blackBoard.getImageView("emission"))
-                .bindImage(3, blackBoard.getImageView("depth"))
+                .bindImage(3, blackBoard.getImageView(DEPTH_IMAGE_NAME))
                 .flushAndDraw(commandBuffer, 3, 1, 0, 0);
         });
 }
 void LightingPass::init() {
-    std::vector<std::string> shadersPath{"full_screen.vert", "lighting_pbr.frag"};
+    ShaderPipelineKey shadersPath{"full_screen.vert", "lighting_pbr.frag"};
     mPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), shadersPath);
 }
 void ForwardPass::render(RenderGraph& rg) {
@@ -58,7 +58,7 @@ void ForwardPass::render(RenderGraph& rg) {
         "ForwardPass", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
             auto& blackBoard = rg.getBlackBoard();
             auto  output     = blackBoard.getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
-            auto  depth = rg.createTexture("depth", {.extent = g_context->getViewPortExtent(), .useage = TextureUsage::DEPTH_ATTACHMENT | TextureUsage::SAMPLEABLE});
+            auto  depth = rg.createTexture(DEPTH_IMAGE_NAME, {.extent = g_context->getViewPortExtent(), .useage = TextureUsage::DEPTH_ATTACHMENT | TextureUsage::SAMPLEABLE});
 
             builder.writeTextures({output}, TextureUsage::COLOR_ATTACHMENT).writeTextures({depth}, TextureUsage::DEPTH_ATTACHMENT);
             builder.readTexture(output);
@@ -109,7 +109,7 @@ void ForwardPass::render(RenderGraph& rg) {
 }
 void ForwardPass::init() {
     PassBase::init();
-    std::vector<std::string> shadersPath{"defered_one_scene_buffer.vert", "forward_lighting.frag"};
+    ShaderPipelineKey shadersPath{"defered_one_scene_buffer.vert", "forward_lighting.frag"};
     mPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), shadersPath);
 }
 
@@ -117,7 +117,7 @@ void IBLLightingPass::render(RenderGraph& rg) {
     rg.addGraphicPass(
         "IBLLightingPass", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
             auto& blackBoard     = rg.getBlackBoard();
-            auto  depth          = blackBoard["depth"];
+            auto  depth          = blackBoard[DEPTH_IMAGE_NAME];
             auto  normal         = blackBoard["normal"];
             auto  diffuse        = blackBoard["diffuse"];
             auto  emission       = blackBoard["emission"];
@@ -140,7 +140,7 @@ void IBLLightingPass::render(RenderGraph& rg) {
             auto& commandBuffer = context.commandBuffer;
             auto  view          = g_manager->fetchPtr<View>("view");
             auto& blackBoard    = rg.getBlackBoard();
-            g_context->getPipelineState().setPipelineLayout(g_context->getDevice().getResourceCache().requestPipelineLayout(std::vector<std::string>{"full_screen.vert", "pbrLab/lighting_ibl.frag"})).setRasterizationState({.cullMode = VK_CULL_MODE_NONE}).setDepthStencilState({.depthTestEnable = false});
+            g_context->getPipelineState().setPipelineLayout(g_context->getDevice().getResourceCache().requestPipelineLayout(ShaderPipelineKey{"full_screen.vert", "pbrLab/lighting_ibl.frag"})).setRasterizationState({.cullMode = VK_CULL_MODE_NONE}).setDepthStencilState({.depthTestEnable = false});
             view->bindViewBuffer();
 
             auto& irradianceCube = blackBoard.getImageView("irradianceCube");
@@ -162,7 +162,7 @@ void IBLLightingPass::render(RenderGraph& rg) {
             g_context->bindImage(0, blackBoard.getImageView("diffuse"))
                 .bindImage(1, blackBoard.getImageView("normal"))
                 .bindImage(2, blackBoard.getImageView("emission"))
-                .bindImage(3, blackBoard.getImageView("depth"))
+                .bindImage(3, blackBoard.getImageView(DEPTH_IMAGE_NAME))
                 .flushAndDraw(commandBuffer, 3, 1, 0, 0);
         });
 }
@@ -208,7 +208,7 @@ void GBufferPass::render(RenderGraph& rg) {
                                               .useage = TextureUsage::SUBPASS_INPUT |
                                                         TextureUsage::COLOR_ATTACHMENT | TextureUsage::SAMPLEABLE});   
 
-            auto depth = rg.createTexture("depth", {.extent = renderContext->getViewPortExtent(),
+            auto depth = rg.createTexture(DEPTH_IMAGE_NAME, {.extent = renderContext->getViewPortExtent(),
                 .useage = TextureUsage::SUBPASS_INPUT | TextureUsage::DEPTH_ATTACHMENT | TextureUsage::SAMPLEABLE
 
                                                    });

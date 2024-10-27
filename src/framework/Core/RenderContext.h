@@ -104,7 +104,7 @@ public:
     template<>
     RenderContext& bindPushConstants<std::vector<uint8_t>>(const std::vector<uint8_t>& pushConstants);
     
-    RenderContext & bindShaders(const std::vector<std::string>& shaderPaths);
+    RenderContext & bindShaders(const ShaderPipelineKey& shaderKeys);
     void flushPipelineState(CommandBuffer& commandBuffer);
 
     void flushPushConstantStage(CommandBuffer& commandBuffer);
@@ -131,7 +131,7 @@ public:
     uint32_t getActiveFrameIndex() const;
 
     void submitAndPresent(CommandBuffer& commandBuffer, VkFence fence = VK_NULL_HANDLE);
-    void submit(CommandBuffer& commandBuffer, bool waiteFence = true);
+    void submit(CommandBuffer& commandBuffer, bool waiteFence = true,VkQueueFlagBits queueFlags = VK_QUEUE_GRAPHICS_BIT);
 
     void setActiveFrameIdx(int idx);
 

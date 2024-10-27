@@ -71,7 +71,7 @@ enum class BufferUsage : uint16_t
     //!< Buffer can be used as an index buffer
     VERTEX = 0x4,
     //!< Buffer can be used as a vertex buffer
-    CONSTANT = 0x8,
+    READ = 0x8,
     //!< Buffer can be used as a constant buffer
     INDIRECT = 0x10,
     //!< Buffer can be used as an indirect buffer
@@ -88,6 +88,22 @@ enum class BufferUsage : uint16_t
     RAY_TRACING = 0x400,
     //!< Buffer can be used as a ray tracing buffer
     DEFAULT = UPLOADABLE //!< Default buffer usage
+};
+
+
+enum class RenderPassType : uint8_t {
+    UNDEFINED  = 0,
+    GRAPHICS   = 1,
+    COMPUTE    = 1 << 1,
+    RAYTRACING = 1 << 2,
+    ALL        = GRAPHICS | COMPUTE | RAYTRACING,
+};
+
+enum class RenderResourceType : uint8_t {
+    UNDEFINED = 0,
+    ETexture  = 1,
+    EBuffer   = 1 << 1,
+    ALL       = ETexture | EBuffer,
 };
 
 inline TextureUsage operator |(TextureUsage lhs, TextureUsage rhs)
@@ -125,3 +141,34 @@ inline bool any(BufferUsage usage)
     return static_cast<uint16_t>(usage) != 0;
 }
 
+
+inline RenderPassType operator |(RenderPassType lhs, RenderPassType rhs)
+{
+    return static_cast<RenderPassType>(static_cast<uint8_t>(lhs) | static_cast<uint8_t>(rhs));
+}
+
+
+inline RenderPassType operator &(RenderPassType lhs, RenderPassType rhs)
+{
+    return static_cast<RenderPassType>(static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs));
+}
+
+inline bool any(RenderPassType usage)
+{
+    return static_cast<uint8_t>(usage) != 0;
+}
+
+inline RenderResourceType operator |(RenderResourceType lhs, RenderResourceType rhs)
+{
+    return static_cast<RenderResourceType>(static_cast<uint8_t>(lhs) | static_cast<uint8_t>(rhs));
+}
+
+inline RenderResourceType operator &(RenderResourceType lhs, RenderResourceType rhs)
+{
+    return static_cast<RenderResourceType>(static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs));
+}
+
+inline bool any(RenderResourceType usage)
+{
+    return static_cast<uint8_t>(usage) != 0;
+}

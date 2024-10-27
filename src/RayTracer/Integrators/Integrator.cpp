@@ -44,7 +44,7 @@ void Integrator::initScene(RTSceneEntry & sceneEntry) {
 }
 
 void Integrator::init() {
-    computePrimAreaLayout = &device.getResourceCache().requestPipelineLayout(std::vector<std::string>{"Raytracing/compute_triangle_area.comp"});
+    computePrimAreaLayout = &device.getResourceCache().requestPipelineLayout(ShaderPipelineKey{"Raytracing/compute_triangle_area.comp"});
 }
 
 void Integrator::updateGui() {
@@ -69,6 +69,8 @@ void Integrator::initLightAreaDistribution(RenderGraph& _graph) {
     };
 
     for (auto& light : entry_->lights) {
+        if(light.light_type != RT_LIGHT_TYPE_AREA)
+            continue;
         auto prim_idx = light.prim_idx;
 
         uint32_t tri_count = entry_->primitives[prim_idx].index_count / 3;
@@ -121,6 +123,6 @@ void Integrator::bindRaytracingResources(CommandBuffer& commandBuffer)
     g_context->bindAcceleration(0, entry_->tlas).bindBuffer(2, *entry_->sceneUboBuffer, 0, sizeof(SceneUbo)).bindBuffer(3, *entry_->sceneDescBuffer).bindBuffer(4, *entry_->rtLightBuffer);
     uint32_t arrayElement = 0;
     for (const auto& texture : mScene->getTextures()) {
-        g_context->bindImageSampler(6, texture->getImage().getVkImageView(), texture->getSampler(), 0, arrayElement++);
+        g_context->bindImageSampler(6, texture->getImage().getVkImageView(), texture->getSampler(), 1, arrayElement++);
     }
 }

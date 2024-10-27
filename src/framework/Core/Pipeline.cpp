@@ -188,12 +188,11 @@ Pipeline::Pipeline(Device& device, const PipelineState& pipelineState) : device(
         VkRayTracingPipelineCreateInfoKHR pipeline_CI = {VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR};
 
         std::vector<VkDynamicState> states = {
-           
+            VK_DYNAMIC_STATE_VIEWPORT,VK_DYNAMIC_STATE_SCISSOR
         };
         VkPipelineDynamicStateCreateInfo dynamicState{VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};
-        dynamicState.dynamicStateCount = 0;
+        dynamicState.dynamicStateCount = states.size();
         dynamicState.pDynamicStates    = states.data();
-        
         pipeline_CI.pDynamicState                = &dynamicState;
         pipeline_CI.stageCount                   = stageCreateInfos.size();
         pipeline_CI.pStages                      = stageCreateInfos.data();

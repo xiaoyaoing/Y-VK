@@ -103,9 +103,9 @@ void IBL::importTexturesToRenderGraph(RenderGraph& rg) {
     //  rg.importTexture("environmentCube", environmentCube->image.get());
 }
 IBL::IBL(Device& device, const Texture* texture) : device(g_context->getDevice()), environmentCube(texture) {
-    this->brdfLUTLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), std::vector<std::string>{"pbrLab/brdf_lut.comp"});
-    this->cubeMapLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), std::vector<std::string>{"pbrLab/irradiance_cube.comp"});
-    this->envMapLayout  = std::make_unique<PipelineLayout>(g_context->getDevice(), std::vector<std::string>{"pbrLab/prefiliter_env_map.comp"});
+    this->brdfLUTLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), ShaderPipelineKey{"pbrLab/brdf_lut.comp"});
+    this->cubeMapLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), ShaderPipelineKey{"pbrLab/irradiance_cube.comp"});
+    this->envMapLayout  = std::make_unique<PipelineLayout>(g_context->getDevice(), ShaderPipelineKey{"pbrLab/prefiliter_env_map.comp"});
 
     irradianceCube = std::make_unique<SgImage>(device, "irradianceCube", VkExtent3D{IrradianceCubeDim, IrradianceCubeDim, 1}, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_VIEW_TYPE_CUBE, VK_SAMPLE_COUNT_1_BIT, toUint32(ceil(log2(IrradianceCubeDim))), 6, VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT);
     prefilterCube  = std::make_unique<SgImage>(device, "prefilterCube", VkExtent3D{PrefilteredEnvMapDim, PrefilteredEnvMapDim, 1}, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_VIEW_TYPE_CUBE, VK_SAMPLE_COUNT_1_BIT, toUint32(ceil(log2(PrefilteredEnvMapDim))), 6, VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT);

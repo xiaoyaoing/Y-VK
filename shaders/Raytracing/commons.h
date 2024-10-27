@@ -47,6 +47,8 @@ struct SceneDesc {
     uint64_t restir_color_storage_addr;
 
     uint64_t gbuffer_addr;
+
+    uint64_t ddgi_ray_data_addr;
 };
 
 struct SceneUbo {
@@ -57,6 +59,9 @@ struct SceneUbo {
     vec4 lightPos;
     mat4 prev_view;
     mat4 prev_proj;
+    float z_near;
+    float z_far;
+    vec2 padding;
 };
 
 struct RTMaterial {
@@ -113,6 +118,40 @@ struct EnvAccel {
     float q;
     float pdf;
     float aliasPdf;
+};
+
+struct PCPath {
+    vec3 sky_col;
+    uint frame_num;
+
+    uint light_num;
+    uint max_depth;
+    uint min_depth;
+    uint enable_sample_bsdf;
+    uint enable_sample_light;
+    uint enable_accumulation;
+    uint visual_throughput;
+    uint visual_normal;
+
+    uint visual_material_type;
+    uint visual_albedo;
+    uint padding[2];
+
+    mat4 probe_rotation;
+
+    uint size_x;
+    uint size_y;
+    uint time;
+    int  pad;
+};
+
+struct GBuffer {
+    vec3 position;
+    uint material_idx;
+    vec2 uv;
+    vec2 pad;
+    vec3 normal;
+    uint pad2;
 };
 
 #define RT_BSDF_TYPE_DIFFUSE    0

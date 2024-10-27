@@ -45,20 +45,20 @@ class PassNode : public RenderGraphNode {
 public:
     PassNode(const std::string& passName);
     ~PassNode() override = default;
-    void resolveTextureUsages(RenderGraph& renderGraph, CommandBuffer& commandBuffer);
-    void addResourceUsage(ResourceNode* texture, uint16_t usage);
+    void resolveResourceUsages(RenderGraph& renderGraph, CommandBuffer& commandBuffer);
+    void addResourceUsage(RenderGraphHandle handle, uint16_t usage);
     bool active() { return mActive & getRefCount() > 0; }
     void setActive(bool active) { mActive = active; }
 
     virtual void                   execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) = 0;
-    virtual RENDER_GRAPH_PASS_TYPE getType() const { return RENDER_GRAPH_PASS_TYPE::UNDEFINED; }
+    virtual RenderPassType getType() const { return RenderPassType::UNDEFINED; }
 
     std::vector<ResourceNode*> devirtualize{};// resources need to be create before executing
     std::vector<ResourceNode*> destroy{};     // resources need to be destroy after executing
 
 protected:
     bool                                        mActive{true};
-    std::unordered_map<ResourceNode*, uint16_t> mResourceUsage;
+    std::unordered_map<RenderGraphHandle, uint16_t,RenderGraphHandle::Hash> mResourceUsage;
 };
 
 class ImageCopyPassNode final : public PassNode {
@@ -83,7 +83,7 @@ public:
     }
 
     void                   declareRenderPass(const RenderGraphPassDescriptor& descriptor);
-    RENDER_GRAPH_PASS_TYPE getType() const override;
+    RenderPassType getType() const override;
 
 private:
     class RenderPassData {
@@ -115,7 +115,7 @@ public:
     void execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) override;
     ComputePassNode(RenderGraph& renderGraph, const std::string& name, ComputeRenderGraphPass* base);
     ~ComputePassNode() override { delete mPass; }
-    RENDER_GRAPH_PASS_TYPE getType() const override;
+    RenderPassType getType() const override;
 
 private:
     ComputeRenderGraphPass* mPass{nullptr};
@@ -126,7 +126,7 @@ public:
     void execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) override;
     RayTracingPassNode(RenderGraph& renderGraph, const std::string& name, RaytracingRenderGraphPass* base);
     ~RayTracingPassNode() override { delete mPass; }
-    RENDER_GRAPH_PASS_TYPE getType() const override;
+    RenderPassType getType() const override;
     // ~RayTracingPassNode() override;
 private:
     RaytracingRenderGraphPass* mPass{nullptr};

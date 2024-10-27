@@ -641,8 +641,8 @@ void GLTFLoadingImpl::processNode(const tinygltf::Node& node, const tinygltf::Mo
             if (loadNewIndex) mIndexCount += curPrimitiveIndexCount;
 
             LOGI("Primitive {} has {} vertices and {} indices {} {} material_idx", j, primVertexCount, curPrimitiveIndexCount, mIndexCount, primitive.material)
-            newPrimitive->setDimensions(posMin, posMax);
             auto transform          = modelTransforms[&node];
+            newPrimitive->setDimensions(transform.getLocalToWorldMatrix() * glm::vec4(posMin, 1.0f), transform.getLocalToWorldMatrix() * glm::vec4(posMax, 1.0f));
             newPrimitive->transform = transform;
             //     primitiveUniforms.push_back(newPrimitive->GetPerPrimitiveUniform());
             primitives.push_back(std::move(newPrimitive));
@@ -1002,6 +1002,12 @@ std::unique_ptr<Scene> GltfLoading::LoadSceneFromGLTFFile(Device& device, const 
     scene->indexType          = model->indexType;
     scene->primitiveIdBuffer  = std::move(model->scenePrimitiveIdBuffer);
     scene->bufferRate         = config.bufferRate;
+
+    BBox sceneBBox;
+    for (auto& primitive : scene->primitives) {
+        sceneBBox.unite(primitive->getDimensions());
+    }
+    scene->setSceneBBox(sceneBBox);
 
     scene->getLoadCompleteInfo().SetGeometryLoaded();
     return scene;

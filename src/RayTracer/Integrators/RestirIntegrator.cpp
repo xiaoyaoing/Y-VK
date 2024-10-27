@@ -4,7 +4,7 @@
 #include "Common/ResourceCache.h"
 #include "Scene/Compoments/Camera.h"
 RestirIntegrator::RestirIntegrator(Device& device) : Integrator(device) {
-    temporalLayout = std::make_unique<PipelineLayout>(device, std::vector<std::string>{
+    temporalLayout = std::make_unique<PipelineLayout>(device, ShaderPipelineKey{
                                                                   "Raytracing/RestirDI/tempor_reuse.rgen",
                                                                   "Raytracing/PT/miss.rmiss",
                                                                   "Raytracing/PT/miss_shadow.rmiss",
@@ -13,7 +13,7 @@ RestirIntegrator::RestirIntegrator(Device& device) : Integrator(device) {
 
                                                               });
 
-    spatialLayout = std::make_unique<PipelineLayout>(device, std::vector<std::string>{
+    spatialLayout = std::make_unique<PipelineLayout>(device, ShaderPipelineKey{
                                                                  "Raytracing/RestirDI/spatial_reuse.rgen",
                                                                  "Raytracing/PT/miss.rmiss",
                                                                  "Raytracing/PT/miss_shadow.rmiss",
@@ -22,7 +22,7 @@ RestirIntegrator::RestirIntegrator(Device& device) : Integrator(device) {
 
                                                              });
 
-    outputLayout = std::make_unique<PipelineLayout>(device, std::vector<std::string>{
+    outputLayout = std::make_unique<PipelineLayout>(device, ShaderPipelineKey{
                                                                 "Raytracing/RestirDI/output.rgen",
                                                                 "Raytracing/PT/miss.rmiss",
                                                                 "Raytracing/PT/miss_shadow.rmiss",

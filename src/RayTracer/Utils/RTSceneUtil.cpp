@@ -169,7 +169,7 @@ void RTSceneEntryImpl::initScene(Scene& scene_) {
     sceneDesc.uv_addr        = uvBuffer->getDeviceAddress(),
     sceneDesc.material_addr  = materialsBuffer->getDeviceAddress(),
     sceneDesc.prim_info_addr = primitiveMeshBuffer->getDeviceAddress();
-    sceneDescBuffer          = std::make_unique<Buffer>(device, sizeof(SceneDesc), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, &sceneDesc);
+    sceneDescBuffer          = std::make_unique<Buffer>(device, sizeof(SceneDesc), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, &sceneDesc);
 }
 void RTSceneEntryImpl::initBuffers(Scene& scene) {
     bool     useStagingBuffer   = true;

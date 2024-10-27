@@ -1,27 +1,29 @@
 #pragma once
 
+#include "Enum.h"
+
 #include <string_view>
 #include "Common/BitMaskEnums.h"
 #include "RenderGraphId.h"
 #include "RenderGraphNode.h"
+#include "Common/Enums.h"
+#include "Scene/Images/AstcImageHelper.h"
 
-enum class RENDER_GRAPH_RESOURCE_TYPE : uint8_t {
-    UNDEFINED = 0,
-    ETexture  = 1,
-    EBuffer   = 1 << 1,
-    ALL       = ETexture | EBuffer,
+#include <vector>
+
+struct ResourceBarrierInfo {
+    std::vector<VkImageMemoryBarrier2KHR> imageBarriers;
+    std::vector<VkBufferMemoryBarrier2KHR> bufferBarriers;
+    std::vector<VkMemoryBarrier2KHR> memoryBarriers;
 };
-
-template<>
-struct EnableBitMaskOperators<RENDER_GRAPH_RESOURCE_TYPE> : std::true_type {};
 
 class ResourceNode : public RenderGraphNode {
 public:
     virtual void                       devirtualize()                                             = 0;
     virtual void                       destroy()                                                  = 0;
-    virtual void                       resloveUsage(CommandBuffer& commandBuffer, uint16_t usage) = 0;
-    virtual RENDER_GRAPH_RESOURCE_TYPE getType() const                                            = 0;
-
+    virtual void                       resloveUsage(ResourceBarrierInfo & barrierInfo, uint16_t lastUsage, uint16_t nextUsage,RenderPassType lastPassType, RenderPassType nextPassType) = 0;
+    virtual RenderResourceType getType() const                                            = 0;
+    
 public:
     PassNode *first{nullptr},
         *last{nullptr};

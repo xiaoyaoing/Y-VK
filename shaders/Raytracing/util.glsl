@@ -36,6 +36,7 @@ struct SurfaceScatterEvent{
     Frame frame;
 
     uint material_idx;
+    uint prim_idx;
     uint triangle_idx;
 };
 
@@ -73,6 +74,7 @@ void copy_event(in SurfaceScatterEvent src, out SurfaceScatterEvent dst){
     dst.frame = src.frame;
     dst.material_idx = src.material_idx;
     dst.triangle_idx = src.triangle_idx;
+    dst.prim_idx = src.prim_idx;
 }
 
 float get_cos_theta(const vec3 v){
@@ -161,7 +163,24 @@ bool sample_microfacet_reflection(const vec3 wo, float roughness, const vec2 ran
     return false;
 }
 
+HitPayload init_hit_payload(){
+    HitPayload payload;
+    payload.n_g = vec3(0);
+    payload.n_s = vec3(0);
+    payload.p = vec3(0);
+    payload.uv = vec2(0);
+    payload.material_idx = -1;
+    payload.triangle_idx = -1;
+    payload.prim_idx = -1;
+    return payload;
+}
 
+bool found_intersection(const HitPayload payload){
+    return payload.material_idx != -1 && payload.prim_idx != -1;
+}
 
+bool has_nan(const vec3 v){
+    return any(isnan(v));
+}
 
 #endif 

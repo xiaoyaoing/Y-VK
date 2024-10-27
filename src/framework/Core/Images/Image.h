@@ -3,6 +3,7 @@
 #include <unordered_map>
 
 #include "Core/Vulkan.h"
+#include "RenderGraph/Enum.h"
 
 class CommandBuffer;
 class ImageView;
@@ -74,6 +75,7 @@ public:
                                                                                             .levelCount     = 1,
                                                                                             .baseArrayLayer = 0,
                                                                                             .layerCount     = 1,
+                                                                                    
                                                                                 });
     void         setLayout(VulkanLayout                   newLayout,
                            const VkImageSubresourceRange& subresourceRange = {

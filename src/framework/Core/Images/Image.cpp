@@ -169,7 +169,7 @@ uint32_t Image::getMipLevelCount() const {
     return mip_level_count;
 }
 
-void Image::transitionLayout(CommandBuffer& commandBuffer, VulkanLayout newLayout, const VkImageSubresourceRange& subresourceRange) {
+void Image::transitionLayout(CommandBuffer& commandBuffer, VulkanLayout newLayout,const VkImageSubresourceRange& subresourceRange) {
     auto oldLayout = getLayout(subresourceRange);
 
     if (oldLayout == newLayout) {

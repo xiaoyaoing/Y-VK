@@ -86,7 +86,7 @@ void PathIntegrator::onUpdateGUI() {
 }
 
 PathIntegrator::PathIntegrator(Device& device_) : Integrator(device_) {
-    layout = std::make_unique<PipelineLayout>(device, std::vector<std::string>{
+    layout = std::make_unique<PipelineLayout>(device, ShaderPipelineKey{
                                                           "Raytracing/PT/raygen.rgen",
                                                           "Raytracing/PT/miss.rmiss",
                                                           "Raytracing/PT/miss_shadow.rmiss",
@@ -94,7 +94,7 @@ PathIntegrator::PathIntegrator(Device& device_) : Integrator(device_) {
                                                           "Raytracing/ray.rahit",
                                                       });
 
-    tem_layout = std::make_unique<PipelineLayout>(device, std::vector<std::string>({"Raytracing/compute_triangle_area.comp"}));
+    tem_layout = std::make_unique<PipelineLayout>(device, ShaderPipelineKey({"Raytracing/compute_triangle_area.comp"}));
 
     pcPath.enable_sample_bsdf  = 1;
     pcPath.enable_sample_light = 1;

@@ -1,7 +1,10 @@
 #pragma once
+#include "Enum.h"
 #include "ResourceNode.h"
 #include "Common/Enums.h"
 #include "Core/Device/Device.h"
+
+
 
 class RenderGraphBuffer : public ResourceNode {
 public:
@@ -15,8 +18,8 @@ public:
     RenderGraphBuffer(const std::string& name, Buffer* hwBuffer);
     void                       devirtualize() override;
     void                       destroy() override;
-    RENDER_GRAPH_RESOURCE_TYPE getType() const override;
-    void                       resloveUsage(CommandBuffer& commandBuffer, uint16_t usage) override;
+    RenderResourceType         getType() const override;
+    void                       resloveUsage(ResourceBarrierInfo& barrierInfo, uint16_t lastUsage, uint16_t nextUsage, RenderPassType lastPassType, RenderPassType nextPassType) override;
     Buffer*                    getHwBuffer();
 
 private:

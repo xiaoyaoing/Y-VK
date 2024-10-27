@@ -70,9 +70,9 @@ void ComputePipelineTest::prepare() {
 
     renderContext->copyBuffer(*stagingBuffer, *storageBuffer);
 
-    computeIntegrateLayout  = std::make_unique<PipelineLayout>(*device, std::vector<std::string>{"compute_nbody/particle_integrate.comp"});
-    computeCalculateLayout  = std::make_unique<PipelineLayout>(*device, std::vector<std::string>{"compute_nbody/particle_calculate.comp"});
-    graphics.pipelineLayout = std::make_unique<PipelineLayout>(*device, std::vector<std::string>{"compute_nbody/particle.vert", "compute_nbody/particle.frag"});
+    computeIntegrateLayout  = std::make_unique<PipelineLayout>(*device, ShaderPipelineKey{"compute_nbody/particle_integrate.comp"});
+    computeCalculateLayout  = std::make_unique<PipelineLayout>(*device, ShaderPipelineKey{"compute_nbody/particle_calculate.comp"});
+    graphics.pipelineLayout = std::make_unique<PipelineLayout>(*device, ShaderPipelineKey{"compute_nbody/particle.vert", "compute_nbody/particle.frag"});
 
     graphics.uniformBuffer = std::make_unique<Buffer>(*device, sizeof(graphics.ubo), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
     uniformBuffer          = std::make_unique<Buffer>(*device, sizeof(ubo), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
@@ -117,7 +117,7 @@ void ComputePipelineTest::drawFrame(RenderGraph& rg) {
         "Graphics Pass",
         [&](auto& builder, auto& settings) {
             auto handle = rg.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
-            auto depth  = rg.createTexture("depth", {.extent = renderContext->getViewPortExtent(), .useage = TextureUsage::SUBPASS_INPUT | TextureUsage::DEPTH_ATTACHMENT
+            auto depth  = rg.createTexture(DEPTH_IMAGE_NAME, {.extent = renderContext->getViewPortExtent(), .useage = TextureUsage::SUBPASS_INPUT | TextureUsage::DEPTH_ATTACHMENT
 
                                                    });
             builder.writeTexture(handle);

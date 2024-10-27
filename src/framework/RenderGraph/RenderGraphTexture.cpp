@@ -33,24 +33,41 @@ void RenderGraphTexture::destroy() {
     delete this;
 }
 
-RENDER_GRAPH_RESOURCE_TYPE RenderGraphTexture::getType() const {
-    return RENDER_GRAPH_RESOURCE_TYPE::ETexture;
+RenderResourceType RenderGraphTexture::getType() const {
+    return RenderResourceType::ETexture;
+}
+void RenderGraphTexture::resloveUsage(ResourceBarrierInfo& barrierInfo, uint16_t lastUsage, uint16_t nextUsage, RenderPassType lastPassType, RenderPassType nextPassType) {
+    auto oldLayout = ImageUtil::getDefaultLayout(static_cast<TextureUsage>(lastUsage));
+    auto newLayout = ImageUtil::getDefaultLayout(static_cast<TextureUsage>(nextUsage));
+
+    auto [srcAccessMask, dstAccessMask, srcStage, dstStage, vkOldLayout, vkNewLayout] = ImageUtil::getVkTransition(oldLayout, newLayout);
+    srcStage = ImageUtil::getStageFlags(lastPassType);
+    dstStage = ImageUtil::getStageFlags(nextPassType);
+
+    auto & imageBarrier = barrierInfo.imageBarriers.emplace_back();
+    imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+    imageBarrier.srcStageMask = srcStage;
+    imageBarrier.dstStageMask = dstStage;
+    imageBarrier.srcAccessMask = srcAccessMask;
+    imageBarrier.dstAccessMask = dstAccessMask;
+    imageBarrier.oldLayout = vkOldLayout;
+    imageBarrier.newLayout = vkNewLayout;
+    imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    imageBarrier.image = mHwTexture->getVkImage().getHandle();
+    imageBarrier.subresourceRange = getHwTexture()->getVkImageView().getSubResourceRange();
+
+    mHwTexture->getVkImage().setLayout(newLayout);
 }
 
-void RenderGraphTexture::resloveUsage(CommandBuffer& commandBuffer, uint16_t usage) {
-    TextureUsage textureUsage = static_cast<TextureUsage>(usage);
-    if (textureUsage == TextureUsage::NONE)
-        return;
-    const auto  newLayout        = ImageUtil::getDefaultLayout(textureUsage);
-    const auto& subResourceRange = getHwTexture()->getVkImageView().getSubResourceRange();
-    mHwTexture->getVkImage().transitionLayout(commandBuffer, newLayout, subResourceRange);
-}
 
 // RenderGraphTexture::~RenderGraphTexture() {
 //     // if (!imported)
 //     //     delete mHwTexture;
 // }
 
+RenderGraphTexture::~RenderGraphTexture() {
+}
 RenderGraphTexture::RenderGraphTexture(const std::string& name, SgImage* hwTexture) : mHwTexture(hwTexture), imported(true),
                                                                                       mDescriptor({}) {
     RenderGraphNode::setName(name);

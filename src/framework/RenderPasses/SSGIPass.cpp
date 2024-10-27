@@ -19,7 +19,7 @@ void SSGIPass::render(RenderGraph& rg) {
     rg.addComputePass(
         "ssgi", [&](RenderGraph::Builder& builder, ComputePassSettings& settings) {
             auto& blackBoard = rg.getBlackBoard();
-            auto  depth      = blackBoard["depth"];
+            auto  depth      = blackBoard[DEPTH_IMAGE_NAME];
             auto  depth_hiz  = blackBoard["depth_hiz"];
             auto  normal     = blackBoard["normal"];
             auto  diffuse    = blackBoard["diffuse"];
@@ -53,7 +53,7 @@ void SSGIPass::render(RenderGraph& rg) {
             g_context->bindImageSampler(0, blackBoard.getImageView("diffuse"), sampler)
                 .bindImageSampler(1, blackBoard.getImageView("normal"), sampler)
                 .bindImageSampler(2, blackBoard.getImageView("emission"), sampler)
-                .bindImageSampler(3, blackBoard.getImageView("depth"), sampler)
+                .bindImageSampler(3, blackBoard.getImageView(DEPTH_IMAGE_NAME), sampler)
                 .bindImageSampler(4, blackBoard.getImageView(RENDER_VIEW_PORT_IMAGE_NAME), sampler)
                 .bindImageSampler(5, TextureHelper::GetBlueNoise()->getVkImageView(), sampler)
                 .bindImageSampler(6, hizDepth, hizSampler)
@@ -67,7 +67,7 @@ void SSGIPass::render(RenderGraph& rg) {
 void SSGIPass::init() {
     PassBase::init();
     mResource       = std::make_unique<SSRResource>();
-    mPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), std::vector<std::string>{"postprocess/ssgi.comp"});
+    mPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), ShaderPipelineKey{"postprocess/ssgi.comp"});
     mPushConstant.use_hiz = 2;
 }
 void SSGIPass::updateGui() {

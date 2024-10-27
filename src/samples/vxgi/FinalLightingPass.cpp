@@ -20,7 +20,7 @@
 // };
 
 void FinalLightingPass::init() {
-    std::vector<std::string> shaderPaths{"vxgi/voxelConeTracing.vert", "vxgi/voxelConeTracing.frag"};
+    ShaderPipelineKey shaderPaths{"vxgi/voxelConeTracing.vert", "vxgi/voxelConeTracing.frag"};
     mFinalLightingPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), shaderPaths);
     mRadianceMapSampler          = std::make_unique<Sampler>(g_context->getDevice(), VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, 0.0f);
     g_manager->putPtr("radiance_map_sampler", mRadianceMapSampler.get());
@@ -33,7 +33,7 @@ void FinalLightingPass::render(RenderGraph& rg) {
             auto  radiance   = blackBoard.getHandle("radiance");
             auto  diffuse    = blackBoard.getHandle("diffuse");
             auto  normal     = blackBoard.getHandle("normal");
-            auto  depth      = blackBoard.getHandle("depth");
+            auto  depth      = blackBoard.getHandle(DEPTH_IMAGE_NAME);
             auto  emission   = blackBoard.getHandle("emission");
 
             auto output = blackBoard.getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
@@ -55,7 +55,7 @@ void FinalLightingPass::render(RenderGraph& rg) {
                 //  .bindImage(1, blackBoard.getImageView("specular"))
                 .bindImage(1, blackBoard.getImageView("normal"))
                 .bindImage(2, blackBoard.getImageView("emission"))
-                .bindImage(3, blackBoard.getImageView("depth"))
+                .bindImage(3, blackBoard.getImageView(DEPTH_IMAGE_NAME))
                 .bindImageSampler(0, radianceMap.getVkImageView(), *mRadianceMapSampler);
             pushFinalLightingParam();
             g_context->flushAndDraw(context.commandBuffer, 3, 1, 0, 0);

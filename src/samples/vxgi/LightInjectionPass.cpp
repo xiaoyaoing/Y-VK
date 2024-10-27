@@ -103,7 +103,7 @@ void LightInjectionPass::init() {
                                      VOXEL_RESOLUTION * CLIP_MAP_LEVEL_COUNT,
                                      VOXEL_RESOLUTION};
     mLightInjectionPipelineLayout = std::make_unique<PipelineLayout>(
-        g_context->getDevice(), std::vector<std::string>{"vxgi/lightInjection.vert", "vxgi/lightInjection.geom", "vxgi/lightInjection.frag"});
+        g_context->getDevice(), ShaderPipelineKey{"vxgi/lightInjection.vert", "vxgi/lightInjection.geom", "vxgi/lightInjection.frag"});
     mLightInjectionImage = std::make_unique<SgImage>(
         g_context->getDevice(), std::string("voxelRadianceImage"), imageResolution, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_VIEW_TYPE_3D, VK_SAMPLE_COUNT_1_BIT, 1, 1, VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT);
     mLightInjectionImage->createImageView(VK_IMAGE_VIEW_TYPE_3D, VK_FORMAT_R32_UINT);

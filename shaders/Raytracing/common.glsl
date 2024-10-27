@@ -12,8 +12,7 @@ layout(binding = 2, set = 0) uniform SceneUboBuffer { SceneUbo scene_ubo; };
 layout(binding = 3, set = 0) uniform SceneDescBuffer { SceneDesc scene_desc; };
 layout(binding = 4, set = 0) readonly buffer Lights { RTLight lights[]; };
 //todo fix this 
-layout(binding = 0, set = 2, rgba32f) uniform image2D image;
-layout(binding = 6, set = 0) uniform sampler2D scene_textures[1024];
+layout(binding = 6, set = 1) uniform sampler2D scene_textures[1024];
 
 
 layout(buffer_reference, std430, buffer_reference_align = 4) readonly buffer InstanceInfo{ RTPrimitive p[]; };
@@ -80,6 +79,7 @@ SurfaceScatterEvent make_surface_scatter_event(HitPayload hit_pay_load, const ve
     event.p = hit_pay_load.p;
     event.material_idx = hit_pay_load.material_idx;
     event.uv = hit_pay_load.uv;
+    event.prim_idx = hit_pay_load.prim_idx;
     return event;
 }
 
@@ -516,8 +516,8 @@ LightSample sample_li_point_light(const RTLight light, const SurfaceScatterEvent
 
 LightSample sample_li(const RTLight light, const SurfaceScatterEvent event, const vec3 rand){
     uint light_type = light.light_type;
-
     LightSample result;
+
     if (light_type == RT_LIGHT_TYPE_AREA){
         result =  sample_li_area_light(light, event, rand);
         result.is_infinite = false;

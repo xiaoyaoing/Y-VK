@@ -8,11 +8,12 @@ class Buffer;
 class Image;
 class ImageView;
 class SgImage;
-
+    
 class RenderGraph;
 
-#define RENDER_VIEW_PORT_IMAGE_NAME "_RENDER_VIEW_PORT_IMAGE_NAME_"
-#define RT_IMAGE_NAME "_RT_IMAGE_NAME_"
+static const std::string RENDER_VIEW_PORT_IMAGE_NAME = "_RENDER_VIEW_PORT_IMAGE_NAME_";
+static const std::string RT_IMAGE_NAME =  "_RT_IMAGE_NAME_";
+static const std::string DEPTH_IMAGE_NAME = "_DEPTH_IMAGE_NAME_";
 
 class Blackboard {
     using Container = std::unordered_map<

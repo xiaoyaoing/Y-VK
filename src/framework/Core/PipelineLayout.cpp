@@ -7,10 +7,10 @@
 // }
 
 
-PipelineLayout::PipelineLayout(Device& device, const std::vector<std::string>& shaderPaths) : device(device) {
-    shaders.reserve(shaderPaths.size());
-    for (auto& shaderPath : shaderPaths) {
-        shaders.emplace_back(&device.getResourceCache().requestShaderModule(FileUtils::getShaderPath(shaderPath)));
+PipelineLayout::PipelineLayout(Device& device, const ShaderPipelineKey& shaderKeys) : device(device) {
+    shaders.reserve(shaderKeys.size());
+    for (auto& shaderKey : shaderKeys) {
+        shaders.emplace_back(&device.getResourceCache().requestShaderModule(shaderKey));
     }
 
     create();
@@ -19,6 +19,10 @@ PipelineLayout::PipelineLayout(Device& device, const std::vector<std::string>& s
 void PipelineLayout::create() {
     VkPipelineLayoutCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+
+    if(shaders.size() == 5) {
+        int k = 1;
+    }
 
     for (auto& shader : shaders) {
         for (const auto& shaderResource : shader->getShaderResources()) {

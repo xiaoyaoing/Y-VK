@@ -131,8 +131,8 @@ public:
 
     Buffer& requestNamedBuffer(const std::string& name, uint64_t bufferSize, VkBufferUsageFlags bufferUsage, VmaMemoryUsage memoryUsage);
 
-    Shader&         requestShaderModule(const std::string& path, VkShaderStageFlagBits stage = VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM);
-    PipelineLayout& requestPipelineLayout(const std::vector<std::string>& shaderPaths);
+    Shader&         requestShaderModule(const ShaderKey& path, VkShaderStageFlagBits stage = VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM);
+    PipelineLayout& requestPipelineLayout(const ShaderPipelineKey& shaderPaths);
 
     Sampler& requestSampler(VkSamplerAddressMode sampleMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VkFilter filter = VK_FILTER_LINEAR, float maxLod = 1, VkSamplerAddressMode addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkSamplerAddressMode addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkSamplerAddressMode addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT);
 

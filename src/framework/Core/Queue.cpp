@@ -23,6 +23,7 @@ void Queue::submit(const std::vector<VkSubmitInfo>& submit_infos, VkFence fence)
     if (result != VK_SUCCESS)
     {
         LOGI("Failed to submit command buffer to queue.");
+        exit(EXIT_FAILURE);
     }
 }
 

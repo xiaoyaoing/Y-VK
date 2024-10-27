@@ -34,6 +34,9 @@ void ResourceSet::bindInput(const ImageView& view, uint32_t binding, uint32_t ar
 }
 
 void ResourceSet::clearDirty() {
+    // if(dirty) {
+    //     resourceBindings.clear();
+    // }
     dirty = false;
 }
 

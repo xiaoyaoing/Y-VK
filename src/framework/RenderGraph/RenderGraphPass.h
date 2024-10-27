@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Enum.h"
 #include "RenderGraphId.h"
 #include "Core/PipelineState.h"
 #include "Core/Vulkan.h"
@@ -12,32 +13,25 @@ class Accel;
 class PipelineLayout;
 class RenderGraph;
 
-enum class RENDER_GRAPH_PASS_TYPE : uint8_t {
-    UNDEFINED  = 0,
-    GRAPHICS   = 1,
-    COMPUTE    = 1 << 1,
-    RAYTRACING = 1 << 2,
-    ALL        = GRAPHICS | COMPUTE | RAYTRACING,
-};
 
 template<>
-struct EnableBitMaskOperators<RENDER_GRAPH_PASS_TYPE> : std::true_type {};
+struct EnableBitMaskOperators<RenderPassType> : std::true_type {};
 
 struct GraphicPassSettings {
-    RENDER_GRAPH_PASS_TYPE type = RENDER_GRAPH_PASS_TYPE::GRAPHICS;
+    RenderPassType type = RenderPassType::GRAPHICS;
 };
 
 struct ComputePassSettings {
-    RENDER_GRAPH_PASS_TYPE type = RENDER_GRAPH_PASS_TYPE::COMPUTE;
+    RenderPassType type = RenderPassType::COMPUTE;
     PipelineLayout *       pipelineLayout{nullptr};
 };
 
 struct RaytracingPassSettings {
     RTPipelineSettings     rTPipelineSettings;
-    RENDER_GRAPH_PASS_TYPE type = RENDER_GRAPH_PASS_TYPE::RAYTRACING;
+    RenderPassType type = RenderPassType::RAYTRACING;
     Accel*                 accel{nullptr};
     PipelineLayout*        pipelineLayout{nullptr};
-    std::vector<std::string> shaderPaths;
+    ShaderPipelineKey shaderPaths;
 
     std::vector<RenderGraphHandle> inBuffer;
     std::vector<RenderGraphHandle> outBuffer;
