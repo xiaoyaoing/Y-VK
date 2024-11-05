@@ -65,6 +65,7 @@ class ImageCopyPassNode final : public PassNode {
 public:
     void execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) override;
     ImageCopyPassNode(RenderGraphHandle src, RenderGraphHandle dst);
+    RenderPassType getType() const override;
 
 protected:
     RenderGraphHandle src, dst;

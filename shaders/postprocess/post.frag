@@ -64,7 +64,7 @@ vec3 Tonemap(vec3 color, float exposure, uint tonemapper)
 
 
 void main() {
-    vec4 input_tex = texture(input_img, vec2(in_uv.x, 1.0 - in_uv.y));
+    vec4 input_tex = texture(input_img, vec2(in_uv.x,  in_uv.y));
     vec4 img;
     if (pc.enable_bloom == 1) {
         //        vec4 bloom_tex = texelFetch(bloom_img, (textureSize(bloom_img, 0).xy - ivec2(pc.width, pc.height)) / 2 + ivec2(gl_FragCoord.xy), 0);

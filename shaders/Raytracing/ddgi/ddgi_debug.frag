@@ -3,11 +3,12 @@
 #extension GL_EXT_buffer_reference2 : require
 #extension GL_EXT_nonuniform_qualifier : require
 #extension GL_GOOGLE_include_directive : require
+#extension GL_EXT_debug_printf : enable
 #include "ddgi_commons.h"
 
 
 layout(location = 0) in vec3 in_normal;
-layout(location = 1) in flat uint in_probe_index;
+layout(location = 1) in flat int in_probe_index;
 
 layout(location = 0) out vec4 out_color;
 
@@ -20,8 +21,13 @@ layout(set = 1, binding = 0) uniform sampler2D radiance_map;
 
 
 void main(){
-    uvec3 probeCoord = get_probe_coord_by_index(in_probe_index);
-    vec2 uv = get_probe_color_uv(probeCoord,in_normal);
+    ivec3 probeCoord = get_probe_coord_by_index(in_probe_index);
+    vec2 uv = get_probe_color_uv(probeCoord,vec3(0,0,1),PROBE_RADIANCE_SIDE);
+     uv = get_probe_color_uv(probeCoord,in_normal,PROBE_RADIANCE_SIDE);
     vec3 radiance = texture(radiance_map, uv).rgb;
+    
+//    debugPrintfEXT("Radiance: %f %f %f\n", radiance.x, radiance.y, radiance.z);
+//    radiance = in_normal;
+  //  radiance = vec3(uv,0);
     out_color = vec4(radiance, 1.0);
 }

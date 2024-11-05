@@ -80,6 +80,7 @@ public:
     Buffer&     getUniformBuffer() const;
 
     void        setDimensions(glm::vec3 min, glm::vec3 max);
+    void        setDimensions(const BBox& box);
     const BBox& getDimensions() const;
 
     Primitive(uint32_t firstVertex, uint32_t firstIndex, uint32_t vertexCount, uint32_t indexCount, uint32_t materialIndex = 0) : firstIndex(firstIndex),

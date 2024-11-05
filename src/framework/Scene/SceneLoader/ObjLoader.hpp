@@ -15,6 +15,7 @@ struct PrimitiveData {
     std::unordered_map<std::string,BufferData> buffers;
     std::unordered_map<std::string, VertexAttribute>         vertexAttributes;
     BufferData indexs;
+    BBox bbox;
 };
 
 

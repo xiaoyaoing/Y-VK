@@ -21,10 +21,10 @@ protected:
 
     VkInstance _instance;
     VkDebugUtilsMessengerEXT _debugMessenger;
-#ifdef  NOEBUG
-    const bool enableValidationLayers = false;
-#else
+#ifdef _DEBUG
     const bool enableValidationLayers = true;
+#else
+    const bool enableValidationLayers = false;
 #endif
 
     void fillDebugMessengerInfo(VkDebugUtilsMessengerCreateInfoEXT &debugInfo);

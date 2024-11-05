@@ -12,7 +12,7 @@
 //layout (location = 0) in vec3 aPos;
 
 layout (location = 0) out vec3 normal;
-layout (location = 1) out flat uint probe_index;
+layout (location = 1) out flat int probe_index;
 
 layout(set = 0, binding = 0) uniform _DDGIUboBuffer{ DDGIUbo ddgi_ubo; };
 layout( set = 0,binding = 2) uniform _SceneUboBuffer { SceneUbo scene_ubo; };
@@ -23,18 +23,19 @@ layout( set = 0,binding = 2) uniform _SceneUboBuffer { SceneUbo scene_ubo; };
 
 void main()
 {
-    probe_index = gl_InstanceIndex;
+    probe_index = int(gl_InstanceIndex);
 
     vec3 position = UVSPHERE[gl_VertexIndex].xyz;
-    uvec3 probe_grid =get_probe_coord_by_index(probe_index);
+    ivec3 probe_grid =get_probe_coord_by_index(probe_index);
     vec3 probe_position = get_position_by_grid(probe_grid);
 
     normal = position;
     
-    position *= 0.05f;
+    position *= 0.2f;
     position += probe_position;
 
 //    debugPrintfEXT("probe_index: %d position: %f %f %f\n", probe_index, position.x, position.y, position.z);
-    gl_Position = scene_ubo.proj * scene_ubo.view * vec4(position, 1.0);
+    gl_Position = (scene_ubo.proj * scene_ubo.view) * vec4(position, 1.0);
+   // gl_Position.y = 1- gl_Position.y;
   
 }

@@ -54,6 +54,11 @@ public:
             case RenderPassType::RAYTRACING:
                 flags |= VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
             break;
+            case RenderPassType::TRANSFER:
+                flags |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+        }
+        if (flags == 0) {
+            LOGE("Invalid RenderPassType");
         }
         return flags;
     }

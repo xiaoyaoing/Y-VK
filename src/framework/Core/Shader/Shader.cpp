@@ -213,6 +213,7 @@ Shader::Shader(Device& device, const ShaderKey& key, VkShaderStageFlagBits spv_s
         std::string   spvPath = GetSpvPathFromShaderPath(shaderFilePath, defineString);
         std::ofstream file    = OpenOrCreateFile(spvPath);
         file.write(reinterpret_cast<const char*>(spirvCode.data()), spirvCode.size() * sizeof(uint32_t));
+        
         file.close();
     }
     VkShaderModuleCreateInfo createInfo{};

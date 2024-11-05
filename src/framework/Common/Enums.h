@@ -96,7 +96,8 @@ enum class RenderPassType : uint8_t {
     GRAPHICS   = 1,
     COMPUTE    = 1 << 1,
     RAYTRACING = 1 << 2,
-    ALL        = GRAPHICS | COMPUTE | RAYTRACING,
+    TRANSFER   = 1 << 3,
+    ALL        = GRAPHICS | COMPUTE | RAYTRACING | TRANSFER,
 };
 
 enum class RenderResourceType : uint8_t {

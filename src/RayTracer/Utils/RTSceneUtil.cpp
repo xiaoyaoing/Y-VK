@@ -67,6 +67,11 @@ RTLight RTSceneEntryImpl::toRTLight(Scene& scene, const SgLight& light) {
         infiniteSamplingBuffer                   = std::make_unique<Buffer>(device, sizeof(EnvAccel) * aceel.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, aceel.data());
         sceneDesc.env_sampling_addr              = infiniteSamplingBuffer->getDeviceAddress();
         sceneDesc.envmap_idx                     = lights.size();
+    } else if (light.type == LIGHT_TYPE::Directional) {
+        rtLight.L         = light.lightProperties.color * light.lightProperties.intensity;
+        rtLight.direction = light.lightProperties.direction;
+        rtLight.position  = light.lightProperties.position;
+        rtLight.light_type = RT_LIGHT_TYPE_DIRECTIONAL;
     }
 
     return rtLight;
@@ -85,8 +90,6 @@ void RTSceneEntryImpl::initScene(Scene& scene_) {
     uvBuffer     = &scene->getVertexBuffer(TEXCOORD_ATTRIBUTE_NAME);
     normalBuffer = &scene->getVertexBuffer(NORMAL_ATTRIBUTE_NAME);
     vertexBuffer = &scene->getVertexBuffer(POSITION_ATTRIBUTE_NAME);
-
- 
 
     if (!scene->getRTMaterials().empty())
         materials = scene->getRTMaterials();
@@ -118,10 +121,10 @@ void RTSceneEntryImpl::initScene(Scene& scene_) {
         }
     }
 
-    if(scene->getName().find("bistro")!=std::string::npos) {
+    if (scene->getName().find("bistro") != std::string::npos) {
         scene->getLights().clear();
     }
-    
+
     if (scene_.getLights().empty()) {
         LOGI("No lights in the scene Adding default light");
         std::string envPath    = FileUtils::getResourcePath("default.hdr");

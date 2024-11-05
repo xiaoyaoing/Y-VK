@@ -24,6 +24,10 @@ struct DDGIConfig {
     float max_distance;
     glm::ivec3 probe_counts;
     glm::vec3 probe_start_position;
+    int irradiance_texel_count  = 8;
+    int distance_texel_count    = 16;
+    int inner_irradiance_texel_count = 6;
+    int inner_distance_texel_count = 14;
 };
 
 using Renderer = std::variant<IBLRenderer, RayTracerRenderer, DeferredRenderer, DDGIRenderer>;
@@ -44,9 +48,13 @@ protected:
     DDGIUbo ubo;
     PCPath pc_ray;
     uint ping = 0;
-    uint pong = 1;
+    uint pong = 0;
     std::unique_ptr<GBufferPass> gbufferPass;
     bool debugDDGI = true;
+    bool showIndirect = true;
+    bool showDirect = false;
+    uint frameCount = 0;
+    std::unique_ptr<Primitive> spherePrimitive;
     // class Impl;
     // Impl* impl;
 };

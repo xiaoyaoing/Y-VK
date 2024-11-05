@@ -51,6 +51,10 @@ RenderGraph::Builder& RenderGraph::Builder::writeTexture(const std::string& name
     auto handle = renderGraph.getBlackBoard().getHandle(name);
     return writeTexture(handle, usage);
 }
+RenderGraph::Builder& RenderGraph::Builder::readTexture(const std::string& name, RenderGraphTexture::Usage usage) {
+    auto handle = renderGraph.getBlackBoard().getHandle(name);
+    return readTexture(handle, usage);
+}
 RenderGraph::Builder& RenderGraph::Builder::readAndWriteTexture(RenderGraphHandle input, RenderGraphTexture::Usage usage) {
     readTexture(input, usage);
     writeTexture(input, usage);

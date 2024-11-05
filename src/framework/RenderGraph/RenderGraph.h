@@ -67,6 +67,10 @@ public:
                               RenderGraphTexture::Usage usage =
                                   RenderGraphTexture::Usage::NONE);
 
+        Builder & readTexture(const std::string & name,
+                              RenderGraphTexture::Usage usage =
+                                  RenderGraphTexture::Usage::NONE);
+
         Builder& readAndWriteTexture(RenderGraphHandle         input,
                                      RenderGraphTexture::Usage usage =
                                          RenderGraphTexture::Usage::NONE);

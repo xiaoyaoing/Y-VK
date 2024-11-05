@@ -85,7 +85,7 @@ void PBRLab::prepare() {
     mRenderPasses.push_back(std::make_unique<GBufferPass>());
     mRenderPasses.push_back(std::make_unique<ShadowMapPass>());
     mRenderPasses.push_back(std::make_unique<IBLLightingPass>());
-    mRenderPasses.push_back(std::make_unique<SSGIPass>());
+    // mRenderPasses.push_back(std::make_unique<SSGIPass>());
 
     sceneLoadingConfig.indexType = VK_INDEX_TYPE_UINT32;
     // loadScene(FileUtils::getResourcePath("cars/car.gltf"));

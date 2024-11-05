@@ -46,7 +46,6 @@ void RayTracer::drawFrame(RenderGraph& renderGraph) {
     lastFrameSceneUbo = sceneUbo;
     renderGraph.createTexture(RT_IMAGE_NAME, {integrators[currentIntegrator]->width, integrators[currentIntegrator]->height, TextureUsage::STORAGE | TextureUsage::TRANSFER_SRC | TextureUsage::SAMPLEABLE | TextureUsage::COLOR_ATTACHMENT, VK_FORMAT_R32G32B32A32_SFLOAT});
     integrators[currentIntegrator]->render(renderGraph);
-    // postProcess->render(renderGraph);
     if (renderGraph.getBlackBoard().contains(RT_IMAGE_NAME))
         renderGraph.addImageCopyPass(renderGraph.getBlackBoard().getHandle(RT_IMAGE_NAME), renderGraph.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME));
 }
@@ -56,16 +55,18 @@ static const std::string kRestirDIIntegrator = "restir";
 static const std::string kDDGIIntegrator     = "ddgi";
 
 void RayTracer::onSceneLoaded() {
+    scene->addDirectionalLight(glm::vec3(0.0 ,-1.0, 0.3), glm::vec3(1.0f), 1.5f);  
+    // scene->addDirectionalLight(glm::vec3(0.6,-0.435,-0.816), glm::vec3(1.0f), 1.0f);
     camera = scene->getCameras()[0];
     Config::GetInstance().CameraFromConfig(*camera, scene->getName());
     sceneFirstLoad = false;
-
+    
     rtSceneEntry = RTSceneUtil::convertScene(*device, *scene);
     for (auto& integrator : integrators) {
         integrator.second->initScene(*rtSceneEntry);
         integrator.second->init();
     }
-
+    
     initView();
 }
 
@@ -73,20 +74,20 @@ void RayTracer::prepare() {
     Application::prepare();
     GlslCompiler::setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_6);
     GlslCompiler::forceRecompile = true;
-
+    
     integrators[kPathIntegrator] = std::make_unique<PathIntegrator>(*device);
     // integrators[kRestirDIIntegrator] = std::make_unique<RestirIntegrator>(*device);
     // DDGIIntegrator a({},*device);
     integrators[kDDGIIntegrator] = std::make_unique<DDGIIntegrator>(*device);
     // integratorNames              = {kPathIntegrator, kRestirDIIntegrator, kDDGIIntegrator};
-
+    
     for (auto& integrator : integrators) {
         integratorNames.push_back(integrator.first);
     }
-
+    
     currentIntegrator = kDDGIIntegrator;
     // currentIntegrator = kPathIntegrator;
-
+    
     sceneLoadingConfig = {.requiredVertexAttribute = {POSITION_ATTRIBUTE_NAME, INDEX_ATTRIBUTE_NAME, NORMAL_ATTRIBUTE_NAME, TEXCOORD_ATTRIBUTE_NAME},
                           .enableMergeDrawCalls    = false,
                           .indexType               = VK_INDEX_TYPE_UINT32,
@@ -94,9 +95,16 @@ void RayTracer::prepare() {
                           .bufferForAccel          = true,
                           .bufferForStorage        = true,
                           .sceneScale              = glm::vec3(0.008f)};
-    loadScene(FileUtils::getResourcePath("scenes/sponza/Sponza01.gltf"));
-}
+  // loadScene(FileUtils::getResourcePath("scenes/sponza/Sponza01.gltf"));
+    sceneLoadingConfig.sceneScale = glm::vec3(1.f);
+   loadScene("F:/code/RTXGI-DDGI/samples/test-harness/data/gltf/sponza/Sponza.gltf");
+  //  loadScene("E:/code/vk-raytracing-demo/resources/classroom/scene.json");
+    // loadScene("E:/code/vkframeworklearn2/resources/cornell-box/cornellBox.gltf");
 
+    // postProcess= std::make_unique<PostProcess>();
+    g_context->setFlipViewport(false);
+    
+}
 void RayTracer::onUpdateGUI() {
     Application::onUpdateGUI();
 
@@ -120,6 +128,7 @@ void RayTracer::onUpdateGUI() {
 
 int main() {
     RayTracer rayTracer({});
+
     rayTracer.prepare();
     rayTracer.mainloop();
     return 0;

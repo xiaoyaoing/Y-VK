@@ -208,10 +208,12 @@ std::unique_ptr<PrimitiveData> vertexIndex2PrimitiveData(const std::vector<Verte
     for (int i = 0; i < tris.size(); i++) {
         primitiveData->indexs.insert(primitiveData->indexs.end(), (uint8_t*)&tris[i], (uint8_t*)&tris[i] + 3 * sizeof(uint32_t));
     }
-    auto uvec3                                               = reinterpret_cast<glm::uvec3*>(primitiveData->indexs.data());
     primitiveData->vertexAttributes[POSITION_ATTRIBUTE_NAME] = VertexAttribute{VK_FORMAT_R32G32B32_SFLOAT, sizeof(glm::vec3)};
     primitiveData->vertexAttributes[NORMAL_ATTRIBUTE_NAME]   = VertexAttribute{VK_FORMAT_R32G32B32_SFLOAT, sizeof(glm::vec3)};
     primitiveData->vertexAttributes[TEXCOORD_ATTRIBUTE_NAME] = VertexAttribute{VK_FORMAT_R32G32_SFLOAT, sizeof(glm::vec2)};
+    auto & bounds = primitiveData->bbox;
+    for (auto& vert : verts)
+        bounds.unite(vert._pos);
     return primitiveData;
 }
 
@@ -229,6 +231,9 @@ std::unique_ptr<PrimitiveData> loadObj(std::ifstream& stream) {
     primitiveData->vertexAttributes[POSITION_ATTRIBUTE_NAME] = VertexAttribute{VK_FORMAT_R32G32B32_SFLOAT, sizeof(glm::vec3)};
     primitiveData->vertexAttributes[NORMAL_ATTRIBUTE_NAME]   = VertexAttribute{VK_FORMAT_R32G32B32_SFLOAT, sizeof(glm::vec3)};
     primitiveData->vertexAttributes[TEXCOORD_ATTRIBUTE_NAME] = VertexAttribute{VK_FORMAT_R32G32_SFLOAT, sizeof(glm::vec2)};
+    BBox & bounds = primitiveData->bbox;
+    for (auto& pos : objLoader.primPos)
+        bounds.unite(pos);
     return primitiveData;
 }
 
@@ -242,7 +247,6 @@ std::unique_ptr<PrimitiveData> loadWo3(std::ifstream& stream) {
     FileUtils::streamRead(stream, numTris);
     tris.resize(size_t(numTris));
     FileUtils::streamRead(stream, tris);
-
     return vertexIndex2PrimitiveData(vertexs, tris);
 }
 

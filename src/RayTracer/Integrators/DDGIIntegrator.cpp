@@ -1,21 +1,25 @@
 #include "DDGIIntegrator.h"
 #include "Common/ResourceCache.h"
+#include "Scene/SceneLoader/SceneLoaderInterface.h"
 #include "shaders/Raytracing/ddgi/ddgi_commons.h"
 
-static ShaderKey      kRaygen             = "Raytracing/ddgi/raygen.rgen";
-static ShaderKey      kClassify           = "Raytracing/ddgi/classify.comp";
-static ShaderKey      kSampleProbe        = "Raytracing/ddgi/sampleProbe.comp";
-static ShaderKey      kClosestHit         = "Raytracing/PT/closesthit.rchit";
-static ShaderKey      kMiss               = "Raytracing/PT/miss.rmiss";
-static ShaderKey      kMissShadow         = "Raytracing/PT/miss_shadow.rmiss";
-static ShaderKey      kRayAnyHit          = "Raytracing/ray.rahit";
-static ShaderKey      kVisualizeVert      = "Raytracing/ddgi/ddgi_debug.vert";
-static ShaderKey      kVisualizeFrag      = "Raytracing/ddgi/ddgi_debug.frag";
-static ShaderKey      kRadianceUpdate     = "Raytracing/ddgi/ddgi_update_radiance.comp";
-static ShaderKey      kDirectionUpdate    = "Raytracing/ddgi/ddgi_update_direction.comp";
-static ShaderKey      kPrimaryRayGen      = "Raytracing/primary_ray.rgen";
-static ShaderKey      kPrimaryRayGenDepth = {"Raytracing/primary_ray.rgen", {"WRITE_DEPTH"}};
-static constexpr uint kSphereVertexCount  = 2880;
+static ShaderKey kRaygen             = "Raytracing/ddgi/raygen.rgen";
+static ShaderKey kClassify           = "Raytracing/ddgi/classify.comp";
+static ShaderKey kSampleProbe        = "Raytracing/ddgi/sample_probe.comp";
+static ShaderKey kClosestHit         = "Raytracing/PT/closesthit.rchit";
+static ShaderKey kMiss               = "Raytracing/PT/miss.rmiss";
+static ShaderKey kMissShadow         = "Raytracing/PT/miss_shadow.rmiss";
+static ShaderKey kRayAnyHit          = "Raytracing/ray.rahit";
+static ShaderKey kVisualizeVert      = "Raytracing/ddgi/ddgi_debug.vert";
+static ShaderKey kVisualizeFrag      = "Raytracing/ddgi/ddgi_debug.frag";
+static ShaderKey kRadianceUpdate     = {"Raytracing/ddgi/ddgi_update_radiance.comp", {"UPDATE_RADIANCE"}};
+static ShaderKey kDepthUpdate        = {"Raytracing/ddgi/ddgi_update_radiance.comp"};
+static ShaderKey kPrimaryRayGen      = "Raytracing/primary_ray.rgen";
+static ShaderKey kPrimaryRayGenDepth = {"Raytracing/primary_ray.rgen", {"WRITE_DEPTH"}};
+static ShaderKey kShadowMapVert      = "shadows/shadowMap.vert";
+static ShaderKey kShadowMapFrag      = "shadows/shadowMap.frag";
+
+static constexpr uint kSphereVertexCount = 2880;
 
 static ShaderPipelineKey GeneratePorbeRays = {
     kRaygen,
@@ -66,6 +70,10 @@ struct ProbeData {
 static std::string kProbeDataBufferName = "probeDataBuffer";
 
 void DDGIIntegrator::render(RenderGraph& renderGraph) {
+    pc_ray.first_frame = frameCount == 0;
+    pc_ray.frame_num   = frameCount;
+    frameCount++;
+
     if (!entry_->primAreaBuffersInitialized) {
         initLightAreaDistribution(renderGraph);
     }
@@ -73,56 +81,122 @@ void DDGIIntegrator::render(RenderGraph& renderGraph) {
     renderGraph.setCutUnUsedResources(false);
 
     renderGraph.addRaytracingPass(
-        "Generate Primary Rays", [&](RenderGraph::Builder& builder, RaytracingPassSettings& settings) {
-            settings.accel = &entry_->tlas;
-            settings.shaderPaths = debugDDGI ? PrimaryRayGenDepth : PrimaryRayGen;
+        "Generate Primary Rays",
+        [&](RenderGraph::Builder& builder, RaytracingPassSettings& settings) {
+            settings.accel                   = &entry_->tlas;
+            settings.shaderPaths             = PrimaryRayGen;
             settings.rTPipelineSettings.dims = {width, height, 1};
             builder.writeTexture(RT_IMAGE_NAME, TextureUsage::STORAGE);
 
-            if (debugDDGI) {
-                auto depth = renderGraph.createTexture(DEPTH_IMAGE_NAME, {.extent = g_context->getViewPortExtent(), .useage = TextureUsage::DEPTH_ATTACHMENT | TextureUsage::SAMPLEABLE | TextureUsage::STORAGE});
-                builder.writeTexture(depth, TextureUsage::STORAGE);
-            }
-
-            settings.rTPipelineSettings.maxDepth = 2; }, [&](RenderPassContext& context) {
-            
+            settings.rTPipelineSettings.maxDepth = 2;
+        },
+        [&](RenderPassContext& context) {
             auto& commandBuffer = context.commandBuffer;
             bindRaytracingResources(commandBuffer);
-            if (debugDDGI)
-                g_context->bindImage(1, renderGraph.getBlackBoard().getImageView(DEPTH_IMAGE_NAME));
             g_context->bindImage(0, renderGraph.getBlackBoard().getImageView(RT_IMAGE_NAME));
             g_context->bindPushConstants(pc_ray);
-            g_context->traceRay(commandBuffer, VkExtent3D{width, height, 1}); });
+            g_context->traceRay(commandBuffer, VkExtent3D{width, height, 1});
+        });
 
     renderGraph.addRaytracingPass(
-        "ddgi_probe_trace", [&](RenderGraph::Builder& builder, RaytracingPassSettings& settings) {
-            settings.accel = &entry_->tlas;
-            settings.shaderPaths = GeneratePorbeRays;
-            settings.rTPipelineSettings.dims = {width, height, 1};
+        "ddgi_probe_trace",
+        [&](RenderGraph::Builder& builder, RaytracingPassSettings& settings) {
+            settings.accel                       = &entry_->tlas;
+            settings.shaderPaths                 = GeneratePorbeRays;
+            settings.rTPipelineSettings.dims     = {width, height, 1};
             settings.rTPipelineSettings.maxDepth = 5;
 
             auto probeRayBuffer = renderGraph.importBuffer(kProbeDataBufferName, buffers->probeRayData.get());
-            builder.writeBuffer(probeRayBuffer, BufferUsage::STORAGE); }, [&](RenderPassContext& context) {
+            builder.writeBuffer(probeRayBuffer, BufferUsage::STORAGE);
+        },
+        [&](RenderPassContext& context) {
             auto& commandBuffer = context.commandBuffer;
             bindRaytracingResources(commandBuffer);
-            g_context->bindBuffer(0, *buffers->uboBuffer).bindBuffer(6, *buffers->probeRayData).bindBuffer(7, *buffers->probeOffsets);
+            g_context->bindBuffer(0, *buffers->uboBuffer)
+                .bindBuffer(6, *buffers->probeRayData)
+                .bindBuffer(7, *buffers->probeOffsets);
             uint probeCount = ubo.probe_counts.x * ubo.probe_counts.y * ubo.probe_counts.z;
-            g_context->bindPushConstants(pc_ray).traceRay(commandBuffer, VkExtent3D{probeCount, uint(ubo.rays_per_probe), 1}); });
+            g_context->bindPushConstants(pc_ray)
+                .traceRay(commandBuffer, VkExtent3D{probeCount, uint(ubo.rays_per_probe), 1});
+        });
 
     renderGraph.addComputePass(
-        "", [&](RenderGraph::Builder& builder, ComputePassSettings& settings) {
-            auto prevRadiance = renderGraph.importTexture("prev_radiance_map", buffers->ddgiIrradiance[ping].get());
+        "ddgi_update_radiance",
+        [&](RenderGraph::Builder& builder, ComputePassSettings& settings) {
             auto radiance = renderGraph.importTexture("ddgi_radiance_map", buffers->ddgiIrradiance[pong].get());
             builder.writeTexture(radiance, RenderGraphTexture::Usage::STORAGE);
-            builder.readTexture(prevRadiance, RenderGraphTexture::Usage::SAMPLEABLE);
-            builder.readBuffer(renderGraph.getBlackBoard().getHandle(kProbeDataBufferName), RenderGraphBuffer::Usage::READ); }, [&](RenderPassContext& context) {
-            auto& sampler = device.getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_FILTER_LINEAR, 1);
-            g_context->bindImageSampler(0, renderGraph.getBlackBoard().getImageView("prev_radiance_map"), sampler).bindImage(0, renderGraph.getBlackBoard().getImageView("ddgi_radiance_map")).bindBuffer(6, renderGraph.getBlackBoard().getBuffer(kProbeDataBufferName)).bindBuffer(0, *buffers->uboBuffer);
-            g_context->bindShaders({kRadianceUpdate}).flushAndDispatch(context.commandBuffer, ubo.probe_counts.x * ubo.probe_counts.y, ubo.probe_counts.z, 1); });
+            builder.readBuffer(renderGraph.getBlackBoard().getHandle(kProbeDataBufferName), RenderGraphBuffer::Usage::READ);
+        },
+        [&](RenderPassContext& context) {
+            g_context->bindImage(0, renderGraph.getBlackBoard().getImageView("ddgi_radiance_map"))
+                .bindBuffer(6, renderGraph.getBlackBoard().getBuffer(kProbeDataBufferName))
+                .bindBuffer(0, *buffers->uboBuffer);
+            g_context->bindShaders({kRadianceUpdate})
+                .bindPushConstants(pc_ray)
+                .flushAndDispatch(context.commandBuffer, ubo.probe_counts.x * ubo.probe_counts.y, ubo.probe_counts.z, 1);
+        });
 
-    if (debugDDGI)
+    renderGraph.addComputePass(
+        "ddgi_update_depth",
+        [&](RenderGraph::Builder& builder, ComputePassSettings& settings) {
+            auto depth = renderGraph.importTexture("ddgi_depth_map", buffers->ddgiDist[pong].get());
+            builder.writeTexture(depth, RenderGraphTexture::Usage::STORAGE);
+            builder.readBuffer(renderGraph.getBlackBoard().getHandle(kProbeDataBufferName), RenderGraphBuffer::Usage::READ);
+        },
+        [&](RenderPassContext& context) {
+            g_context->bindImage(0, renderGraph.getBlackBoard().getImageView("ddgi_depth_map"))
+                .bindBuffer(6, renderGraph.getBlackBoard().getBuffer(kProbeDataBufferName))
+                .bindBuffer(0, *buffers->uboBuffer);
+            g_context->bindShaders({kDepthUpdate})
+                .bindPushConstants(pc_ray)
+                .flushAndDispatch(context.commandBuffer, ubo.probe_counts.x * ubo.probe_counts.y, ubo.probe_counts.z, 1);
+        });
+
+    if(showIndirect)
+    renderGraph.addComputePass(
+        "ddgi_indirect_lighting",
+        [&](RenderGraph::Builder& builder, ComputePassSettings& settings) {
+            builder.readTexture("ddgi_radiance_map", RenderGraphTexture::Usage::SAMPLEABLE);
+            builder.readTexture("ddgi_depth_map", RenderGraphTexture::Usage::SAMPLEABLE);
+            builder.writeTexture(RT_IMAGE_NAME, RenderGraphTexture::Usage::STORAGE);
+        },
+        [&](RenderPassContext& context) {
+            auto& sampler = device.getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_FILTER_LINEAR, 1);
+            bindRaytracingResources(context.commandBuffer);
+
+            g_context->bindImageSampler(0, renderGraph.getBlackBoard().getImageView("ddgi_radiance_map"), sampler)
+                .bindImageSampler(1, renderGraph.getBlackBoard().getImageView("ddgi_depth_map"), sampler)
+                .bindBuffer(3, *entry_->sceneDescBuffer)
+                .bindBuffer(0, *buffers->uboBuffer)
+                .bindImage(0, renderGraph.getBlackBoard().getImageView(RT_IMAGE_NAME))
+                .bindPushConstants(pc_ray);
+            g_context->bindShaders({kSampleProbe})
+                .flushAndDispatch(context.commandBuffer, (width + 15) / 16, (height + 15) / 16, 1);
+        });
+
+    if (debugDDGI) {
         renderGraph.addGraphicPass(
-            "Visualize ddgi_probe", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
+            "Only Depth Pass",
+            [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
+                auto depth = renderGraph.createTexture(
+                    DEPTH_IMAGE_NAME,
+                    {.extent = g_context->getViewPortExtent(),
+                     .useage = TextureUsage::DEPTH_ATTACHMENT | TextureUsage::SAMPLEABLE | TextureUsage::STORAGE,
+                     .format = VK_FORMAT_D32_SFLOAT});
+                builder.writeTexture(depth, TextureUsage::DEPTH_ATTACHMENT);
+                RenderGraphPassDescriptor desc;
+                desc.textures = {depth};
+                desc.addSubpass({.outputAttachments = {depth}});
+                builder.declare(desc);
+            },
+            [&](RenderPassContext& context) {
+                g_context->bindShaders({kShadowMapVert, kShadowMapFrag}).bindPushConstants(camera->viewProj());
+                g_manager->fetchPtr<View>("view")->bindViewGeom(context.commandBuffer).drawPrimitives(context.commandBuffer);
+            });
+
+        renderGraph.addGraphicPass(
+            "Visualize ddgi_probe",
+            [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
                 auto radiance = renderGraph.getBlackBoard().getHandle("ddgi_radiance_map");
                 builder.readTexture(radiance, TextureUsage::SAMPLEABLE);
 
@@ -134,52 +208,109 @@ void DDGIIntegrator::render(RenderGraph& renderGraph) {
                 RenderGraphPassDescriptor desc;
                 desc.textures = {output, depth};
                 desc.addSubpass({.outputAttachments = {output, depth}});
-                builder.declare(desc); }, [&](RenderPassContext& context) {
-                g_context->bindShaders({kVisualizeVert, kVisualizeFrag}).getPipelineState().setVertexInputState({}).setRasterizationState({.cullMode = VK_CULL_MODE_NONE});
-                g_context->bindBuffer(0, *buffers->uboBuffer).bindBuffer(2, *entry_->sceneUboBuffer).bindImageSampler(0, renderGraph.getBlackBoard().getImageView("ddgi_radiance_map"), device.getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_FILTER_LINEAR, 1));
+                builder.declare(desc);
+            },
+            [&](RenderPassContext& context) {
+                g_context->bindShaders({kVisualizeVert, kVisualizeFrag})
+                    .getPipelineState()
+                    .setVertexInputState({})
+                    .setRasterizationState({.cullMode = VK_CULL_MODE_BACK_BIT})
+                    .setDepthStencilState({.depthTestEnable = true, .depthWriteEnable = true});
+                g_context->bindBuffer(0, *buffers->uboBuffer)
+                    .bindBuffer(2, *entry_->sceneUboBuffer)
+                    .bindImageSampler(0, renderGraph.getBlackBoard().getImageView("ddgi_radiance_map"), device.getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_FILTER_LINEAR, 1));
                 uint probeCount = ubo.probe_counts.x * ubo.probe_counts.y * ubo.probe_counts.z;
-                g_context->flushAndDraw(context.commandBuffer, kSphereVertexCount, probeCount, 0, 0); });
+                // g_context->bindPrimitiveGeom(context.commandBuffer,*spherePrimitive).flushAndDrawIndexed(context.commandBuffer, spherePrimitive->indexCount, probeCount, 0, 0);
+                g_context->flushAndDraw(context.commandBuffer, kSphereVertexCount, probeCount, 0, 0);
+            });
+    }
 }
 
 void DDGIIntegrator::init() {
     Integrator::init();
     gbufferPass = std::make_unique<GBufferPass>();
     gbufferPass->init();
+    spherePrimitive = SceneLoaderInterface::loadSpecifyTypePrimitive(device,"sphere");
 }
 
 void DDGIIntegrator::initScene(RTSceneEntry& entry) {
     Integrator::initScene(entry);
-    ubo.probe_counts   = 1.1f * (entry.scene->getSceneBBox().max() - entry.scene->getSceneBBox().min()) / config.probe_distance;
-    ubo.rays_per_probe = config.rays_per_probe;
-    buffers            = new DDGIBuffers();
+    ubo.probe_counts       = 1.1f * (entry.scene->getSceneBBox().max() - entry.scene->getSceneBBox().min()) / config.probe_distance;
+    ubo.rays_per_probe     = config.rays_per_probe;
+    ubo.depth_sharpness    = 50.f;
+    ubo.normal_bias        = 0.1f;
+    ubo.probe_distance     = config.probe_distance;
+    ubo.view_bias          = 0.1f;
+    ubo.backface_ratio     = 0.1f;
+    ubo.min_frontface_dist = 0.1f;
+    ubo.max_distance       = 1.5f * ((entry.scene->getSceneBBox().max() - entry.scene->getSceneBBox().min()) / vec3(ubo.probe_counts)).length();
+
+    buffers = new DDGIBuffers();
 
     uint numProbes = ubo.probe_counts.x * ubo.probe_counts.y * ubo.probe_counts.z;
 
-    buffers->probeRayData  = std::make_unique<Buffer>(device, sizeof(DDGIRayData) * numProbes * ubo.rays_per_probe, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-    buffers->probeRayCount = std::make_unique<Buffer>(device, sizeof(uint32_t) * numProbes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-    buffers->probeOffsets  = std::make_unique<Buffer>(device, sizeof(vec3) * numProbes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-    buffers->gbufferBuffer = std::make_unique<Buffer>(device, sizeof(GBuffer) * width * height, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+    buffers->probeRayData = std::make_unique<Buffer>(
+        device,
+        sizeof(DDGIRayData) * numProbes * ubo.rays_per_probe,
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+        VMA_MEMORY_USAGE_GPU_ONLY);
+    buffers->probeRayCount = std::make_unique<Buffer>(
+        device,
+        sizeof(uint32_t) * numProbes,
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        VMA_MEMORY_USAGE_GPU_ONLY);
+    buffers->probeOffsets = std::make_unique<Buffer>(
+        device,
+        sizeof(vec3) * numProbes,
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        VMA_MEMORY_USAGE_GPU_ONLY);
+    buffers->gbufferBuffer = std::make_unique<Buffer>(
+        device,
+        sizeof(GBuffer) * width * height,
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+        VMA_MEMORY_USAGE_GPU_ONLY);
     LOGI("{} num probes", numProbes);
 
     entry_->sceneDesc.gbuffer_addr       = buffers->gbufferBuffer->getDeviceAddress();
     entry_->sceneDesc.ddgi_ray_data_addr = buffers->probeRayData->getDeviceAddress();
     entry_->sceneDescBuffer->uploadData(&entry_->sceneDesc, sizeof(entry_->sceneDesc));
 
-    VkExtent3D imageExtent   = {uint32(ubo.probe_counts.x * ubo.probe_counts.y * 18), uint32(ubo.probe_counts.z * 18), 1};
-    ubo.irradiance_height    = imageExtent.height;
-    ubo.irradiance_width     = imageExtent.width;
-    ubo.probe_start_position = entry.scene->getSceneBBox().min();
+    VkExtent3D irradianceImageExtent   = {uint32(ubo.probe_counts.x * ubo.probe_counts.y * config.irradiance_texel_count), uint32(ubo.probe_counts.z * config.irradiance_texel_count), 1};
+    ubo.irradiance_height    = irradianceImageExtent.height;
+    ubo.irradiance_width     = irradianceImageExtent.width;
+    ubo.probe_start_position = entry.scene->getSceneBBox().min() + 0.5f * (entry.scene->getSceneBBox().max() - entry.scene->getSceneBBox().min()) / vec3(ubo.probe_counts);
 
-    buffers->uboBuffer = std::make_unique<Buffer>(device, sizeof(DDGIUbo), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, &ubo);
+    VkExtent3D depthImageExtent = {uint32(ubo.probe_counts.x * ubo.probe_counts.y * config.distance_texel_count), uint32(ubo.probe_counts.z * config.distance_texel_count), 1};
+    ubo.depth_height = depthImageExtent.height;
+    ubo.depth_width  = depthImageExtent.width;
 
-    buffers->ddgiIrradiance[0] = std::make_unique<SgImage>(device, "ddgi_irradiance0", imageExtent, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_VIEW_TYPE_2D);
-    buffers->ddgiIrradiance[1] = std::make_unique<SgImage>(device, "ddgi_irradiance1", imageExtent, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_VIEW_TYPE_2D);
-    buffers->ddgiDist[0]       = std::make_unique<SgImage>(device, "ddgi_dist0", imageExtent, VK_FORMAT_R16G16_SFLOAT, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_VIEW_TYPE_2D);
-    buffers->ddgiDist[1]       = std::make_unique<SgImage>(device, "ddgi_dist1", imageExtent, VK_FORMAT_R16G16_SFLOAT, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_VIEW_TYPE_2D);
+    buffers->uboBuffer = std::make_unique<Buffer>(
+        device,
+        sizeof(DDGIUbo),
+        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        VMA_MEMORY_USAGE_CPU_TO_GPU,
+        &ubo);
+
+    buffers->ddgiIrradiance[0] = std::make_unique<SgImage>(
+        device,
+        "ddgi_irradiance0",
+        irradianceImageExtent,
+        VK_FORMAT_R16G16B16A16_SFLOAT,
+        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        VMA_MEMORY_USAGE_GPU_ONLY,
+        VK_IMAGE_VIEW_TYPE_2D);
+    buffers->ddgiDist[0] = std::make_unique<SgImage>(
+        device,
+        "ddgi_dist0",
+        depthImageExtent,
+        VK_FORMAT_R16G16_SFLOAT,
+        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        VMA_MEMORY_USAGE_GPU_ONLY,
+        VK_IMAGE_VIEW_TYPE_2D);
 
     pc_ray.probe_rotation      = glm::mat4(1.0f);
-    pc_ray.size_x              = imageExtent.width;
-    pc_ray.size_y              = imageExtent.height;
+    pc_ray.size_x              = width;
+    pc_ray.size_y              = height;
     pc_ray.frame_num           = 0;
     pc_ray.light_num           = mScene->getLights().size();
     pc_ray.enable_sample_bsdf  = 1;
@@ -187,6 +318,9 @@ void DDGIIntegrator::initScene(RTSceneEntry& entry) {
     pc_ray.max_depth           = 2;
     pc_ray.min_depth           = 0;
     pc_ray.probe_rotation      = glm::mat4(1.0f);
+    pc_ray.first_frame         = 1;
+    pc_ray.ddgi_show_direct = 0;
+    pc_ray.ddgi_indirect_scale = 1.0f;
 
     LOGI("DDGI Integrator initialized");
 }
@@ -194,4 +328,8 @@ void DDGIIntegrator::initScene(RTSceneEntry& entry) {
 void DDGIIntegrator::onUpdateGUI() {
     Integrator::onUpdateGUI();
     ImGui::Checkbox("Debug DDGI", &debugDDGI);
+    ImGui::Checkbox("Show indirect light", &showIndirect);
+    ImGui::Checkbox("Show direct light", reinterpret_cast<bool*>(&pc_ray.ddgi_show_direct));
+    ImGui::Checkbox("Warp Border", reinterpret_cast<bool *>(&pc_ray.wrap_border));
+    ImGui::SliderFloat("indirect scale", &pc_ray.ddgi_indirect_scale, 0.0f, 10.0f);
 }

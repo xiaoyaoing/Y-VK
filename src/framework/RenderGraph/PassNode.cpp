@@ -156,7 +156,7 @@ void PassNode::resolveResourceUsages(RenderGraph& renderGraph, CommandBuffer& co
         if (std::get<0>(state) == nullptr) {
             stateTracker.setResourceState(resourceIt.first, this, resourceIt.second);
             srcState = getType();
-            srcUsage = 0;
+            srcUsage = resourceIt.second;
         } else {
             srcState = std::get<0>(state)->getType();
             srcUsage = std::get<1>(state);
@@ -214,6 +214,9 @@ void ImageCopyPassNode::execute(RenderGraph& renderGraph, CommandBuffer& command
 }
 
 ImageCopyPassNode::ImageCopyPassNode(RenderGraphHandle src, RenderGraphHandle dst) : PassNode("Image Copy"), src(src), dst(dst) {
+}
+RenderPassType ImageCopyPassNode::getType() const {
+    return RenderPassType::TRANSFER;
 }
 
 void ComputePassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) {

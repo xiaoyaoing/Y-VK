@@ -49,6 +49,13 @@ struct ViewProj {
 void ShadowMapPass::render(RenderGraph& rg) {
    auto view = g_manager->fetchPtr<View>("view");
    auto &  lights  = view->getLights();
+
+   int lastDirectionalLight = -1;
+   for(int i = 0; i < lights.size(); i++) {
+       if (lights[i].type == LIGHT_TYPE::Directional) {
+           lastDirectionalLight = i;
+       }
+   }
     
     for(int i = 0; i < lights.size(); i++) {
         if (lights[i].type == LIGHT_TYPE::Directional) {
@@ -69,7 +76,7 @@ void ShadowMapPass::render(RenderGraph& rg) {
                 builder.writeTexture(depth, TextureUsage::DEPTH_ATTACHMENT);
                 },
                 
-                [&,light = &lights[i],name = shadowName](RenderPassContext& context) {
+                [light = &lights[i],name = shadowName,i,lastDirectionalLight,this,&rg](RenderPassContext& context) {
                     g_context->getPipelineState().setPipelineLayout(*mPipelineLayout).setDepthStencilState({.depthCompareOp = VK_COMPARE_OP_LESS}).setRasterizationState({.cullMode = VK_CULL_MODE_NONE});
                     auto desc = getLightMVP(light->lightProperties.position,light->lightProperties.direction);
                     auto mvp = desc.proj * desc.view;
@@ -83,6 +90,10 @@ void ShadowMapPass::render(RenderGraph& rg) {
 
                     rg.getBlackBoard().getImage(name).transitionLayout(context.commandBuffer, VulkanLayout::DEPTH_SAMPLER);
                     g_manager->getView()->setLightDirty(true);
+
+                    if (lastDirectionalLight == i) {
+                        g_context->resetViewport(context.commandBuffer);
+                    }
                 });
         }
     }

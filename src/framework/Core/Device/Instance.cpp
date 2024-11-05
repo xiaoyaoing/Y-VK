@@ -112,12 +112,11 @@ Instance::Instance(const std::string&                           application_name
     }
     instanceInfo.pNext = &features;
 
+
     VK_CHECK_RESULT(vkCreateInstance(&instanceInfo, nullptr, &_instance));
+
     volkLoadInstance(_instance);
-    //    while (true);
-    //    exit(-1);
     LOGI("Instance Created");
-    // vkCreateDebugUtilsMessengerEXT(_instance,&debugMessengerCreateInfo, nullptr,&_debugMessenger);
 }
 
 void Instance::fillDebugMessengerInfo(VkDebugUtilsMessengerCreateInfoEXT& debugUtilsMessengerInfo) {

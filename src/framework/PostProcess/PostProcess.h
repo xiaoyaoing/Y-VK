@@ -16,6 +16,7 @@ public:
 
     void init() override;
     void render(RenderGraph& rg) override;
+   // void render(RenderGraph& rg,RenderGraphHandle 
     void updateGui() override;
 
 protected:

@@ -46,6 +46,10 @@ void Transform::lateUpdate() {
     m_changedSinceLastFrame = false;
     m_lastFrameWorldBBox    = m_worldBBox;
 }
+glm::vec3 Transform::TransformPoint(const glm::vec3& point) const {
+    glm::vec4 p = glm::vec4(point, 1.0f);
+    return glm::vec3(getLocalToWorldMatrix() * p);
+}
 void Transform::setLocalToWorldMatrix(const glm::mat4& matrix) {
     m_localToWorldMatrix = matrix;
     m_worldToLocalMatrix = glm::inverse(matrix);

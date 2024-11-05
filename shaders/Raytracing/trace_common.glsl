@@ -1,3 +1,7 @@
+bool is_delta_light(const uint light_type){
+    return light_type == RT_LIGHT_TYPE_DIRECTIONAL;
+}
+
 vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event, bool enable_sample_light, bool enable_sample_bsdf, inout uvec4 seed){
 
 
@@ -8,7 +12,7 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
     vec3 light_sample_rand = rand3(seed);
 
     if (is_specular_material(materials.m[event.material_idx])){
-        debugPrintfEXT("specular\n");
+//     //   debugPrintfEXT("specular\n");
         return vec3(0, 0, 0);
     }
 
@@ -16,6 +20,8 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
     const RTLight light = lights[light_idx];
 
 
+    enable_sample_bsdf = enable_sample_bsdf && !is_delta_light(light.light_type);
+    
     LightSample light_sample = sample_li(light, event, light_sample_rand);
     
 
@@ -28,8 +34,9 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
             traceRayEXT(tlas,
             gl_RayFlagsTerminateOnFirstHitEXT |
             gl_RayFlagsSkipClosestHitShaderEXT,
-            0xFF, 1, 0, 1, event.p, EPS, light_sample.wi, light_sample.dist - EPS, 1);
+            0xFF, 1, 0, 1, event.p, EPS , light_sample.wi, light_sample.dist - EPS, 1);
             bool  visible = any_hit_payload.hit == 0;
+//            visible = true;
             if (visible){
                 uint material_idx = event.material_idx;
                 event.wi = to_local(event.frame, light_sample.wi);
@@ -38,12 +45,13 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
                 vec3 bsdf =eval_bsdf(materials.m[material_idx], event);
                 result += light_sample.indensity  * bsdf * light_mis_weight / light_sample.pdf;
                 if (hasNaN(result)){
-                    debugPrintfEXT("light L %f %f %f\n", light.L.x, light.L.y, light.L.z);
-                    debugPrintfEXT("bsdf %f %f %f\n", bsdf.x, bsdf.y, bsdf.z);
-                    debugPrintfEXT("light_mis_weight %f\n", light_mis_weight);
-                    debugPrintfEXT("light_sample.pdf %f\n", light_sample.pdf);
-                    debugPrintfEXT("bsdf_pdf %f\n", bsdf_pdf);
-                    debugPrintfEXT("result %f %f %f\n", result.x, result.y, result.z);
+                    debugPrintfEXT("light L %f %f %f, bsdf %f %f %f, light_mis_weight %f, light_sample.pdf %f, bsdf_pdf %f, result %f %f %f\n",
+                    light_sample.indensity.x, light_sample.indensity.y, light_sample.indensity.z,
+                    bsdf.x, bsdf.y, bsdf.z,
+                    light_mis_weight,
+                    light_sample.pdf,
+                    bsdf_pdf,
+                    result.x, result.y, result.z);
                 }
             }
         }
@@ -65,6 +73,8 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
             0xFF, 0, 0, 0, event.p + EPS * world_wi, 0, world_wi, 10000, 0);
             
             bool same_light = light_sample.is_infinite? hitPayload.prim_idx == -1: hitPayload.prim_idx == light.prim_idx;
+            
+//            same_light = true;
 
             if (same_light){
                 uint material_idx = event.material_idx;

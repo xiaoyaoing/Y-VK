@@ -43,7 +43,7 @@ public:
     SceneUbo                      sceneUbo;
     SceneUbo                      lastFrameSceneUbo;
     std::shared_ptr<RTSceneEntry> rtSceneEntry;
-    std::unique_ptr<PostProcess>  postProcess;
+    // std::unique_ptr<PostProcess>  postProcess;
 };
 
 #endif//VULKANDEMO_RAYTRACER_H

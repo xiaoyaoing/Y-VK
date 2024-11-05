@@ -22,6 +22,7 @@ using uvec2 = glm::uvec2;
 
 #define LIGHT_TYPE_AREA     1
 #define LIGHT_TYPE_INFINITE 2
+#define LIGHT_TYPE_DIRECTION 3
 
 //For code used in shader,use "_" code style
 
@@ -91,7 +92,7 @@ struct RTLight {
     uint prim_idx;
     vec3 position;
     uint light_type;
-    vec3 padding;
+    vec3 direction;
     uint light_texture_id;
 };
 
@@ -135,14 +136,20 @@ struct PCPath {
 
     uint visual_material_type;
     uint visual_albedo;
-    uint padding[2];
+    uint wrap_border;
+    uint padding;
 
     mat4 probe_rotation;
 
     uint size_x;
     uint size_y;
     uint time;
-    int  pad;
+    uint first_frame;
+
+    uint ddgi_show_direct;
+    uint ddgi_show_indirect;
+    float ddgi_indirect_scale;
+    uint padding3;
 };
 
 struct GBuffer {
@@ -164,6 +171,7 @@ struct GBuffer {
 #define RT_LIGHT_TYPE_AREA     0
 #define RT_LIGHT_TYPE_INFINITE 1
 #define RT_LIGHT_TYPE_POINT    2
+#define RT_LIGHT_TYPE_DIRECTIONAL 3
 
 #define RT_BSDF_LOBE_DIFFUSE    1u
 #define RT_BSDF_LOBE_SPECULAR   1u << 1

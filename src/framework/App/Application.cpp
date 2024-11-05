@@ -65,9 +65,11 @@ void Application::initWindow(const char* name, uint32_t width, uint32_t height) 
  * - Create logical device
  */
 void Application::prepare() {
+
+    initLogger();
+
     initVk();
     initGUI();
-    initLogger();
 
     TextureHelper::Initialize();
     RenderPtrManangr::Initalize();
@@ -92,6 +94,8 @@ void Application::initVk() {
     VK_CHECK_RESULT(volkInitialize());
 
     getRequiredInstanceExtensions();
+
+  
     _instance = std::make_unique<Instance>(std::string("vulkanApp"), instanceExtensions, validationLayers);
     surface   = window->createSurface(*_instance);
 
@@ -118,7 +122,8 @@ void Application::initVk() {
     VkPhysicalDeviceProperties deviceProperties;
     vkGetPhysicalDeviceProperties(physical_devices[0], &deviceProperties);
     LOGI("Device Name: {}", deviceProperties.deviceName)
-
+    
+    
     device = std::make_unique<Device>(physical_devices[0], surface, _instance->getHandle(), deviceExtensions);
 
     createRenderContext();

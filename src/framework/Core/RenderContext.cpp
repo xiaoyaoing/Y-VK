@@ -617,6 +617,10 @@ void RenderContext::flushPushConstantStage(CommandBuffer& commandBuffer) {
     auto& pipelineLayout    = pipelineState.getPipelineLayout();
     auto  pushConstantRange = pipelineLayout.getPushConstantRangeStage(storePushConstants.size());
 
+    if(pushConstantRange == 0) {
+         pushConstantRange = pipelineLayout.getPushConstantRangeStage(storePushConstants.size());
+        LOGE("Push Constant Size is too large,device support {},but current size is {}", maxPushConstantSize, storePushConstants.size());
+    }
     vkCmdPushConstants(commandBuffer.getHandle(), pipelineLayout.getHandle(), pushConstantRange, 0, storePushConstants.size(), storePushConstants.data());
     storePushConstants.clear();
 }

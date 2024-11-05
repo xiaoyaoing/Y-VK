@@ -26,6 +26,7 @@ struct JsonLoader {
     std::vector<PerPrimitiveUniform> primitiveUniforms;
 
     std::vector<std::unique_ptr<Primitive>> primitives;
+    BBox sceneBBox;
     std::vector<std::unique_ptr<Texture>>   textures;
     std::vector<GltfMaterial>               materials;
     std::vector<RTMaterial>                 rtMaterials;
@@ -439,6 +440,8 @@ void JsonLoader::loadPrimitives() {
             }
         }
         auto primitive = std::make_unique<Primitive>(vertexOffset, indexOffset, vertexCount, indexCount, material_index);
+        primitive->setDimensions(primitiveData->bbox);
+        
         vertexOffsets.push_back(vertexOffset);
         indexOffsets.push_back(indexOffset);
 
@@ -449,11 +452,12 @@ void JsonLoader::loadPrimitives() {
         vertexDatas.push_back(std::move(primitiveData->buffers));
 
         primitive->lightIndex = lightIndex;
-        //  transforms.push_back(transform);
         primitive->transform = transform;
+
+        primitive->setDimensions(primitive->transform.transformPointToWorld(primitive->getDimensions().min()), primitive->transform.transformPointToWorld(primitive->getDimensions().max()));
+        sceneBBox.unite(primitive->getDimensions());
         primitives.push_back(std::move(primitive));
     }
-
     std::unordered_map<std::string, std::unique_ptr<Buffer>> stagingVertexBuffers;
     auto                                                     stagingIndexBuffer = std::make_unique<Buffer>(device, indexOffset * sizeof(uint32_t), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
@@ -536,6 +540,7 @@ std::unique_ptr<Scene> Jsonloader::LoadSceneFromJsonFile(Device& device, const s
     scene->vertexAttributes  = std::move(loader.vertexAttributes);
     scene->sceneVertexBuffer = std::move(loader.sceneVertexBuffer);
     scene->sceneIndexBuffer  = std::move(loader.sceneIndexBuffer);
+    scene->setSceneBBox(loader.sceneBBox);
 
     scene->sceneUniformBuffer = std::move(loader.sceneUniformBuffer);
     scene->indexType          = VK_INDEX_TYPE_UINT32;
@@ -543,6 +548,5 @@ std::unique_ptr<Scene> Jsonloader::LoadSceneFromJsonFile(Device& device, const s
 
     scene->loadCompleteInfo->SetGeometryLoaded();
     scene->loadCompleteInfo->SetTextureLoaded();
-
     return scene;
 }

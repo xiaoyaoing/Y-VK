@@ -251,9 +251,6 @@ vec3 eval_light(const RTLight light, const vec3 p, const vec3 n_g, const vec3 w)
     else if (light.light_type == RT_LIGHT_TYPE_POINT){
         return light.L;
     }
-    if (dot(n_g, -w) > 0){
-        return light.L;
-    }
     return vec3(0);
 }
 
@@ -369,6 +366,10 @@ float eval_light_pdf(const RTLight light, const vec3 p, const vec3 light_p, cons
     }
     else if (light.light_type == RT_LIGHT_TYPE_POINT){
         return 1.f / (4.f * PI);
+    }
+    else if (light.light_type == RT_LIGHT_TYPE_DIRECTIONAL){
+        //delta light
+        return 0;
     }
     return 0;
 }
@@ -513,6 +514,16 @@ LightSample sample_li_point_light(const RTLight light, const SurfaceScatterEvent
     return result;
 }
 
+LightSample sample_li_directional_light(const RTLight light, const SurfaceScatterEvent event, const vec3 rand){
+    LightSample result;
+    result.indensity = light.L;
+    result.wi = normalize(-light.direction);
+    result.pdf = 1.f;
+    result.p = event.p + result.wi * 1000.f;
+    result.dist = 1000.f;
+    return result;
+}
+
 
 LightSample sample_li(const RTLight light, const SurfaceScatterEvent event, const vec3 rand){
     uint light_type = light.light_type;
@@ -530,6 +541,10 @@ LightSample sample_li(const RTLight light, const SurfaceScatterEvent event, cons
     else if (light_type == RT_LIGHT_TYPE_POINT){
         result =  sample_li_point_light(light, event, rand);
         result.is_infinite = false;
+    }
+    else if (light_type == RT_LIGHT_TYPE_DIRECTIONAL){
+        result =  sample_li_directional_light(light, event, rand);
+        result.is_infinite = true;
     }
     return result;
 }

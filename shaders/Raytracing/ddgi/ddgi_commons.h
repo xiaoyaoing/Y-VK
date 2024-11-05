@@ -3,33 +3,32 @@
 
 #include "../commons.h"
 
-
 struct DDGIUbo {
     ivec3 probe_counts;
     float hysteresis;
-    vec3 probe_start_position;
-    float probe_step;
-    
-    int rays_per_probe;
+    vec3  probe_start_position;
+    float probe_distance;
+
+    int   rays_per_probe;
     float max_distance;
     float depth_sharpness;
     float normal_bias;
-    
+
     float view_bias;
     float backface_ratio;
-    int irradiance_width;
-    int irradiance_height;
-    
-    int depth_width;
-    int depth_height;
+    int   irradiance_width;
+    int   irradiance_height;
+
+    int   depth_width;
+    int   depth_height;
     float min_frontface_dist;
     float pad;
 };
 
-struct DDGIRayData{
-    vec3 direction;
+struct DDGIRayData {
+    vec3  direction;
     float pad;
-    vec3 irradiance;
+    vec3  irradiance;
     float dist;
 };
 

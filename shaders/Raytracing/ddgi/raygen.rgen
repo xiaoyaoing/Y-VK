@@ -33,7 +33,7 @@ uvec4 seed = init_rng(gl_LaunchIDEXT.xy, gl_LaunchSizeEXT.xy, pc_ray.frame_num);
 //DDGIRayDataBuffer ddgi_ray_data_buffer = DDGIRayDataBuffer(scene_desc.ddgi_ray_data_addr);
 
 
-vec3 probe_location(uint index) {
+vec3 probe_location(int index) {
     vec3 offset = probe_offsets.d[index].xyz;
     offset = vec3(0);
     return offset + get_position_by_grid(get_probe_coord_by_index(index));
@@ -72,8 +72,8 @@ void main()
 {
 
 
-    uint probe_index = gl_LaunchIDEXT.x;
-    uint ray_index = gl_LaunchIDEXT.y;
+    int probe_index = int(gl_LaunchIDEXT.x);
+    int ray_index = int(gl_LaunchIDEXT.y);
 
 
     uint rayFlags = gl_RayFlagsOpaqueEXT;
@@ -103,8 +103,11 @@ void main()
             irradiance += Le(direction.xyz, event);
 
             vec3 light_sample = uniform_sample_one_light(seed, event, pc_ray.light_num, pc_ray.enable_sample_light>0, pc_ray.enable_sample_bsdf>0);
+           // light_sample = get_albedo(materials.m[event.material_idx],event.uv);
             irradiance +=  light_sample;
-        }
+            
+            distance = length(hitPayload.p - origin);
+        }   
     }
     if (isnan(irradiance.x) || isnan(irradiance.y) || isnan(irradiance.z)){
         debugPrintfEXT("nan irradiance %f %f %f\n", irradiance.x, irradiance.y, irradiance.z);

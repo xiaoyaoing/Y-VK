@@ -287,7 +287,7 @@ void Gui::addGuiPass(RenderGraph& graph) {
             auto renderOutput = graph.getBlackBoard()[RENDER_VIEW_PORT_IMAGE_NAME];
             auto swapChain    = graph.importTexture("swap_chain", &g_context->getSwapChainImage(), true);
             builder.readTexture(renderOutput, RenderGraphTexture::Usage::SAMPLEABLE);
-            builder.writeTexture(swapChain);
+            builder.writeTexture(swapChain, RenderGraphTexture::Usage::COLOR_ATTACHMENT);
             builder.declare(RenderGraphPassDescriptor({swapChain, swapChain}, RenderGraphSubpassInfo{.outputAttachments = {swapChain}}));
         },
         [&renderContext, this](const RenderPassContext& context) {
