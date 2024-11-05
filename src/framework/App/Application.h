@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Common/RTConfing.h"
 #include "Core/Buffer.h"
 #include "Core/CommandBuffer.h"
 #include "Core/Pipeline.h"
@@ -54,7 +55,6 @@
         return 0;                     \
     }
 
-
 class Application {
     /**
      * @brief Initializes the window for the application.
@@ -67,12 +67,13 @@ class Application {
     virtual void initGUI();
 
     void initLogger();
+
 public:
     Application(const char* name, uint32_t width, uint32_t height);
     Application() : Application("Vulkan", 1920, 1080) {
     }
     virtual ~Application();
-    
+
     virtual void prepare();
     virtual void inputEvent(const InputEvent& inputEvent);
 
@@ -156,8 +157,9 @@ protected:
 
     void handleMouseMove(float x, float y);
 
-    protected:
+protected:
     bool sceneFirstLoad{true};
+    RTConfing config;
 
 private:
     std::string               mPresentTexture = RENDER_VIEW_PORT_IMAGE_NAME;
@@ -165,8 +167,7 @@ private:
     const char*               mAppName;
     std::unique_ptr<PassBase> mPostProcessPass{};
     //Camera related  variable end
-
-    VkFence fence{VK_NULL_HANDLE};
+    VkFence   fence{VK_NULL_HANDLE};
 #ifdef NOEBUG
     const bool enableValidationLayers = false;
 #else

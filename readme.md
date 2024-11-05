@@ -28,7 +28,11 @@ Indirect Specular
 Combined Global Illumination
 ![gi.png](ScreenShoots%2Fgi.png)
 
-
+Dynamic Diffuse Global Illumination
+DDGI
+![ddgi.png](ScreenShoots%2Fddgi.png)
+Path Tracing!
+![pt.png](ScreenShoots%2Fpt.png)
 
 MainlyFrom https://vulkan-tutorial.com/
 Vulkan Samples :https://github.com/KhronosGroup/Vulkan-Samples

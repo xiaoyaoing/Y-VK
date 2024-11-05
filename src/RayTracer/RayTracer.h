@@ -13,14 +13,14 @@
 #include "PostProcess/PostProcess.h"
 #include "RenderPasses/RenderPassBase.h"
 
-struct RayTracerSettings {};
+\
 
 #define RESTIR_INTEGRATOR_NAME "restir"
 #define PATH_INTEGRATOR_NAME   "path"
 
 class RayTracer : public Application {
 public:
-    RayTracer(const RayTracerSettings& settings);
+    RayTracer(const RTConfing& settings);
     void prepare() override;
     void onUpdateGUI() override;
     void drawFrame(RenderGraph& renderGraph) override;
@@ -29,9 +29,9 @@ public:
 
     // std::unique_ptr<Integrator> path,restirDI{};
 
-    std::unordered_map<std::string_view, std::unique_ptr<Integrator>> integrators;
-    std::string_view                                                  currentIntegrator = RESTIR_INTEGRATOR_NAME;
-    std::vector<std::string_view>
+    std::unordered_map<std::string, std::unique_ptr<Integrator>> integrators;
+    std::string                                                  currentIntegrator = RESTIR_INTEGRATOR_NAME;
+    std::vector<std::string>
         integratorNames;
 
     struct

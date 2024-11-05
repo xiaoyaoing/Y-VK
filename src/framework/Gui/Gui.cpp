@@ -128,6 +128,8 @@ bool Gui::inputEvent(const InputEvent& input_event) {
         } else if (mouse_button.getAction() == MouseAction::Move) {
             capture_move_event = io.WantCaptureMouse;
         }
+        capture_move_event = io.WantCaptureMouse;
+
     } else if (input_event.getSource() == EventSource::TouchScreen) {
         const auto& touch_event = static_cast<const TouchInputEvent&>(input_event);
 

@@ -57,8 +57,6 @@ void PathIntegrator::initScene(RTSceneEntry& entry) {
     // sceneDescBuffer = std::make_unique<Buffer>(device, sizeof(SceneDesc), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, &desc);
 
     pcPath.light_num = entry_->lights.size();
-    pcPath.max_depth = 5;
-    pcPath.min_depth = 0;
 }
 
 void PathIntegrator::onUpdateGUI() {
@@ -84,8 +82,7 @@ void PathIntegrator::onUpdateGUI() {
     ImGui::Checkbox("Visual Material Type", reinterpret_cast<bool*>(&pcPath.visual_material_type));
     ImGui::Checkbox("Visual Albedo", reinterpret_cast<bool*>(&pcPath.visual_albedo));
 }
-
-PathIntegrator::PathIntegrator(Device& device_) : Integrator(device_) {
+PathIntegrator::PathIntegrator(Device& device, PathTracingConfig config):Integrator(device) {
     layout = std::make_unique<PipelineLayout>(device, ShaderPipelineKey{
                                                           "Raytracing/PT/raygen.rgen",
                                                           "Raytracing/PT/miss.rmiss",
@@ -96,7 +93,12 @@ PathIntegrator::PathIntegrator(Device& device_) : Integrator(device_) {
 
     tem_layout = std::make_unique<PipelineLayout>(device, ShaderPipelineKey({"Raytracing/compute_triangle_area.comp"}));
 
-    pcPath.enable_sample_bsdf  = 1;
-    pcPath.enable_sample_light = 1;
+    pcPath.enable_sample_bsdf  = config.sample_bsdf;
+    pcPath.enable_sample_light = config.sample_light;
     pcPath.enable_accumulation = true;
+    pcPath.max_depth           = config.max_depth;
+    pcPath.min_depth           = config.min_depth;
+
+    
 }
+

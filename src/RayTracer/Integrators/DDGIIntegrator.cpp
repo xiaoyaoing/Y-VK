@@ -275,14 +275,14 @@ void DDGIIntegrator::initScene(RTSceneEntry& entry) {
     entry_->sceneDesc.ddgi_ray_data_addr = buffers->probeRayData->getDeviceAddress();
     entry_->sceneDescBuffer->uploadData(&entry_->sceneDesc, sizeof(entry_->sceneDesc));
 
-    VkExtent3D irradianceImageExtent   = {uint32(ubo.probe_counts.x * ubo.probe_counts.y * config.irradiance_texel_count), uint32(ubo.probe_counts.z * config.irradiance_texel_count), 1};
-    ubo.irradiance_height    = irradianceImageExtent.height;
-    ubo.irradiance_width     = irradianceImageExtent.width;
-    ubo.probe_start_position = entry.scene->getSceneBBox().min() + 0.5f * (entry.scene->getSceneBBox().max() - entry.scene->getSceneBBox().min()) / vec3(ubo.probe_counts);
+    VkExtent3D irradianceImageExtent = {uint32(ubo.probe_counts.x * ubo.probe_counts.y * config.irradiance_texel_count), uint32(ubo.probe_counts.z * config.irradiance_texel_count), 1};
+    ubo.irradiance_height            = irradianceImageExtent.height;
+    ubo.irradiance_width             = irradianceImageExtent.width;
+    ubo.probe_start_position         = entry.scene->getSceneBBox().min() + 0.5f * (entry.scene->getSceneBBox().max() - entry.scene->getSceneBBox().min()) / vec3(ubo.probe_counts);
 
     VkExtent3D depthImageExtent = {uint32(ubo.probe_counts.x * ubo.probe_counts.y * config.distance_texel_count), uint32(ubo.probe_counts.z * config.distance_texel_count), 1};
-    ubo.depth_height = depthImageExtent.height;
-    ubo.depth_width  = depthImageExtent.width;
+    ubo.depth_height            = depthImageExtent.height;
+    ubo.depth_width             = depthImageExtent.width;
 
     buffers->uboBuffer = std::make_unique<Buffer>(
         device,
@@ -319,10 +319,13 @@ void DDGIIntegrator::initScene(RTSceneEntry& entry) {
     pc_ray.min_depth           = 0;
     pc_ray.probe_rotation      = glm::mat4(1.0f);
     pc_ray.first_frame         = 1;
-    pc_ray.ddgi_show_direct = 0;
+    pc_ray.ddgi_show_direct    = 0;
     pc_ray.ddgi_indirect_scale = 1.0f;
 
     LOGI("DDGI Integrator initialized");
+}
+DDGIIntegrator::DDGIIntegrator(Device& device, DDGIConfig config) :Integrator(device){
+    this->config = config;
 }
 
 void DDGIIntegrator::onUpdateGUI() {

@@ -1,0 +1,26 @@
+{
+  "integrators": [
+    {
+      "type": "path",
+      "min_depth": 2,
+      "max_depth": 5
+    },
+    {
+      "type": "ddgi",
+      "ray_per_probe": 2048,
+      "probe_distance": 2.0
+    }
+  ],
+  "integrator": {
+    "type": "ddgi"
+  },
+  "scene_path": "F:/code/RTXGI-DDGI/samples/test-harness/data/gltf/sponza/Sponza.gltf",
+  "scene_scale": 1.0,
+  "scene_translation": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "window_width": 2560,
+  "window_height": 1440
+}

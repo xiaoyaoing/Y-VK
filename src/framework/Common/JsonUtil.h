@@ -1,4 +1,7 @@
 #pragma once
+#include <fwd.hpp>
+#include <vec3.hpp>
+#include <vec2.hpp>
 #include <nlohmann/json.hpp>
 
 using Json = nlohmann::json;
@@ -26,3 +29,10 @@ public:
     static Json fromFile(const std::string& path);
     static void toFile(const std::string& path, const Json& json);
 };
+
+namespace glm {
+    void from_json(const Json& j, vec3& v);
+
+    void from_json(const Json& j, vec2& v);
+    void from_json(const Json& j, quat& v);
+}// 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Integrator.h"
+#include "Common/RTConfing.h"
 #include "Raytracing/PT/path_commons.h"
 #include "RenderPasses/GBufferPass.h"
 
@@ -10,7 +11,7 @@ public:
     void initScene(RTSceneEntry & entry) override;
     void onUpdateGUI() override;
 
-    PathIntegrator(Device& device);
+    PathIntegrator(Device& device,PathTracingConfig config);
 
     // ~PathIntegrator();
 protected:

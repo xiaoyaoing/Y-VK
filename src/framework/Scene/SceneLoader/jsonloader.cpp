@@ -46,26 +46,7 @@ struct JsonLoader {
     SceneLoadingConfig    config;
 };
 
-namespace glm {
-    void from_json(const Json& j, vec3& v) {
-        if (!j.is_array()) {
-            v = vec3(j.get<float>());
-            return;
-        }
-        v.x = j.at(0).get<float>();
-        v.y = j.at(1).get<float>();
-        v.z = j.at(2).get<float>();
-    }
 
-    void from_json(const Json& j, vec2& v) {
-        if (!j.is_array()) {
-            v = vec2(j.get<float>());
-            return;
-        }
-        v.x = j.at(0).get<float>();
-        v.y = j.at(1).get<float>();
-    }
-}// namespace glm
 
 VkBufferUsageFlags GetBufferUsageFlags(const SceneLoadingConfig& config, VkBufferUsageFlags flags) {
     VkBufferUsageFlags vkBufferUsageFlags = flags;

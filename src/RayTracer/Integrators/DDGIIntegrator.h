@@ -1,5 +1,6 @@
 #pragma once
 #include "Integrator.h"
+#include "Common/RTConfing.h"
 #include "Raytracing/PT/path_commons.h"
 #include "Raytracing/ddgi/ddgi_commons.h"
 #include "RenderGraph/RenderGraph.h"
@@ -12,23 +13,7 @@ class RayTracerRenderer{};
 class DeferredRenderer{};
 class DDGIRenderer{};
 
-struct DDGIConfig {
-    float hysteresis = 0.98f;
-    int rays_per_probe = 256;
-    float depth_sharpness = 50.0f;
-    float normal_bias = 0.1f;
-    float view_bias = 0.1f;
-    float backface_ratio = 0.1f;
-    float probe_distance = 2.f;
-    float min_frontface_dist = 0.1f;
-    float max_distance;
-    glm::ivec3 probe_counts;
-    glm::vec3 probe_start_position;
-    int irradiance_texel_count  = 8;
-    int distance_texel_count    = 16;
-    int inner_irradiance_texel_count = 6;
-    int inner_distance_texel_count = 14;
-};
+
 
 using Renderer = std::variant<IBLRenderer, RayTracerRenderer, DeferredRenderer, DDGIRenderer>;
 
@@ -38,7 +23,7 @@ class DDGIIntegrator : public Integrator {
 public:
     void init() override;
     void initScene(RTSceneEntry& entry) override;
-    DDGIIntegrator(Device& device) : Integrator(device) {}
+    DDGIIntegrator(Device& device,DDGIConfig config);
     void onUpdateGUI() override;
 
 protected:
