@@ -150,9 +150,9 @@ void main(){
                     //irradiance = abs(position) / 10.f;
                     result += irradiance * weight;// * 10.f;
 //                    result = texel_dir * 0.5f + 0.5f ;
-                    if(result.x /total_weight > 100){
-                        debugPrintfEXT("irradiance and weight: %f %f i %d %f\n", irradiance.x, weight,i, total_weight);
-                    }
+//                    if(result.x /total_weight > 100){
+//                        debugPrintfEXT("irradiance and weight: %f %f i %d %f\n", irradiance.x, weight,i, total_weight);
+//                    }
                     
                     #else
                     dist = min(dist, ddgi_ubo.max_distance);

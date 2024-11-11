@@ -5,6 +5,7 @@
 #include "Raytracing/ddgi/ddgi_commons.h"
 #include "RenderGraph/RenderGraph.h"
 #include "RenderPasses/GBufferPass.h"
+#include "RenderPasses/ShadowMapPass.h"
 
 #include <variant>
 
@@ -35,11 +36,13 @@ protected:
     uint ping = 0;
     uint pong = 0;
     std::unique_ptr<GBufferPass> gbufferPass;
+    std::unique_ptr<ShadowMapPass> shadowMapPass;
     bool debugDDGI = true;
     bool showIndirect = true;
     bool showDirect = false;
     uint frameCount = 0;
     std::unique_ptr<Primitive> spherePrimitive;
+    bool useRTGBuffer = true;
     // class Impl;
     // Impl* impl;
 };

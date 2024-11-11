@@ -113,7 +113,6 @@ vec3 sample_irradiance_map(vec3 normal, vec3 position, vec3 surface_bias) {
         irradiance = vec3(0.0);
     }
     
-//    irradiance = irradiance * irradiance;
     return irradiance * 3.1415926 * 0.85f;;
 }
 
@@ -128,15 +127,13 @@ void main(){
     if (pixel_index.x >= pc.size_x || pixel_index.y >= pc.size_y){
         return;
     }
-//    imageStore(radiance_image, pixel_index, vec4(result, 1));
-//    return;
     const uint g_buffer_index = pixel_index.y * pc.size_x + pixel_index.x;
     if (gbuffer.d[g_buffer_index].material_idx == -1){
         return;
     }
     vec3 normal = gbuffer.d[g_buffer_index].normal;
     vec3 position = gbuffer.d[g_buffer_index].position;
-    vec3 indirect_lighting = sample_irradiance_map(normal, position, normal * 0.1f) * pc.ddgi_indirect_scale;
+    vec3 indirect_lighting = sample_irradiance_map(normal, position, normal * pc.ddgi_normal_bias) * pc.ddgi_indirect_scale;
 
     vec3 direct_lighting = imageLoad(radiance_image, ivec2(pixel_index)).xyz;
 
@@ -144,10 +141,5 @@ void main(){
     if (pc.ddgi_show_direct > 0){
         result += direct_lighting;
     }
-//    if(pc.visual_normal > 0){
-//        result = normal * 0.5 + 0.5;
-//    }
-   //result = normal * 0.5 + 0.5;
-
     imageStore(radiance_image, pixel_index, vec4(result, 1));
 }

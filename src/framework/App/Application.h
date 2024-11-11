@@ -69,7 +69,7 @@ class Application {
     void initLogger();
 
 public:
-    Application(const char* name, uint32_t width, uint32_t height);
+    Application(const char* name, uint32_t width, uint32_t height,RTConfing config = RTConfing());
     Application() : Application("Vulkan", 1920, 1080) {
     }
     virtual ~Application();
@@ -101,6 +101,8 @@ protected:
     virtual void onMouseMove();
     virtual void onViewUpdated();
     virtual void preparePerViewData();
+    virtual std::string getLdrImageToSave() {return RENDER_VIEW_PORT_IMAGE_NAME;}
+    virtual std::string getHdrImageToSave() {return RENDER_VIEW_PORT_IMAGE_NAME;}
 
     void updateGUI();
     void createRenderContext();

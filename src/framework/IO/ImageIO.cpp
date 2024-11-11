@@ -13,6 +13,8 @@
 #define TINYDDSLOADER_IMPLEMENTATION
 #include "tinyddsloader.h"
 
+#include <ext/tinyexr/tinyexr.h>
+
 namespace tinyddsloader {
     VkFormat ConvertFormatFromDxgiFormat(DDSFile::DXGIFormat format) {
         switch (format) {
@@ -230,4 +232,5 @@ void ImageIO::saveLdr(const std::string& path, void* data, int width, int height
 }
 
 void ImageIO::saveHdr(const std::string& path, void* data, int width, int height, int channels) {
+   
 }

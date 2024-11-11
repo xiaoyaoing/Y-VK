@@ -104,8 +104,7 @@ void ForwardPass::render(RenderGraph& rg) {
             g_context->getPipelineState().setColorBlendState(blendState);
 
             g_context->getPipelineState().setDepthStencilState({.depthTestEnable = false});
-            view->drawPrimitives(context.commandBuffer, [&view](const Primitive& primitive) { return view->getAlphaMode(primitive) == AlphaMode::BLEND; });
-        });
+            view->drawPrimitives(context.commandBuffer, [&view](const Primitive& primitive) { return view->getAlphaMode(primitive) == AlphaMode::BLEND; }); });
 }
 void ForwardPass::init() {
     PassBase::init();
@@ -218,5 +217,45 @@ void GBufferPass::render(RenderGraph& rg) {
 
             builder.writeTextures({diffuse,  emission, depth}, TextureUsage::COLOR_ATTACHMENT).writeTexture(depth, TextureUsage::DEPTH_ATTACHMENT); }, [&](RenderPassContext& context) {
             renderContext->getPipelineState().setPipelineLayout(*mPipelineLayout).setDepthStencilState({.depthCompareOp = VK_COMPARE_OP_LESS}).setRasterizationState({.cullMode =  VK_CULL_MODE_NONE});
+            g_manager->fetchPtr<View>("view")->bindViewBuffer().bindViewShading().bindViewGeom(context.commandBuffer).drawPrimitives(context.commandBuffer); });
+}
+
+std::vector<std::string> outputToBufferDefines                  = {"OUTPUT_TO_BUFFER"};
+std::vector<std::string> outputToBufferAndDirectLightingDefines = {"OUTPUT_TO_BUFFER", "DIRECT_LIGHTING"};
+
+static ShaderPipelineKey CommonGBuffer                    = {"defered_one_scene_buffer.vert", "defered_pbr.frag"};
+static ShaderPipelineKey GBufferToBuffer                  = {"defered_one_scene_buffer.vert", {"defered_pbr.frag", outputToBufferDefines}};
+static ShaderPipelineKey GBufferToBufferAndDirectLighting = {"defered_one_scene_buffer.vert", {"defered_pbr.frag", outputToBufferAndDirectLightingDefines}};
+
+void GBufferPass::renderToBuffer(RenderGraph& rg, RenderGraphHandle outputBuffer, RenderGraphHandle directLightingImage) {
+
+    rg.addComputePass("Clear GBuffer", [&](RenderGraph::Builder& builder, ComputePassSettings& settings) {
+        builder.writeBuffer(outputBuffer);
+    }, [this,&rg,_outputBuffer = outputBuffer](RenderPassContext& context) {
+        auto gbuffer = rg.getBuffer(_outputBuffer);
+        g_context->bindBuffer(5, *gbuffer->getHwBuffer());
+        g_context->bindShaders({"clearGBuffer.comp"});
+        auto bufferCount = g_context->getViewPortExtent().width * g_context->getViewPortExtent().height;
+        g_context->flushAndDispatch(context.commandBuffer, (bufferCount + 63) / 64, 1, 1);
+    });
+    
+    rg.addGraphicPass(
+        "GBufferPassToBuffer", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
+            builder.writeBuffer(outputBuffer,BufferUsage::STORAGE);
+            if(directLightingImage.isInitialized()) {
+                builder.writeTexture(directLightingImage);
+            }
+            auto depth = rg.createTexture(DEPTH_IMAGE_NAME, {.extent = g_context->getViewPortExtent(), .useage = TextureUsage::DEPTH_ATTACHMENT | TextureUsage::SAMPLEABLE});
+            builder.writeTexture(depth);
+            RenderGraphPassDescriptor desc{};
+            desc.setTextures(directLightingImage.isInitialized() ? std::vector{ directLightingImage, depth} : std::vector{depth});
+            desc.addSubpass({.outputAttachments = desc.textures });
+            builder.declare(desc);
+        }, [_outputBuffer = outputBuffer,_directLightingImage = directLightingImage,&rg](RenderPassContext& context) {
+
+            g_context->bindBuffer(5,*rg.getBuffer(_outputBuffer)->getHwBuffer());
+            
+            g_context->bindShaders(_directLightingImage.isInitialized() ? GBufferToBufferAndDirectLighting : GBufferToBuffer);   
+            g_context->getPipelineState().setDepthStencilState({.depthCompareOp = VK_COMPARE_OP_LESS}).setRasterizationState({.cullMode =  VK_CULL_MODE_NONE});
             g_manager->fetchPtr<View>("view")->bindViewBuffer().bindViewShading().bindViewGeom(context.commandBuffer).drawPrimitives(context.commandBuffer); });
 }

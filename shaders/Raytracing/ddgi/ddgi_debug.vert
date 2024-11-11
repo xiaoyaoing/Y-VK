@@ -31,7 +31,7 @@ void main()
 
     normal = position;
     
-    position *= 0.2f;
+    position *= 0.05f;
     position += probe_position;
 
 //    debugPrintfEXT("probe_index: %d position: %f %f %f\n", probe_index, position.x, position.y, position.z);

@@ -17,8 +17,7 @@
 #include "Scene/SceneLoader/SceneLoaderInterface.h"
 #include "Scene/SceneLoader/gltfloader.h"
 
-RayTracer::RayTracer(const RTConfing& settings) : Application("Real time Ray tracer", settings.getWindowWidth(), settings.getWindowHeight()) {
-    config = settings;
+RayTracer::RayTracer(const RTConfing& settings) : Application("Real time Ray tracer", settings.getWindowWidth(), settings.getWindowHeight(),settings) {
     addDeviceExtension(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     addDeviceExtension(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
     addDeviceExtension(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
@@ -65,6 +64,9 @@ void RayTracer::onSceneLoaded() {
     }
 
     initView();
+}
+std::string RayTracer::getHdrImageToSave() {
+    return RT_IMAGE_NAME;
 }
 
 void RayTracer::prepare() {

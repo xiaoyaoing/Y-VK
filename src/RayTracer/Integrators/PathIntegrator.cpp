@@ -29,7 +29,7 @@ void PathIntegrator::render(RenderGraph& renderGraph) {
         settings.rTPipelineSettings.maxDepth = 5;
     
     
-        auto output = renderGraph.createTexture(RT_IMAGE_NAME,{width,height,TextureUsage::STORAGE | TextureUsage::TRANSFER_SRC | TextureUsage::SAMPLEABLE,VK_FORMAT_R32G32B32A32_SFLOAT});
+        auto output = renderGraph.getBlackBoard().getHandle(RT_IMAGE_NAME);
         builder.writeTexture(output,TextureUsage::STORAGE); }, [&](RenderPassContext& context) {
             bindRaytracingResources(commandBuffer);
     

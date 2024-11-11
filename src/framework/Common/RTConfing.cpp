@@ -15,8 +15,7 @@ static const std::unordered_map<EIntegraotrType, IntegratorKey> kIntegratorTypeT
 std::string to_string(EIntegraotrType type) {
     return kIntegratorTypeToString.at(type);
 }
-RTConfing::RTConfing() {
-}
+
 std::string RTConfing::getScenePath() const {
     return scenePath;
 }
@@ -54,6 +53,8 @@ RTConfing::RTConfing(const Json& json) {
         } else if(integratorTypeStr == kDDGIIntegrator) {
             ddgiConfig.rays_per_probe =  GetOptional(integratorJson,"ray_per_probe", ddgiConfig.rays_per_probe);
             ddgiConfig.probe_distance = GetOptional(integratorJson, "probe_distance", ddgiConfig.probe_distance);
+            ddgiConfig.normal_bias = GetOptional(integratorJson, "normal_bias", ddgiConfig.normal_bias);
+            ddgiConfig.use_rt_gbuffer = GetOptional(integratorJson, "use_rt_gbuffer", ddgiConfig.use_rt_gbuffer);
         } else if(integratorTypeStr == kRestirDIIntegrator) {
             // integratorType = eRestirDI;
         }

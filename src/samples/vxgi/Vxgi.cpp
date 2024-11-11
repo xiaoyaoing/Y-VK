@@ -53,10 +53,10 @@ BBox VXGI::getBBox(uint32_t clipmapLevel) {
 void VXGI::prepare() {
     Application::prepare();
 
-    sceneLoadingConfig.sceneScale = glm::vec3(0.008f);
+    // sceneLoadingConfig.sceneScale = glm::vec3(0.008f);
     sceneLoadingConfig.indexType  = VK_INDEX_TYPE_UINT32;
     sceneLoadingConfig.loadLight  = false;
-    loadScene(FileUtils::getResourcePath("scenes/sponza/Sponza01.gltf"));
+    loadScene("F:/code/RTXGI-DDGI/samples/test-harness/data/gltf/sponza/Sponza.gltf");
     // loadScene("F:/bistro/bistro.gltf");
 
     GlslCompiler::forceRecompile = true;
@@ -120,7 +120,7 @@ void VXGI::updateClipRegions() {
     }
 }
 void VXGI::onSceneLoaded() {
-    scene->addDirectionalLight({0, -1.f, 0}, glm::vec3(1.0f), 1.5f, vec3(0.0f, 20, -5.f));
+    scene->addDirectionalLight(glm::vec3(0.0, -1.0, 0.3), glm::vec3(1.0f), 1.5f,vec3(0.0f, 20, -5.f));
     Application::onSceneLoaded();
 }
 

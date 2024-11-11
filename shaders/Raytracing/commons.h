@@ -149,7 +149,7 @@ struct PCPath {
     uint ddgi_show_direct;
     uint ddgi_show_indirect;
     float ddgi_indirect_scale;
-    uint padding3;
+    float ddgi_normal_bias;
 };
 
 struct GBuffer {

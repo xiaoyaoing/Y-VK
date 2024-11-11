@@ -41,6 +41,10 @@ public:
     // friend class Blackboard;
 
 public:
+    static RenderGraphHandle InvalidHandle() noexcept
+    {
+        return RenderGraphHandle();
+    }
     RenderGraphHandle(const RenderGraphHandle& rhs) noexcept = default;
 
     RenderGraphHandle& operator=(const RenderGraphHandle& rhs)

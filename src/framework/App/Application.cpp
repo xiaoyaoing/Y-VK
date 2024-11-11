@@ -32,7 +32,7 @@
  */
 Application::Application(const char* name,
                          uint32_t width, 
-                         uint32_t height) : mWidth(width), mHeight(height), mAppName(name) {
+                         uint32_t height,RTConfing _config) : mWidth(width), mHeight(height), mAppName(name),config(_config) {
     initWindow(name, width, height);
 }
 
@@ -381,18 +381,24 @@ void Application::handleSaveImage(RenderGraph& graph) {
         graph.addComputePass(
             "image to file ",
             [&](RenderGraph::Builder& builder, ComputePassSettings& settings) {
-                auto image = graph.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
+                RenderGraphHandle image;
+                if(imageSave.savePng)
+                    image = graph.getBlackBoard().getHandle(getLdrImageToSave());
+                else {
+                     image = graph.getBlackBoard().getHandle(getHdrImageToSave());
+                }
                 builder.readTexture(image, TextureUsage::TRANSFER_SRC);
 
                 //Not really write to image. Avoid pass cut
                 builder.writeTexture(image, TextureUsage::TRANSFER_SRC);
             },
             [&](RenderPassContext& context) {
-                auto& swapchainImage = graph.getBlackBoard().getHwImage(RENDER_VIEW_PORT_IMAGE_NAME);
+                auto& swapchainImage = graph.getBlackBoard().getHwImage(imageSave.savePng ? getLdrImageToSave() : getHdrImageToSave());
                 auto  width          = swapchainImage.getExtent2D().width;
                 auto  height         = swapchainImage.getExtent2D().height;
-                if (imageSave.buffer == nullptr || imageSave.buffer->getSize() < width * height * 4) {
-                    imageSave.buffer = std::make_unique<Buffer>(*device, swapchainImage.getExtent2D().width * swapchainImage.getExtent2D().height * 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+                auto  stride = imageSave.savePng ? 4 : 16;
+                if (imageSave.buffer == nullptr || imageSave.buffer->getSize() < width * height * stride) {
+                    imageSave.buffer = std::make_unique<Buffer>(*device, swapchainImage.getExtent2D().width * swapchainImage.getExtent2D().height * stride, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
                 }
                 VkBufferImageCopy region = {.bufferOffset      = 0,
                                             .bufferRowLength   = 0,

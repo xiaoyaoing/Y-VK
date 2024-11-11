@@ -25,6 +25,11 @@ public:
     void onUpdateGUI() override;
     void drawFrame(RenderGraph& renderGraph) override;
     void onSceneLoaded() override;
+
+protected:
+    std::string getHdrImageToSave() override;
+
+public:
     // virtual void update() override;
 
     // std::unique_ptr<Integrator> path,restirDI{};

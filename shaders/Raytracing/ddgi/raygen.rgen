@@ -21,6 +21,8 @@ layout(set = 0, binding = 0) uniform _DDGIUboBuffer{ DDGIUbo ddgi_ubo; };
 layout(set = 0, binding = 6, std430)  buffer DDGIRayDataBuffer { DDGIRayData data[]; } ddgi_ray_data_buffer;
 layout(set = 0, binding = 7)  buffer ProbeOffsets { vec3 d[]; } probe_offsets;
 
+layout(set = 1, binding = 0) uniform sampler2D radiance_map;
+layout(set = 1, binding = 1) uniform sampler2D dist_map;
 
 
 #include "../trace_common.glsl"
@@ -31,6 +33,91 @@ uvec4 seed = init_rng(gl_LaunchIDEXT.xy, gl_LaunchSizeEXT.xy, pc_ray.frame_num);
 
 
 //DDGIRayDataBuffer ddgi_ray_data_buffer = DDGIRayDataBuffer(scene_desc.ddgi_ray_data_addr);
+
+vec3 sample_irradiance_map(vec3 normal, vec3 position, vec3 surface_bias) {
+
+
+    //  normal = vec3(0,0,1);
+
+    vec3 irradiance = vec3(0.0);
+    float total_weight = 0.0;
+
+    ivec3 base_probe_coord= get_probe_coord_by_position(position);
+    vec3 base_probe_position = get_probe_position(base_probe_coord);
+    vec3 biased_position = position + surface_bias;
+
+    vec3 probe_blend_alpha = clamp((biased_position - base_probe_position) / (ddgi_ubo.probe_distance), vec3(0.0), vec3(1.0));
+
+
+    for (int probe_index = 0;probe_index<8;probe_index ++){
+        ivec3 adjacent_probe_offset = ivec3(probe_index, probe_index >> 1, probe_index >> 2) & ivec3(1, 1, 1);
+
+
+        ivec3 adjacent_probe_coord = clamp(ivec3(base_probe_coord) + adjacent_probe_offset, ivec3(0), ivec3(ddgi_ubo.probe_counts) - ivec3(1));
+
+        int adjacent_probe_index = get_probe_index_by_coord(adjacent_probe_coord);
+
+        int probeState = get_probe_state(adjacent_probe_index);
+        if (probeState == 0){
+            continue;
+        }
+        vec3 adjacent_probe_position = get_probe_position(adjacent_probe_coord);
+        vec3 dir_world_pos_to_adjacent_probe = normalize(adjacent_probe_position - position);
+        vec3 dir_biased_pos_to_adjacent_probe = normalize(adjacent_probe_position - biased_position);
+
+
+        float biased_pos_to_adjacent_probe_distance = length(adjacent_probe_position - biased_position);
+
+        vec3 trilinear= mix(vec3(1-probe_blend_alpha), probe_blend_alpha, vec3(adjacent_probe_offset));
+        float trilinear_weight = trilinear.x * trilinear.y * trilinear.z;
+        float weight = 1.f;
+
+        //        vec2 octant_coord = encode_to_oct(dir_biased_pos_to_adjacent_probe);
+        vec2 probe_sample_uv = get_probe_color_uv(ivec3(adjacent_probe_coord), -dir_biased_pos_to_adjacent_probe, PROBE_DEPTH_SIDE);
+
+        vec2 filtered_distance = textureLod(dist_map, probe_sample_uv, 0).rg;
+        float variance = abs(filtered_distance.x * filtered_distance.x - filtered_distance.y);
+
+        float chebyshev_weight = 1.0f;
+        if (biased_pos_to_adjacent_probe_distance > filtered_distance.x){
+            float v = biased_pos_to_adjacent_probe_distance - filtered_distance.x;
+            chebyshev_weight = variance / (variance + v * v);
+            chebyshev_weight = max(pow(chebyshev_weight, 3), 0.f);
+        }
+
+        weight = max(0.05f, chebyshev_weight);
+        weight = max(1e-5f, weight);
+
+        const float crush_threshold = 0.2f;
+        if (weight < crush_threshold){
+            weight *= (weight * weight) / (crush_threshold * crush_threshold);
+        }
+
+        weight *= trilinear_weight;
+
+        probe_sample_uv = get_probe_color_uv(ivec3(adjacent_probe_coord), normal, PROBE_RADIANCE_SIDE);
+        vec3 probeRadiance = textureLod(radiance_map, probe_sample_uv, 0).rgb;
+
+        //  return probeRadiance;
+        //        probeRadiance = vec3(probe_sample_uv, 0);
+        //        weight = 0.125f;
+
+        //        probeRadiance = vec3(0.5);
+
+        irradiance += probeRadiance * weight ;//* 10;
+        total_weight += weight;
+    }
+
+    if (total_weight > 0.0){
+        irradiance /= total_weight;
+    }
+    else {
+        irradiance = vec3(0.0);
+    }
+
+    return irradiance * 3.1415926 * 0.85f;;
+}
+
 
 
 vec3 probe_location(int index) {
@@ -86,14 +173,14 @@ void main()
     vec3 irradiance = vec3(0);
     float distance;
 
-
+    bool found_intersect;
     SurfaceScatterEvent event;
     {
         hitPayload = init_hit_payload();
 
         traceRayEXT(tlas, rayFlags, cullMask, 0, 0, 0, origin.xyz, tmin, direction.xyz, tmax, 0);
 
-        bool found_intersect = found_intersection(hitPayload);
+        found_intersect = found_intersection(hitPayload);
         if (!found_intersect) {
             irradiance =  eval_env(direction.xyz);
             distance = 1000.f;
@@ -116,8 +203,21 @@ void main()
 //    if(!isBlack(irradiance))
 //        debugPrintfEXT("irradiance %f %f %f\n", irradiance.x, irradiance.y, irradiance.z);
     
+    vec3 light_irradiance = vec3(0);
+    float volumeBlendWeight = 1.f;
+
+    // Don't evaluate irradiance when the surface is outside the volume
+    if (volumeBlendWeight > 0 && found_intersect && pc_ray.frame_num > 0)
+    {
+        // Get irradiance from the DDGIVolume
+        light_irradiance = sample_irradiance_map(event.p,event.frame.n, vec3(event.frame.n * pc_ray.ddgi_normal_bias));
+        light_irradiance *= pc_ray.ddgi_indirect_scale;
+        light_irradiance = get_albedo(materials.m[event.material_idx], event.uv) * light_irradiance / PI;
+       // debugPrintfEXT("light_irradiance %f %f %f\n", light_irradiance.x, light_irradiance.y, light_irradiance.z);
+    }
+    
     DDGIRayData ray_data;
-    ray_data.irradiance = irradiance;
+    ray_data.irradiance = irradiance + light_irradiance;
     ray_data.dist = distance;
     ray_data.direction = direction;
     uint index = probe_index * ddgi_ubo.rays_per_probe + ray_index;

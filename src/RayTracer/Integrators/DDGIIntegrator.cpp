@@ -79,24 +79,36 @@ void DDGIIntegrator::render(RenderGraph& renderGraph) {
     }
 
     renderGraph.setCutUnUsedResources(false);
+    
+    
+    if(useRTGBuffer) {
+        renderGraph.addRaytracingPass(
+           "Generate Primary Rays",
+           [&](RenderGraph::Builder& builder, RaytracingPassSettings& settings) {
+               settings.accel                   = &entry_->tlas;
+               settings.shaderPaths             = PrimaryRayGen;
+               settings.rTPipelineSettings.dims = {width, height, 1};
+               builder.writeTexture(RT_IMAGE_NAME, TextureUsage::STORAGE);
 
-    renderGraph.addRaytracingPass(
-        "Generate Primary Rays",
-        [&](RenderGraph::Builder& builder, RaytracingPassSettings& settings) {
-            settings.accel                   = &entry_->tlas;
-            settings.shaderPaths             = PrimaryRayGen;
-            settings.rTPipelineSettings.dims = {width, height, 1};
-            builder.writeTexture(RT_IMAGE_NAME, TextureUsage::STORAGE);
+               settings.rTPipelineSettings.maxDepth = 2;
+           },
+           [&](RenderPassContext& context) {
+               auto& commandBuffer = context.commandBuffer;
+               bindRaytracingResources(commandBuffer);
+               g_context->bindImage(0, renderGraph.getBlackBoard().getImageView(RT_IMAGE_NAME));
+               g_context->bindPushConstants(pc_ray);
+               g_context->traceRay(commandBuffer, VkExtent3D{width, height, 1});
+           });
+    }
+    else {
+        auto gbufferBuffer = renderGraph.importBuffer("gbufferBuffer", buffers->gbufferBuffer.get());
+        shadowMapPass->render(renderGraph);
+        gbufferPass->renderToBuffer(renderGraph, gbufferBuffer,renderGraph.getBlackBoard().getHandle(RT_IMAGE_NAME));  
+    }
 
-            settings.rTPipelineSettings.maxDepth = 2;
-        },
-        [&](RenderPassContext& context) {
-            auto& commandBuffer = context.commandBuffer;
-            bindRaytracingResources(commandBuffer);
-            g_context->bindImage(0, renderGraph.getBlackBoard().getImageView(RT_IMAGE_NAME));
-            g_context->bindPushConstants(pc_ray);
-            g_context->traceRay(commandBuffer, VkExtent3D{width, height, 1});
-        });
+    auto radiance = renderGraph.importTexture("ddgi_radiance_map", buffers->ddgiIrradiance[pong].get());
+    auto depth_ddgi_map = renderGraph.importTexture("ddgi_depth_map", buffers->ddgiDist[pong].get());
+
 
     renderGraph.addRaytracingPass(
         "ddgi_probe_trace",
@@ -108,10 +120,14 @@ void DDGIIntegrator::render(RenderGraph& renderGraph) {
 
             auto probeRayBuffer = renderGraph.importBuffer(kProbeDataBufferName, buffers->probeRayData.get());
             builder.writeBuffer(probeRayBuffer, BufferUsage::STORAGE);
+            builder.readTexture(radiance, RenderGraphTexture::Usage::SAMPLEABLE).readTexture(depth_ddgi_map, RenderGraphTexture::Usage::SAMPLEABLE);
         },
         [&](RenderPassContext& context) {
             auto& commandBuffer = context.commandBuffer;
             bindRaytracingResources(commandBuffer);
+            auto& sampler = device.getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_FILTER_LINEAR, 1);
+            g_context->bindImageSampler(0, renderGraph.getBlackBoard().getImageView("ddgi_radiance_map"), sampler)
+                .bindImageSampler(1, renderGraph.getBlackBoard().getImageView("ddgi_depth_map"), sampler);
             g_context->bindBuffer(0, *buffers->uboBuffer)
                 .bindBuffer(6, *buffers->probeRayData)
                 .bindBuffer(7, *buffers->probeOffsets);
@@ -123,7 +139,6 @@ void DDGIIntegrator::render(RenderGraph& renderGraph) {
     renderGraph.addComputePass(
         "ddgi_update_radiance",
         [&](RenderGraph::Builder& builder, ComputePassSettings& settings) {
-            auto radiance = renderGraph.importTexture("ddgi_radiance_map", buffers->ddgiIrradiance[pong].get());
             builder.writeTexture(radiance, RenderGraphTexture::Usage::STORAGE);
             builder.readBuffer(renderGraph.getBlackBoard().getHandle(kProbeDataBufferName), RenderGraphBuffer::Usage::READ);
         },
@@ -139,8 +154,7 @@ void DDGIIntegrator::render(RenderGraph& renderGraph) {
     renderGraph.addComputePass(
         "ddgi_update_depth",
         [&](RenderGraph::Builder& builder, ComputePassSettings& settings) {
-            auto depth = renderGraph.importTexture("ddgi_depth_map", buffers->ddgiDist[pong].get());
-            builder.writeTexture(depth, RenderGraphTexture::Usage::STORAGE);
+            builder.writeTexture(depth_ddgi_map, RenderGraphTexture::Usage::STORAGE);
             builder.readBuffer(renderGraph.getBlackBoard().getHandle(kProbeDataBufferName), RenderGraphBuffer::Usage::READ);
         },
         [&](RenderPassContext& context) {
@@ -175,7 +189,8 @@ void DDGIIntegrator::render(RenderGraph& renderGraph) {
         });
 
     if (debugDDGI) {
-        renderGraph.addGraphicPass(
+        if(!renderGraph.getBlackBoard().contains(DEPTH_IMAGE_NAME))
+            renderGraph.addGraphicPass(
             "Only Depth Pass",
             [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
                 auto depth = renderGraph.createTexture(
@@ -230,6 +245,8 @@ void DDGIIntegrator::init() {
     Integrator::init();
     gbufferPass = std::make_unique<GBufferPass>();
     gbufferPass->init();
+    shadowMapPass = std::make_unique<ShadowMapPass>();
+    shadowMapPass->init();
     spherePrimitive = SceneLoaderInterface::loadSpecifyTypePrimitive(device,"sphere");
 }
 
@@ -238,7 +255,8 @@ void DDGIIntegrator::initScene(RTSceneEntry& entry) {
     ubo.probe_counts       = 1.1f * (entry.scene->getSceneBBox().max() - entry.scene->getSceneBBox().min()) / config.probe_distance;
     ubo.rays_per_probe     = config.rays_per_probe;
     ubo.depth_sharpness    = 50.f;
-    ubo.normal_bias        = 0.1f;
+    ubo.normal_bias        = config.normal_bias;
+    pc_ray.ddgi_normal_bias       = config.normal_bias;
     ubo.probe_distance     = config.probe_distance;
     ubo.view_bias          = 0.1f;
     ubo.backface_ratio     = 0.1f;
@@ -322,6 +340,8 @@ void DDGIIntegrator::initScene(RTSceneEntry& entry) {
     pc_ray.ddgi_show_direct    = 0;
     pc_ray.ddgi_indirect_scale = 1.0f;
 
+    useRTGBuffer = config.use_rt_gbuffer;
+
     LOGI("DDGI Integrator initialized");
 }
 DDGIIntegrator::DDGIIntegrator(Device& device, DDGIConfig config) :Integrator(device){
@@ -335,4 +355,6 @@ void DDGIIntegrator::onUpdateGUI() {
     ImGui::Checkbox("Show direct light", reinterpret_cast<bool*>(&pc_ray.ddgi_show_direct));
     ImGui::Checkbox("Warp Border", reinterpret_cast<bool *>(&pc_ray.wrap_border));
     ImGui::SliderFloat("indirect scale", &pc_ray.ddgi_indirect_scale, 0.0f, 10.0f);
+    ImGui::SliderFloat("normal bias", &pc_ray.ddgi_normal_bias, 0.0f, 1.0f);
+    ImGui::Checkbox("Use RT GBuffer", &useRTGBuffer);
 }

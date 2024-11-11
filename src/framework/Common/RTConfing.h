@@ -20,6 +20,7 @@ struct DDGIConfig {
     int distance_texel_count    = 16;
     int inner_irradiance_texel_count = 6;
     int inner_distance_texel_count = 14;
+    bool use_rt_gbuffer;
 };
 
 struct PathTracingConfig {
@@ -41,7 +42,7 @@ std::string to_string(EIntegraotrType type);
 
 class RTConfing {
 public:
-    RTConfing();
+    RTConfing() = default;
     DDGIConfig getDDGIConfig() const;
     PathTracingConfig getPathTracingConfig() const;
     EIntegraotrType getIntegratorType() const;
