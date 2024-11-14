@@ -9,18 +9,19 @@
 #include "Common/VkCommon.h"
 void Example::drawFrame(RenderGraph& rg) {
     auto& commandBuffer = renderContext->getGraphicCommandBuffer();
-    rg.addPass(
+    rg.addGraphicPass(
         "TrianglePass", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
-            const auto output =  rg.getBlackBoard().getHandle(SWAPCHAIN_IMAGE_NAME);
+            const auto output =  rg.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
             builder.declare(RenderGraphPassDescriptor({output},{.outputAttachments =  {output}})); }, [&](RenderPassContext& context) {
             view->bindViewBuffer();
-            renderContext->getPipelineState().setPipelineLayout(*layout).setDepthStencilState({.depthTestEnable = false}).setRasterizationState({.cullMode = VK_CULL_MODE_NONE});
+            g_context->bindShaders({"triangle/triangle.vert","triangle/triangle.frag"});    
+            renderContext->getPipelineState().setDepthStencilState({.depthTestEnable = false}).setRasterizationState({.cullMode = VK_CULL_MODE_NONE});
                 
             if(this->rasterizationConservative) { 
                 renderContext->getPipelineState().setRasterizationState({.cullMode = VK_CULL_MODE_NONE,.pNext =  &conservativeRasterizationStateCreateInfo});
             }
             for(const auto & prim : view->getMVisiblePrimitives()) {
-                renderContext->bindPrimitive(commandBuffer,*prim).flushAndDrawIndexed(commandBuffer,prim->indexCount);
+                renderContext->bindPrimitiveGeom(commandBuffer,*prim).flushAndDrawIndexed(commandBuffer,prim->indexCount);
             } });
     gui->addGuiPass(rg);
 
@@ -36,10 +37,10 @@ Example::Example() : Application("Triangle", 1920, 1080) {
 void Example::prepare() {
     Application::prepare();
 
-    std::vector<Shader> shaders{
-        Shader(*device, FileUtils::getShaderPath("triangle/triangle.vert")),
-        Shader(*device, FileUtils::getShaderPath("triangle/triangle.frag"))};
-    this->layout = std::make_unique<PipelineLayout>(*device, shaders);
+    // std::vector<Shader> shaders{
+    //     Shader(*device, FileUtils::getShaderPath("triangle/triangle.vert")),
+    //     Shader(*device, FileUtils::getShaderPath("triangle/triangle.frag"))};
+    // this->layout = std::make_unique<PipelineLayout>(*device, shaders);
 
     scene = loadDefaultTriangleScene(*device);
 

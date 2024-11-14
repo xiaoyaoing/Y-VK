@@ -41,7 +41,7 @@ void LightingPass::render(RenderGraph& rg) {
             auto  view          = g_manager->fetchPtr<View>("view");
             auto& blackBoard    = rg.getBlackBoard();
             g_context->getPipelineState().setPipelineLayout(*mPipelineLayout).setRasterizationState({.cullMode = VK_CULL_MODE_NONE}).setDepthStencilState({.depthTestEnable = false});
-            view->bindViewBuffer();
+            view->bindViewBuffer().bindViewShading();
             g_context->bindImage(0, blackBoard.getImageView("diffuse"))
                 .bindImage(1, blackBoard.getImageView("normal"))
                 .bindImage(2, blackBoard.getImageView("emission"))

@@ -10,11 +10,11 @@ namespace TextureHelper {
     enum HELPERTEXTURE_COUNT {
         HELPERTEXTURE_LOGO,
         HELPERTEXTURE_BLUENOISE,
+        HELPERTEXTURE_PERLINNOISE,
         HELPERTEXTURE_COUNT
     };
 
     std::unique_ptr<SgImage> helperTextures[HELPERTEXTURE_COUNT];
-    std::unique_ptr<Sampler> sampler;
 
     void Initialize() {
 

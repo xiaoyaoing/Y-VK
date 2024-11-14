@@ -235,7 +235,7 @@ protected:
     bool firstUpdate{true};
 
     float m_nearZ{0.f};
-    float m_farZ{1.f};
+    float m_farZ{100.f};
     float m_aspect{1.f};
     float m_fovY{1.f};
 

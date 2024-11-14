@@ -120,8 +120,6 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkInstance
                    return strcmp(extensionName, extension) == 0;
                }) != enabled_extensions.end();
     };
-    bool enableRayTracing = enableExtension(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
-
     VkPhysicalDeviceFeatures2 device_features2{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2};
 
     //todo check if this is needed
@@ -138,7 +136,23 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkInstance
 
     syncronization2_features.synchronization2 = VK_TRUE;
 
-    if (enableRayTracing) {
+    features12.pNext       = &syncronization2_features;
+    device_features2.pNext = &features12;
+
+    void** nextChain = &syncronization2_features.pNext;
+
+    if (enableExtension(VK_EXT_MESH_SHADER_EXTENSION_NAME)) {
+        VkPhysicalDeviceMeshShaderFeaturesEXT enabledMeshShaderFeatures{};
+        enabledMeshShaderFeatures.sType      = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
+        enabledMeshShaderFeatures.meshShader = VK_TRUE;
+        enabledMeshShaderFeatures.taskShader = VK_TRUE;
+        enabledMeshShaderFeatures.pNext      = nullptr;
+        *nextChain                           = &enabledMeshShaderFeatures;
+        nextChain                            = &enabledMeshShaderFeatures.pNext;
+        LOGI("Enabled Mesh Shader Extension");
+    }
+
+    if (enableExtension(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME)) {
         VkPhysicalDeviceRayTracingPipelineFeaturesKHR rt_fts{
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR};
         VkPhysicalDeviceAccelerationStructureFeaturesKHR accel_fts{
@@ -171,22 +185,16 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkInstance
 
         dynamic_rendering_feature.dynamicRendering = VK_TRUE;
         maintenance4_fts.maintenance4              = VK_TRUE;
-        syncronization2_features.pNext             = &maintenance4_fts;
-        maintenance4_fts.pNext                     = &dynamic_rendering_feature;
-        dynamic_rendering_feature.pNext            = &rt_fts;
+        *nextChain                                 = &maintenance4_fts;
 
-        device_features2.features.samplerAnisotropy = VK_TRUE;
-        //
+        maintenance4_fts.pNext          = &dynamic_rendering_feature;
+        dynamic_rendering_feature.pNext = &rt_fts;
+
+        device_features2.features.samplerAnisotropy              = VK_TRUE;
         device_features2.features.vertexPipelineStoresAndAtomics = VK_TRUE;
-        //
 
-        VkPhysicalDeviceProperties2 device_properties{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2};
-        device_properties.pNext = &rayTracingPipelineProperties;
-        vkGetPhysicalDeviceProperties2(physicalDevice, &device_properties);
+        LOGI("Enabled Ray Tracing Pipeline Extension");
     }
-
-    features12.pNext       = &syncronization2_features;
-    device_features2.pNext = &features12;
 
     bool enableFragmentStoresAndAtomics = VK_TRUE;
 

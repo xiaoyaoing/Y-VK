@@ -31,9 +31,15 @@
  * Calls initWindow to create the application window       
  */
 Application::Application(const char* name,
-                         uint32_t width, 
-                         uint32_t height,RTConfing _config) : mWidth(width), mHeight(height), mAppName(name),config(_config) {
+                         uint32_t    width,
+                         uint32_t    height,
+                         RTConfing   _config) : mWidth(width), mHeight(height), mAppName(name), config(_config) {
     initWindow(name, width, height);
+}
+Application::Application(const char* name,  std::string configPath) :  mAppName(name), config(configPath) {
+    mWidth = config.getWindowWidth();
+    mHeight = config.getWindowHeight();
+    initWindow(name, mWidth, mHeight);
 }
 
 Application::~Application() {
@@ -602,8 +608,9 @@ void Application::loadScene(const std::string& path) {
 }
 
 void Application::onSceneLoaded() {
-    
-    camera = scene->getCameras()[0];
+    if(!scene->getCameras().empty()) {
+        camera = scene->getCameras()[0];
+    }
     initView();
     Config::GetInstance().CameraFromConfig(*camera,scene->getName());
     sceneFirstLoad = false;

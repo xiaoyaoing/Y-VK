@@ -62,7 +62,7 @@ VkShaderStageFlagBits find_shader_stage(const std::string& ext) {
         return VK_SHADER_STAGE_TASK_BIT_EXT;
     }
 
-    throw std::runtime_error("File extension `" + ext + "` does not have a vulkan shader stage.");
+    LOGE("File extension `{}` does not have a vulkan shader stage.", ext.c_str());
 }
 
 static std::string SPV_CACHED_PATH = "spvcachedFiles/";

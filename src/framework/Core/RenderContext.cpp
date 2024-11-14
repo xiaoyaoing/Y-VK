@@ -576,6 +576,14 @@ void RenderContext::flushAndDispatch(CommandBuffer& commandBuffer, uint32_t grou
     flush(commandBuffer);
     vkCmdDispatch(commandBuffer.getHandle(), groupCountX, groupCountY, groupCountZ);
 }
+void RenderContext::flushAndDispatchMesh(CommandBuffer& commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
+    flush(commandBuffer);
+    vkCmdDrawMeshTasksEXT(commandBuffer.getHandle(), groupCountX, groupCountY, groupCountZ);
+}
+void RenderContext::flushAndDrawMeshTasks(CommandBuffer& commandBuffer, uint groupCountX, uint groupCountY, uint groupCountZ) {
+    flush(commandBuffer);
+    vkCmdDrawMeshTasksEXT(commandBuffer.getHandle(), groupCountX, groupCountY, groupCountZ);
+}
 
 void RenderContext::beginRenderPass(CommandBuffer& commandBuffer, RenderTarget& renderTarget, const std::vector<SubpassInfo>& subpassInfos) {
     auto& renderPass  = device.getResourceCache().requestRenderPass(renderTarget.getAttachments(), subpassInfos);
@@ -691,11 +699,11 @@ void RenderContext::handleSurfaceChanges() {
                                                               swapchain->getSurface(),
                                                               &surface_properties))
 
-    if (surfaceExtent.width != surface_properties.currentExtent.width || surfaceExtent.height != surface_properties.currentExtent.height) {
+   // if (surfaceExtent.width != surface_properties.currentExtent.width || surfaceExtent.height != surface_properties.currentExtent.height) {
         device.waitIdle();
         surfaceExtent = surface_properties.currentExtent;
         recrateSwapChain(surfaceExtent);
-    }
+  //  }
 }
 
 void RenderContext::recrateSwapChain(VkExtent2D extent) {

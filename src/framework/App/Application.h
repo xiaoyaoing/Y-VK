@@ -55,6 +55,15 @@
         return 0;                     \
     }
 
+#define MAIN(APP_NAME)        \
+    int main(int argc, char** argv) { \
+        APP_NAME app;             \
+        app.prepare();                \
+        app.mainloop();               \
+        return 0;                     \
+    }
+
+
 class Application {
     /**
      * @brief Initializes the window for the application.
@@ -70,6 +79,7 @@ class Application {
 
 public:
     Application(const char* name, uint32_t width, uint32_t height,RTConfing config = RTConfing());
+    Application(const char* name, std::string configPath);
     Application() : Application("Vulkan", 1920, 1080) {
     }
     virtual ~Application();

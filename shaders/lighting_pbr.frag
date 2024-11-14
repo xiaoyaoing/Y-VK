@@ -65,13 +65,7 @@ void main(){
     }
     else
     {
-        // calculate Microfacet BRDF model
-        // Roughness is authored as perceptual roughness; as is convention
-        // convert to material roughness by squaring the perceptual roughness [2].
-        // for 
-
         vec3 view_dir = normalize(per_frame.camera_pos - world_pos);
-
         PBRInfo pbr_info;
         // why use abs here?
         pbr_info.NdotV = clamp(abs(dot(normal, view_dir)), 0.001, 1.0);
@@ -81,6 +75,7 @@ void main(){
         pbr_info.alphaRoughness = perceptual_roughness * perceptual_roughness;
         //  pbr_info.alphaRoughness = 0.01f;
         pbr_info.diffuseColor = diffuse_color;
+        
 
         for (uint i = 0U; i < per_frame.light_count; ++i)
         {
@@ -93,7 +88,8 @@ void main(){
             pbr_info.LdotH = clamp(dot(light_dir, half_vector), 0.0, 1.0);
             pbr_info.VdotH = clamp(dot(view_dir, half_vector), 0.0, 1.0);
 
-            vec3 light_contribution = microfacetBRDF(pbr_info) * apply_light(lights_info.lights[i], world_pos, normal) * calcute_shadow(lights_info.lights[i], world_pos);
+            vec3 light_contribution = microfacetBRDF(pbr_info);// * apply_light(lights_info.lights[i], world_pos, normal) * calcute_shadow(lights_info.lights[i], world_pos);
+            direct_contribution += light_contribution;
         }
     }
 //    direct_contribution = vec3(1,0,0);

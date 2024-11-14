@@ -286,6 +286,8 @@ std::unique_ptr<Scene> loadDefaultTriangleScene(Device& device) {
     prim->setIndexType(VK_INDEX_TYPE_UINT32);
     // auto scene = new Scene(std::move(primitives), {}, {mat}, {}, {});
     auto scene = new Scene();
+    scene->getLoadCompleteInfo().SetTextureLoaded();
+    scene->getLoadCompleteInfo().SetGeometryLoaded();
     return std::unique_ptr<Scene>(scene);
 }
 GltfMaterial InitGltfMaterial() {

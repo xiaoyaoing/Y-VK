@@ -115,9 +115,8 @@ void RenderGraphTest::prepare() {
     for (auto& pass : passes) {
         pass->init();
     }
-    // sceneLoadingConfig.sceneScale = glm::vec3(0.001);
-    // loadScene(Config::GetInstance().GetScenePath());
-    loadScene("E:/code/rtrt/resources/sponza/Sponza01.gltf");
+    sceneLoadingConfig.indexType = VK_INDEX_TYPE_UINT32;
+    loadScene(config.getScenePath());
 
     auto light_pos   = glm::vec3(0.0f, 128.0f, -225.0f);
     auto light_color = glm::vec3(1.0, 1.0, 1.0);
@@ -150,7 +149,7 @@ void RenderGraphTest::prepare() {
     g_manager->putPtr("view", view.get());
 }
 
-RenderGraphTest::RenderGraphTest() : Application("Defered Rendering Sponza", 1920, 1080) {
+RenderGraphTest::RenderGraphTest() : Application("Defered Rendering Sponza",FileUtils::getResourcePath("render.json")) {
     addDeviceExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     GlslCompiler::forceRecompile = true;
 }

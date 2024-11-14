@@ -49,6 +49,8 @@ public:
     void getSceneLoadingConfig(SceneLoadingConfig& config) const;
     std::string getScenePath() const;
     RTConfing(const Json & json);
+    RTConfing(const std::string & path);
+    void init();
     int getWindowWidth() const;
     int getWindowHeight() const;
 protected:
