@@ -1,0 +1,25 @@
+/* Copyright (c) 2021, Sascha Willems
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ */
+
+#version 450
+#extension GL_EXT_mesh_shader : require
+
+layout(push_constant) uniform PushConstants
+{
+	float grassSpacing;
+	float time;
+	int batchCount;
+	int useLod;
+	float windDirection;
+	float lodLevel;
+	float windScale;
+} pushConstants;
+
+
+void main()
+{
+	EmitMeshTasksEXT(pushConstants.batchCount, 1, 1);
+}
