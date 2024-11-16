@@ -96,7 +96,6 @@ Gui::Gui(Device& device) : device(device) {
     iniFileName = FileUtils::getResourcePath() + "imgui.ini";
 }
 Gui::~Gui() {
-    vkDestroyPipeline(device.getHandle(), pipeline, nullptr);
     ImGui::SaveIniSettingsToDisk(FileUtils::getResourcePath("imgui.ini").c_str());
 }
 
@@ -105,14 +104,7 @@ bool Gui::inputEvent(const InputEvent& input_event) {
     auto  capture_move_event = false;
 
     if (input_event.getSource() == EventSource::KeyBoard) {
-        //not support yet
-        // const auto& key_event = static_cast<const KeyInputEvent&>(input_event);
-        //
-        // if (key_event.getAction() == KeyAction::Down) {
-        //     io.KeysDown[static_cast<int>(key_event.getCode())] = true;
-        // } else if (key_event.getAction() == KeyAction::Up) {
-        //     io.KeysDown[static_cast<int>(key_event.getCode())] = false;
-        // }
+        
     } else if (input_event.getSource() == EventSource::Mouse) {
         const auto& mouse_button = static_cast<const MouseButtonInputEvent&>(input_event);
 
@@ -143,54 +135,6 @@ bool Gui::inputEvent(const InputEvent& input_event) {
             capture_move_event = io.WantCaptureMouse;
         }
     }
-
-    // // Toggle debug UI view when tap or clicking outside the GUI windows
-    // if (!io.WantCaptureMouse)
-    // {
-    // 	bool press_down = (input_event.getSource() == EventSource::Mouse && static_cast<const MouseButtonInputEvent &>(input_event).getAction() == MouseAction::Down) || (input_event.getSource() == EventSource::Touchscreen && static_cast<const TouchInputEvent &>(input_event).getAction() == TouchAction::Down);
-    // 	bool press_up   = (input_event.getSource() == EventSource::Mouse && static_cast<const MouseButtonInputEvent &>(input_event).getAction() == MouseAction::Up) || (input_event.getSource() == EventSource::Touchscreen && static_cast<const TouchInputEvent &>(input_event).getAction() == TouchAction::Up);
-    //
-    // 	if (press_down)
-    // 	{
-    // 		timer.start();
-    // 		if (input_event.getSource() == EventSource::Touchscreen)
-    // 		{
-    // 			const auto &touch_event = static_cast<const TouchInputEvent &>(input_event);
-    // 			if (touch_event.get_touch_points() == 2)
-    // 			{
-    // 				two_finger_tap = true;
-    // 			}
-    // 		}
-    // 	}
-    // 	if (press_up)
-    // 	{
-    // 		auto press_delta = timer.stop<Timer::Milliseconds>();
-    // 		if (press_delta < press_time_ms)
-    // 		{
-    // 			if (input_event.getSource() == EventSource::Mouse)
-    // 			{
-    // 				const auto &mouse_button = static_cast<const MouseButtonInputEvent &>(input_event);
-    // 				if (mouse_button.get_button() == MouseButton::Right)
-    // 				{
-    // 					debug_view.active = !debug_view.active;
-    // 				}
-    // 			}
-    // 			else if (input_event.getSource() == EventSource::Touchscreen)
-    // 			{
-    // 				const auto &touch_event = static_cast<const TouchInputEvent &>(input_event);
-    // 				if (two_finger_tap && touch_event.get_touch_points() == 2)
-    // 				{
-    // 					debug_view.active = !debug_view.active;
-    // 				}
-    // 				else
-    // 				{
-    // 					two_finger_tap = false;
-    // 				}
-    // 			}
-    // 		}
-    // 	}
-    // }
-
     return capture_move_event;
 }
 std::string Gui::showFileDialog(std::string title, std::vector<std::string> fileTypes) {
@@ -277,8 +221,6 @@ bool Gui::update() {
         idxOffset += cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx);
     }
     return true;
-    //}
-    return false;
 }
 
 void Gui::addGuiPass(RenderGraph& graph) {
@@ -324,13 +266,6 @@ void Gui::addGuiPass(RenderGraph& graph) {
 
                     auto texture = static_cast<ImageView*>(pcmd->GetTexID());
                     renderContext.bindImageSampler(0, *texture, fontTexture->getSampler());
-
-                    VkRect2D scissorRect;
-                    scissorRect.offset.x      = max((int32_t)(pcmd->ClipRect.x), 0);
-                    scissorRect.offset.y      = max((int32_t)(pcmd->ClipRect.y), 0);
-                    scissorRect.extent.width  = (uint32_t)(pcmd->ClipRect.z - pcmd->ClipRect.x);
-                    scissorRect.extent.height = (uint32_t)(pcmd->ClipRect.w - pcmd->ClipRect.y);
-                    //   context.commandBuffer.setScissor(0, {scissorRect});
                     renderContext.flushAndDrawIndexed(
                         context.commandBuffer, pcmd->ElemCount, 1, indexOffset, vertexOffset, 0);
                     indexOffset += pcmd->ElemCount;

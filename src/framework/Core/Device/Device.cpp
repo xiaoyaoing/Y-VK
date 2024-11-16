@@ -193,6 +193,11 @@ Device::Device(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkInstance
         device_features2.features.samplerAnisotropy              = VK_TRUE;
         device_features2.features.vertexPipelineStoresAndAtomics = VK_TRUE;
 
+        nextChain                                  = &rt_fts.pNext;
+
+        VkPhysicalDeviceProperties2 device_properties{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2};
+        device_properties.pNext = &rayTracingPipelineProperties;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &device_properties);
         LOGI("Enabled Ray Tracing Pipeline Extension");
     }
 

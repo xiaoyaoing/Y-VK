@@ -103,6 +103,7 @@ protected:
     }
 
     virtual void update();
+    virtual void perFrameUpdate();
     virtual void getRequiredInstanceExtensions();
     virtual void initVk();
     virtual void drawFrame(RenderGraph& rg) = 0;

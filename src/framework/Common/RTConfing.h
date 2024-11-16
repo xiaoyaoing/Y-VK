@@ -21,6 +21,7 @@ struct DDGIConfig {
     int inner_irradiance_texel_count = 6;
     int inner_distance_texel_count = 14;
     bool use_rt_gbuffer;
+    bool debug_ddgi = true;
 };
 
 struct PathTracingConfig {

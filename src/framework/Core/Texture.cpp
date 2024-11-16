@@ -100,7 +100,6 @@ static void initVKTexture(Device&                   device,
 
     commandBuffer.copyBufferToImage(imageBuffer, texture->image->getVkImage(), imageCopyRegions);
 
-    //  texture->getImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY, subresourceRange);
 
     if (texture->image->getMipMaps().size() == 1 && texture->image->needGenerateMipMapOnGpu()) {
         std::vector<VkImageBlit2> blits;
@@ -290,9 +289,22 @@ void Texture::initTexturesInOneSubmit(std::vector<std::unique_ptr<Texture>>& tex
         return;
     }
 
-    int batchSize = 10;
-    for (int i = 0; i < textures.size(); i += batchSize) {
-        initTexturesInBatch(textures, i, std::min(i + batchSize, static_cast<int>(textures.size())));
+    size_t oneBatchLimit = 256'000'000;
+
+    std::vector<int> batchStart{0};
+    size_t currentSize = 0;
+    for (int i = 0; i < textures.size(); i++) {
+        currentSize += textures[i]->image->getBufferSize();
+        if (currentSize > oneBatchLimit) {
+            batchStart.push_back(i);
+            currentSize = 0;
+        }
+    }
+
+    batchStart.push_back(textures.size());
+    
+    for (int i = 0; i < batchStart.size() - 1; i++) {
+        initTexturesInBatch(textures, batchStart[i],batchStart[i+1]);
     }
 
     return;

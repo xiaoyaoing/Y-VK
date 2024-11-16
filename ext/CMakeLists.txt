@@ -147,3 +147,8 @@ target_sources(tiny_obj_loader PRIVATE ${TINY_OBJ_LOADER_FILES})
 
 add_subdirectory(volk)
 add_subdirectory(json)
+
+set(TINYEXR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tinyexr)
+add_subdirectory(tinyexr)
+target_include_directories(tinyexr PUBLIC ${TINYEXR_DIR})
+

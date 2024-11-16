@@ -62,6 +62,7 @@ void RTConfing::init() {
             ddgiConfig.probe_distance = GetOptional(integratorJson, "probe_distance", ddgiConfig.probe_distance);
             ddgiConfig.normal_bias    = GetOptional(integratorJson, "normal_bias", ddgiConfig.normal_bias);
             ddgiConfig.use_rt_gbuffer = GetOptional(integratorJson, "use_rt_gbuffer", ddgiConfig.use_rt_gbuffer);
+            ddgiConfig.debug_ddgi     = GetOptional(integratorJson, "debug_ddgi", ddgiConfig.debug_ddgi);
         } else if (integratorTypeStr == kRestirDIIntegrator) {
             // integratorType = eRestirDI;
         }

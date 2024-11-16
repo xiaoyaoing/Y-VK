@@ -13,7 +13,11 @@
 #define TINYDDSLOADER_IMPLEMENTATION
 #include "tinyddsloader.h"
 
-#include <ext/tinyexr/tinyexr.h>
+// #define TINYEXR_IMPLEMENTATION
+// #undef  TINYEXR_USE_MINIZ
+// #include <ext/tinyexr/tinyexr.h>
+#define TINYEXR_IMPLEMENTATION
+#include <tinyexr.h>
 
 namespace tinyddsloader {
     VkFormat ConvertFormatFromDxgiFormat(DDSFile::DXGIFormat format) {
@@ -205,6 +209,24 @@ ImageIO::ImageDesc ImageIO::loadImage(const std::string& path) {
         desc.needGenerateMipmaps = dds.GetMipCount() == 1;
         desc.format              = ConvertFormatFromDxgiFormat(dds.GetFormat());
         desc.extent              = VkExtent3D{dds.GetWidth(), dds.GetHeight(), dds.GetDepth()};
+        return desc;
+    }
+    if(ext == "exr") {
+        ImageDesc desc;
+        int width, height, channels;
+        float* data;
+        const char* err;
+        int ret = LoadEXR(&data, &width, &height, path.c_str(), &err);
+        if (ret != TINYEXR_SUCCESS) {
+            LOGE("Failed to load EXR file: {}", path.c_str());
+        }
+        desc.data.resize(width * height * 4 * sizeof(float));
+        memcpy(desc.data.data(), data, width * height * 4 * sizeof(float));
+        delete[] data;
+        desc.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        desc.extent = VkExtent3D{static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1};
+        desc.needGenerateMipmaps = false;
+        desc.mipmaps = {Mipmap{0, 0, desc.extent}};
         return desc;
     }
 }

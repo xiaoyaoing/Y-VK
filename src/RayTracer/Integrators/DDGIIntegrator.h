@@ -32,7 +32,7 @@ protected:
     struct DDGIBuffers;
     DDGIBuffers * buffers{nullptr};
     DDGIUbo ubo;
-    PCPath pc_ray;
+    // PCPath pc_ray;
     uint ping = 0;
     uint pong = 0;
     std::unique_ptr<GBufferPass> gbufferPass;
@@ -40,7 +40,6 @@ protected:
     bool debugDDGI = true;
     bool showIndirect = true;
     bool showDirect = false;
-    uint frameCount = 0;
     std::unique_ptr<Primitive> spherePrimitive;
     bool useRTGBuffer = true;
     // class Impl;

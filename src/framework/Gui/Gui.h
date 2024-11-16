@@ -45,7 +45,6 @@ public:
     float scale{1.f};
 
 protected:
-    VkPipeline pipeline{};
 
     //Gui buffer may be updated every frame so we use a frame buffer pool to handle this
     BufferAllocation mvertexBuffer{}, mIndexBuffer{};

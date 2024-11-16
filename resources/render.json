@@ -8,15 +8,16 @@
     {
       "type": "ddgi",
       "ray_per_probe": 256,
-      "probe_distance": 1,
+      "probe_distance": 2,
       "normal_bias" : 0.4,
-      "use_rt_gbuffer" : true
+      "use_rt_gbuffer" : true,
+      "debug_ddgi" : false
     }
   ],
   "integrator": {
     "type": "ddgi"
   },
-  "scene_path": "F:/code/RTXGI-DDGI/samples/test-harness/data/gltf/sponza/Sponza.gltf",
+  "scene_path": "F:\\bistro\\bistro.gltf",
   "scene_scale": 1.0,
   "scene_translation": [
     0.0,

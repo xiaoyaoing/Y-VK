@@ -444,14 +444,14 @@ void SgImage::loadResources(const std::string& path) {
         stbi_image_free(pixels);
         format             = VK_FORMAT_R32G32B32A32_SFLOAT;
         needGenerateMipMap = false;
-    } else if (ext == "dds") {
+    }
+    else if (ext == "dds" || ext == "exr") {
         auto desc = ImageIO::loadImage(path);
         setExtent(desc.extent);
         mData              = std::move(desc.data);
         format             = desc.format;
         needGenerateMipMap = desc.needGenerateMipmaps;
         mipMaps            = desc.mipmaps;
-
     } else {
         LOGE("Unsupported image format: {}", ext);
     }

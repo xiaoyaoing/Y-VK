@@ -26,14 +26,6 @@ struct SkyBoxPushConstant {
 };
 
 void PBRLab::drawFrame(RenderGraph& rg) {
-
-    // if (scene->getName().find("car.gltf") != std::string::npos) {
-    //     view->IteratorPrimitives([](Primitive& primitive) {
-    //         primitive.transform.setLocalToWorldMatrix(glm::rotate(0.002f, glm::vec3(0, 1, 0)) * primitive.transform.getLocalToWorldMatrix());
-    //     });
-    //     scene->updateSceneUniformBuffer();
-    // }
-
     rg.setCutUnUsedResources(false);
 
     if (environmentCubeAsync) {
@@ -61,16 +53,10 @@ void PBRLab::drawFrame(RenderGraph& rg) {
             renderContext->bindPrimitiveGeom(context.commandBuffer, *cube).bindImageSampler(0, environmentCube->getImage().getVkImageView(), environmentCube->getSampler()).bindPushConstants(SkyBoxPushConstant{.exposure = exposure, .gamma = gamma});
             renderContext->flushAndDrawIndexed(context.commandBuffer, cube->indexCount, 1, 0, 0, 0);
         });
-
-    // if (scene->getName().find("car.gltf") != std::string::npos) {
-    //     for (auto& pass : mforwardRenderPasses) {
-    //         pass->render(rg);
-    //     }
-    // } else {
+    
         for (auto& pass : mRenderPasses) {
             pass->render(rg);
         }
-    // }
 }
 
 void PBRLab::prepare() {
@@ -88,10 +74,6 @@ void PBRLab::prepare() {
     // mRenderPasses.push_back(std::make_unique<SSGIPass>());
 
     sceneLoadingConfig.indexType = VK_INDEX_TYPE_UINT32;
-    // loadScene(FileUtils::getResourcePath("cars/car.gltf"));
-   // loadScene("E:/code/car/resources/scenes/bistro/bistro.gltf");
-    // loadScene("F:/bistro/bistro.gltf");
-    // loadScene(FileUtils::getResourcePath("scenes/sponza/Sponza01.gltf"));
     loadScene("E:/code/FidelityFX-SSSR/sample/media/Chess/scene.gltf");
     scene->addDirectionalLight({0, -0.5f, -0.12f}, glm::vec3(1.0f), 1.5f, vec3(0, 50, 0));
 
@@ -131,8 +113,6 @@ void PBRLab::onUpdateGUI() {
             environmentCubeAsync = Texture::loadTextureFromFile(g_context->getDevice(), file);
         });
     }
-
-    // ImGui::Selectable()
 }
 
 int main() {

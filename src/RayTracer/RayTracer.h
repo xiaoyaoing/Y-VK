@@ -27,6 +27,8 @@ public:
     void onSceneLoaded() override;
 
 protected:
+    void perFrameUpdate() override;
+
     std::string getHdrImageToSave() override;
 
 public:
@@ -48,6 +50,8 @@ public:
     SceneUbo                      sceneUbo;
     SceneUbo                      lastFrameSceneUbo;
     std::shared_ptr<RTSceneEntry> rtSceneEntry;
+    std::shared_ptr<PCPath> pcPath;
+    std::unique_ptr<Texture> asyncEnvironmenMap{nullptr};
     // std::unique_ptr<PostProcess>  postProcess;
 };
 
