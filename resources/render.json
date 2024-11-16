@@ -7,8 +7,8 @@
     },
     {
       "type": "ddgi",
-      "ray_per_probe": 256,
-      "probe_distance": 2,
+      "ray_per_probe": 1024,
+      "probe_counts": 32,
       "normal_bias" : 0.4,
       "use_rt_gbuffer" : true,
       "debug_ddgi" : false

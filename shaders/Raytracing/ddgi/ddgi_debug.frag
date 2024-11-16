@@ -22,8 +22,7 @@ layout(set = 1, binding = 0) uniform sampler2D radiance_map;
 
 void main(){
     ivec3 probeCoord = get_probe_coord_by_index(in_probe_index);
-    vec2 uv = get_probe_color_uv(probeCoord,vec3(0,0,1),PROBE_RADIANCE_SIDE);
-     uv = get_probe_color_uv(probeCoord,in_normal,PROBE_RADIANCE_SIDE);
+    vec2 uv = get_probe_color_uv(probeCoord,in_normal,PROBE_RADIANCE_SIDE);
     vec3 radiance = texture(radiance_map, uv).rgb;
     
 //    debugPrintfEXT("Radiance: %f %f %f\n", radiance.x, radiance.y, radiance.z);

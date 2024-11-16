@@ -410,14 +410,14 @@ void GLTFLoadingImpl::loadLights(const tinygltf::Model& model) {
         }
     }
 
-    if(config.loadLight && lights.empty()) {
+    if (config.loadLight && lights.empty()) {
         LOGI("No light found in gltf file, using default light");
         SgLight sgLight;
-        sgLight.lightProperties.color = glm::vec3(1.0f, 1.0f, 1.0f);
+        sgLight.lightProperties.color     = glm::vec3(1.0f, 1.0f, 1.0f);
         sgLight.lightProperties.intensity = 1.0f;
-        sgLight.lightProperties.position = glm::vec3(0.0f, 300.0f, 0.0f);
+        sgLight.lightProperties.position  = glm::vec3(0.0f, 300.0f, 0.0f);
         sgLight.lightProperties.direction = glm::normalize(glm::vec3(-1, -1, -1));
-        sgLight.type = LIGHT_TYPE::Directional;
+        sgLight.type                      = LIGHT_TYPE::Directional;
         this->lights.push_back(sgLight);
     }
 }
@@ -652,8 +652,15 @@ void GLTFLoadingImpl::processNode(const tinygltf::Node& node, const tinygltf::Mo
             if (loadNewIndex) mIndexCount += curPrimitiveIndexCount;
 
             LOGI("Primitive {} has {} vertices and {} indices {} {} material_idx", j, primVertexCount, curPrimitiveIndexCount, mIndexCount, primitive.material)
-            auto transform          = modelTransforms[&node];
-            newPrimitive->setDimensions(transform.getLocalToWorldMatrix() * glm::vec4(posMin, 1.0f), transform.getLocalToWorldMatrix() * glm::vec4(posMax, 1.0f));
+            auto transform = modelTransforms[&node];
+
+            auto tempPosMin = transform.getLocalToWorldMatrix() * glm::vec4(posMin, 1.0f);
+            auto tempPosMax = transform.getLocalToWorldMatrix() * glm::vec4(posMax, 1.0f);
+
+            posMin = glm::vec3(std::min(tempPosMin.x, tempPosMax.x), std::min(tempPosMin.y, tempPosMax.y), std::min(tempPosMin.z, tempPosMax.z));
+            posMax = glm::vec3(std::max(tempPosMin.x, tempPosMax.x), std::max(tempPosMin.y, tempPosMax.y), std::max(tempPosMin.z, tempPosMax.z));
+
+            newPrimitive->setDimensions(posMin, posMax);
             newPrimitive->transform = transform;
             //     primitiveUniforms.push_back(newPrimitive->GetPerPrimitiveUniform());
             primitives.push_back(std::move(newPrimitive));
@@ -1059,6 +1066,10 @@ Mesh::Mesh(Device& device, glm::mat4 matrix) : device(device) {
 }
 
 void Primitive::setDimensions(glm::vec3 min, glm::vec3 max) {
+    if (min.x > max.x || min.y > max.y || min.z > max.z) {
+        LOGE("Invalid dimensions");
+        return;
+    }
     dimensions = BBox(min, max);
 }
 void Primitive::setDimensions(const BBox& box) {

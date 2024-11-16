@@ -11,10 +11,9 @@ struct DDGIConfig {
     float normal_bias = 0.1f;
     float view_bias = 0.1f;
     float backface_ratio = 0.1f;
-    float probe_distance = 2.f;
     float min_frontface_dist = 0.1f;
     float max_distance;
-    glm::ivec3 probe_counts;
+    glm::ivec3 probe_counts = glm::ivec3(16,16,16);
     glm::vec3 probe_start_position;
     int irradiance_texel_count  = 8;
     int distance_texel_count    = 16;
