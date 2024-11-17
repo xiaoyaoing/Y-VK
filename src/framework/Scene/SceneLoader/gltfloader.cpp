@@ -653,15 +653,9 @@ void GLTFLoadingImpl::processNode(const tinygltf::Node& node, const tinygltf::Mo
 
             LOGI("Primitive {} has {} vertices and {} indices {} {} material_idx", j, primVertexCount, curPrimitiveIndexCount, mIndexCount, primitive.material)
             auto transform = modelTransforms[&node];
-
-            auto tempPosMin = transform.getLocalToWorldMatrix() * glm::vec4(posMin, 1.0f);
-            auto tempPosMax = transform.getLocalToWorldMatrix() * glm::vec4(posMax, 1.0f);
-
-            posMin = glm::vec3(std::min(tempPosMin.x, tempPosMax.x), std::min(tempPosMin.y, tempPosMax.y), std::min(tempPosMin.z, tempPosMax.z));
-            posMax = glm::vec3(std::max(tempPosMin.x, tempPosMax.x), std::max(tempPosMin.y, tempPosMax.y), std::max(tempPosMin.z, tempPosMax.z));
-
-            newPrimitive->setDimensions(posMin, posMax);
-            newPrimitive->transform = transform;
+            
+            newPrimitive->setOriginalDimensions(BBox(posMin, posMax));
+            newPrimitive->setTransform(transform);
             //     primitiveUniforms.push_back(newPrimitive->GetPerPrimitiveUniform());
             primitives.push_back(std::move(newPrimitive));
             gltfPrimitives[primitive.indices].emplace_back(&primitive);
@@ -781,7 +775,6 @@ void GLTFLoadingImpl::loadNode(const tinygltf::Node& node, const tinygltf::Model
                 vertexCount = static_cast<uint32_t>(posAccessor.count);
             }
 
-            newPrimitive->setDimensions(posMin, posMax);
 
             auto matrix = getTransform(node).getLocalToWorldMatrix();
 
@@ -1065,17 +1058,28 @@ Node::~Node() {
 Mesh::Mesh(Device& device, glm::mat4 matrix) : device(device) {
 }
 
-void Primitive::setDimensions(glm::vec3 min, glm::vec3 max) {
-    if (min.x > max.x || min.y > max.y || min.z > max.z) {
+// void Primitive::setDimensions(glm::vec3 min, glm::vec3 max) {
+//     if (min.x > max.x || min.y > max.y || min.z > max.z) {
+//         LOGE("Invalid dimensions");
+//         return;
+//     }
+//     transformedDimensions = BBox(min, max);
+// }
+// void Primitive::setDimensions(const BBox& box) {
+//     transformedDimensions = box;
+// }
+void Primitive::setOriginalDimensions(const BBox& box) {
+    if (box.min().x > box.max().x || box.min().y > box.max().y || box.min().z > box.max().z) {
         LOGE("Invalid dimensions");
         return;
     }
-    dimensions = BBox(min, max);
-}
-void Primitive::setDimensions(const BBox& box) {
-    dimensions = box;
+    originalDimensions = box;
 }
 
+void Primitive::setTransform(const Transform& transform) {
+    this->transform = transform;
+    transformedDimensions = transform.TransformBBox(originalDimensions);
+}
 const BBox& Primitive::getDimensions() const {
-    return dimensions;
+    return transformedDimensions;
 }

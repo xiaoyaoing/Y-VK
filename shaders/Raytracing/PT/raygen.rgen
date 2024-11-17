@@ -58,18 +58,13 @@ vec3 eval_env(vec3 dir){
 
 void main()
 {
-
-
-   // const vec2 pixelCenter = vec2(gl_LaunchIDEXT.xy) + rand2(seed);
     const vec2 pixelCenter = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
     const vec2 inUV = pixelCenter/vec2(gl_LaunchSizeEXT.xy);
     vec2 d = inUV * 2.0 - 1.0;
     vec3 origin = (scene_ubo.viewInverse * vec4(0, 0, 0, 1)).xyz;
     vec4 target = scene_ubo.projInverse * vec4(d.x, d.y, 1, 1);
     vec4 direction = scene_ubo.viewInverse*vec4(normalize(target.xyz / target.w), 0);
-
-    // debugPrintfEXT("origin %f %f %f direction %f %f %f\n", origin.x, origin.y, origin.z, direction.x, direction.y, direction.z);
-
+    
     uint rayFlags = gl_RayFlagsOpaqueEXT;
     uint cullMask = 0xff;
     float tmin = 0.001;
@@ -123,7 +118,7 @@ void main()
 
 
 
-        BsdfSampleRecord record = sample_bsdf(materials.m[event.material_idx], event, rand2(seed));
+        BsdfSampleRecord record = sample_bsdf(materials.m[event.material_idx], event, seed);
 
         specular_bounce = (record.sample_flags & RT_BSDF_LOBE_SPECULAR)!=0;
 
