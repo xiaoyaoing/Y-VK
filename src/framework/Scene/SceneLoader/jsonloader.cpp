@@ -176,6 +176,9 @@ void JsonLoader::loadMaterials() {
         if (materialJson.contains("albedo") && materialJson["albedo"].is_string()) {
             texture_paths.insert(materialJson["albedo"].get<std::string>());
         }
+        if (materialJson.contains("roughness") && materialJson["roughness"].is_string()) {
+            texture_paths.insert(materialJson["roughness"].get<std::string>());
+        }
     }
     //  std::vector<std::unique_ptr<Texture>> textures;
     std::unordered_map<std::string_view, int> texture_index;
@@ -205,6 +208,13 @@ void JsonLoader::loadMaterials() {
         } else {
             rtMaterial.texture_id = -1;
             rtMaterial.albedo     = GetOptional(materialJson, "albedo", vec3(0.5f));
+        }
+        if(materialJson.contains("roughness") && materialJson["roughness"].is_string()) {
+            auto textureName      = materialJson["roughness"].get<std::string>();
+            rtMaterial.roughness_texture_id = texture_index.contains(textureName) ? texture_index[textureName] : -1;
+        } else {
+            rtMaterial.roughness_texture_id = -1;
+            rtMaterial.roughness            = GetOptional(materialJson, "roughness", 0.2f);
         }
         if(materialJson.contains("name")) {
             LOGI("name : " + materialJson["name"].get<std::string>());
@@ -355,7 +365,10 @@ void JsonLoader::loadPrimitives() {
         } else if (primitiveJson.contains("type")) {
             std::string type = primitiveJson["type"];
             if (type == "infinite_sphere") {
-                mat4 matrix = mat4FromJson(primitiveJson["transform"]);
+                mat4 matrix = mat4(1);
+                if (primitiveJson.contains("transform")) {
+                    matrix = mat4FromJson(primitiveJson["transform"]);
+                }
                 lights.push_back(SgLight{.type = LIGHT_TYPE::Sky, .lightProperties = {.texture_index = static_cast<uint32_t>(textures.size()), .world_matrix = matrix}});
                 textures.push_back(Texture::loadTextureFromFile(device, rootPath.string() + "/" + primitiveJson["emission"].get<std::string>()));
             } else
@@ -430,10 +443,16 @@ void JsonLoader::loadPrimitives() {
 
         indexBuffers.emplace_back(std::move(primitiveData->indexs));
         vertexDatas.push_back(std::move(primitiveData->buffers));
+        
 
         primitive->lightIndex = lightIndex;
         primitive->setOriginalDimensions(primitiveData->bbox);
         primitive->setTransform(transform);
+
+        // primitive->transform = transform;
+        // primitive->originalDimensions = BBox(transform.getLocalToWorldMatrix() * glm::vec4(primitiveData->bbox.min(), 1.0f), transform.getLocalToWorldMatrix() * glm::vec4(primitiveData->bbox.max(), 1.0f));
+        // primitive->transformedDimensions = primitive->originalDimensions;
+        // primitive->transformedDimensions = primitive->transform.TransformBBox(primitive->originalDimensions);
         
         sceneBBox.unite(primitive->getDimensions());
         primitives.push_back(std::move(primitive));
@@ -446,7 +465,6 @@ void JsonLoader::loadPrimitives() {
         // sceneVertexBuffer[attri.first] = std::move(buffer);
         stagingVertexBuffers[attri.first] = std::move(buffer);
     }
-    //sceneIndexBuffer = std::make_unique<Buffer>(device, indexOffset * sizeof(uint32_t), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
 
     auto commandBuffer = device.createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
@@ -456,12 +474,9 @@ void JsonLoader::loadPrimitives() {
     // };
     for (uint32_t i = 0; i < primitives.size(); i++) {
         for (auto& [name, bufferData] : vertexDatas[i]) {
-            auto vec3_data = reinterpret_cast<const glm::vec3*>(bufferData.data());
             stagingVertexBuffers[name]->uploadData(bufferData.data(), bufferData.size(), vertexOffsets[i] * vertexAttributes[name].stride);
-            //  copyBuffer(*sceneVertexBuffer[name], bufferData.size(), vertexOffsets[i] * vertexAttributes[name].stride);
         }
         stagingIndexBuffer->uploadData(indexBuffers[i].data(), indexBuffers[i].size(), indexOffsets[i] * sizeof(uint32_t));
-        //   copyBuffer(*sceneIndexBuffer, indexBuffers[i].size(), indexOffsets[i] * sizeof(uint32_t));
     }
 
     for (auto& [name, buffer] : stagingVertexBuffers) {
@@ -471,8 +486,6 @@ void JsonLoader::loadPrimitives() {
 
     g_context->submit(commandBuffer, true);
 
-    // auto vertex_data = getTFromGpuBuffer<glm::vec3>(*sceneVertexBuffer[POSITION_ATTRIBUTE_NAME]);
-    // auto vertex_data1 = getTFromGpuBuffer<glm::vec3>(*(stagingBuffer);
 
     {
         sceneUniformBuffer = std::make_unique<Buffer>(device, sizeof(PerPrimitiveUniform) * primitives.size(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);

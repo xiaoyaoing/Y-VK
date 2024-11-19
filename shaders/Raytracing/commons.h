@@ -81,14 +81,15 @@ struct RTMaterial {
     float avgTransmittance;
 
     float ior;
+    vec3  padding;
     int roughness_texture_id;
-    float sheen;
-    float clearCoat;
-
-    float metallic;
-    float specularTint;
-    float anisotropic;
-    float specular;
+    // float sheen;
+    // float clearCoat;
+    //
+    // float metallic;
+    // float specularTint;
+    // float anisotropic;
+    // float specular;
     
 };
 

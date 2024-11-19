@@ -51,7 +51,7 @@ void RayTracer::drawFrame(RenderGraph& renderGraph) {
 }
 
 void RayTracer::onSceneLoaded() {
-    scene->addDirectionalLight(glm::vec3(0.0, -1.0, 0.3), glm::vec3(1.0f), 1.5f);
+    // scene->addDirectionalLight(glm::vec3(0.0, -1.0, 0.3), glm::vec3(1.0f), 1.5f);
     camera = scene->getCameras()[0];
     Config::GetInstance().CameraFromConfig(*camera, scene->getName());
     sceneFirstLoad = false;

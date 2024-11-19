@@ -57,6 +57,8 @@ void RTConfing::init() {
         if (integratorTypeStr == kPathIntegrator) {
             pathTracingConfig.min_depth = GetOptional(integratorJson, "min_depth", pathTracingConfig.min_depth);
             pathTracingConfig.max_depth = GetOptional(integratorJson, "max_depth", pathTracingConfig.max_depth);
+            pathTracingConfig.sample_bsdf = GetOptional(integratorJson, "sample_bsdf", pathTracingConfig.sample_bsdf);
+            pathTracingConfig.sample_light = GetOptional(integratorJson, "sample_light", pathTracingConfig.sample_light);
         } else if (integratorTypeStr == kDDGIIntegrator) {
             ddgiConfig.rays_per_probe = GetOptional(integratorJson, "ray_per_probe", ddgiConfig.rays_per_probe);
             ddgiConfig.probe_counts = GetOptional(integratorJson, "probe_counts", ddgiConfig.probe_counts);

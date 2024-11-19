@@ -335,8 +335,8 @@ void DDGIIntegrator::initScene(RTSceneEntry& entry) {
     getPC().size_y              = height;
     getPC().frame_num           = 0;
     getPC().light_num           = mScene->getLights().size();
-    getPC().enable_sample_bsdf  = 1;
-    getPC().enable_sample_light = 1;
+    // getPC().enable_sample_bsdf  = 1;
+    // getPC().enable_sample_light = 1;
     getPC().probe_rotation      = glm::mat4(1.0f);
     getPC().first_frame         = 1;
     getPC().ddgi_show_direct    = 0;

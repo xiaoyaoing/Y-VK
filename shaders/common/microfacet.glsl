@@ -21,6 +21,7 @@ float ggx_d(float alpha, vec3 wh, vec3 wi) {
     float cosThetaSq = cos_theta*cos_theta;
     float tanThetaSq = max(1.0f - cosThetaSq, 0.0f)/cosThetaSq;
     float cosThetaQu = cosThetaSq*cosThetaSq;
+    if(cos_theta == 0.0f) return 0.0f;
     return alphaSq*INV_PI/(cosThetaQu*sqr(alphaSq + tanThetaSq));
 }
 

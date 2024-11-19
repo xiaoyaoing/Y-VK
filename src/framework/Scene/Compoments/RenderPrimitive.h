@@ -43,9 +43,6 @@ protected:
 
     VkIndexType indexType{VK_INDEX_TYPE_UINT16};
 
-    BBox transformedDimensions;
-    BBox originalDimensions;
-
     std::unordered_map<std::string, VertexAttribute>         vertexAttributes;
     std::unordered_map<std::string, std::unique_ptr<Buffer>> vertexBuffers;
     std::unique_ptr<Buffer>                                  indexBuffer;
@@ -60,8 +57,9 @@ public:
     uint32_t       materialIndex{0};
     Transform      transform{};
     uint32_t       lightIndex{-1u};
-
-    glm::mat4 getTransformMatrix() const {
+    BBox           transformedDimensions;
+    BBox           originalDimensions;
+    glm::mat4      getTransformMatrix() const {
         return transform.getLocalToWorldMatrix();
     }
     bool getVertexAttribute(const std::string& name, VertexAttribute* attribute = nullptr) const;
@@ -95,7 +93,7 @@ public:
     }
     PerPrimitiveUniform GetPerPrimitiveUniform() const {
         return {transform.getLocalToWorldMatrix(), glm::transpose(glm::inverse(transform.getLocalToWorldMatrix())), materialIndex, 0, 0, 0};
-    } 
+    }
 };
 
 #endif//VULKANDEMO_RENDERPRIMITIVE_H
