@@ -17,8 +17,8 @@ void Integrator::initScene(RTSceneEntry & sceneEntry) {;
     camera        = sceneEntry.scene->getCameras()[0];
     camera->flipY = false;
 
-    width  = renderContext->getViewPortExtent().width;
-    height = renderContext->getViewPortExtent().height;
+    width  = camera->getScreenWidth();
+    height = camera->getScreenHeight();
 }
 
 void Integrator::init() {

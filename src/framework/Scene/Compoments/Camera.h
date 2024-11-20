@@ -174,6 +174,7 @@ public:
 
     void setFlipY(bool flip) { flipY = flip; flipYTemp = flip; }
 
+    glm::ivec2 getScreenSize() const noexcept { return glm::ivec2(m_screenWidth, m_screenHeight); }
     /**
     * Flips y coordinate in screen space.
     */
@@ -212,7 +213,7 @@ public:
     void  setRotation(glm::quat rotation);
     void  setMoveSpeed(float moveSpeed);
     float getMoveSpeed() const;
-
+    void setScreenSize(float screenWidth, float screenHeight);
     struct {
         bool up{false};
         bool down{false};

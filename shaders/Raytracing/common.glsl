@@ -62,7 +62,7 @@ vec3 visualize_normal(vec3 n) {
 
 bool is_two_sided(uint material_idx){
     const uint material_type = materials.m[material_idx].bsdf_type;
-    return material_type == RT_BSDF_TYPE_DIELECTRIC || material_type == RT_BSDF_TYPE_PRINCIPLE;
+    return material_type == RT_BSDF_TYPE_DIELECTRIC || material_type == RT_BSDF_TYPE_DISNEY;
 }
 
 SurfaceScatterEvent make_surface_scatter_event(HitPayload hit_pay_load, const vec3 wo){

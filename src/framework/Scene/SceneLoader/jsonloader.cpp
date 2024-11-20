@@ -79,8 +79,10 @@ void JsonLoader::loadCamera() {
     vec2  resolution = GetOptional(cameraJson, "resolution", vec2(1920, 1080));
     float aspect     = resolution.x / resolution.y;
     //  camera->setRotation(GetOptional(transform, "rotation", glm::vec3(0.0f)));
-    camera->setPerspective(GetOptional(transform, "fov", 45.0f), aspect, GetOptional(cameraJson, "zNear", 0.1f), GetOptional(cameraJson, "zFar", 4000.0f));
+    camera->setPerspective(GetOptional(cameraJson, "fov", 45.0f), aspect, GetOptional(cameraJson, "zNear", 0.1f), GetOptional(cameraJson, "zFar", 4000.0f));
     camera->setFlipY(true);
+
+    camera->setScreenSize(int(resolution.x), int(resolution.y)); 
     cameras.push_back(camera);
 }
 void JsonLoader::PreprocessMaterials() {
@@ -107,7 +109,7 @@ std::unordered_map<std::string, uint32_t> type2RTBSDFTYPE = {
     {"rough_conductor", RT_BSDF_TYPE_CONDUCTOR},
     {"plastic", RT_BSDF_TYPE_DIFFUSE},
     {"rough_plastic", RT_BSDF_TYPE_PLASTIC},
-    {"principle", RT_BSDF_TYPE_PRINCIPLE},
+    {"disney", RT_BSDF_TYPE_DISNEY},
     {"dielectric", RT_BSDF_TYPE_DIELECTRIC},
     {"rough_dielectric", RT_BSDF_TYPE_DIELECTRIC},
 };
@@ -166,7 +168,21 @@ void handleSpecifyMaterialAttribute(RTMaterial& rtMaterial, const Json& material
         rtMaterial.diffuseFresnel   = diffuseReflectance(m_ior, 10000);
     }
     if (rtMaterial.bsdf_type == RT_BSDF_TYPE_DIELECTRIC) {
-        rtMaterial.ior = GetOptional(materialJson, "ior", 1.3);
+        rtMaterial.ior = GetOptional(materialJson, "ior", 1.3f);
+    }
+    if (rtMaterial.bsdf_type == RT_BSDF_TYPE_DISNEY) {
+        rtMaterial.albedo = GetOptional(materialJson, "base_color", vec3(0.5f));
+        rtMaterial.ior = GetOptional(materialJson, "ior", 1.3f);
+        rtMaterial.metallic = GetOptional(materialJson, "metallic", 0.0f);
+        rtMaterial.sheenTint = GetOptional(materialJson, "sheen_tint", 0.0f);
+        rtMaterial.sheen = GetOptional(materialJson, "sheen", 0.0f);
+        rtMaterial.clearCoat = GetOptional(materialJson, "clearCoat", 0.0f);
+        rtMaterial.metallic = GetOptional(materialJson, "metallic", 0.0f);
+        rtMaterial.specularTint = GetOptional(materialJson, "specular_tint", 0.0f);
+        rtMaterial.anisotropic = GetOptional(materialJson, "anisotropic", 0.0f);
+        rtMaterial.specularTransmission = GetOptional(materialJson, "specular_transmission", 0.0f);
+        rtMaterial.clearCoatGloss = GetOptional(materialJson, "clear_coat_gloss", 0.0f);
+        rtMaterial.subSurfaceFactor = GetOptional(materialJson, "subsurface", 0.0f);
     }
 }
 void JsonLoader::loadMaterials() {
@@ -214,7 +230,7 @@ void JsonLoader::loadMaterials() {
             rtMaterial.roughness_texture_id = texture_index.contains(textureName) ? texture_index[textureName] : -1;
         } else {
             rtMaterial.roughness_texture_id = -1;
-            rtMaterial.roughness            = GetOptional(materialJson, "roughness", 0.2f);
+            rtMaterial.roughness            = GetOptional(materialJson, "roughness", 0.f);
         }
         if(materialJson.contains("name")) {
             LOGI("name : " + materialJson["name"].get<std::string>());

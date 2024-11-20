@@ -3,8 +3,7 @@
     {
       "type": "path",
       "min_depth": 0,
-      "max_depth": 1,
-      "sample_bsdf" : false
+      "max_depth": 8
     },
     {
       "type": "ddgi",
@@ -18,7 +17,7 @@
   "integrator": {
     "type": "path"
   },
-  "scene_path": "E:/code/vk-raytracing-demo/resources/test-ball/scene.json",
+  "scene_path": "E:\\code\\vk-raytracing-demo\\resources\\cornell-box-json\\scene.json",
   "scene_scale": 1.0,
   "scene_translation": [
     0.0,

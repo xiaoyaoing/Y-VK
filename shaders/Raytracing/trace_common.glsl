@@ -25,12 +25,7 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
     
     LightSample light_sample = sample_li(light, event, light_sample_rand);
     
-//    light_sample.wi = -light_sample.wi;
 
-
-    if(hasNaN(light_sample.wi)){
-        debugPrintfEXT("light_sample.wi %f %f %f\n", light_sample.wi.x, light_sample.wi.y, light_sample.wi.z);
-    }
     if (enable_sample_light)
     {
         if (!isBlack(light_sample.indensity) && light_sample.pdf != 0){
@@ -42,17 +37,6 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
             gl_RayFlagsSkipClosestHitShaderEXT,
             0xFF, 1, 0, 1, event.p, EPS , light_sample.wi, light_sample.dist - EPS, 1);
             bool  visible = any_hit_payload.hit == 0;
-
-            
-            
-            hitPayload.prim_idx = -1;
-            traceRayEXT(tlas,
-            gl_RayFlagsOpaqueEXT,
-            0xFF, 0, 0, 0, event.p + EPS * light_sample.wi, 0,light_sample.wi, 10000, 0);
-            
-           // debugPrintfEXT("light_sample.wi %f %f %f\n", light_sample.wi.x, light_sample.wi.y, light_sample.wi.z);
-            
-            visible = hitPayload.prim_idx == -1;
            // visible = true;
             if (visible){
                 uint material_idx = event.material_idx;
@@ -70,7 +54,6 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
                     bsdf_pdf,
                     result.x, result.y, result.z,light_sample.wi.x, light_sample.wi.y, light_sample.wi.z);
                 }
-               // result = vec3(0, 0, 0);
             }
         }
     }

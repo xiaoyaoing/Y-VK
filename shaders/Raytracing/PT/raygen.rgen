@@ -168,7 +168,7 @@ void main()
   //  color = throughput * eval_env(direction.xyz);
    // color = direction.xyz;
 
-    color *= 0.1f;
+    //color *= 0.1f;
 
     if (isnan(color.x) || isnan(color.y) || isnan(color.z)){
         debugPrintfEXT("nan color %f %f %f\n", color.x, color.y, color.z);

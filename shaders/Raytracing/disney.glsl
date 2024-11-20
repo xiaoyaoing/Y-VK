@@ -1,7 +1,7 @@
 #ifndef DISNEY_BSDF_FUNCTIONS_GLSL
 #define DISNEY_BSDF_FUNCTIONS_GLSL
 
-const float PI = 3.141592653589793;
+
 
 // Smith masking-term for the GGX distribution
 float smithG_G1(float roughness, float No) {
@@ -20,50 +20,155 @@ float smithG_G1_anisotropic(float roughnessX, float roughnessY, vec3 v) {
     return g1 * g2;
 }
 
+float FD(vec3 w, float FD90) {
+    return 1.0 + (FD90 - 1.0) * pow(1.0 - abs(w.z), 5.0);
+}
+
+float FSS(vec3 w, float FSS90) {
+    return 1.0 + (FSS90 - 1.0) * pow(1.0 - abs(w.z), 5.0);
+}
+
+//float luminance(vec3 color) {
+//    return dot(color, vec3(0.2126, 0.7152, 0.0722));
+//}
+
 // Disney's diffuse term
-vec3 disney_diffuse(const vec3 baseColor, float roughness, float NoL, float NoV, float VoH) {
-    float fd90 = 0.5 + 2 * roughness * NoL * NoL;
-    float f0 = 1 + (fd90 - 1) * pow(1 - VoH, 5);
-    float lightScatter = (1 + (fd90 - 1) * pow(1 - NoL, 5)) * (1 + (fd90 - 1) * pow(1 - NoV, 5));
-    float f = f0 * lightScatter;
-    return baseColor * (1 - f) / PI;
+vec3 disney_diffuse(const vec3 baseColor, float roughness, float subSurfaceFactor, vec3 wi, vec3 wo,float sheen_tint) {
+    if (wi.z < 0.0 || wo.z < 0.0) {
+        return vec3(0.0);
+    }
+    vec3 wh = normalize(wi + wo);
+
+    vec3 baseColorPI = baseColor / PI;
+
+    float FD90 = 0.5 + 2.0 * roughness * pow(abs(dot(wh, wi)), 2.0);
+    vec3 baseDiffuse = baseColorPI * FD(wo, FD90) * FD(wi, FD90);
+
+    float FSS90 = roughness * abs(dot(wh, wi));
+    float scaleFactor = FSS(wi, FSS90) * FSS(wo, FSS90) * (1.0 / (abs(wi.z) + abs(wo.z)) - 0.5) + 0.5;
+    vec3 subsurface = 1.25 * baseColorPI * scaleFactor;
+
+    vec3 diffuse_result =  mix(baseDiffuse, subsurface, subSurfaceFactor);
+    
+    vec3 c_tint = luminance(baseColor) > 0.0 ? baseColor / luminance(baseColor) : vec3(1.0);
+    vec3 sheen_result = vec3(1-sheen_tint) + sheen_tint * c_tint;
+    sheen_result *= pow(1.0 - dot(wi, wh), 5.0);
+    
+    return diffuse_result + sheen_result;
 }
 
-// Disney's sheen term
-vec3 disney_sheen(const vec3 baseColor, float sheenTint, float NoL, float NoV, float VoH) {
-    float sheenLerp = (1 - sheenTint) + sheenTint * (dot(baseColor, vec3(0.3333)) > 0.5 ? 1 : 0);
-    float sheen = pow(saturate(1 - NoL), 5) * pow(saturate(1 - NoV), 5) * sheenLerp;
-    return baseColor * sheen;
+//// Disney's sheen term
+//vec3 disney_sheen(const vec3 baseColor, float sheenTint, float NoL, float NoV, float VoH) {
+//
+//}
+//
+
+
+
+BsdfSampleRecord disney_sample(const RTMaterial mat, inout uvec4 seed, inout SurfaceScatterEvent event){
+    BsdfSampleRecord record;
+    float roughness = get_roughness(mat, event.uv);
+    float metallic =  get_metallness(mat, event.uv);
+    vec3 outgoing = event.wo;
+
+    if (outgoing.z <= 0) {
+        return dielectric_sample(mat, seed, event);
+    }
+
+    // 根据权重选择不同的 BxDF 进行采样
+    float weights[4];
+    weights[0] = (1.0 - mat.metallic) * (1.0 - mat.specularTransmission);// Diffuse
+    weights[1] = 1 - mat.specularTransmission * (1.0 - metallic);// Metal
+    weights[2] = (1.0 - mat.metallic) * mat.specularTransmission;// Glass
+    weights[3] = 0.25 * mat.clearCoat;// ClearCoat
+
+    float totalWeight = weights[0] + weights[1] + weights[2] + weights[3];
+    float r = rand1(seed) * totalWeight;
+    int idx = 0;
+    for (int i = 0; i < 4; ++i) {
+        if (r < weights[i]) {
+            idx = i;
+            break;
+        }
+        r -= weights[i];
+    }
+
+    // 根据选择的 BxDF 进行采样
+    if (idx == 0) {
+        // Diffuse
+        return diffuse_sample(mat, seed, event);
+    } else if (idx == 1) {
+        // Metal
+        return conductor_albedo_sample(mat, seed, event);
+    } else if (idx == 2) {
+        // Glass
+        return dielectric_sample(mat, seed, event);
+    } else if (idx == 3) {
+        return clearcoat_sample(mat, seed, event);
+    }
+    return record;
 }
 
 
-vec3 disney_f(const DisneyBSDF disneyBXDF, const vec3 outgoing, const vec3 incoming) {
-    vec3 halfway = normalize(incoming + outgoing);
-    float NoL = saturate(dot(incoming, halfway));
-    float NoV = saturate(dot(outgoing, halfway));
-    float VoH = saturate(dot(outgoing, halfway));
-    float LoH = saturate(dot(incoming, halfway));
+vec3 disney_f(const RTMaterial mat, const SurfaceScatterEvent event){
+    float roughness = get_roughness(mat, event.uv);
+    float metallic =  get_metallness(mat, event.uv);
+    vec3 outgoing = event.wo;
 
-    // Diffuse component
-    vec3 diffuse = disney_diffuse(disneyBXDF.diffuse.baseColor, disneyBXDF.diffuse.roughness, NoL, NoV, VoH);
+    if (outgoing.z <= 0) {
+        return dielectric_f(mat, event);
+    }
 
-    // Sheen component
-    vec3 sheen = disney_sheen(disneyBXDF.sheen.baseColor, disneyBXDF.sheen.sheenTint, NoL, NoV, VoH);
+    float glassWeight = (1.0 - mat.metallic) * mat.specularTransmission;
+    float clearCoatWeight = 0.25 * mat.clearCoat;
+    float sheenWeight = 0.5 * mat.sheen;
+    float diffuseWeight = (1.0 - mat.metallic) * (1.0 - mat.specularTransmission);
+    float metalWeight = 1 - mat.specularTransmission * (1.0 - metallic);
 
-    // Metal component (simplified version, you need to implement the full Disney metal model)
-    vec3 metal = vec3(0); // Placeholder for metal component
+    vec3 albedo = get_albedo(mat, event.uv);
+    vec3 diffuseResult = diffuseWeight>0?disney_diffuse(albedo, roughness, mat.subSurfaceFactor, event.wi, event.wo, mat.sheenTint):vec3(0);
+    vec3 metalResult = metalWeight>0?conductor_albedo_f(mat, event):vec3(0);
+    vec3 glassResult = glassWeight>0?dielectric_f(mat, event):vec3(0);
+    vec3 clearCoatResult = clearCoatWeight>0?clearcoat_f(mat, event):vec3(0);
+    
+    if(hasNaN(diffuseResult)){
+        debugPrintfEXT("diffuseResult %f %f %f\n", diffuseResult.x, diffuseResult.y, diffuseResult.z);
+    }
+    if(hasNaN(metalResult)){
+        debugPrintfEXT("metalResult %f %f %f\n", metalResult.x, metalResult.y, metalResult.z);
+    }
+    if(hasNaN(glassResult)){
+        debugPrintfEXT("glassResult %f %f %f\n", glassResult.x, glassResult.y, glassResult.z);
+    }
+    if(hasNaN(clearCoatResult)){
+        debugPrintfEXT("clearCoatResult %f %f %f\n", clearCoatResult.x, clearCoatResult.y, clearCoatResult.z);
+    }
+    return diffuseResult * diffuseWeight + metalResult * metalWeight + glassResult * glassWeight + clearCoatResult * clearCoatWeight;
 
-    // Clear coat component (simplified version, you need to implement the full Disney clear coat model)
-    vec3 clearCoat = vec3(0); // Placeholder for clear coat component
+}
 
-    // Glass component (simplified version, you need to implement the full Disney glass model)
-    vec3 glass = vec3(0); // Placeholder for glass component
+float disney_pdf(const RTMaterial mat, const SurfaceScatterEvent event){
+    float roughness = get_roughness(mat, event.uv);
+    float metallic =  get_metallness(mat, event.uv);
+    vec3 outgoing = event.wo;
 
-    // Combine all components
-    return diffuse + sheen + metal + clearCoat + glass;
+    if (outgoing.z <= 0) {
+        return dielectric_pdf(mat, event);
+    }
+
+    float glassWeight = (1.0 - mat.metallic) * mat.specularTransmission;
+    float clearCoatWeight = 0.25 * mat.clearCoat;
+    float diffuseWeight = (1.0 - mat.metallic) * (1.0 - mat.specularTransmission);
+    float metalWeight = 1 - mat.specularTransmission * (1.0 - metallic);
+
+    float diffuseResult = diffuseWeight>0?diffuse_pdf(mat, event):0;
+    float metalResult = metalWeight>0?conductor_albedo_pdf(mat, event):0;
+    float glassResult = glassWeight>0?dielectric_pdf(mat, event):0;
+    float clearCoatResult = clearCoatWeight>0?clearcoat_pdf(mat, event):0;
+    
+    float allWeight = diffuseWeight + metalWeight + glassWeight + clearCoatWeight;
+    return (diffuseResult * diffuseWeight + metalResult * metalWeight + glassResult * glassWeight + clearCoatResult * clearCoatWeight) / allWeight;
 }
 
 
-
-
-#endif // DISNEY_BSDF_FUNCTIONS_GLSL
+#endif// DISNEY_BSDF_FUNCTIONS_GLSL
