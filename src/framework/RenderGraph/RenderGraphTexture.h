@@ -38,12 +38,12 @@ public:
 
     static constexpr Usage DEFAULT_W_USAGE       = Usage::COLOR_ATTACHMENT;
     static constexpr Usage DEFAULT_DEPTH_W_USAGE = Usage::DEPTH_ATTACHMENT;
-
+    
     ~RenderGraphTexture() override;
 
     RenderGraphTexture(const std::string& name, SgImage* hwTexture);
     RenderGraphTexture(const std::string& name, const Descriptor& descriptor);
-
+    
     bool isDepthStencilTexture() const;
 
     void setHwTexture(SgImage* hwTexture);
@@ -58,9 +58,9 @@ public:
     void destroy() override;
 
     RenderResourceType getType() const override;
-
+    unsigned short     defaultUsage() const override;
     void resloveUsage(ResourceBarrierInfo& barrierInfo, uint16_t lastUsage, uint16_t nextUsage, RenderPassType lastPassType, RenderPassType nextPassType) override;
-
+    
     bool             imported{false};
     const Descriptor mDescriptor;
 

@@ -16,6 +16,7 @@ public:
     };
     RenderGraphBuffer(const std::string& name, const Descriptor& descriptor);
     RenderGraphBuffer(const std::string& name, Buffer* hwBuffer);
+    uint16_t defaultUsage() const override{return static_cast<uint16_t>(Usage::STORAGE);}
     void                       devirtualize() override;
     void                       destroy() override;
     RenderResourceType         getType() const override;

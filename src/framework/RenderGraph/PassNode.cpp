@@ -152,16 +152,17 @@ void PassNode::resolveResourceUsages(RenderGraph& renderGraph, CommandBuffer& co
 
         unsigned short srcUsage;
         RenderPassType srcState;
-
+        stateTracker.setResourceState(resourceIt.first, this, resourceIt.second);
         if (std::get<0>(state) == nullptr) {
-            stateTracker.setResourceState(resourceIt.first, this, resourceIt.second);
             srcState = getType();
             srcUsage = resourceIt.second;
         } else {
             srcState = std::get<0>(state)->getType();
             srcUsage = std::get<1>(state);
         }
-
+        // if(resource->getName() == "virtual viewport0") {
+        //     
+        // }
         resource->resloveUsage(barrierInfo, srcUsage, resourceIt.second, srcState, getType());
     }
     VkDependencyInfo dependencyInfo{};

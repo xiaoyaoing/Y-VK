@@ -172,6 +172,7 @@ SgImage::SgImage(Device& device, const std::string& name, const VkExtent3D& exte
     if (isCubeMap())
         flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
     vkImage = std::make_unique<Image>(device, extent, format, image_usage, memory_usage, sample_count, mipLevels, array_layers, flags);
+    DebugUtils::SetObjectName(device.getHandle(), reinterpret_cast<uint64_t>(vkImage->getHandle()),VK_OBJECT_TYPE_IMAGE, name.c_str());
     createImageView();
 
     size_t hash;

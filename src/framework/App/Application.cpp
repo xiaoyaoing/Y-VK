@@ -33,7 +33,7 @@
 Application::Application(const char* name,
                          uint32_t    width,
                          uint32_t    height,
-                         RTConfing   _config) : mWidth(width), mHeight(height), mAppName(name), config(_config) {
+                         RenderConfig   _config) : mWidth(width), mHeight(height), mAppName(name), config(_config) {
     initWindow(name, width, height);
 }
 Application::Application(const char* name,  std::string configPath) :  mAppName(name), config(configPath) {
@@ -282,17 +282,6 @@ void Application::updateGUI() {
     io.DeltaTime   = 0;
 
     gui->newFrame();
-
-    {
-
-        // mainloop
-        //  while(continueRendering)
-        {
-            //...do other stuff like ImGui::NewFrame();
-
-            //...do other stuff like ImGui::Render();
-        }
-    }
 
     ImGui::Begin("Basic", nullptr, ImGuiWindowFlags_NoMove);
     

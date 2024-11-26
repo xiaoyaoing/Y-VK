@@ -1,6 +1,6 @@
 #pragma once
 #include "Integrator.h"
-#include "Common/RTConfing.h"
+#include "Common/RenderConfig.h"
 #include "Raytracing/PT/path_commons.h"
 #include "Raytracing/ddgi/ddgi_commons.h"
 #include "RenderGraph/RenderGraph.h"

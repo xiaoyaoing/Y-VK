@@ -33,8 +33,51 @@ void RenderGraphTexture::destroy() {
     delete this;
 }
 
+#include <vulkan/vulkan.h>
+#include <string>
+
+std::string ImageLayoutToString(VkImageLayout layout) {
+    switch (layout) {
+        case VK_IMAGE_LAYOUT_UNDEFINED:
+            return "VK_IMAGE_LAYOUT_UNDEFINED";
+        case VK_IMAGE_LAYOUT_GENERAL:
+            return "VK_IMAGE_LAYOUT_GENERAL";
+        case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+            return "VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL";
+        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+            return "VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL";
+        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
+            return "VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL";
+        case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+            return "VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL";
+        case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+            return "VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL";
+        case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+            return "VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL";
+        case VK_IMAGE_LAYOUT_PREINITIALIZED:
+            return "VK_IMAGE_LAYOUT_PREINITIALIZED";
+        case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL:
+            return "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL";
+        case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL:
+            return "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL";
+        case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
+            return "VK_IMAGE_LAYOUT_PRESENT_SRC_KHR";
+        case VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR:
+            return "VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR";
+        case VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV:
+            return "VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV";
+        case VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT:
+            return "VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT";
+        default:
+            return "UNKNOWN_LAYOUT";
+    }
+}
+
 RenderResourceType RenderGraphTexture::getType() const {
     return RenderResourceType::ETexture;
+}
+unsigned short RenderGraphTexture::defaultUsage() const {
+    return 0;
 }
 void RenderGraphTexture::resloveUsage(ResourceBarrierInfo& barrierInfo, uint16_t lastUsage, uint16_t nextUsage, RenderPassType lastPassType, RenderPassType nextPassType) {
     auto oldLayout = ImageUtil::getDefaultLayout(static_cast<TextureUsage>(lastUsage));
@@ -57,6 +100,7 @@ void RenderGraphTexture::resloveUsage(ResourceBarrierInfo& barrierInfo, uint16_t
     imageBarrier.image = mHwTexture->getVkImage().getHandle();
     imageBarrier.subresourceRange = getHwTexture()->getVkImageView().getSubResourceRange();
 
+    LOGI("Image name: {}, old layout: {}, new layout: {}", mName.c_str(), ImageLayoutToString(vkOldLayout).c_str(), ImageLayoutToString(vkNewLayout).c_str());
     mHwTexture->getVkImage().setLayout(newLayout);
 }
 

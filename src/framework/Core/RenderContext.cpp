@@ -78,7 +78,7 @@ RenderContext::RenderContext(Device& device, VkSurfaceKHR surface, Window& windo
 
     for (uint32_t i = 0; i < getSwapChainImageCount(); i++) {
         frameResources.emplace_back(std::make_unique<FrameResource>(device));
-        frameResources.back()->graphicCommandBuffer = std::make_unique<CommandBuffer>(device.getHandle(),device.getCommandPool().getHandle(),vkGraphicCommandBuffers[i], VK_QUEUE_GRAPHICS_BIT);
+        frameResources.back()->graphicCommandBuffer = std::make_unique<CommandBuffer>(device.getHandle(), device.getCommandPool().getHandle(), vkGraphicCommandBuffers[i], VK_QUEUE_GRAPHICS_BIT);
     }
 
     maxPushConstantSize = device.getProperties().limits.maxPushConstantsSize;
@@ -154,7 +154,7 @@ void RenderContext::submitAndPresent(CommandBuffer& commandBuffer, VkFence fence
     queue.wait();
 }
 
-void RenderContext::submit(CommandBuffer& commandBuffer, bool waiteFence,VkQueueFlagBits queueFlags ) {
+void RenderContext::submit(CommandBuffer& commandBuffer, bool waiteFence, VkQueueFlagBits queueFlags) {
     commandBuffer.endRecord();
     auto queue = device.getQueueByFlag(queueFlags, 0);
 
@@ -324,8 +324,8 @@ RenderContext& RenderContext::bindPrimitiveGeom(CommandBuffer& commandBuffer, co
     InputAssemblyState inputAssemblyState = pipelineState.getInputAssemblyState();
     inputAssemblyState.topology           = GetVkPrimitiveTopology(primitive.primitiveType);
 
-   // vertexInputState.attributes.push_back({.location = maxLoaction + 1, .binding = maxLoaction + 1, .format = VK_FORMAT_R32_UINT, .offset = 0});
-  //  vertexInputState.bindings.push_back({.binding = maxLoaction + 1, .stride = sizeof(uint32_t), .inputRate = VK_VERTEX_INPUT_RATE_INSTANCE});
+    // vertexInputState.attributes.push_back({.location = maxLoaction + 1, .binding = maxLoaction + 1, .format = VK_FORMAT_R32_UINT, .offset = 0});
+    //  vertexInputState.bindings.push_back({.binding = maxLoaction + 1, .stride = sizeof(uint32_t), .inputRate = VK_VERTEX_INPUT_RATE_INSTANCE});
 
     pipelineState.setVertexInputState(vertexInputState).setInputAssemblyState(inputAssemblyState);
 
@@ -376,11 +376,11 @@ RenderContext& RenderContext::bindScene(CommandBuffer& commandBuffer, const Scen
 
     if (scene.usePrimitiveIdBuffer()) {
         vertexInputState.attributes.push_back({.location = maxLoaction + 1, .binding = maxLoaction + 1, .format = VK_FORMAT_R32_UINT, .offset = 0});
-        vertexInputState.bindings.push_back({.binding = maxLoaction + 1, .stride = sizeof(uint32_t), .inputRate = scene.getMergeDrawCall()?VK_VERTEX_INPUT_RATE_VERTEX:VK_VERTEX_INPUT_RATE_INSTANCE});
+        vertexInputState.bindings.push_back({.binding = maxLoaction + 1, .stride = sizeof(uint32_t), .inputRate = scene.getMergeDrawCall() ? VK_VERTEX_INPUT_RATE_VERTEX : VK_VERTEX_INPUT_RATE_INSTANCE});
         std::vector<const Buffer*> buffers = {&scene.getPrimitiveIdBuffer()};
         commandBuffer.bindVertexBuffer(maxLoaction + 1, buffers, {0});
     }
-                  
+
     commandBuffer.bindIndicesBuffer(scene.getIndexBuffer(), 0, scene.getIndexType());
 
     pipelineState.setVertexInputState(vertexInputState);
@@ -588,7 +588,7 @@ void RenderContext::flushAndDrawMeshTasks(CommandBuffer& commandBuffer, uint gro
 void RenderContext::beginRenderPass(CommandBuffer& commandBuffer, RenderTarget& renderTarget, const std::vector<SubpassInfo>& subpassInfos) {
     auto& renderPass  = device.getResourceCache().requestRenderPass(renderTarget.getAttachments(), subpassInfos);
     auto& framebuffer = device.getResourceCache().requestFrameBuffer(
-        renderTarget, renderPass,renderTarget.getExtent());
+        renderTarget, renderPass, renderTarget.getExtent());
 
     commandBuffer.beginRenderPass(renderPass, framebuffer, renderTarget.getDefaultClearValues(), {});
 
@@ -598,8 +598,6 @@ void RenderContext::beginRenderPass(CommandBuffer& commandBuffer, RenderTarget& 
 
     pipelineState.setRenderPass(renderPass);
     pipelineState.setSubpassIndex(0);
-
-    
 }
 
 void RenderContext::nextSubpass(CommandBuffer& commandBuffer) {
@@ -625,8 +623,8 @@ void RenderContext::flushPushConstantStage(CommandBuffer& commandBuffer) {
     auto& pipelineLayout    = pipelineState.getPipelineLayout();
     auto  pushConstantRange = pipelineLayout.getPushConstantRangeStage(storePushConstants.size());
 
-    if(pushConstantRange == 0) {
-         pushConstantRange = pipelineLayout.getPushConstantRangeStage(storePushConstants.size());
+    if (pushConstantRange == 0) {
+        pushConstantRange = pipelineLayout.getPushConstantRangeStage(storePushConstants.size());
         LOGE("Push Constant Size is too large,device support {},but current size is {}", maxPushConstantSize, storePushConstants.size());
     }
     vkCmdPushConstants(commandBuffer.getHandle(), pipelineLayout.getHandle(), pushConstantRange, 0, storePushConstants.size(), storePushConstants.data());
@@ -669,8 +667,8 @@ RenderContext& RenderContext::bindPushConstants(const std::vector<uint8_t>& push
     storePushConstants.insert(storePushConstants.end(), pushConstants.begin(), pushConstants.end());
     return *this;
 }
-RenderContext &  RenderContext::bindShaders(const ShaderPipelineKey& shaderKeys) {
-    auto & pipelineLayout = device.getResourceCache().requestPipelineLayout(shaderKeys);
+RenderContext& RenderContext::bindShaders(const ShaderPipelineKey& shaderKeys) {
+    auto& pipelineLayout = device.getResourceCache().requestPipelineLayout(shaderKeys);
     pipelineState.setPipelineLayout(pipelineLayout);
     return *this;
 }
@@ -699,11 +697,11 @@ void RenderContext::handleSurfaceChanges() {
                                                               swapchain->getSurface(),
                                                               &surface_properties))
 
-   // if (surfaceExtent.width != surface_properties.currentExtent.width || surfaceExtent.height != surface_properties.currentExtent.height) {
-        device.waitIdle();
-        surfaceExtent = surface_properties.currentExtent;
-        recrateSwapChain(surfaceExtent);
-  //  }
+    // if (surfaceExtent.width != surface_properties.currentExtent.width || surfaceExtent.height != surface_properties.currentExtent.height) {
+    device.waitIdle();
+    surfaceExtent = surface_properties.currentExtent;
+    recrateSwapChain(surfaceExtent);
+    //  }
 }
 
 void RenderContext::recrateSwapChain(VkExtent2D extent) {

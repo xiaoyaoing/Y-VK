@@ -409,9 +409,23 @@ void RenderGraph::execute(CommandBuffer& commandBuffer) {
         pass->resolveResourceUsages(*this, commandBuffer);
         pass->execute(*this, commandBuffer);
 
+        ResourceBarrierInfo barrierInfo;
+
         for (const auto& resourceNode : pass->destroy) {
-            //getBlackBoard().remove(texture->getName());
-            resourceNode->destroy();
+            auto firstPass = resourceNode->first;
+            auto state = firstPass->getResourceUsage(resourceNode->handle);
+            auto curState = resourceStateTracker.getResourceState(resourceNode->handle);
+            unsigned short srcUsage;
+            RenderPassType srcState;
+            resourceNode->resloveUsage(barrierInfo,std::get<1>(curState),state,pass->getType(),firstPass->getType());
+        }
+
+
+        auto depdencyInfo = barrierInfo.GetVkDependencyInfo();
+        vkCmdPipelineBarrier2(commandBuffer.getHandle(),&depdencyInfo);
+
+        for (const auto& resource : pass->destroy) {
+            resource->destroy();
         }
     }
 }

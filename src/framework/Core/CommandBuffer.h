@@ -97,6 +97,6 @@ public:
 protected:
     VkQueueFlags    mQueueFlag{VK_QUEUE_GRAPHICS_BIT};
     VkCommandBuffer mCommandBuffer;
-    VkDevice         mDevice;
+    VkDevice        mDevice;
     VkCommandPool   mCommandPool;
 };

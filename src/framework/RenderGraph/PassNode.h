@@ -49,7 +49,7 @@ public:
     void addResourceUsage(RenderGraphHandle handle, uint16_t usage);
     bool active() { return mActive & getRefCount() > 0; }
     void setActive(bool active) { mActive = active; }
-
+    uint16_t getResourceUsage(RenderGraphHandle handle) const;
     virtual void                   execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) = 0;
     virtual RenderPassType getType() const { return RenderPassType::UNDEFINED; }
 
