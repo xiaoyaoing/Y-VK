@@ -99,22 +99,9 @@ void main(){
         
         const ivec2 test_coord = pixel_coord_local - 1;
         vec3 test_coord_dir = oct_decode(normalized_oct_coord(test_coord, OUTPUT_SIDE));
-
-        vec2 t1 = normalized_oct_coord(test_coord, OUTPUT_SIDE);
-
-        if(abs(t1.x)>1){
-            debugPrintfEXT("t1: %f %f %d %d\n",t1.x,t1.y,test_coord.x,test_coord.y);
-        }
-
-        vec2 t2 = encode_to_oct(test_coord_dir);
-
-        vec3 t3 = oct_decode(t2);
-
         vec2 res = encode_to_oct(vec3(0,0,1)) ;
         res = res * 0.5  * float(OUTPUT_SIDE) + 0.5f * float(OUTPUT_SIDE);
 
-//        debugPrintfEXT("res: %f %f t1: %f %f t2: %f %f %d %d\n",res.x,res.y,t1.x,t1.y,t2.x,t2.y,test_coord.x,test_coord.y);
-//        debugPrintfEXT("test_coord_dir: %f %f %f t3: %f %f %f\n",test_coord_dir.x,test_coord_dir.y,test_coord_dir.z,t3.x,t3.y,t3.z);
         
         
         float total_weight = 0.0;

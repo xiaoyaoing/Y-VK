@@ -72,17 +72,8 @@ vec2 get_probe_color_uv(ivec3 probe_coord,vec3 dir,int side_length){
     vec2 pixel_coord = vec2(get_pixel_coord_top_left(probe_coord,side_length+2));
     pixel_coord += 0.5f * vec2(side_length);
     pixel_coord += (encode_to_oct(dir)) * 0.5 * float(side_length);
-    
-//    if(dir == vec3(-1,0,0)){
-//        debugPrintfEXT("pixel_coord: %f %f\n",pixel_coord.x,pixel_coord.y);
-//    }
-//   // return pixel_coord / vec2(texture_width, texture_height);
-
-   // return pixel_coord / vec2(side_length+2);
-    
     float texture_width = side_length == PROBE_DEPTH_SIDE ? ddgi_ubo.depth_width : ddgi_ubo.irradiance_width;
     float texture_height = side_length == PROBE_DEPTH_SIDE ? ddgi_ubo.depth_height : ddgi_ubo.irradiance_height;
-    
     return pixel_coord / vec2(texture_width, texture_height);
 }
 

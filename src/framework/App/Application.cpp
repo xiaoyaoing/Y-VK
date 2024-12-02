@@ -218,8 +218,8 @@ void Application::update() {
 
     RenderGraph graph(*device);
     graph.importTexture(RENDER_VIEW_PORT_IMAGE_NAME, &renderContext->getCurHwtexture());
-
-    if (scene->getLoadCompleteInfo().GetSceneLoaded()) {
+    
+    if (scene && scene->getLoadCompleteInfo().GetSceneLoaded()) {
         if(sceneFirstLoad){
             onSceneLoaded();
         }

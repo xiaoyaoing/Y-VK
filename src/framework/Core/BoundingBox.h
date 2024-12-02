@@ -48,6 +48,18 @@ public:
 
     const auto& max() const noexcept { return m_max; }
 
+    BBox operator+(const BBox& b) const noexcept {
+        BBox ret = *this;
+        ret.unite(b);
+        return ret;
+    }
+
+    BBox operator+(const glm::vec3& p) const noexcept {
+        BBox ret = *this;
+        ret.unite(p);
+        return ret;
+    }
+
 private:
     glm::vec3 m_min, m_max;
 };
