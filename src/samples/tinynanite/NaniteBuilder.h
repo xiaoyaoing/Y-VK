@@ -5,6 +5,7 @@
 #include <functional>
 #include <map>
 #include <set>
+#include <unordered_set>
 #include <span>
 #include <vec3.hpp>
 #include <vector>
@@ -90,7 +91,7 @@ struct Cluster {
     glm::vec3 m_max_pos = glm::vec3(-1e30f, -1e30f, -1e30f);
 
     std::vector<int> face_parent_cluster_group; //size == m_positions.size / 3
-    std::set<uint32_t> m_linked_cluster;
+    std::unordered_set<uint32_t> m_linked_cluster;
     uint64_t guid;
     Cluster() = default;
     float simplify(uint32_t targetNumTris);
@@ -106,9 +107,9 @@ struct Cluster {
     
 };
 
-struct ClusterGroup {
-    
-};
+// struct ClusterGroup {
+//     
+// };
 
 
 struct NnaiteBVH {
@@ -133,7 +134,7 @@ struct GraphPartitioner {
         uint32_t end;
     };
     uint32_t targetPart;
-    std::vector<Range> ranges;
+    // std::vector<Range> ranges;
     std::vector<idx_t> indexes;
     std::vector<idx_t> partitionIDs;
     uint32_t numElements;

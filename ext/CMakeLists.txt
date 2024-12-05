@@ -153,4 +153,5 @@ add_subdirectory(tinyexr)
 target_include_directories(tinyexr PUBLIC ${TINYEXR_DIR})
 
 add_subdirectory(metis)
+add_subdirectory(meshoptimizer)
 

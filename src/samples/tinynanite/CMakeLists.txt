@@ -11,5 +11,5 @@ file(GLOB_RECURSE MSG_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp" "${CMAKE_CURRENT
 
 add_executable(${FOLDER_NAME} ${MSG_FILES} ${shaders_src})
 
-target_link_libraries(${FOLDER_NAME} framework metis)
+target_link_libraries(${FOLDER_NAME} framework metis meshoptimizer)
 
