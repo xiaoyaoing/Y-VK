@@ -2,39 +2,15 @@
 
 #include "Common/RTConfing.h"
 #include "Core/Buffer.h"
-#include "Core/CommandBuffer.h"
-#include "Core/Pipeline.h"
-#include "Core/FrameBuffer.h"
-#include "Core/RenderPass.h"
 #include "Core/Device/Device.h"
-#include <Core/Images/Image.h>
-#include "Core/Queue.h"
 #include "PlatForm/Window.h"
-#include "Core/CommandPool.h"
-#include "Core/SwapChain.h"
-#include "Core/RenderTarget.h"
 #include "Core/RenderContext.h"
-#include <Core/Descriptor/DescriptorPool.h>
-#include <Core/Descriptor/DescriptorLayout.h>
-#include <Core/Descriptor/DescriptorSet.h>
-#include "Core/Images/ImageView.h"
-#include "Core/Texture.h"
 #include "Scene/Compoments/Camera.h"
 #include "Gui/InputEvent.h"
 #include "Gui/Gui.h"
 
-#include <stb_image.h>
-#include <ext/matrix_clip_space.hpp>
-#include <ext/matrix_transform.hpp>
-#include <ext/matrix_clip_space.hpp>
-#include <spdlog/spdlog.h>
 #include <vk_mem_alloc.h>
-
 #include <vector>
-#include <optional>
-#include <chrono>
-
-#include <imgui.h>
 
 #include "Common/Timer.h"
 #include "Core/View.h"

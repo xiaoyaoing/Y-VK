@@ -63,3 +63,7 @@ public:
 private:
     glm::vec3 m_min, m_max;
 };
+
+class SphereBox {
+    
+};

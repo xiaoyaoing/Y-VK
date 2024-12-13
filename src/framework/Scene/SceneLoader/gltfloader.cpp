@@ -415,7 +415,7 @@ void GLTFLoadingImpl::loadLights(const tinygltf::Model& model) {
         SgLight sgLight;
         sgLight.lightProperties.color = glm::vec3(1.0f, 1.0f, 1.0f);
         sgLight.lightProperties.intensity = 1.0f;
-        sgLight.lightProperties.position = glm::vec3(0.0f, 300.0f, 0.0f);
+        sgLight.lightProperties.position = glm::vec3(0.0f, 20.0f, 0.0f);
         sgLight.lightProperties.direction = glm::normalize(glm::vec3(-1, -1, -1));
         sgLight.type = LIGHT_TYPE::Directional;
         this->lights.push_back(sgLight);

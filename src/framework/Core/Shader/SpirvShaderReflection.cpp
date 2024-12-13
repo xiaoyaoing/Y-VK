@@ -1,5 +1,6 @@
 #include "SpirvShaderReflection.h"
 #include "spirv_reflect.hpp"
+#include "Common/Log.h"
 
 //first just handle pipeline layout 相关
 template<spv::Decoration T>
@@ -100,7 +101,7 @@ inline void readResourceSize(const spirv_cross::Compiler& compiler,
                              ShaderResource&              shaderResource) {
     const auto& sprivType = compiler.get_type_from_variable(resource.id);
 
-    shaderResource.size = toUint32(compiler.get_declared_struct_size(sprivType));
+    shaderResource.size = (compiler.get_declared_struct_size(sprivType));
 }
 
 inline void readShaderResourceInput(const spirv_cross::CompilerReflection& compiler,

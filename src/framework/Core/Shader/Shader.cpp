@@ -5,6 +5,7 @@
 #include <fstream>
 #include "Common/FIleUtils.h"
 #include "Core/Shader/GlslCompiler.h"
+#include "Core/Shader/HlslCompiler.h"
 
 #include "spdlog/fmt/bundled/os.h"
 #include "Core/Shader/SpirvShaderReflection.h"
@@ -14,7 +15,9 @@
 Shader::SHADER_LOAD_MODE getShaderMode(const std::string& ext) {
     if (ext == "spv")
         return Shader::SPV;
-    return Shader::ORIGIN_SHADER;
+    if (ext == "hlsl")
+        return Shader::HLSL;
+    return Shader::GLSL;
 }
 
 size_t Shader::getId() const {
@@ -171,7 +174,8 @@ void ShaderVariant::update_id() {
 
 Shader::Shader(Device& device, const ShaderKey& key, VkShaderStageFlagBits spv_stage) : device(device) {
     std::string           shaderFilePath = FileUtils::getShaderPath(key.path);
-    auto                  mode           = getShaderMode(FileUtils::getFileExt(shaderFilePath));
+    auto                  shaderExt      = FileUtils::getFileExt(shaderFilePath);
+    auto                  mode           = getShaderMode(shaderExt);
     std::vector<uint32_t> spirvCode;
 
     auto defineString = key.variant.get_preamble();
@@ -180,13 +184,15 @@ Shader::Shader(Device& device, const ShaderKey& key, VkShaderStageFlagBits spv_s
         mode  = SPV;
         stage = spv_stage;
     } else {
-        stage               = find_shader_stage(FileUtils::getFileExt(shaderFilePath));
+        if (mode == GLSL)
+            stage = find_shader_stage(FileUtils::getFileExt(shaderFilePath));
+        else
+            stage = key.stage;
         std::string spvPath = GetSpvPathFromShaderPath(shaderFilePath, defineString);
         if (std::filesystem::exists(spvPath)) {
             auto spvUpdateTime    = std::filesystem::last_write_time(spvPath);
             auto shaderUpdateTime = std::filesystem::last_write_time(shaderFilePath);
-            // localtime_s(spvUpdateTime);
-            if (spvUpdateTime > shaderUpdateTime && !GlslCompiler::forceRecompile) {
+            if (spvUpdateTime > shaderUpdateTime && !GlslCompiler::forceRecompile && !HlslCompiler::forceRecompile) {
                 mode           = SPV;
                 shaderFilePath = spvPath;
                 LOGI("Cached shader spv found: {},Spv last update time {}", shaderFilePath, FileUtils::getFileTimeStr(spvPath));
@@ -197,25 +203,41 @@ Shader::Shader(Device& device, const ShaderKey& key, VkShaderStageFlagBits spv_s
     if (mode == SHADER_LOAD_MODE::SPV) {
         auto shaderSource = FileUtils::readShaderBinary(shaderFilePath);
         if (shaderSource.empty()) {
-            mode = SHADER_LOAD_MODE::ORIGIN_SHADER;
+            mode = getShaderMode(shaderExt);
         }
         spirvCode.assign(reinterpret_cast<const uint32_t*>(shaderSource.data()),
                          reinterpret_cast<const uint32_t*>(shaderSource.data() + shaderSource.size()));
     }
-    if (mode == SHADER_LOAD_MODE::ORIGIN_SHADER) {
+
+    if (mode != SHADER_LOAD_MODE::SPV) {
         std::string shaderLog;
-        auto        shaderBuffer = FileUtils::readShaderBinary(shaderFilePath);
-        if (!GlslCompiler::compileToSpirv(stage, shaderBuffer, "main", spirvCode, shaderLog, shaderFilePath, key)) {
-            LOGE("Failed to compile shader {}, Error: {}", shaderFilePath, shaderLog.c_str())
+        auto        shaderBuffer   = FileUtils::readShaderBinary(shaderFilePath);
+        bool        compileSuccess = false;
+
+        if (mode == SHADER_LOAD_MODE::HLSL) {
+            compileSuccess = HlslCompiler::compileToSpirv(stage, shaderBuffer, "main", spirvCode, shaderLog, shaderFilePath, key);
+            if (!compileSuccess) {
+                LOGE("Failed to compile HLSL shader {}, Error: {}", shaderFilePath, shaderLog.c_str());
+            } else {
+                LOGI("HLSL shader compiled successfully {}", shaderFilePath.c_str());
+            }
         } else {
-            LOGI("Shader compiled from source code succrssfully {}", shaderFilePath.c_str());
+            compileSuccess = GlslCompiler::compileToSpirv(stage, shaderBuffer, key.entryPoint, spirvCode, shaderLog, shaderFilePath, key);
+            if (!compileSuccess) {
+                LOGE("Failed to compile GLSL shader {}, Error: {}", shaderFilePath, shaderLog.c_str());
+            } else {
+                LOGI("GLSL shader compiled successfully {}", shaderFilePath.c_str());
+            }
         }
-        std::string   spvPath = GetSpvPathFromShaderPath(shaderFilePath, defineString);
-        std::ofstream file    = OpenOrCreateFile(spvPath);
-        file.write(reinterpret_cast<const char*>(spirvCode.data()), spirvCode.size() * sizeof(uint32_t));
-        
-        file.close();
+
+        if (compileSuccess) {
+            std::string   spvPath = GetSpvPathFromShaderPath(shaderFilePath, defineString);
+            std::ofstream file    = OpenOrCreateFile(spvPath);
+            file.write(reinterpret_cast<const char*>(spirvCode.data()), spirvCode.size() * sizeof(uint32_t));
+            file.close();
+        }
     }
+
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.codeSize = spirvCode.size() * sizeof(uint32_t);

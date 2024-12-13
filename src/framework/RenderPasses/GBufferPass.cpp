@@ -1,5 +1,6 @@
 #include "GBufferPass.h"
 
+#include "imgui.h"
 #include "Common/ResourceCache.h"
 #include "Core/RenderContext.h"
 #include "Core/View.h"

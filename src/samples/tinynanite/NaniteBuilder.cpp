@@ -45,7 +45,7 @@ static __forceinline uint32_t Murmur32(std::initializer_list<uint32_t> InitList)
 void SaveMeshInputDataToObj(const MeshInputData& meshData, const std::string& filePath) {
     std::ofstream file(filePath);
     if (!file.is_open()) {
-        LOGE("Failed to open file for writing: %s", filePath.c_str());
+        LOGE("Failed to open file for writing: {}", filePath.c_str());
         return;
     }
 
@@ -92,7 +92,7 @@ void SaveMeshInputDataToObj(const MeshInputData& meshData, const std::string& fi
     }
 
     file.close();
-    LOGI("Successfully saved mesh to: %s", filePath.c_str());
+    LOGI("Successfully saved mesh to: {}", filePath.c_str());
 }
 
 uint32_t HashPosition(const glm::vec3& Position) {
@@ -375,15 +375,24 @@ Cluster InitClusterFromMeshInputData(MeshInputData& InputMeshData, uint32_t base
         for (int k = 0; k < 3; k++) {
             uint32_t globalIndex = InputMeshData.TriangleIndices[baseTriangle + i * 3 + k];
 
-            if (std::find(cluster.m_indexes.begin(), cluster.m_indexes.end(), globalIndex) == cluster.m_indexes.end()) {
+            // if (std::find(cluster.m_indexes.begin(), cluster.m_indexes.end(), globalIndex) == cluster.m_indexes.end()) {
                 cluster.m_indexes.push_back(globalIndex);
                 cluster.m_positions.push_back(InputMeshData.Vertices.Positions[globalIndex]);
                 cluster.m_normals.push_back(InputMeshData.Vertices.Normals[globalIndex]);
                 cluster.m_uvs.push_back(InputMeshData.Vertices.UVs[globalIndex]);
-            }
+            // }
         }
     }
 
+    cluster.m_bounding_box = BBox();
+    cluster.m_min_pos      = glm::vec3(1e30f);
+    cluster.m_max_pos      = glm::vec3(-1e30f);
+    cluster.m_mip_level    = InputMeshData.mipLevel;
+    for (const auto& pos : cluster.m_positions) {
+        cluster.m_bounding_box.unite(pos);
+        cluster.m_min_pos = glm::min(cluster.m_min_pos, pos);
+        cluster.m_max_pos = glm::max(cluster.m_max_pos, pos);
+    }
     return cluster;
 }
 
@@ -489,6 +498,7 @@ void clusterTriangles1(std::vector<Cluster>& clusters, MeshInputData& InputMeshD
         cluster.m_bounding_box = BBox();
         cluster.m_min_pos      = glm::vec3(1e30f);
         cluster.m_max_pos      = glm::vec3(-1e30f);
+        cluster.m_mip_level    = InputMeshData.mipLevel;
 
         for (const auto& pos : cluster.m_positions) {
             cluster.m_bounding_box.unite(pos);
@@ -831,44 +841,21 @@ GraphAdjancy Cluster::buildAdjacency() {
 
 // ClusterGroup 结构体定义
 struct ClusterGroup {
-    uint32_t startIndex; // 在clusters数组中的起始索引
-    uint32_t count;      // 包含的cluster数量
-    BBox     boundingBox;// 组的包围盒
-    float    errorMetric;// LOD误差度量
-
+    // uint32_t startIndex; // 在clusters数组中的起始索引
+    // uint32_t count;      // 包含的cluster数量
+    std::vector<uint32_t> clusterIndexes{};
+    BBox                  boundingBox;// 组的包围盒
+    float                 errorMetric;// LOD误差度量
+    uint                  lodLevel = 0;
     ClusterGroup()
-        : startIndex(0), count(0), boundingBox(), errorMetric(0.0f) {}
-
-    // 从一组clusters初始化
-    void initFromClusters(const std::vector<Cluster>& clusters, uint32_t start, uint32_t clusterCount) {
-        startIndex = start;
-        count      = clusterCount;
-
-        // 计算包围盒
-        boundingBox = BBox();
-        errorMetric = 0.0f;
-
-        for (uint32_t i = 0; i < count; i++) {
-            const auto& cluster = clusters[startIndex + i];
-            boundingBox         = boundingBox + cluster.m_bounding_box;
-        }
-    }
-
-    // 获取组内的clusters
-    std::span<Cluster> getClusters(std::vector<Cluster>& clusters) {
-        return std::span<Cluster>(&clusters[startIndex], count);
-    }
-
-    std::span<const Cluster> getClusters(const std::vector<Cluster>& clusters) const {
-        return std::span<const Cluster>(&clusters[startIndex], count);
-    }
+        : boundingBox(), errorMetric(0.0f) {}
 };
 
 float simplifyMeshData1(MeshInputData& inputData, uint32_t targetNumTris) {
     if (inputData.TriangleIndices.empty() || targetNumTris >= inputData.TriangleIndices.size() / 3) {
         return 0.0f;
     }
-    SaveMeshInputDataToObj(inputData, "before.obj");
+    // SaveMeshInputDataToObj(inputData, "before.obj");
 
     // 准备顶点位置数据
     size_t             vertexCount = inputData.Vertices.Positions.size();
@@ -932,7 +919,7 @@ float simplifyMeshData1(MeshInputData& inputData, uint32_t targetNumTris) {
     } while (float(simplified_index_count) > float(targetNumTris * 3) * 1.1f && iteration < max_iter);
 
     if (iteration >= max_iter) {
-        LOGE("simplify iteration exceed max iteration %u", max_iter);
+        LOGE("simplify iteration exceed max iteration {}", max_iter);
         return 0.0f;
     }
 
@@ -1000,10 +987,235 @@ float simplifyMeshData1(MeshInputData& inputData, uint32_t targetNumTris) {
     return lod_error;
 }
 
-// DAGReduce 函数定义
-void DAGReduce(std::vector<ClusterGroup>& groups, std::vector<Cluster>& clusters, std::atomic<uint32_t>& numClusters, std::span<uint32_t> children, uint32_t maxParents, uint32_t groupIndex, uint32_t MeshIndex) {
-    // 合并提供的clusters
-    // 合并提供的clusters
+// 在适当位置添加以下函数实现
+uint32_t CreateBVHNode(std::vector<BVHNode>& nodes) {
+    nodes.push_back(BVHNode());
+    return nodes.size() - 1;
+}
+
+BBox CalculateClusterBounds(const Cluster& cluster) {
+    BBox bounds;
+    for (const auto& pos : cluster.m_positions) {
+        bounds = bounds + pos;
+    }
+    return bounds;
+}
+
+// 计算BVH成本的辅助函数
+float BVH_Cost(const std::vector<BVHNode>& nodes, std::span<const uint32_t> nodeIndices) {
+    if (nodeIndices.empty()) return 0.0f;
+
+    BBox bound = nodes[nodeIndices[0]].bounds;
+    for (size_t i = 1; i < nodeIndices.size(); ++i) {
+        bound = bound + nodes[nodeIndices[i]].bounds;
+    }
+
+    glm::vec3 extent = bound.max() - bound.min();
+    return extent.x + extent.y + extent.z;
+}
+
+void BVH_SortNodes(const std::vector<BVHNode>& Nodes, std::span<uint32_t> NodeIndices, const std::vector<uint32_t>& ChildSizes) {
+    // 执行NANITE_MAX_BVH_NODE_FANOUT_BITS次二分分割
+    for (uint32_t Level = 0; Level < NANITE_MAX_BVH_NODE_FANOUT_BITS; Level++) {
+        const uint32_t NumBuckets               = 1 << Level;
+        const uint32_t NumChildrenPerBucket     = NANITE_MAX_BVH_NODE_FANOUT >> Level;
+        const uint32_t NumChildrenPerBucketHalf = NumChildrenPerBucket >> 1;
+
+        uint32_t BucketStartIndex = 0;
+        for (uint32_t BucketIndex = 0; BucketIndex < NumBuckets; BucketIndex++) {
+            const uint32_t FirstChild = NumChildrenPerBucket * BucketIndex;
+
+            uint32_t Sizes[2] = {0, 0};
+            for (uint32_t i = 0; i < NumChildrenPerBucketHalf; i++) {
+                Sizes[0] += ChildSizes[FirstChild + i];
+                Sizes[1] += ChildSizes[FirstChild + i + NumChildrenPerBucketHalf];
+            }
+
+            auto NodeIndices01 = NodeIndices.subspan(BucketStartIndex, Sizes[0] + Sizes[1]);
+            auto NodeIndices0  = NodeIndices.subspan(BucketStartIndex, Sizes[0]);
+            auto NodeIndices1  = NodeIndices.subspan(BucketStartIndex + Sizes[0], Sizes[1]);
+
+            BucketStartIndex += Sizes[0] + Sizes[1];
+
+            auto SortByAxis = [&](uint32_t AxisIndex) {
+                auto compareFunc = [&Nodes, AxisIndex](uint32_t A, uint32_t B) {
+                    glm::vec3 centerA = (Nodes[A].bounds.min() + Nodes[A].bounds.max()) * 0.5f;
+                    glm::vec3 centerB = (Nodes[B].bounds.min() + Nodes[B].bounds.max()) * 0.5f;
+                    return centerA[AxisIndex] < centerB[AxisIndex];
+                };
+
+                std::sort(NodeIndices01.begin(), NodeIndices01.end(), compareFunc);
+            };
+
+            float    BestCost      = MAX_FLT;
+            uint32_t BestAxisIndex = 0;
+
+            // 尝试沿不同轴排序并选择最佳的
+            const uint32_t NumAxes = 3;
+            for (uint32_t AxisIndex = 0; AxisIndex < NumAxes; AxisIndex++) {
+                SortByAxis(AxisIndex);
+
+                float Cost = BVH_Cost(Nodes, NodeIndices0) + BVH_Cost(Nodes, NodeIndices1);
+                if (Cost < BestCost) {
+                    BestCost      = Cost;
+                    BestAxisIndex = AxisIndex;
+                }
+            }
+
+            // 如果最佳轴不是最后一个，则重新排序
+            if (BestAxisIndex != NumAxes - 1) {
+                SortByAxis(BestAxisIndex);
+            }
+        }
+    }
+}
+
+uint32_t BuildBVHTopDown(std::vector<BVHNode>& nodes, std::span<uint32_t> indices, bool bSort) {
+    const uint32_t numNode = indices.size();
+    if (numNode == 1) {
+        return indices[0];
+    }
+
+    auto&    node      = nodes.emplace_back();
+    uint32_t nodeIndex = nodes.size() - 1;
+
+    if (indices.size() <= 4) {
+        node.children = std::vector<uint32_t>(indices.begin(), indices.end());
+        return nodeIndex;
+    }
+
+    uint32_t TopSize = NANITE_MAX_BVH_NODE_FANOUT;
+    while (TopSize * NANITE_MAX_BVH_NODE_FANOUT <= numNode) {
+        TopSize *= NANITE_MAX_BVH_NODE_FANOUT;
+    }
+
+    const uint32_t LargeChildSize    = TopSize;
+    const uint32_t SmallChildSize    = TopSize / NANITE_MAX_BVH_NODE_FANOUT;
+    const uint32_t MaxExcessPerChild = LargeChildSize - SmallChildSize;
+
+    std::vector<uint32_t> ChildSizes(NANITE_MAX_BVH_NODE_FANOUT);
+
+    uint32_t Excess = numNode - TopSize;
+    for (int32_t i = NANITE_MAX_BVH_NODE_FANOUT - 1; i >= 0; i--) {
+        const uint32_t ChildExcess = std::min(Excess, MaxExcessPerChild);
+        ChildSizes[i]              = SmallChildSize + ChildExcess;
+        if(ChildSizes[i] == 3722304989) {
+            LOGE("error");
+        }
+        Excess -= ChildExcess;
+    }
+    assert(Excess == 0);
+
+    if (bSort) {
+        BVH_SortNodes(nodes, indices, ChildSizes);
+    }
+
+    uint32_t Offset = 0;
+    for (uint32_t i = 0; i < NANITE_MAX_BVH_NODE_FANOUT; i++) {
+        uint32_t ChildSize = ChildSizes[i];
+        uint32_t NodeIndex = BuildBVHTopDown(nodes, indices.subspan(Offset, ChildSize), bSort);
+        nodes[nodeIndex].children.push_back(NodeIndex);
+        Offset += ChildSize;
+    }
+
+    return nodeIndex;
+}
+
+SphereBox CalculateSphereBox(const std::vector<SphereBox>& boxes) {
+    return boxes[0];
+    // SphereBox result;
+    // for (const auto& box : boxes) {
+    //     result = result + box;
+    // }
+    // return result;
+}
+
+uint32_t BuildBVHRecursive(std::vector<BVHNode>& nodes, std::vector<TNode> & tnodes, const std::vector<ClusterGroup> groups, uint32_t rootIndex, uint32_t depth) {
+    auto childNum = nodes[rootIndex].children.size();
+
+    uint32 TNodeIndex = tnodes.size();
+    auto&  tnode      = tnodes.emplace_back();
+    for (uint32_t i = 0; i < childNum; i++) {
+        uint32_t childIndex = nodes[rootIndex].children[i];
+        if (nodes[childIndex].isLeaf) {
+            tnode.ClusterGroupPartIndex[childIndex] = nodes[childIndex].groupIndex;
+        } else {
+            auto                   childTNodeIndex = BuildBVHRecursive(nodes, tnodes, groups, childIndex, depth + 1);
+            auto                   childTNode      = tnodes[childTNodeIndex];
+            std::vector<SphereBox> sphereBoxes;
+            BBox                   box;
+            float                  minLodError = FLT_MAX;
+            float                  maxLodError = 0.0f;
+            for (uint32 grandChildIndex : childTNode.ClusterGroupPartIndex) {
+                auto& group = groups[grandChildIndex];
+                box         = box + group.boundingBox;
+                sphereBoxes.push_back(childTNode.LODBounds[grandChildIndex]);
+                minLodError = std::min(minLodError, group.errorMetric);
+                maxLodError = std::max(maxLodError, group.errorMetric);
+            }
+
+            tnode.Bounds[childIndex]             = box;
+            tnode.LODBounds[childIndex]          = CalculateSphereBox(sphereBoxes);
+            tnode.MinLODError[childIndex]        = minLodError;
+            tnode.MaxLODError[childIndex]        = maxLodError;
+            tnode.ChildrenStartIndex[childIndex] = childTNodeIndex;
+        }
+    }
+    return TNodeIndex;
+}
+
+NaniteBVH BuildBVH(const std::vector<Cluster>& clusters, const std::vector<ClusterGroup>& groups) {
+    NaniteBVH bvh;
+
+    // 按LOD级别对clusters进行分组
+    // std::map<uint32_t, std::vector<uint32_t>> lodClusters;
+    // for (uint32_t i = 0; i < clusters.size(); i++) {
+    //     lodClusters[clusters[i].m_mip_level].push_back(i);
+    //     if(clusters[i].m_mip_level>=10) {
+    //         int k = 1;
+    //     }
+    // }
+
+    std::vector<BVHNode> nodes(groups.size());
+    uint maxMipLevel = 0;
+    for (uint32_t i = 0; i < groups.size(); i++) {
+        nodes[i].groupIndex = i;
+        nodes[i].bounds       = groups[i].boundingBox;
+        nodes[i].isLeaf       = true;
+        nodes[i].lodLevel = groups[i].lodLevel;
+        maxMipLevel = std::max(maxMipLevel, groups[i].lodLevel);
+    }
+    std::vector<std::vector<uint32_t>> nodesByMip(maxMipLevel+1);
+
+    for (uint32_t i = 0; i < groups.size(); i++) {
+        nodesByMip[groups[i].lodLevel].push_back(i);
+    }
+    // for (const auto& [lodLevel, clusterIndices] : lodClusters) {
+    //     maxMipLevel = std::max(maxMipLevel, lodLevel);
+    // }
+
+   
+
+    std::vector<uint32_t> levelRoots;
+    for (int i = 0; i <= maxMipLevel; i++) {
+        if (nodesByMip[i].empty()) {
+            continue;
+        }
+        auto nodeIndex = BuildBVHTopDown(nodes, nodesByMip[i], true);
+        LOGI("i: {}, nodeIndex: {}", i, nodeIndex);
+        levelRoots.push_back(nodeIndex);
+    }
+    LOGI("BVH node1 count: {}", nodes.size());
+    auto root = BuildBVHTopDown(nodes, levelRoots, false);
+
+    LOGI("BVH node count: {}", nodes.size());
+    std::vector<TNode> tnodes;
+    BuildBVHRecursive(nodes, tnodes, groups, root, 0);
+
+    return bvh;
+}
+
+MeshInputData mergeClusterToMeshInputData(std::vector<Cluster>& clusters,  std::span<uint32_t> children) {
     MeshInputData mergedInputData;
 
     // 创建顶点重映射表
@@ -1053,12 +1265,17 @@ void DAGReduce(std::vector<ClusterGroup>& groups, std::vector<Cluster>& clusters
     }
 
     mergedInputData.TriangleCounts.push_back(mergedInputData.TriangleIndices.size() / 3);
+    mergedInputData.mipLevel = clusters[children[0]].m_mip_level + 1;
 
-    // ... 后续代码保持不变 ...
+    return mergedInputData;
+}
 
-    // 简化合并后的数据
+// DAGReduce 函数定义
+void DAGReduce(std::vector<ClusterGroup>& groups, std::vector<Cluster>& clusters, std::atomic<uint32_t>& numClusters, std::span<uint32_t> children, uint32_t maxParents, uint32_t groupIndex, uint32_t MeshIndex) {
+    auto mergedInputData = mergeClusterToMeshInputData(clusters, children);
     uint32_t targetNumTris = maxParents * ClusterSize;
     float    error         = simplifyMeshData1(mergedInputData, targetNumTris);
+
 
     // 使用clusterTriangles1重新划分
     std::vector<Cluster> newClusters;
@@ -1070,9 +1287,9 @@ void DAGReduce(std::vector<ClusterGroup>& groups, std::vector<Cluster>& clusters
 
     // 更新group信息
     ClusterGroup newGroup;
-    newGroup.startIndex = newClusterStart;
-    newGroup.count      = newClusters.size();
-    groups[groupIndex]  = std::move(newGroup);
+    newGroup.clusterIndexes = std::vector<uint32_t>(children.begin(), children.end());
+    newGroup.lodLevel       = mergedInputData.mipLevel;
+    groups[groupIndex]      = std::move(newGroup);
 }
 
 void BuildDAG(std::vector<ClusterGroup>& groups, std::vector<Cluster>& clusters, uint32_t ClusterStart, uint32_t clusterRangeNum, uint32_t MeshIndex, BBox MeshBounds) {
@@ -1080,13 +1297,14 @@ void BuildDAG(std::vector<ClusterGroup>& groups, std::vector<Cluster>& clusters,
     std::atomic<uint32_t> numClusters = 0;
     uint32_t              levelOffset = ClusterStart;
 
+    bool buildRoot = true;
     while (true) {
         numClusters = clusters.size();
         std::span<Cluster> levelClusters(&clusters[levelOffset], bFirstLevel ? clusterRangeNum : clusters.size() - levelOffset);
         bFirstLevel = false;
 
         if (levelClusters.size() < 2) {
-            break;
+           break;
         }
 
         if (levelClusters.size() <= MaxClusterGroupSize) {
@@ -1139,6 +1357,14 @@ void BuildDAG(std::vector<ClusterGroup>& groups, std::vector<Cluster>& clusters,
 
             // 处理每个partition组
             uint32_t groupIndex = 0;
+
+            for (auto& [partitionId, children] : partitionGroups) {
+                auto mergedInputData = mergeClusterToMeshInputData(clusters, children);
+                SaveMeshInputDataToObj(mergedInputData, FileUtils::getFilePath("mergedInputData"+std::to_string(groupIndex),"obj"));
+            }
+
+             exit(-1);
+
             for (auto& [partitionId, children] : partitionGroups) {
                 // 计算组内所有元素数量
                 uint32_t numGroupElements = 0;
@@ -1146,6 +1372,8 @@ void BuildDAG(std::vector<ClusterGroup>& groups, std::vector<Cluster>& clusters,
                     numGroupElements += clusters[clusterId].m_indexes.size() / 3;
                 }
 
+                if (buildRoot) {
+                }
                 // 计算最大父节点数量
                 uint32_t maxParents = numGroupElements / (ClusterSize * 2);
 
@@ -1155,7 +1383,7 @@ void BuildDAG(std::vector<ClusterGroup>& groups, std::vector<Cluster>& clusters,
                 groupIndex++;
             }
         }
-
+        buildRoot   = false;
         levelOffset = numClusters;
     }
 }
@@ -1208,9 +1436,13 @@ void NaniteBuilder::Build(MeshInputData& InputMeshData, MeshOutputData* OutFallb
             baseTriangle += numTriangles;
         }
     }
-
+    
+    
     std::vector<ClusterGroup> groups;
     BuildDAG(groups, clusters, 0, clusters.size(), 0, BBox());
+
+    NaniteBVH bvh = BuildBVH(clusters, groups);
+    LOGI("NaniteBuilder::Build Cluster Count: {} Group Count: {}", clusters.size(), groups.size());
     // ... 其余代码保持不变 ...
 }
 
@@ -1221,7 +1453,7 @@ void ConvertData(std::vector<T1>& data, std::vector<T2>& outData) {
 }
 
 std::unique_ptr<MeshInputData> NaniteBuilder::createNaniteExampleMeshInputData() {
-    auto primData      = PrimitiveLoader::loadPrimitive(FileUtils::getResourcePath("tiny_nanite/bunny.obj"));
+    auto primData      = PrimitiveLoader::loadPrimitive(FileUtils::getResourcePath("tiny_nanite/dragon.obj"));
     auto meshInputData = std::make_unique<MeshInputData>();
     ConvertData(primData->buffers[POSITION_ATTRIBUTE_NAME], meshInputData->Vertices.Positions);
     ConvertData(primData->buffers[NORMAL_ATTRIBUTE_NAME], meshInputData->Vertices.Normals);

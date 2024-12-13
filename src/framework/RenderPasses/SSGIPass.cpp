@@ -1,6 +1,7 @@
 #include "SSGIPass.h"
 
 #include "HizPass.h"
+#include "imgui.h"
 #include "Common/ResourceCache.h"
 #include "Common/TextureHelper.h"
 #include "Core/RenderContext.h"

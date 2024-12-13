@@ -1,7 +1,8 @@
-#include "Core/Vulkan.h"
 
 #pragma once
-
+#include <volk.h>
+#include <unordered_map>
+#include <string>
 class Device;
 
 //Type without binding point: Input Output PushConstant SpecializationConstant
@@ -111,9 +112,22 @@ private:
     void update_id();
 };
 
+enum ShaderStage : uint8_t {
+    UNDEFINED = 0,
+    VERTEX    = 1,
+    FRAGMENT  = 2,
+    COMPUTE   = 3,
+};
+
 struct ShaderKey {
-    std::string   path;
-    ShaderVariant variant;
+    std::string   path{};
+    ShaderVariant variant{};
+
+    using EntryPoint = std::string;
+    //Used for hlsl shader 
+    VkShaderStageFlagBits   stage{VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM};
+    EntryPoint entryPoint{"main"};
+    
     ShaderKey&    operator=(const std::string& _path) {
         this->path = _path;
         return *this;
@@ -151,11 +165,11 @@ class Shader {
 public:
     enum SHADER_LOAD_MODE {
         SPV,
-        ORIGIN_SHADER
+        GLSL,
+        HLSL
     };
 
     Shader(Device& device, const ShaderKey& key, VkShaderStageFlagBits stage = VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM);
-
 
     ~Shader();
 

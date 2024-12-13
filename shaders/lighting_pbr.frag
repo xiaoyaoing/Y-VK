@@ -88,7 +88,7 @@ void main(){
             pbr_info.LdotH = clamp(dot(light_dir, half_vector), 0.0, 1.0);
             pbr_info.VdotH = clamp(dot(view_dir, half_vector), 0.0, 1.0);
 
-            vec3 light_contribution = microfacetBRDF(pbr_info);// * apply_light(lights_info.lights[i], world_pos, normal) * calcute_shadow(lights_info.lights[i], world_pos);
+            vec3 light_contribution = microfacetBRDF(pbr_info) * apply_light(lights_info.lights[i], world_pos, normal) * calcute_shadow(lights_info.lights[i], world_pos);
             direct_contribution += light_contribution;
         }
     }

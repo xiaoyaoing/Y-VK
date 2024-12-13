@@ -12,3 +12,4 @@ cmake-build-release-visual-studio--2022
 .idea
 /resources/scenes
 /savedImage
+/target

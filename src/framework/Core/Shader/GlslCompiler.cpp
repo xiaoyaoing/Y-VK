@@ -1,22 +1,8 @@
-// #include "ext/glslang/glslang/Public/ShaderLang.h"
-// //
-// // Created by pc on 2023/8/17.
-// //
 #include "GlslCompiler.h"
-// #include "StandAlone/DirStackFileIncluder.h"
-// #include "glslang/Public/ResourceLimits.h"
-// #include "SPIRV/Logger.h"
-// #include "SPIRV/GlslangToSpv.h"
-// #include "ext/spirv-cross/spirv_glsl.hpp"
-
 #include "Shader.h"
-
 #include <filesystem>
-#include <SPIRV/GLSL.std.450.h>
 #include <SPIRV/GlslangToSpv.h>
 #include <StandAlone/DirStackFileIncluder.h>
-#include <glslang/Include/ShHandle.h>
-#include <glslang/OSDependent/osinclude.h>
 #include <glslang/Public/ResourceLimits.h>
 
 inline EShLanguage FindShaderLanguage(VkShaderStageFlagBits stage) {
