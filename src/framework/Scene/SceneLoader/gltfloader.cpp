@@ -295,7 +295,7 @@ struct GLTFLoadingImpl {
     int                          cur_tex_index{0};
 
     std::vector<std::shared_ptr<Camera>> cameras;
-
+    BBox sceneBBox;
     bool metallicRoughnessWorkflow;
 
     GLTFLoadingImpl(Device& device, const std::string& path, const SceneLoadingConfig& config, Scene* scene);
@@ -415,7 +415,7 @@ void GLTFLoadingImpl::loadLights(const tinygltf::Model& model) {
         SgLight sgLight;
         sgLight.lightProperties.color = glm::vec3(1.0f, 1.0f, 1.0f);
         sgLight.lightProperties.intensity = 1.0f;
-        sgLight.lightProperties.position = glm::vec3(0.0f, 20.0f, 0.0f);
+     //   sgLight.lightProperties.position = sceneBBox.center()+vec3(0,sceneBBox.extent().y/5.f * 3,0); 
         sgLight.lightProperties.direction = glm::normalize(glm::vec3(-1, -1, -1));
         sgLight.type = LIGHT_TYPE::Directional;
         this->lights.push_back(sgLight);
@@ -653,8 +653,13 @@ void GLTFLoadingImpl::processNode(const tinygltf::Node& node, const tinygltf::Mo
 
             LOGI("Primitive {} has {} vertices and {} indices {} {} material_idx", j, primVertexCount, curPrimitiveIndexCount, mIndexCount, primitive.material)
             auto transform          = modelTransforms[&node];
-            newPrimitive->setDimensions(transform.getLocalToWorldMatrix() * glm::vec4(posMin, 1.0f), transform.getLocalToWorldMatrix() * glm::vec4(posMax, 1.0f));
+            auto min = transform.getLocalToWorldMatrix() * glm::vec4(posMin, 1.0f);
+            auto max = transform.getLocalToWorldMatrix() * glm::vec4(posMax, 1.0f);
+            auto tempMin = glm::vec3(std::min(min.x, max.x), std::min(min.y, max.y), std::min(min.z, max.z));
+            auto tempMax = glm::vec3(std::max(min.x, max.x), std::max(min.y, max.y), std::max(min.z, max.z));
+            newPrimitive->setDimensions(tempMin, tempMax);
             newPrimitive->transform = transform;
+            sceneBBox.unite(newPrimitive->getDimensions());
             //     primitiveUniforms.push_back(newPrimitive->GetPerPrimitiveUniform());
             primitives.push_back(std::move(newPrimitive));
             gltfPrimitives[primitive.indices].emplace_back(&primitive);
@@ -813,7 +818,6 @@ void GLTFLoadingImpl::loadFromFile(const std::string& path) {
     loadMaterials(*gltfModel);
     loadImages(path, gltfModel);
     loadCameras(*gltfModel);
-    loadLights(*gltfModel);
     const tinygltf::Scene& scene = gltfModel->scenes[gltfModel->defaultScene > -1 ? gltfModel->defaultScene : 0];
 
     if (config.bufferRate == BufferRate::PER_PRIMITIVE) {
@@ -824,7 +828,7 @@ void GLTFLoadingImpl::loadFromFile(const std::string& path) {
     } else {
         process(*gltfModel);
     }
-
+    loadLights(*gltfModel);
     std::vector<uint32_t>            primitiveIdxs;
     std::vector<PerPrimitiveUniform> primitiveUniforms;
     for (size_t i = 0; i < primitives.size(); i++) {
@@ -895,6 +899,27 @@ void GLTFLoadingImpl::loadMaterials(tinygltf::Model& gltfModel) {
         LOGI("base color factor {} {} {} {}", material.pbrBaseColorFactor.x, material.pbrBaseColorFactor.y, material.pbrBaseColorFactor.z, material.pbrBaseColorFactor.w);
         materials.emplace_back(material);
     }
+
+    if(materials.empty()) {
+        LOGI("No material found in gltf file, using default material");
+        GltfMaterial material;
+        material.alphaCutoff = 0.5f;
+        material.alphaMode = 0;
+        material.doubleSided = 0;
+        material.emissiveFactor = glm::vec3(0.0f, 0.0f, 0.0f);
+        material.emissiveTexture = -1;
+        material.normalTexture = -1;
+        material.normalTextureScale = 1.0f;
+        material.occlusionTexture = -1;
+        material.occlusionTextureStrength = 1.0f;
+        material.pbrBaseColorFactor = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+        material.pbrBaseColorTexture = -1;
+        material.pbrMetallicFactor = 1.0f;
+        material.pbrMetallicRoughnessTexture = -1;
+        material.pbrRoughnessFactor = 1.0f;
+        materials.emplace_back(material);
+    }
+    
     //   materials.resize(gltfModel.materials.size());
 }
 
@@ -1013,12 +1038,8 @@ std::unique_ptr<Scene> GltfLoading::LoadSceneFromGLTFFile(Device& device, const 
     scene->indexType          = model->indexType;
     scene->primitiveIdBuffer  = std::move(model->scenePrimitiveIdBuffer);
     scene->bufferRate         = config.bufferRate;
-
-    BBox sceneBBox;
-    for (auto& primitive : scene->primitives) {
-        sceneBBox.unite(primitive->getDimensions());
-    }
-    scene->setSceneBBox(sceneBBox);
+    
+    scene->setSceneBBox(model->sceneBBox);
 
     scene->getLoadCompleteInfo().SetGeometryLoaded();
     return scene;

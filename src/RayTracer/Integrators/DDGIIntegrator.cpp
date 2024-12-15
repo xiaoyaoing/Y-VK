@@ -1,4 +1,6 @@
 #include "DDGIIntegrator.h"
+
+#include "imgui.h"
 #include "Common/ResourceCache.h"
 #include "Scene/SceneLoader/SceneLoaderInterface.h"
 #include "shaders/Raytracing/ddgi/ddgi_commons.h"

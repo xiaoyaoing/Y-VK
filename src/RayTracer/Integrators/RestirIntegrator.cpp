@@ -1,5 +1,6 @@
 #include "RestirIntegrator.h"
 
+#include "imgui.h"
 #include "Common/Distrib.hpp"
 #include "Common/ResourceCache.h"
 #include "Scene/Compoments/Camera.h"

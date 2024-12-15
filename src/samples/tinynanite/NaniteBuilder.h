@@ -11,6 +11,7 @@
 #include <vector>
 #include <memory>
 #include <metis.h>
+#include <stack>
 
 using DataArray = std::span<uint8_t>;
 
@@ -62,7 +63,25 @@ struct GraphAdjancy {
     //std::multimap<uint32_t, uint32_t> adjVertices;
     GraphAdjancy() = default;
     std::vector<AdjancyVertex> adjVertices;
+    std::vector<std::unordered_map<uint32_t, int>> adj_list; // 邻接列表
+
+    void init(uint32_t size) { 
+        adj_list.resize(size); 
+    }
+
+    void add_edge(uint32_t from, uint32_t to, int face_id) {
+        if(from == 0 || to == 0) {
+            int a = 0;
+        }
+        adj_list[from][to] = face_id; // 添加边
+    }
     void                       addEdge(uint32_t v0, uint32_t v1) {
+        if(v0 == 277 && v1 == 5) {
+            int a = 0;
+        }
+        if(v1 == 277 && v0 == 5) {
+            int a = 0;
+        }
         adjVertices[v0].adjVertices.insert(v1);
         adjVertices[v1].adjVertices.insert(v0);
     }
@@ -76,10 +95,12 @@ struct GraphAdjancy {
     }
 };
 struct Cluster {
+    uint32_t triangle_offset;
     std::vector<glm::vec3> m_positions;
     std::vector<glm::vec3> m_normals;
     std::vector<glm::vec2> m_uvs;
     std::vector<uint32_t>  m_indexes;
+    std::vector<uint32_t>  origin_indexes;
 
     //Vertex A -> Vertex B
     //Vertex A in this cluster, Vertex B in another cluster
@@ -91,6 +112,8 @@ struct Cluster {
 
     std::vector<int>             face_parent_cluster_group;//size == m_positions.size / 3
     std::unordered_set<uint32_t> m_linked_cluster;
+    std::unordered_map<uint32_t, uint32_t> m_linked_cluster_cost;
+    std::vector<uint32_t> m_linked_cluster_vec;
     uint64_t                     guid;
     uint32_t                     m_mip_level;
     Cluster() = default;
@@ -100,10 +123,42 @@ struct Cluster {
     glm::vec3 getPosition(uint32_t index) {
         return m_positions[index];
     }
-    uint32_t getIndexes(uint32_t index) {
+    uint32_t getIndexes(uint32_t index) const {
         return m_indexes[index];
     }
+    uint32_t getTriangleCount() const{
+        return m_indexes.size()/3;
+    }
     GraphAdjancy buildAdjacency();
+    bool isConnected() {
+        if (m_indexes.empty()) return true; // 如果没有顶点，视为连通
+
+        std::unordered_set<uint32_t> visited;
+        std::stack<uint32_t> stack;
+
+        // 从第一个顶点开始 DFS
+        stack.push(m_indexes[0]); // 假设 m_indexes 存储顶点索引
+        while (!stack.empty()) {
+            uint32_t vertex = stack.top();
+            stack.pop();
+
+            if (visited.find(vertex) == visited.end()) {
+                visited.insert(vertex);
+
+                // 遍历与当前顶点相连的所有顶点
+                for (const auto& edge : m_external_edges) {
+                    if (edge.v0 == vertex && visited.find(edge.v1) == visited.end()) {
+                        stack.push(edge.v1);
+                    } else if (edge.v1 == vertex && visited.find(edge.v0) == visited.end()) {
+                        stack.push(edge.v0);
+                    }
+                }
+            }
+        }
+
+        // 检查是否所有顶点都被访问过
+        return visited.size() == m_indexes.size();
+    }
 };
 
 // struct ClusterGroup {

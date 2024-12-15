@@ -9,14 +9,14 @@
       "type": "ddgi",
       "ray_per_probe": 256,
       "probe_distance": 1,
-      "normal_bias" : 0.4,
+      "normal_bias" : 0.6,
       "use_rt_gbuffer" : true
     }
   ],
   "integrator": {
     "type": "ddgi"
   },
-  "scene_path": "F:/code/RTXGI-DDGI/samples/test-harness/data/gltf/sponza/Sponza.gltf",
+  "scene_path": "D:\\dodownload\\cornell_box.gltf",
   "scene_scale": 1.0,
   "scene_translation": [
     0.0,
