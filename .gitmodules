@@ -31,3 +31,6 @@
 
 
 
+[submodule "ext/meshoptimizer"]
+	path = ext/meshoptimizer
+	url = https://github.com/zeux/meshoptimizer
