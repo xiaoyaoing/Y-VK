@@ -69,7 +69,7 @@ public:
 
     uint32_t getMipLevelCount() const;
 
-    void         transitionLayout(CommandBuffer& commandBuffer, VulkanLayout newLayout, const VkImageSubresourceRange& subresourceRange = {
+    void         transitionLayout(CommandBuffer& commandBuffer, VulkanLayout newLayout,  VkImageSubresourceRange subresourceRange = {
                                                                                             .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
                                                                                             .baseMipLevel   = 0,
                                                                                             .levelCount     = 1,

@@ -52,6 +52,7 @@ void GraphicsPassNode::RenderPassData::devirtualize(RenderGraph& renderGraph, co
             .samples        = hwTexture->getVkImage().getSampleCount(),
             .usage          = hwTexture->getVkImage().getUseFlags(),
             .initial_layout = hwTexture->getVkImage().getLayout(hwTexture->getVkImageView().getSubResourceRange()),
+            .final_layout =  desc.finalLayouts.contains(color)?desc.finalLayouts.at(color):VulkanLayout::UNDEFINED,
             //todo fix this
             .loadOp = loadOp,
             .storeOp = VK_ATTACHMENT_STORE_OP_STORE
@@ -161,7 +162,6 @@ void PassNode::resolveResourceUsages(RenderGraph& renderGraph, CommandBuffer& co
             srcUsage = std::get<1>(state);
         }
         stateTracker.setResourceState(resourceIt.first, this, resourceIt.second);
-        
         resource->resloveUsage(barrierInfo, srcUsage, resourceIt.second, srcState, getType());
     }
     VkDependencyInfo dependencyInfo{};

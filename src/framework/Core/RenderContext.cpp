@@ -643,10 +643,10 @@ void RenderContext::endRenderPass(CommandBuffer& commandBuffer, RenderTarget& re
     commandBuffer.endPass();
     // resourceSets.clear();
 
-    auto& finalLayouts = pipelineState.getRenderPass()->getAttachmentFinalLayouts();
-    for (uint32_t i = 0; i < finalLayouts.size(); i++) {
-        renderTarget.getImage(i).setLayout(finalLayouts[i]);
-    }
+    // auto& finalLayouts = pipelineState.getRenderPass()->getAttachmentFinalLayouts();
+    // for (uint32_t i = 0; i < finalLayouts.size(); i++) {
+    //     renderTarget.getImage(i).setLayout(finalLayouts[i]);
+    // }
 
     pipelineState.reset();
 }

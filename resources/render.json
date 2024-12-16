@@ -16,7 +16,7 @@
   "integrator": {
     "type": "path"
   },
-  "scene_path": "D:\\code\\Y-VK\\resources\\kitchen\\kitchen\\scene.json",
+  "scene_path": "D:\\code\\glTF-Sample-Models\\glTF-Sample-Models-main\\glTF-Sample-Models-main\\2.0\\Sponza\\glTF\\Sponza.gltf",
   "scene_scale": 1.0,
   "scene_translation": [
     0.0,

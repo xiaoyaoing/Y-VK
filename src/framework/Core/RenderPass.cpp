@@ -171,11 +171,10 @@ RenderPass::RenderPass(Device& device, const std::vector<Attachment>& attachment
         attachmentDescription.samples       = attachments[i].samples;
         attachmentDescription.initialLayout = ImageUtil::getVkImageLayout(attachments[i].initial_layout);
         //todo fix this
-        attachmentDescription.finalLayout = isDepthOrStencilFormat(attachmentDescription.format) ? ImageUtil::getVkImageLayout(VulkanLayout::DEPTH_ATTACHMENT) : ImageUtil::getVkImageLayout(VulkanLayout::COLOR_ATTACHMENT);
-        // attachmentFinalLayouts[i] = attachments[i].initial_layout;
-        //
-        // attachmentFinalLayouts[i] = attachments[i].initial_layout;
-
+        if (attachments[i].final_layout == VulkanLayout::UNDEFINED)
+            attachmentDescription.finalLayout = isDepthOrStencilFormat(attachmentDescription.format) ? ImageUtil::getVkImageLayout(VulkanLayout::DEPTH_ATTACHMENT) : ImageUtil::getVkImageLayout(VulkanLayout::COLOR_ATTACHMENT);
+        else
+            attachmentDescription.finalLayout = ImageUtil::getVkImageLayout(attachments[i].final_layout);
         attachmentDescription.loadOp  = attachments[i].loadOp;
         attachmentDescription.storeOp = attachments[i].storeOp;
         attachmentDescription.loadOp  = attachments[i].loadOp;

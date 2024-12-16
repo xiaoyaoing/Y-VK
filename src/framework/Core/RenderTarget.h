@@ -17,6 +17,7 @@ struct Attachment {
     VkImageUsageFlags usage{VK_IMAGE_USAGE_SAMPLED_BIT};
 
     VulkanLayout initial_layout{VulkanLayout::UNDEFINED};
+    VulkanLayout final_layout{VulkanLayout::UNDEFINED};
 
     VkAttachmentLoadOp loadOp{VK_ATTACHMENT_LOAD_OP_LOAD};
 

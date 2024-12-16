@@ -57,7 +57,7 @@ void RenderGraphTexture::resloveUsage(ResourceBarrierInfo& barrierInfo, uint16_t
     imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     imageBarrier.image = mHwTexture->getVkImage().getHandle();
     imageBarrier.subresourceRange = getHwTexture()->getVkImageView().getSubResourceRange();
-
+    
     mHwTexture->getVkImage().setLayout(newLayout);
 }
 
