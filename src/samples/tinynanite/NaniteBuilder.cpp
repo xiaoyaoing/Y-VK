@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <metis.h>
+#include <numeric>
 
 static constexpr uint32_t ClusterSize = 128;
 
@@ -40,6 +41,10 @@ static __forceinline uint32_t Murmur32(std::initializer_list<uint32_t> InitList)
     }
 
     return MurmurFinalize32(Hash);
+}
+
+size_t HashCombine(uint32_t hash0, uint32_t hash1) {
+    return size_t(hash0) | (size_t(hash1) << 32);
 }
 
 void SaveMeshInputDataToObj(const MeshInputData& meshData, const std::string& filePath) {
@@ -95,6 +100,16 @@ void SaveMeshInputDataToObj(const MeshInputData& meshData, const std::string& fi
     LOGI("Successfully saved mesh to: {}", filePath.c_str());
 }
 
+void saveSignleClusterToObj(Cluster& cluster, const std::string& filename) {
+    MeshInputData inputData;
+    inputData.Vertices.Positions = cluster.m_positions;
+    inputData.Vertices.Normals   = cluster.m_normals;
+    inputData.Vertices.UVs       = cluster.m_uvs;
+    inputData.TriangleIndices    = cluster.m_indexes;
+    inputData.TriangleCounts.push_back(cluster.m_indexes.size() / 3);
+    SaveMeshInputDataToObj(inputData, filename);
+}
+
 uint32_t HashPosition(const glm::vec3& Position) {
     union {
         float    f;
@@ -125,16 +140,17 @@ inline uint32_t cycle3(uint32_t Value) {
 }
 
 struct PointHash {
-    std::unordered_map<uint32_t, std::vector<uint32_t>> hashTable;
-    std::unordered_map<size_t, std::vector<uint32_t>>   hashTable1;
+    std::unordered_map<size_t, std::vector<uint32_t>>                                    hashTable1;
+    std::unordered_map<size_t, std::vector<std::tuple<glm::vec3, glm::vec3, glm::vec3>>> debugPositionTable;
     template<typename GerPosition, typename Function>
     void ForAllMatching(uint32_t index, bool bAdd, GerPosition&& getPosition, Function&& callback) {
 
-        vec3   position0 = getPosition(index);
-        vec3   position1 = getPosition(cycle3(index));
-        uint32 hash0     = HashPosition(position0);
-        uint32 hash1     = HashPosition(position1);
-        uint32 hash      = Murmur32({hash0, hash1});
+        vec3 position0 = getPosition(index);
+        vec3 position1 = getPosition(cycle3(index));
+
+        uint32 hash0 = HashPosition(position0);
+        uint32 hash1 = HashPosition(position1);
+        auto   hash  = HashCombine(hash0, hash1);
 
         if (hashTable1.contains(hash)) {
             for (auto& anotherEdge : hashTable1[hash]) {
@@ -143,13 +159,50 @@ struct PointHash {
         } else {
         }
 
-        hash = Murmur32({hash1, hash0});
+        hash = HashCombine(hash1, hash0);
 
         if (bAdd) {
             if (!hashTable1.contains(hash)) {
                 hashTable1[hash] = std::vector<uint32_t>();
             }
             hashTable1[hash].push_back(index);
+
+            // if(debugPositionTable.contains(hash)) {
+            //     debugPositionTable[hash].push_back({position0, position1, position2});
+            // } else {
+            //     debugPositionTable[hash] = std::vector<std::tuple<glm::vec3,glm::vec3,glm::vec3>>();
+            //     debugPositionTable[hash].push_back({position0, position1, position2});
+            // }
+        }
+    }
+
+    template<typename GerPosition, typename Function>
+    void ForAllMatchingPoint(uint32_t index, bool bAdd, GerPosition&& getPosition, Function&& callback) {
+        vec3 position0 = getPosition(index);
+        auto hash0     = HashPosition(position0);
+        if (hashTable1.contains(hash0)) {
+            for (auto& anotherEdge : hashTable1[hash0]) {
+                callback(index, anotherEdge);
+            }
+        }
+        if (bAdd) {
+            if (!hashTable1.contains(hash0)) {
+                hashTable1[hash0] = std::vector<uint32_t>();
+            }
+            hashTable1[hash0].push_back(index);
+
+            auto position1 = getPosition(cycle3(index));
+            auto position2 = getPosition(cycle3(cycle3(index)));
+            if (debugPositionTable.contains(hash0)) {
+                debugPositionTable[hash0].push_back({position0, position1, position2});
+            } else {
+               
+                if(position0 == position1 && position1 == position2) {
+                    int k = 1;
+                }
+                debugPositionTable[hash0] = std::vector<std::tuple<glm::vec3, glm::vec3, glm::vec3>>();
+                debugPositionTable[hash0].push_back({position0, position1, position2});
+            }
         }
     }
 };
@@ -176,75 +229,75 @@ GraphAdjancy buildAdjancy(std::span<uint32_t> indexes, GerPosition&& getPosition
     return graphData;
 }
 
-GraphAdjancy buildClusterGroupAdjancy(std::span<Cluster> clusters) {
-    std::vector<ClusterExternEdge> externEdges;
-    uint32_t                       externalEdgeCount = 0;
-    PointHash                      edgehash;
-    GraphAdjancy                   graphData(clusters.size());
-    for (uint32_t i = 0; i < clusters.size(); i++) {
-        externalEdgeCount += clusters[i].m_external_edges.size();
-    }
-    externEdges.resize(externalEdgeCount);
-    uint32_t externalEdgeOffset = 0;
-    for (uint32_t i = 0; i < clusters.size(); i++) {
-        for (auto edge : clusters[i].m_external_edges) {
-            uint32_t index0                   = clusters[i].getIndexes(edge.v0);
-            uint32_t index1                   = clusters[i].getIndexes(edge.v1);
-            auto     position0                = clusters[i].getPosition(index0);
-            auto     position1                = clusters[i].getPosition(index1);
-            auto     hash_0                   = HashPosition(position0);
-            auto     hash_1                   = HashPosition(position1);
-            auto     hash_value               = Murmur32({hash_0, hash_1});
-            externEdges[externalEdgeOffset++] = edge;
-            edgehash.hashTable[hash_value].push_back(externalEdgeOffset);
-        }
-    }
-
-    for (uint32_t i = 0; i < clusters.size(); i++) {
-        for (auto edge : clusters[i].m_external_edges) {
-            auto     hash_0     = HashPosition(clusters[i].m_positions[edge.v0]);
-            auto     hash_1     = HashPosition(clusters[i].m_positions[edge.v1]);
-            auto     hash_value = Murmur32({hash_1, hash_0});
-            uint32_t index0     = clusters[i].getIndexes(edge.v0);
-            uint32_t index1     = clusters[i].getIndexes(edge.v1);
-            auto     position0  = clusters[i].getPosition(index0);
-            auto     position1  = clusters[i].getPosition(index1);
-            for (uint32_t group : edgehash.hashTable[hash_value]) {
-                auto externalEdge   = externEdges[group];
-                auto otherCluster   = clusters[externalEdge.clusterIndex];
-                auto otherIndex0    = otherCluster.getIndexes(externalEdge.v0);
-                auto otherIndex1    = otherCluster.getIndexes(externalEdge.v1);
-                auto otherPosition0 = otherCluster.getPosition(otherIndex0);
-                auto otherPosition1 = otherCluster.getPosition(otherIndex1);
-                if (externalEdge.clusterIndex != i && position0 == otherPosition0 && position1 == otherPosition1) {
-                    graphData.addEdge(i, externalEdge.clusterIndex);
-                    clusters[i].m_linked_cluster.insert(externalEdge.clusterIndex);
-                }
-            }
-        }
-    }
-
-    return graphData;
-}
-GraphAdjancy buildClusterGroupAdjancy1(std::span<Cluster> clusters, uint32_t levelOffset) {
-    GraphAdjancy graphData(clusters.size());
-
-    // 遍历所有cluster
-    for (uint32_t localId = 0; localId < clusters.size(); localId++) {
-        const auto& cluster = clusters[localId];
-
-        // 对于每个相邻的cluster
-        for (const auto& globalAdjId : cluster.m_linked_cluster) {
-            // 检查相邻cluster是否在当前span范围内
-            if (globalAdjId >= levelOffset && globalAdjId < levelOffset + clusters.size()) {
-                uint32_t localAdjId = globalAdjId - levelOffset;
-                graphData.addEdge(localId, localAdjId);
-            }
-        }
-    }
-
-    return graphData;
-}
+// GraphAdjancy buildClusterGroupAdjancy(std::span<Cluster> clusters) {
+//     std::vector<ClusterExternEdge> externEdges;
+//     uint32_t                       externalEdgeCount = 0;
+//     PointHash                      edgehash;
+//     GraphAdjancy                   graphData(clusters.size());
+//     for (uint32_t i = 0; i < clusters.size(); i++) {
+//         externalEdgeCount += clusters[i].m_external_edges.size();
+//     }
+//     externEdges.resize(externalEdgeCount);
+//     uint32_t externalEdgeOffset = 0;
+//     for (uint32_t i = 0; i < clusters.size(); i++) {
+//         for (auto edge : clusters[i].m_external_edges) {
+//             uint32_t index0                   = clusters[i].getIndexes(edge.v0);
+//             uint32_t index1                   = clusters[i].getIndexes(edge.v1);
+//             auto     position0                = clusters[i].getPosition(index0);
+//             auto     position1                = clusters[i].getPosition(index1);
+//             auto     hash_0                   = HashPosition(position0);
+//             auto     hash_1                   = HashPosition(position1);
+//             auto     hash_value               = HashCombine(hash_0, hash_1);
+//             externEdges[externalEdgeOffset++] = edge;
+//             edgehash.hashTable1[hash_value].push_back(externalEdgeOffset);
+//         }
+//     }
+//
+//     for (uint32_t i = 0; i < clusters.size(); i++) {
+//         for (auto edge : clusters[i].m_external_edges) {
+//             auto     hash_0     = HashPosition(clusters[i].m_positions[edge.v0]);
+//             auto     hash_1     = HashPosition(clusters[i].m_positions[edge.v1]);
+//             auto     hash_value = Murmur32({hash_1, hash_0});
+//             uint32_t index0     = clusters[i].getIndexes(edge.v0);
+//             uint32_t index1     = clusters[i].getIndexes(edge.v1);
+//             auto     position0  = clusters[i].getPosition(index0);
+//             auto     position1  = clusters[i].getPosition(index1);
+//             for (uint32_t group : edgehash.hashTable1[hash_value]) {
+//                 auto externalEdge   = externEdges[group];
+//                 auto otherCluster   = clusters[externalEdge.clusterIndex];
+//                 auto otherIndex0    = otherCluster.getIndexes(externalEdge.v0);
+//                 auto otherIndex1    = otherCluster.getIndexes(externalEdge.v1);
+//                 auto otherPosition0 = otherCluster.getPosition(otherIndex0);
+//                 auto otherPosition1 = otherCluster.getPosition(otherIndex1);
+//                 if (externalEdge.clusterIndex != i && position0 == otherPosition0 && position1 == otherPosition1) {
+//                     graphData.addEdge(i, externalEdge.clusterIndex);
+//                     clusters[i].m_linked_cluster.insert(externalEdge.clusterIndex);
+//                 }
+//             }
+//         }
+//     }
+//
+//     return graphData;
+// }
+// GraphAdjancy buildClusterGroupAdjancy1(std::span<Cluster> clusters, uint32_t levelOffset) {
+//     GraphAdjancy graphData(clusters.size());
+//
+//     // 遍历所有cluster
+//     for (uint32_t localId = 0; localId < clusters.size(); localId++) {
+//         const auto& cluster = clusters[localId];
+//
+//         // 对于每个相邻的cluster
+//         for (const auto& globalAdjId : cluster.m_linked_cluster) {
+//             // 检查相邻cluster是否在当前span范围内
+//             if (globalAdjId >= levelOffset && globalAdjId < levelOffset + clusters.size()) {
+//                 uint32_t localAdjId = globalAdjId - levelOffset;
+//                 graphData.addEdge(localId, localAdjId);
+//             }
+//         }
+//     }
+//
+//     return graphData;
+// }
 
 struct Triangle {
     vec3 position[3];
@@ -376,10 +429,10 @@ Cluster InitClusterFromMeshInputData(MeshInputData& InputMeshData, uint32_t base
             uint32_t globalIndex = InputMeshData.TriangleIndices[baseTriangle + i * 3 + k];
 
             // if (std::find(cluster.m_indexes.begin(), cluster.m_indexes.end(), globalIndex) == cluster.m_indexes.end()) {
-                cluster.m_indexes.push_back(globalIndex);
-                cluster.m_positions.push_back(InputMeshData.Vertices.Positions[globalIndex]);
-                cluster.m_normals.push_back(InputMeshData.Vertices.Normals[globalIndex]);
-                cluster.m_uvs.push_back(InputMeshData.Vertices.UVs[globalIndex]);
+            cluster.m_indexes.push_back(globalIndex);
+            cluster.m_positions.push_back(InputMeshData.Vertices.Positions[globalIndex]);
+            cluster.m_normals.push_back(InputMeshData.Vertices.Normals[globalIndex]);
+            cluster.m_uvs.push_back(InputMeshData.Vertices.UVs[globalIndex]);
             // }
         }
     }
@@ -396,7 +449,231 @@ Cluster InitClusterFromMeshInputData(MeshInputData& InputMeshData, uint32_t base
     return cluster;
 }
 
+void clusterTrianglesByMeshOpt(std::vector<Cluster>& clusters, MeshInputData& InputMeshData, uint32_t baseTriangle, uint32_t numTriangles) {
+    const size_t                 max_vertices  = 64;
+    const size_t                 max_triangles = 124;
+    auto                         max_meshlets  = meshopt_buildMeshletsBound(numTriangles * 3, max_vertices, max_triangles);
+    std::vector<meshopt_Meshlet> meshlets(max_meshlets);//generated meshlets
+    std::vector<uint>            meshlet_vertices;
+    // meshlet_vertices.push_back_uninitialized(max_meshlets * max_vertices);
+    meshlet_vertices.resize(max_meshlets * max_vertices);
+    std::vector<unsigned char> meshlet_triangles;
+    meshlet_triangles.resize(max_meshlets * max_triangles);
+
+    float coneWeight = 0.0f;
+
+    size_t meshlet_count = meshopt_buildMeshlets(meshlets.data(),
+                                                 meshlet_vertices.data(),
+                                                 meshlet_triangles.data(),
+                                                 &InputMeshData.TriangleIndices[baseTriangle],
+                                                 numTriangles * 3,
+                                                 reinterpret_cast<const float*>(InputMeshData.Vertices.Positions.data()),
+                                                 InputMeshData.Vertices.Positions.size(),
+                                                 sizeof(glm::vec3),
+                                                 max_vertices,
+                                                 max_triangles,
+                                                 coneWeight);
+
+    size_t initialClusterCount = clusters.size();// Store the initial count of clusters
+
+    for (size_t i = 0; i < meshlet_count; ++i) {
+        Cluster                cluster;
+        const meshopt_Meshlet& meshlet = meshlets[i];
+
+        // Collect vertex positions, normals, and UVs for the current meshlet
+        for (size_t j = 0; j < meshlet.vertex_count; ++j) {
+            uint32_t vertexIndex = meshlet_vertices[meshlet.vertex_offset + j];
+            cluster.m_positions.push_back(InputMeshData.Vertices.Positions[vertexIndex]);
+            cluster.m_normals.push_back(InputMeshData.Vertices.Normals[vertexIndex]);
+            cluster.m_uvs.push_back(InputMeshData.Vertices.UVs[vertexIndex]);
+        }
+
+        // Collect triangle indices for the current meshlet
+        for (size_t j = 0; j < meshlet.triangle_count; ++j) {
+            for (int k = 0; k < 3; k++) {
+                uint32_t triangleIndex = meshlet_triangles[meshlet.triangle_offset + j * 3 + k];
+                cluster.m_indexes.push_back(triangleIndex);
+            }
+            cluster.origin_indexes.push_back(meshlet_vertices[meshlet.vertex_offset + meshlet_triangles[meshlet.triangle_offset + j * 3 + 0]]);
+
+            auto pos = cluster.m_positions[cluster.m_indexes[j * 3 + 0]];
+            auto origin_pos = InputMeshData.Vertices.Positions[cluster.origin_indexes.back()];
+            
+            
+            cluster.origin_indexes.push_back(meshlet_vertices[meshlet.vertex_offset + meshlet_triangles[meshlet.triangle_offset + j * 3 + 1]]);
+            cluster.origin_indexes.push_back(meshlet_vertices[meshlet.vertex_offset + meshlet_triangles[meshlet.triangle_offset + j * 3 + 2]]);
+        }
+
+       
+
+        // Calculate bounding box for the cluster
+        cluster.m_bounding_box = BBox();
+        for (const auto& pos : cluster.m_positions) {
+            cluster.m_bounding_box.unite(pos);
+        }
+
+        // Set min and max positions
+        cluster.m_min_pos = glm::vec3(1e30f);
+        cluster.m_max_pos = glm::vec3(-1e30f);
+        for (const auto& pos : cluster.m_positions) {
+            cluster.m_min_pos = glm::min(cluster.m_min_pos, pos);
+            cluster.m_max_pos = glm::max(cluster.m_max_pos, pos);
+        }
+
+        // Insert the new cluster at the end of the existing clusters
+        clusters.push_back(cluster);
+    }
+
+    // Optionally, you can log the number of clusters created
+    LOGI("Created {} clusters from mesh optimization.", clusters.size() - initialClusterCount);
+
+    std::span<Cluster> clusterSpan(clusters.data() + initialClusterCount, clusters.size() - initialClusterCount);
+    //Build cluster adjancy
+
+    auto sum_triangle = std::accumulate(clusterSpan.begin(), clusterSpan.end(), 0, [](int sum, const Cluster& cluster) { return sum + cluster.getTriangleCount(); });
+
+    std::unordered_map<uint32_t, uint32_t> faceToCluster;
+    size_t                                 globalFaceOffset = 0;
+    for (size_t i = 0; i < clusterSpan.size(); i++) {
+        for (size_t j = 0; j < clusterSpan[i].getTriangleCount(); j++) {
+            if(globalFaceOffset + j == 835 / 3 ) {
+                int k = 1;
+            }
+            faceToCluster[globalFaceOffset + j] = i + initialClusterCount;
+        }
+        // std::fill(faceToCluster
+        clusterSpan[i].triangle_offset = globalFaceOffset;
+        globalFaceOffset += clusterSpan[i].getTriangleCount();
+    }
+    if(false)
+    {
+        GraphAdjancy adjancy(sum_triangle * 3);
+        PointHash    hash;
+
+        
+
+        globalFaceOffset = 0;
+        for (auto& meshlet : clusterSpan) {
+            for (size_t j = 0; j < meshlet.getTriangleCount(); ++j) {
+                uint indexOffset = globalFaceOffset + j * 3;
+                hash.ForAllMatchingPoint(indexOffset + 0, true, [&](uint32_t index) { return meshlet.m_positions[meshlet.m_indexes[index - globalFaceOffset]]; }, [&](uint32_t edgeIndex, uint32_t otherEdgeIndex) {
+                    auto face0 = edgeIndex / 3;
+                    auto face1 = otherEdgeIndex / 3;
+                    if (faceToCluster[face0] != faceToCluster[face1]) {
+                        adjancy.addEdge(edgeIndex, otherEdgeIndex);
+                    } });
+                hash.ForAllMatchingPoint(indexOffset + 1, true, [&](uint32_t index) { return meshlet.m_positions[meshlet.m_indexes[index - globalFaceOffset]]; }, [&](uint32_t edgeIndex, uint32_t otherEdgeIndex) {
+                    auto face0 = edgeIndex / 3;
+                    auto face1 = otherEdgeIndex / 3;
+                    if (faceToCluster[face0] != faceToCluster[face1]) {
+                        adjancy.addEdge(edgeIndex, otherEdgeIndex);
+                    } });
+                hash.ForAllMatchingPoint(indexOffset + 2, true, [&](uint32_t index) { return meshlet.m_positions[meshlet.m_indexes[index - globalFaceOffset]]; }, [&](uint32_t edgeIndex, uint32_t otherEdgeIndex) {
+                    auto face0 = edgeIndex / 3;
+                    auto face1 = otherEdgeIndex / 3;
+                    if (faceToCluster[face0] != faceToCluster[face1]) {
+                        adjancy.addEdge(edgeIndex, otherEdgeIndex);
+                    } });
+            }
+            globalFaceOffset += meshlet.getTriangleCount() * 3;
+        }
+        int index = 0;
+        int count  = 0;
+        for (auto& adj : adjancy.adjVertices) {
+            auto face         = index / 3;
+            auto clusterIndex = faceToCluster[face];
+            Triangle tri;
+            tri.position[0] = clusterSpan[clusterIndex].m_positions[clusterSpan[clusterIndex].m_indexes[index/3 * 3 -  clusterSpan[clusterIndex].triangle_offset *3 ]];
+            tri.position[1] = clusterSpan[clusterIndex].m_positions[clusterSpan[clusterIndex].m_indexes[index /3 * 3-   clusterSpan[clusterIndex].triangle_offset *3 + 1]];
+            tri.position[2] = clusterSpan[clusterIndex].m_positions[clusterSpan[clusterIndex].m_indexes[index/3 * 3 -   clusterSpan[clusterIndex].triangle_offset *3+ 2]];
+
+            int index_ = 0;
+            for (auto& adjIndex : adj.adjVertices) {
+                index_++;
+                auto anotherFace         = adjIndex / 3;
+                auto anotherClusterIndex = faceToCluster[anotherFace];
+                Triangle anotherTri;
+                anotherTri.position[0] = clusterSpan[anotherClusterIndex].m_positions[clusterSpan[anotherClusterIndex].m_indexes[adjIndex/3 * 3 -  clusterSpan[anotherClusterIndex].triangle_offset*3]];
+                anotherTri.position[1] = clusterSpan[anotherClusterIndex].m_positions[clusterSpan[anotherClusterIndex].m_indexes[adjIndex/3 * 3 -  clusterSpan[anotherClusterIndex].triangle_offset*3 + 1]];
+                anotherTri.position[2] = clusterSpan[anotherClusterIndex].m_positions[clusterSpan[anotherClusterIndex].m_indexes[adjIndex /3 * 3 - clusterSpan[anotherClusterIndex].triangle_offset*3 + 2]];
+
+                auto hash_ = HashPosition(tri.position[index % 3]);
+                auto & adj1 = hash.debugPositionTable[hash_];
+            
+                bool c = isTriangleAdjancy(tri, anotherTri);
+                if (!c) {
+                    LOGE("Triangle {} and {} is not adjancy", face, anotherFace);
+                }
+            
+                if (clusterIndex != anotherClusterIndex) {
+                    clusters[clusterIndex].m_linked_cluster.insert(anotherClusterIndex);
+                    if(clusters[clusterIndex].m_linked_cluster_cost.contains(anotherClusterIndex)) {
+                        clusters[clusterIndex].m_linked_cluster_cost[anotherClusterIndex] += 1;
+                    }
+                    else {
+                        clusters[clusterIndex].m_linked_cluster_cost[anotherClusterIndex] = 1;
+                    }
+                    clusters[clusterIndex].m_linked_cluster_vec.push_back(anotherClusterIndex);
+                    count++;
+                }
+            }
+            index++;
+        }
+
+        for(auto & cluster : clusters) {
+            LOGI("Cluster {} has {} linked clusters", cluster.guid, cluster.m_linked_cluster.size());
+        }
+        LOGI("Total adjancy count: {}", count);
+    }
+
+    {
+        GraphAdjancy adjancy(sum_triangle * 3);
+        adjancy.init(InputMeshData.TriangleIndices.size());
+        for(auto& cluster : clusters) {
+            for(auto i = 0;i<cluster.getTriangleCount();i++) {
+                uint face_id = cluster.triangle_offset + i;
+                glm::uvec3 tri = {cluster.origin_indexes[i * 3], cluster.origin_indexes[i * 3 + 1], cluster.origin_indexes[i * 3 + 2]};
+                adjancy.add_edge(tri.x, tri.y,face_id);
+                adjancy.add_edge(tri.y, tri.z,face_id);
+                adjancy.add_edge(tri.z, tri.x,face_id);
+            }
+        }
+
+        for (auto& edge : adjancy.adj_list) {
+            auto from = &edge - adjancy.adj_list.data();
+            for (auto [to, face0] : edge) {
+                auto reverse_edge = adjancy.adj_list[to];
+                if (reverse_edge.find(from) != reverse_edge.end()) {
+                    uint face1 = reverse_edge[from];
+                    auto mid1 = faceToCluster.find(face0)->second;
+                    auto mid2 = faceToCluster.find(face1)->second;
+                    if (mid1 != mid2) {
+                        clusters[mid1].m_linked_cluster.insert(mid2);
+                        if(clusters[mid1].m_linked_cluster_cost.contains(mid2)) {
+                            clusters[mid1].m_linked_cluster_cost[mid2] += 1;
+                        }
+                        else {
+                            clusters[mid1].m_linked_cluster_cost[mid2] = 1;
+                        }
+                        clusters[mid1].m_linked_cluster_vec.push_back(mid2);
+
+                        clusters[mid2].m_linked_cluster.insert(mid1);
+                        if(clusters[mid2].m_linked_cluster_cost.contains(mid1)) {
+                            clusters[mid2].m_linked_cluster_cost[mid1] += 1;
+                        }
+                        else {
+                            clusters[mid2].m_linked_cluster_cost[mid1] = 1;
+                        }
+                    }
+                }
+		
+            }
+        }
+    }
+}
+
 void clusterTriangles1(std::vector<Cluster>& clusters, MeshInputData& InputMeshData, uint32_t baseTriangle, uint32_t numTriangles) {
+
     GraphAdjancy graphData          = buildAdjancy(std::span<uint32_t>(InputMeshData.TriangleIndices.data() + baseTriangle, numTriangles * 3), [&](uint32_t index) {
         return InputMeshData.Vertices.Positions[InputMeshData.TriangleIndices[index]];
     });
@@ -427,11 +704,24 @@ void clusterTriangles1(std::vector<Cluster>& clusters, MeshInputData& InputMeshD
 
     struct ClusterAdjacency {
         std::unordered_map<uint32_t, std::unordered_set<uint32_t>> adj_clusters;
+        std::unordered_map<uint32_t, std::unordered_map<uint32_t, uint32_t>> adj_clusters_cost;
 
         void addEdge(uint32_t cluster1, uint32_t cluster2) {
             if (cluster1 != cluster2) {
                 adj_clusters[cluster1].insert(cluster2);
                 adj_clusters[cluster2].insert(cluster1);
+                if(adj_clusters_cost[cluster1].contains(cluster2)) {
+                    adj_clusters_cost[cluster1][cluster2] += 1;
+                }
+                else {
+                    adj_clusters_cost[cluster1][cluster2] = 1;
+                }
+                if(adj_clusters_cost[cluster2].contains(cluster1)) {
+                    adj_clusters_cost[cluster2][cluster1] += 1;
+                }
+                else {
+                    adj_clusters_cost[cluster2][cluster1] = 1;
+                }
             }
         }
     } clusterAdj;
@@ -448,28 +738,39 @@ void clusterTriangles1(std::vector<Cluster>& clusters, MeshInputData& InputMeshD
         for (int k = 0; k < 3; k++) {
             uint32_t globalIndex = InputMeshData.TriangleIndices[baseTriangle + i * 3 + k];
 
-            if (oldToNewIndexMap.find(globalIndex) == oldToNewIndexMap.end()) {
-                oldToNewIndexMap[globalIndex] = clusters[clusterId].m_positions.size();
-                clusters[clusterId].m_positions.push_back(InputMeshData.Vertices.Positions[globalIndex]);
-                clusters[clusterId].m_normals.push_back(InputMeshData.Vertices.Normals[globalIndex]);
-                clusters[clusterId].m_uvs.push_back(InputMeshData.Vertices.UVs[globalIndex]);
-            }
-            clusters[clusterId].m_indexes.push_back(oldToNewIndexMap[globalIndex]);
+            // if (oldToNewIndexMap.find(globalIndex) == oldToNewIndexMap.end()) {
+            //     oldToNewIndexMap[globalIndex] = clusters[clusterId].m_positions.size();
+            clusters[clusterId].m_positions.push_back(InputMeshData.Vertices.Positions[globalIndex]);
+            clusters[clusterId].m_normals.push_back(InputMeshData.Vertices.Normals[globalIndex]);
+            clusters[clusterId].m_uvs.push_back(InputMeshData.Vertices.UVs[globalIndex]);
+            //}
+            clusters[clusterId].m_indexes.push_back(clusters[clusterId].m_positions.size() - 1);
         }
     }
+
+    // for(int i =oldClusterCount; i < clusters.size(); i++) {
+    //     int clusterId = i;
+    //     if(!clusters[clusterId].isConnected()) {
+    //         saveSignleClusterToObj(clusters[clusterId], FileUtils::getFilePath("disconnected_cluster", "obj"));
+    //         LOGE("Cluster {} is not connected", clusterId);
+    //     }
+    // }
 
     for (uint32_t i = 0; i < numTriangles * 3; i++) {
         uint32_t currentCluster = partitioner.partitionIDs[i / 3] + oldClusterCount;
 
         graphData.forAll(i, [&](uint32_t edgeIndex0, uint32_t edgeIndex1) {
             uint32_t neighborCluster = partitioner.partitionIDs[edgeIndex1 / 3] + oldClusterCount;
-            clusterAdj.addEdge(currentCluster, neighborCluster);
+            if (currentCluster != neighborCluster) {
+                clusterAdj.addEdge(currentCluster, neighborCluster);
+            }
         });
     }
 
     for (const auto& [clusterId, adjClusters] : clusterAdj.adj_clusters) {
         auto& cluster            = clusters[clusterId];
         cluster.m_linked_cluster = adjClusters;
+        cluster.m_linked_cluster_cost = clusterAdj.adj_clusters_cost[clusterId];
 
         for (auto adjClusterId : adjClusters) {
             const auto& adjCluster = clusters[adjClusterId];
@@ -598,9 +899,8 @@ void clusterTriangles3(std::vector<Cluster>& clusters, MeshInputData& InputMeshD
                 cluster.m_bounding_box.unite(cluster.m_positions.back());
                 cluster.m_min_pos = glm::min(cluster.m_min_pos, cluster.m_positions.back());
                 cluster.m_max_pos = glm::max(cluster.m_max_pos, cluster.m_positions.back());
-            } else {
-                cluster.m_indexes.push_back(indexMap[globalIndex]);
             }
+            cluster.m_indexes.push_back(indexMap[globalIndex]);
         }
     }
 
@@ -1099,7 +1399,7 @@ uint32_t BuildBVHTopDown(std::vector<BVHNode>& nodes, std::span<uint32_t> indice
     for (int32_t i = NANITE_MAX_BVH_NODE_FANOUT - 1; i >= 0; i--) {
         const uint32_t ChildExcess = std::min(Excess, MaxExcessPerChild);
         ChildSizes[i]              = SmallChildSize + ChildExcess;
-        if(ChildSizes[i] == 3722304989) {
+        if (ChildSizes[i] == 3722304989) {
             LOGE("error");
         }
         Excess -= ChildExcess;
@@ -1130,7 +1430,7 @@ SphereBox CalculateSphereBox(const std::vector<SphereBox>& boxes) {
     // return result;
 }
 
-uint32_t BuildBVHRecursive(std::vector<BVHNode>& nodes, std::vector<TNode> & tnodes, const std::vector<ClusterGroup> groups, uint32_t rootIndex, uint32_t depth) {
+uint32_t BuildBVHRecursive(std::vector<BVHNode>& nodes, std::vector<TNode>& tnodes, const std::vector<ClusterGroup> groups, uint32_t rootIndex, uint32_t depth) {
     auto childNum = nodes[rootIndex].children.size();
 
     uint32 TNodeIndex = tnodes.size();
@@ -1177,15 +1477,15 @@ NaniteBVH BuildBVH(const std::vector<Cluster>& clusters, const std::vector<Clust
     // }
 
     std::vector<BVHNode> nodes(groups.size());
-    uint maxMipLevel = 0;
+    uint                 maxMipLevel = 0;
     for (uint32_t i = 0; i < groups.size(); i++) {
         nodes[i].groupIndex = i;
-        nodes[i].bounds       = groups[i].boundingBox;
-        nodes[i].isLeaf       = true;
-        nodes[i].lodLevel = groups[i].lodLevel;
-        maxMipLevel = std::max(maxMipLevel, groups[i].lodLevel);
+        nodes[i].bounds     = groups[i].boundingBox;
+        nodes[i].isLeaf     = true;
+        nodes[i].lodLevel   = groups[i].lodLevel;
+        maxMipLevel         = std::max(maxMipLevel, groups[i].lodLevel);
     }
-    std::vector<std::vector<uint32_t>> nodesByMip(maxMipLevel+1);
+    std::vector<std::vector<uint32_t>> nodesByMip(maxMipLevel + 1);
 
     for (uint32_t i = 0; i < groups.size(); i++) {
         nodesByMip[groups[i].lodLevel].push_back(i);
@@ -1193,8 +1493,6 @@ NaniteBVH BuildBVH(const std::vector<Cluster>& clusters, const std::vector<Clust
     // for (const auto& [lodLevel, clusterIndices] : lodClusters) {
     //     maxMipLevel = std::max(maxMipLevel, lodLevel);
     // }
-
-   
 
     std::vector<uint32_t> levelRoots;
     for (int i = 0; i <= maxMipLevel; i++) {
@@ -1215,7 +1513,7 @@ NaniteBVH BuildBVH(const std::vector<Cluster>& clusters, const std::vector<Clust
     return bvh;
 }
 
-MeshInputData mergeClusterToMeshInputData(std::vector<Cluster>& clusters,  std::span<uint32_t> children) {
+MeshInputData mergeClusterToMeshInputData(std::vector<Cluster>& clusters, std::span<uint32_t> children) {
     MeshInputData mergedInputData;
 
     // 创建顶点重映射表
@@ -1272,10 +1570,9 @@ MeshInputData mergeClusterToMeshInputData(std::vector<Cluster>& clusters,  std::
 
 // DAGReduce 函数定义
 void DAGReduce(std::vector<ClusterGroup>& groups, std::vector<Cluster>& clusters, std::atomic<uint32_t>& numClusters, std::span<uint32_t> children, uint32_t maxParents, uint32_t groupIndex, uint32_t MeshIndex) {
-    auto mergedInputData = mergeClusterToMeshInputData(clusters, children);
-    uint32_t targetNumTris = maxParents * ClusterSize;
-    float    error         = simplifyMeshData1(mergedInputData, targetNumTris);
-
+    auto     mergedInputData = mergeClusterToMeshInputData(clusters, children);
+    uint32_t targetNumTris   = maxParents * ClusterSize;
+    float    error           = simplifyMeshData1(mergedInputData, targetNumTris);
 
     // 使用clusterTriangles1重新划分
     std::vector<Cluster> newClusters;
@@ -1304,7 +1601,7 @@ void BuildDAG(std::vector<ClusterGroup>& groups, std::vector<Cluster>& clusters,
         bFirstLevel = false;
 
         if (levelClusters.size() < 2) {
-           break;
+            break;
         }
 
         if (levelClusters.size() <= MaxClusterGroupSize) {
@@ -1317,7 +1614,7 @@ void BuildDAG(std::vector<ClusterGroup>& groups, std::vector<Cluster>& clusters,
             uint32_t maxParents = numGroupElements / (ClusterSize * 2);
             DAGReduce(groups, clusters, numClusters, children, maxParents, groups.size() - 1, MeshIndex);
         } else {
-            GraphAdjancy adjancy = buildClusterGroupAdjancy1(levelClusters, levelOffset);
+            // GraphAdjancy adjancy = buildClusterGroupAdjancy1(levelClusters, levelOffset);
 
             uint32_t         targetGroupCount = (levelClusters.size() + MinClusterGroupSize - 1) / MinClusterGroupSize;
             GraphPartitioner partitioner(levelClusters.size(), targetGroupCount);
@@ -1332,7 +1629,8 @@ void BuildDAG(std::vector<ClusterGroup>& groups, std::vector<Cluster>& clusters,
                 graph->AdjacencyOffset[i] = graph->Adjacency.size();
                 for (const auto& adjClusterId : levelClusters[i].m_linked_cluster) {
                     if (adjClusterId >= levelOffset && adjClusterId < levelOffset + levelClusters.size()) {
-                        float weight = 1.0f;
+                       float weight = levelClusters[i].m_linked_cluster_cost[adjClusterId - levelOffset];
+                       // float weight = 1.0f;
                         partitioner.addAdjacency(graph, adjClusterId - levelOffset, weight);
                     }
                 }
@@ -1359,11 +1657,28 @@ void BuildDAG(std::vector<ClusterGroup>& groups, std::vector<Cluster>& clusters,
             uint32_t groupIndex = 0;
 
             for (auto& [partitionId, children] : partitionGroups) {
-                auto mergedInputData = mergeClusterToMeshInputData(clusters, children);
-                SaveMeshInputDataToObj(mergedInputData, FileUtils::getFilePath("mergedInputData"+std::to_string(groupIndex),"obj"));
+                // 遍历每个集群
+                for (size_t clusterIndex = 0; clusterIndex < children.size(); ++clusterIndex) {
+                    // 获取当前集群的索引
+                    const auto& clusterChildren = children[clusterIndex];
+
+                    // 合并当前集群的输入数据
+                    std::vector<uint32_t> clusterChildrenSpan = {clusterChildren};
+                    auto                  mergedInputData     = mergeClusterToMeshInputData(clusters, clusterChildrenSpan);
+
+                    // 保存合并后的输入数据到 OBJ 文件，文件名包含 clusterIndex 和 groupIndex
+                    SaveMeshInputDataToObj(
+                        mergedInputData,
+                        FileUtils::getFilePath("mergedInputData_group_" + std::to_string(groupIndex) + "_cluster_" + std::to_string(clusterIndex), "obj", true));
+                }
+
+                auto groupmesh = mergeClusterToMeshInputData(clusters, children);
+                SaveMeshInputDataToObj(groupmesh, FileUtils::getFilePath("group_" + std::to_string(groupIndex), "obj", true));
+
+                groupIndex++;
             }
 
-             exit(-1);
+            exit(-1);
 
             for (auto& [partitionId, children] : partitionGroups) {
                 // 计算组内所有元素数量
@@ -1431,13 +1746,28 @@ void NaniteBuilder::Build(MeshInputData& InputMeshData, MeshOutputData* OutFallb
         uint32_t baseTriangle = 0;
         for (uint32_t numTriangles : InputMeshData.TriangleCounts) {
             uint32_t clusterOffset = clusters.size();
-            clusterTriangles1(clusters, InputMeshData, baseTriangle, numTriangles);
+            clusterTrianglesByMeshOpt(clusters, InputMeshData, baseTriangle, numTriangles);
             clusterPerMesh.push_back(clusters.size() - clusterOffset);
             baseTriangle += numTriangles;
         }
+    }           
+
+    int index = 0;
+    for (auto& cluster : clusters) {
+        if(index == 315) {
+            int k = 1;
+        }
+        saveSignleClusterToObj(cluster, FileUtils::getFilePath("cluster_" + std::to_string(index++), "obj", true));
     }
     
-    
+    std::vector<uint32_t> children;
+    for (uint32_t i = 0; i < clusters.size(); i++) {
+        children.push_back(i);
+    }
+    auto mesh_input_data = mergeClusterToMeshInputData(clusters, children);
+    SaveMeshInputDataToObj(mesh_input_data, "mergedInputData.obj");
+    // exit(-1);
+
     std::vector<ClusterGroup> groups;
     BuildDAG(groups, clusters, 0, clusters.size(), 0, BBox());
 
@@ -1453,7 +1783,7 @@ void ConvertData(std::vector<T1>& data, std::vector<T2>& outData) {
 }
 
 std::unique_ptr<MeshInputData> NaniteBuilder::createNaniteExampleMeshInputData() {
-    auto primData      = PrimitiveLoader::loadPrimitive(FileUtils::getResourcePath("tiny_nanite/dragon.obj"));
+    auto primData      = PrimitiveLoader::loadPrimitive(FileUtils::getResourcePath("tiny_nanite/jinx-combined.obj"));
     auto meshInputData = std::make_unique<MeshInputData>();
     ConvertData(primData->buffers[POSITION_ATTRIBUTE_NAME], meshInputData->Vertices.Positions);
     ConvertData(primData->buffers[NORMAL_ATTRIBUTE_NAME], meshInputData->Vertices.Normals);
@@ -1626,8 +1956,9 @@ void GraphPartitioner::partition(FGraphData& graph) {
     // METIS选项
     idx_t options[METIS_NOPTIONS];
     METIS_SetDefaultOptions(options);
-    options[METIS_OPTION_UFACTOR] = 200;// 0-based numbering
-
+    options[METIS_OPTION_NUMBERING] = 0;
+    options[METIS_OPTION_OBJTYPE] = METIS_OBJTYPE_CUT;
+    options[METIS_OPTION_SEED] = 14;
     // 权重数组
     std::vector<idx_t> vwgt(nvtxs, 1);// 顶点权重，默认为1
     std::vector<idx_t> adjwgt;        // 边权重
@@ -1669,8 +2000,12 @@ void GraphPartitioner::partition(FGraphData& graph) {
 
     // nvtxs = 0;
     int objval = 0;
+    std::vector<float> tpwgts;
+    tpwgts.resize(nparts, 1.0f / nparts);
+
+    
     // 调用METIS
-    int result = METIS_PartGraphKway(
+    int result = METIS_PartGraphRecursive(
         &nvtxs,                                  // 顶点数量
         &ncon,                                   // 约束数量
         xadj.data(),                             // 偏移数组

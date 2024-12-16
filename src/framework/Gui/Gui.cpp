@@ -290,7 +290,7 @@ void Gui::addGuiPass(RenderGraph& graph) {
             auto swapChain    = graph.importTexture("swap_chain", &g_context->getSwapChainImage(), true);
             builder.readTexture(renderOutput, RenderGraphTexture::Usage::SAMPLEABLE);
             builder.writeTexture(swapChain, RenderGraphTexture::Usage::COLOR_ATTACHMENT);
-            builder.declare(RenderGraphPassDescriptor({swapChain, swapChain}, RenderGraphSubpassInfo{.outputAttachments = {swapChain}}));
+            builder.declare(RenderGraphPassDescriptor({swapChain}, RenderGraphSubpassInfo{.outputAttachments = {swapChain}}));
         },
         [&renderContext, this](const RenderPassContext& context) {
             ImDrawData* imDrawData   = ImGui::GetDrawData();

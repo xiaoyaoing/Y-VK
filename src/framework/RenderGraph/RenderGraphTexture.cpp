@@ -41,6 +41,7 @@ void RenderGraphTexture::resloveUsage(ResourceBarrierInfo& barrierInfo, uint16_t
     auto newLayout = ImageUtil::getDefaultLayout(static_cast<TextureUsage>(nextUsage));
 
     auto [srcAccessMask, dstAccessMask, srcStage, dstStage, vkOldLayout, vkNewLayout] = ImageUtil::getVkTransition(oldLayout, newLayout);
+    if (lastPassType!=RenderPassType::UNDEFINED)
     srcStage = ImageUtil::getStageFlags(lastPassType);
     dstStage = ImageUtil::getStageFlags(nextPassType);
 
@@ -58,6 +59,11 @@ void RenderGraphTexture::resloveUsage(ResourceBarrierInfo& barrierInfo, uint16_t
     imageBarrier.subresourceRange = getHwTexture()->getVkImageView().getSubResourceRange();
 
     mHwTexture->getVkImage().setLayout(newLayout);
+}
+
+uint16_t RenderGraphTexture::getDefaultUsage(uint16_t nextUsage) {
+    auto layout = mHwTexture->getVkImage().getLayout();
+    return static_cast<uint16_t>(ImageUtil::getTextureUsage(layout));
 }
 
 

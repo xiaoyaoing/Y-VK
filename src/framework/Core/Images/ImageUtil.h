@@ -64,6 +64,9 @@ public:
     }
 
     inline static VulkanLayout getDefaultLayout(TextureUsage usage) {
+        if (any(usage & TextureUsage::PRESENT)) {
+            return VulkanLayout::PRESENT;
+        }
         if (any(usage & TextureUsage::STORAGE))
             return VulkanLayout::READ_WRITE;
 
@@ -90,6 +93,40 @@ public:
             return VulkanLayout::TRANSFER_DST;
         return VulkanLayout::READ_ONLY;
     }
+
+    inline static TextureUsage getTextureUsage(VulkanLayout layout) {
+    switch(layout) {
+        case VulkanLayout::READ_WRITE:
+            return TextureUsage::STORAGE;
+            
+        case VulkanLayout::READ_ONLY:
+            return TextureUsage::SAMPLEABLE;
+            
+        case VulkanLayout::DEPTH_ATTACHMENT:
+            return TextureUsage::DEPTH_ATTACHMENT;
+            
+        case VulkanLayout::DEPTH_SAMPLER:
+            return TextureUsage::DEPTH_ATTACHMENT | TextureUsage::SAMPLEABLE;
+            
+        case VulkanLayout::COLOR_ATTACHMENT:
+            return TextureUsage::COLOR_ATTACHMENT;
+            
+        case VulkanLayout::DEPTH_READ_ONLY:
+            return TextureUsage::DEPTH_READ_ONLY;
+            
+        case VulkanLayout::TRANSFER_SRC:
+            return TextureUsage::TRANSFER_SRC;
+            
+        case VulkanLayout::TRANSFER_DST:
+            return TextureUsage::TRANSFER_DST;
+        case VulkanLayout::PRESENT:
+            return TextureUsage::PRESENT;
+        case VulkanLayout::UNDEFINED:
+            return TextureUsage::NONE;
+        default:
+            return TextureUsage::SAMPLEABLE; // 默认返回READ_ONLY对应的usage
+    }
+}
 
     // inline static VulkanLayout getDefaultLayout(VkImageUsageFlags vkusage)
     // {

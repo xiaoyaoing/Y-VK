@@ -112,7 +112,7 @@ uint32_t RenderContext::getActiveFrameIndex() const {
 }
 
 void RenderContext::submitAndPresent(CommandBuffer& commandBuffer, VkFence fence) {
-    getSwapChainImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::PRESENT, getSwapChainImage().getVkImageView().getSubResourceRange());
+    getSwapChainImage().getVkImage().transitionLayout(commandBuffer, VulkanLayout::PRESENT);
     commandBuffer.endRecord();
 
     auto queue = device.getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0);

@@ -16,11 +16,12 @@ public:
     };
     RenderGraphBuffer(const std::string& name, const Descriptor& descriptor);
     RenderGraphBuffer(const std::string& name, Buffer* hwBuffer);
-    void                       devirtualize() override;
-    void                       destroy() override;
-    RenderResourceType         getType() const override;
-    void                       resloveUsage(ResourceBarrierInfo& barrierInfo, uint16_t lastUsage, uint16_t nextUsage, RenderPassType lastPassType, RenderPassType nextPassType) override;
-    Buffer*                    getHwBuffer();
+    void               devirtualize() override;
+    void               destroy() override;
+    RenderResourceType getType() const override;
+    void               resloveUsage(ResourceBarrierInfo& barrierInfo, uint16_t lastUsage, uint16_t nextUsage, RenderPassType lastPassType, RenderPassType nextPassType) override;
+    Buffer*            getHwBuffer();
+    uint16_t           getDefaultUsage(uint16_t nextUsage) override;
 
 private:
     Descriptor mDesc;

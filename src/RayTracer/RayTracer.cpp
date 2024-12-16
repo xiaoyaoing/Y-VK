@@ -5,6 +5,7 @@
 
 #include "RayTracer.h"
 
+#include "imgui.h"
 #include "Common/Config.h"
 #include "Common/ResourceCache.h"
 #include "Common/VkCommon.h"

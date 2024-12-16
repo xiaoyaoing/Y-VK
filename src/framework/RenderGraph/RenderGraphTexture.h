@@ -59,8 +59,9 @@ public:
 
     RenderResourceType getType() const override;
 
-    void resloveUsage(ResourceBarrierInfo& barrierInfo, uint16_t lastUsage, uint16_t nextUsage, RenderPassType lastPassType, RenderPassType nextPassType) override;
-
+    void             resloveUsage(ResourceBarrierInfo& barrierInfo, uint16_t lastUsage, uint16_t nextUsage, RenderPassType lastPassType, RenderPassType nextPassType) override;
+    uint16_t         getDefaultUsage(uint16_t nextUsage) override;
+    
     bool             imported{false};
     const Descriptor mDescriptor;
 
