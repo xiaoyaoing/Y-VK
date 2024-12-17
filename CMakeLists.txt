@@ -21,7 +21,7 @@ file(GLOB_RECURSE shaders_src CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.h
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.rcall
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.rint
-   # ${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.hlsl
+    #${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.hlsl
 )
 
 # 将 HLSL 文件添加到项目中，但不编译它们

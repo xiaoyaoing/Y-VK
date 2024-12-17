@@ -3,7 +3,7 @@
 //
 
 #include "Sampler.h"
-
+#include "Common/ResourceCache.h"   
 Sampler::Sampler(Device& device, VkSamplerAddressMode sampleMode, VkFilter filter, float maxLod,VkSamplerAddressMode addressModeU,VkSamplerAddressMode addressModeV,VkSamplerAddressMode addressModeW) : device(device) {
     VkPhysicalDeviceProperties properties{};
     vkGetPhysicalDeviceProperties(device.getPhysicalDevice(), &properties);
@@ -36,4 +36,22 @@ Sampler::~Sampler() {
 }
 Sampler::Sampler(Sampler&& other) : device(other.device), _sampler(other._sampler) {
     other._sampler = VK_NULL_HANDLE;
+}
+
+Device* SamplerManager::m_device = nullptr;
+
+void SamplerManager::Initialize(Device& device) {
+    m_device = &device;
+}
+
+Sampler & SamplerManager::GetRepeatLinearSampler(uint32_t mipLevels) {
+    return m_device->getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, mipLevels);
+}
+
+Sampler & SamplerManager::GetClampToEdgeLinearSampler(uint32_t mipLevels) {
+    return m_device->getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_FILTER_LINEAR, mipLevels);
+}
+
+Sampler & SamplerManager::GetNearestSampler() {
+    return m_device->getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_FILTER_NEAREST, 1);
 }

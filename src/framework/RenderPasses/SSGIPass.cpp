@@ -52,23 +52,36 @@ void SSGIPass::render(RenderGraph& rg) {
             auto&      hizSampler           = g_context->getDevice().getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_FILTER_LINEAR, hizDepth.getSubResourceRange().levelCount);
             glm::ivec2 dispatchSize         = glm::ivec2((g_context->getViewPortExtent().width + 7) / 8, (g_context->getViewPortExtent().height + 7) / 8);
             g_context->bindImageSampler(0, blackBoard.getImageView("diffuse"), sampler)
-                .bindImageSampler(1, blackBoard.getImageView("normal"), sampler)
-                .bindImageSampler(2, blackBoard.getImageView("emission"), sampler)
-                .bindImageSampler(3, blackBoard.getImageView(DEPTH_IMAGE_NAME), sampler)
-                .bindImageSampler(4, blackBoard.getImageView(RENDER_VIEW_PORT_IMAGE_NAME), sampler)
-                .bindImageSampler(5, TextureHelper::GetBlueNoise()->getVkImageView(), sampler)
-                .bindImageSampler(6, hizDepth, hizSampler)
                 .bindImage(0, blackBoard.getImageView("ssgi"))
-                .bindPushConstants(mPushConstant)
-                .flushAndDispatch(commandBuffer, dispatchSize.x, dispatchSize.y, 1);
+                .bindPushConstants(mPushConstant);
+            bool useCombinedSampler = false;
+            if (useCombinedSampler) {
+                g_context->bindImageSampler(1, blackBoard.getImageView("normal"), sampler)
+                    .bindImageSampler(2, blackBoard.getImageView("emission"), sampler)
+                    .bindImageSampler(3, blackBoard.getImageView(DEPTH_IMAGE_NAME), sampler)
+                    .bindImageSampler(4, blackBoard.getImageView(RENDER_VIEW_PORT_IMAGE_NAME), sampler)
+                    .bindImageSampler(5, TextureHelper::GetBlueNoise()->getVkImageView(), sampler)
+                    .bindImageSampler(6, hizDepth, hizSampler);
+            } else {
+                g_context->bindImage(1, blackBoard.getImageView("normal"))
+                          .bindImage(2, blackBoard.getImageView("emission"))
+                          .bindImage(3, blackBoard.getImageView(DEPTH_IMAGE_NAME))
+                          .bindImage(4, blackBoard.getImageView(RENDER_VIEW_PORT_IMAGE_NAME))
+                          .bindImage(5, TextureHelper::GetBlueNoise()->getVkImageView())
+                          .bindImage(6, hizDepth)
+                          .bindSampler(7, sampler);            }
+            g_context->flushAndDispatch(commandBuffer, dispatchSize.x, dispatchSize.y, 1);
         });
 
     rg.addImageCopyPass(rg.getBlackBoard().getHandle("ssgi"), rg.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME));
 }
 void SSGIPass::init() {
     PassBase::init();
-    mResource       = std::make_unique<SSRResource>();
-    mPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), ShaderPipelineKey{"postprocess/ssgi.comp"});
+    mResource = std::make_unique<SSRResource>();
+    //mPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), ShaderPipelineKey{"postprocess/ssgi.comp"});
+    ShaderKey key("postprocess/ssr.hlsl");
+    key.stage             = VK_SHADER_STAGE_COMPUTE_BIT;
+    mPipelineLayout       = std::make_unique<PipelineLayout>(g_context->getDevice(), ShaderPipelineKey{key});
     mPushConstant.use_hiz = 2;
 }
 void SSGIPass::updateGui() {

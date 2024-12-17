@@ -1,4 +1,7 @@
 #include "HlslCompiler.h"
+
+#include "Common/FIleUtils.h"
+
 #include <wrl/client.h>
 #include <d3d12shader.h>
 #include <dxc/dxcapi.h>
@@ -6,14 +9,14 @@
 #include <fstream>
 
 bool HlslCompiler::compileToSpirv(
-    VkShaderStageFlagBits stage,
-    const std::vector<uint8_t>& hlsl_source,
-    const std::string& entry_point,
-    std::vector<std::uint32_t>& spirv,
-    std::string& info_log,
+    VkShaderStageFlagBits        stage,
+    const std::vector<uint8_t>&  hlsl_source,
+    const std::string&           entry_point,
+    std::vector<std::uint32_t>&  spirv,
+    std::string&                 info_log,
     const std::filesystem::path& shader_path,
-    const ShaderKey& shaderKey) {
-    
+    const ShaderKey&             shaderKey) {
+
     if (!InitializeDxcCompiler()) {
         info_log = "Failed to initialize DXC compiler";
         return false;
@@ -25,15 +28,23 @@ bool HlslCompiler::compileToSpirv(
         return false;
     }
 
+    auto entryPointW   = StringToWString(entry_point);
+    auto profileW      = StringToWString(profile);
+    auto shaderFolderW = StringToWString(FileUtils::getShaderPath());
+
     std::vector<LPCWSTR> arguments = {
         L"-spirv",
         L"-fspv-target-env=vulkan1.2",
         L"-O3",
-        L"-enable-16bit-types",
         L"-HV 2021",
-        L"-E", StringToWString(entry_point).c_str(),
-        L"-T", StringToWString(profile).c_str()
+        L"-E",
+        entryPointW.c_str(),
+        L"-T",
+        profileW.c_str(),
     };
+
+    arguments.push_back(L"-I");
+    arguments.push_back(shaderFolderW.c_str());
 
     std::vector<std::wstring> define_strings;
     for (const auto& define : shaderKey.variant.get_processes()) {
@@ -45,12 +56,11 @@ bool HlslCompiler::compileToSpirv(
     }
 
     Microsoft::WRL::ComPtr<IDxcBlobEncoding> source_blob;
-    HRESULT hr = dxc_utils->CreateBlob(
+    HRESULT                                  hr = dxc_utils->CreateBlob(
         hlsl_source.data(),
         static_cast<UINT32>(hlsl_source.size()),
         CP_UTF8,
-        source_blob.GetAddressOf()
-    );
+        source_blob.GetAddressOf());
 
     if (FAILED(hr)) {
         info_log = "Failed to create source blob";
@@ -58,25 +68,24 @@ bool HlslCompiler::compileToSpirv(
     }
 
     DxcBuffer source_buffer;
-    source_buffer.Ptr = source_blob->GetBufferPointer();
-    source_buffer.Size = source_blob->GetBufferSize();
+    source_buffer.Ptr      = source_blob->GetBufferPointer();
+    source_buffer.Size     = source_blob->GetBufferSize();
     source_buffer.Encoding = 0;
 
     Microsoft::WRL::ComPtr<IDxcResult> result;
     hr = dxc_compiler->Compile(
         &source_buffer,
         arguments.data(),
-        static_cast<UINT32>(arguments.size()),
+        arguments.size(),
         include_handler,
         IID_PPV_ARGS(result.GetAddressOf()));
 
     Microsoft::WRL::ComPtr<IDxcBlobUtf8> errors;
     result->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(errors.GetAddressOf()), nullptr);
-    if (errors && errors->GetStringLength() > 0) {
-        info_log = std::string(errors->GetStringPointer());
-    }
-
     if (FAILED(hr)) {
+        if (errors && errors->GetStringLength() > 0) {
+            info_log = std::string(errors->GetStringPointer());
+        }
         return false;
     }
 
@@ -84,7 +93,7 @@ bool HlslCompiler::compileToSpirv(
     result->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(spirv_blob.GetAddressOf()), nullptr);
     if (spirv_blob) {
         auto* data = static_cast<const uint32_t*>(spirv_blob->GetBufferPointer());
-        auto size = spirv_blob->GetBufferSize() / sizeof(uint32_t);
+        auto  size = spirv_blob->GetBufferSize() / sizeof(uint32_t);
         spirv.assign(data, data + size);
     }
 
@@ -146,9 +155,8 @@ std::string HlslCompiler::getTargetProfile(VkShaderStageFlagBits stage) {
 
 std::wstring HlslCompiler::StringToWString(const std::string& str) {
     if (str.empty()) return std::wstring();
-    int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);
+    int          size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);
     std::wstring wstrTo(size_needed, 0);
     MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], size_needed);
     return wstrTo;
 }
-

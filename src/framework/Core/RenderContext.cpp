@@ -251,6 +251,13 @@ RenderContext& RenderContext::bindImage(uint32_t binding, const ImageView& view,
     resourceSetsDirty = true;
     return *this;
 }
+RenderContext& RenderContext::bindSampler(uint32_t binding, const Sampler& sampler, uint32_t setId, uint32_t array_element) {
+    if (setId == -1)
+        setId = static_cast<uint32_t>(DescriptorSetPoints::SAMPLER);
+    resourceSets[setId].bindSampler(sampler, binding, array_element);
+    resourceSetsDirty = true;
+    return *this;
+}
 
 // RenderContext& RenderContext::bindMaterial(const Material& material) {
 //     const uint32_t setId = static_cast<uint32_t>(DescriptorSetPoints::SAMPLER);
@@ -492,11 +499,12 @@ void RenderContext::flushDescriptorState(CommandBuffer& commandBuffer, VkPipelin
 
                     if (imageView != nullptr || sampler != nullptr) {
                         VkDescriptorImageInfo imageInfo{
-
-                            .imageView   = imageView->getHandle(),
                             .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                         };
 
+                        if(imageView) {
+                            imageInfo.imageView = imageView->getHandle();
+                        }
                         if (sampler)
                             imageInfo.sampler = sampler->getHandle();
 
@@ -512,6 +520,9 @@ void RenderContext::flushDescriptorState(CommandBuffer& commandBuffer, VkPipelin
                                     } else {
                                         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                                     }
+                                    break;
+                                case VK_DESCRIPTOR_TYPE_SAMPLER:
+                                   // imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                                     break;
                                 case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
                                     imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;

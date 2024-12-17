@@ -25,6 +25,11 @@ void ResourceSet::bindImage(const ImageView& view, const Sampler& sampler, uint3
     resourceBindings[binding][array_element].layout     = ImageUtil::getVkImageLayout(view.getImage().getLayout(view.getSubResourceRange()));
     dirty                                               = true;
 }
+void ResourceSet::bindSampler(const Sampler& sampler, uint32_t binding, uint32_t array_element) {
+    resourceBindings[binding][array_element].dirty   = true;
+    resourceBindings[binding][array_element].sampler = &sampler;
+    dirty                                            = true;
+}
 
 void ResourceSet::bindInput(const ImageView& view, uint32_t binding, uint32_t array_element) {
     resourceBindings[binding][array_element].dirty      = true;

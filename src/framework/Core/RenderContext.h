@@ -90,6 +90,7 @@ public:
     RenderContext& bindAcceleration(uint32_t binding, const Accel& acceleration, uint32_t setId = -1, uint32_t array_element = 0);
     RenderContext& bindImageSampler(uint32_t binding, const ImageView& view, const Sampler& sampler, uint32_t setId = -1, uint32_t array_element = 0);
     RenderContext& bindImage(uint32_t binding, const ImageView& view, uint32_t setId = -1, uint32_t array_element = 0);
+    RenderContext& bindSampler(uint32_t binding, const Sampler& sampler, uint32_t setId = -1, uint32_t array_element = 0);
     // RenderContext& bindMaterial(const Material& material);
     RenderContext& bindView(const View& view);
     RenderContext& bindPrimitiveGeom(CommandBuffer& commandBuffer, const Primitive& primitive);

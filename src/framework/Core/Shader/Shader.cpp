@@ -172,6 +172,8 @@ void ShaderVariant::update_id() {
     id = hasher(preamble);
 }
 
+
+
 Shader::Shader(Device& device, const ShaderKey& key, VkShaderStageFlagBits spv_stage) : device(device) {
     std::string           shaderFilePath = FileUtils::getShaderPath(key.path);
     auto                  shaderExt      = FileUtils::getFileExt(shaderFilePath);

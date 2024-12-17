@@ -17,3 +17,16 @@ protected:
     VkSampler _sampler;
     Device&   device;
 };
+
+class SamplerManager {
+public:
+    static void Initialize(Device& device);
+    
+    // 常见的采样器配置
+    static Sampler & GetRepeatLinearSampler(uint32_t mipLevels);
+    static Sampler & GetClampToEdgeLinearSampler(uint32_t mipLevels);
+    static Sampler & GetNearestSampler();
+
+private:
+    static Device* m_device; // 设备指针
+};

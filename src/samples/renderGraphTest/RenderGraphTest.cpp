@@ -112,7 +112,7 @@ void RenderGraphTest::prepare() {
     passes.emplace_back(std::make_unique<GBufferPass>());
     passes.emplace_back(std::make_unique<ShadowMapPass>());
     passes.emplace_back(std::make_unique<LightingPass>());
-    // passes.emplace_back(std::make_unique<SSGIPass>());
+    passes.emplace_back(std::make_unique<SSGIPass>());
 
     for (auto& pass : passes) {
         pass->init();

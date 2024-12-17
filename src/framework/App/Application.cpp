@@ -83,7 +83,7 @@ void Application::prepare() {
 
     TextureHelper::Initialize();
     RenderPtrManangr::Initalize();
-    
+    SamplerManager::Initialize(*device);
     
     camera = std::make_shared<Camera>();
     mPostProcessPass = std::make_unique<PostProcess>();
