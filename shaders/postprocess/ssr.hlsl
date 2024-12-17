@@ -47,10 +47,8 @@ struct PushConstant {
     : register(b0, space0);
 [[vk::push_constant]] ConstantBuffer<PushConstant> pc : register(b1, space0);
 
-[[vk::binding(0,
-              1)]] Texture2D gbuffer_diffuse_roughness; // binding = 0, set = 1
+[[vk::binding(0,1)]]  Texture2D gbuffer_diffuse_roughness; // binding = 0, set = 1
 [[vk::binding(1, 1)]] Texture2D gbuffer_normal_metalic; // binding = 1, set = 1
-[[vk::binding(2, 1)]] Texture2D gbuffer_emission;       // binding = 2, set = 1
 [[vk::binding(3, 1)]] Texture2D gbuffer_depth;          // binding = 3, set = 1
 [[vk::binding(4, 1)]] Texture2D frame_color_attach;     // binding = 4, set = 1
 [[vk::binding(5, 1)]] Texture2D blue_noise;             // binding = 5, set = 1

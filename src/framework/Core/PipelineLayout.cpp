@@ -19,11 +19,7 @@ PipelineLayout::PipelineLayout(Device& device, const ShaderPipelineKey& shaderKe
 void PipelineLayout::create() {
     VkPipelineLayoutCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-
-    if(shaders.size() == 5) {
-        int k = 1;
-    }
-
+    
     for (auto& shader : shaders) {
         for (const auto& shaderResource : shader->getShaderResources()) {
 
