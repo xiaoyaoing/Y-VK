@@ -64,12 +64,13 @@ void SSGIPass::render(RenderGraph& rg) {
                     .bindImageSampler(6, hizDepth, hizSampler);
             } else {
                 g_context->bindImage(1, blackBoard.getImageView("normal"))
-                          .bindImage(2, blackBoard.getImageView("emission"))
-                          .bindImage(3, blackBoard.getImageView(DEPTH_IMAGE_NAME))
-                          .bindImage(4, blackBoard.getImageView(RENDER_VIEW_PORT_IMAGE_NAME))
-                          .bindImage(5, TextureHelper::GetBlueNoise()->getVkImageView())
-                          .bindImage(6, hizDepth)
-                          .bindSampler(7, sampler);            }
+                    .bindImage(2, blackBoard.getImageView("emission"))
+                    .bindImage(3, blackBoard.getImageView(DEPTH_IMAGE_NAME))
+                    .bindImage(4, blackBoard.getImageView(RENDER_VIEW_PORT_IMAGE_NAME))
+                    .bindImage(5, TextureHelper::GetBlueNoise()->getVkImageView())
+                    .bindImage(6, hizDepth)
+                    .bindSampler(7, sampler);
+            }
             g_context->flushAndDispatch(commandBuffer, dispatchSize.x, dispatchSize.y, 1);
         });
 
