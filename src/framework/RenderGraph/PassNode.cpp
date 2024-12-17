@@ -52,6 +52,7 @@ void GraphicsPassNode::RenderPassData::devirtualize(RenderGraph& renderGraph, co
             .samples        = hwTexture->getVkImage().getSampleCount(),
             .usage          = hwTexture->getVkImage().getUseFlags(),
             .initial_layout = hwTexture->getVkImage().getLayout(hwTexture->getVkImageView().getSubResourceRange()),
+            .final_layout =  desc.finalLayouts.contains(color)?desc.finalLayouts.at(color):VulkanLayout::UNDEFINED,
             //todo fix this
             .loadOp = loadOp,
             .storeOp = VK_ATTACHMENT_STORE_OP_STORE
@@ -151,17 +152,16 @@ void PassNode::resolveResourceUsages(RenderGraph& renderGraph, CommandBuffer& co
         auto state = stateTracker.getResourceState(resourceIt.first);
 
         unsigned short srcUsage;
-        RenderPassType srcState;
+        RenderPassType srcState{UNDEFINED};
 
         if (std::get<0>(state) == nullptr) {
-            stateTracker.setResourceState(resourceIt.first, this, resourceIt.second);
-            srcState = getType();
-            srcUsage = resourceIt.second;
+            //srcState = getType();
+            srcUsage = resource->getDefaultUsage(resourceIt.second);
         } else {
             srcState = std::get<0>(state)->getType();
             srcUsage = std::get<1>(state);
         }
-
+        stateTracker.setResourceState(resourceIt.first, this, resourceIt.second);
         resource->resloveUsage(barrierInfo, srcUsage, resourceIt.second, srcState, getType());
     }
     VkDependencyInfo dependencyInfo{};
@@ -172,7 +172,8 @@ void PassNode::resolveResourceUsages(RenderGraph& renderGraph, CommandBuffer& co
     dependencyInfo.pBufferMemoryBarriers    = barrierInfo.bufferBarriers.data();
     dependencyInfo.pImageMemoryBarriers     = barrierInfo.imageBarriers.data();
     dependencyInfo.pMemoryBarriers          = barrierInfo.memoryBarriers.data();
-    vkCmdPipelineBarrier2(commandBuffer.getHandle(), &dependencyInfo);
+    
+        vkCmdPipelineBarrier2(commandBuffer.getHandle(), &dependencyInfo);
 }
 
 void PassNode::addResourceUsage(RenderGraphHandle handle, uint16_t usage) {

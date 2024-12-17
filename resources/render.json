@@ -14,9 +14,9 @@
     }
   ],
   "integrator": {
-    "type": "ddgi"
+    "type": "path"
   },
-  "scene_path": "F:/code/RTXGI-DDGI/samples/test-harness/data/gltf/sponza/Sponza.gltf",
+  "scene_path": "D:\\code\\glTF-Sample-Models\\glTF-Sample-Models-main\\glTF-Sample-Models-main\\2.0\\Sponza\\glTF\\Sponza.gltf",
   "scene_scale": 1.0,
   "scene_translation": [
     0.0,

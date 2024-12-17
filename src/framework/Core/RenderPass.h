@@ -20,6 +20,8 @@ struct SubpassInfo {
     VkResolveModeFlagBits depthStencilResolveMode{};
 
     std::string debugName;
+
+    std::unordered_map<uint32_t,VkImageLayout> finalLayouts{};
 };
 
 

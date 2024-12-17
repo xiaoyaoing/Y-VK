@@ -36,6 +36,7 @@ public:
 
     glm::vec3 center() const noexcept { return m_min * 0.5f + m_max * 0.5f; }
 
+    glm::vec3 extent() const noexcept { return m_max - m_min; }
     // Returns width(x), height(y), depth(z)
     glm::vec3 scale() const noexcept { return m_max - m_min; }
 

@@ -57,6 +57,8 @@ enum class TextureUsage : uint16_t
     TRANSFER_DST= 0x200,
 
     STORAGE  = 0x400,
+
+    PRESENT = 0x800,
     
     //!< Texture can be used as a subpass input
     DEFAULT = UPLOADABLE | SAMPLEABLE //!< Default texture usage

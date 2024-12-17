@@ -72,7 +72,9 @@ void ShadowMapPass::render(RenderGraph& rg) {
                     auto depth = rg.createTexture(shadowName, {.extent = VkExtent2D{4096,4096},
                 .useage = TextureUsage::SUBPASS_INPUT | TextureUsage::DEPTH_ATTACHMENT | TextureUsage::SAMPLEABLE
                                                    });
-                builder.declare(RenderGraphPassDescriptor({depth}, {.outputAttachments = {depth}}));
+                    auto desc = RenderGraphPassDescriptor({depth}, {.outputAttachments = {depth}});
+                    desc.setFinalLayout(depth,VulkanLayout::DEPTH_SAMPLER);
+                builder.declare(desc);
                 builder.writeTexture(depth, TextureUsage::DEPTH_ATTACHMENT);
                 },
                 
@@ -88,7 +90,7 @@ void ShadowMapPass::render(RenderGraph& rg) {
                     context.commandBuffer.setScissor(0,{vkCommon::initializers::rect2D(4096, 4096, 0, 0)});
                     g_manager->fetchPtr<View>("view")->bindViewGeom(context.commandBuffer).drawPrimitives(context.commandBuffer);
 
-                    rg.getBlackBoard().getImage(name).transitionLayout(context.commandBuffer, VulkanLayout::DEPTH_SAMPLER);
+                    // rg.getBlackBoard().getImage(name).transitionLayout(context.commandBuffer, VulkanLayout::DEPTH_SAMPLER);
                     g_manager->getView()->setLightDirty(true);
 
                     if (lastDirectionalLight == i) {

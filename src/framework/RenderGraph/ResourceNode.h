@@ -22,6 +22,7 @@ public:
     virtual void                       devirtualize()                                             = 0;
     virtual void                       destroy()                                                  = 0;
     virtual void                       resloveUsage(ResourceBarrierInfo & barrierInfo, uint16_t lastUsage, uint16_t nextUsage,RenderPassType lastPassType, RenderPassType nextPassType) = 0;
+    virtual uint16_t getDefaultUsage(uint16_t nextUsage) = 0;
     virtual RenderResourceType getType() const                                            = 0;
     
 public:

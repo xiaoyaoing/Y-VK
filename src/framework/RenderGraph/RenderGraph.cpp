@@ -422,6 +422,7 @@ Blackboard& RenderGraph::getBlackBoard() const {
 
 RenderGraphHandle RenderGraph::importTexture(const std::string& name, SgImage* hwTexture, bool addRef) {
     auto texture = new RenderGraphTexture(name, hwTexture);
+    DebugUtils::SetObjectName(device.getHandle(),reinterpret_cast<uint64_t>(texture->getHwTexture()->getVkImage().getHandle()),VK_OBJECT_TYPE_IMAGE,name);
     if (addRef) texture->addRef();
     return addTexture(texture);
 }

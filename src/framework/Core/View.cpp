@@ -154,6 +154,7 @@ void View::updateGui() {
         ImGui::SliderFloat3("Position", pos, -100, 100, "%.2f");
         ImGui::Checkbox("Use shadow", &light.lightProperties.use_shadow);
         light.lightProperties.direction = glm::normalize(glm::vec3(dir[0], dir[1], dir[2]));
+        light.lightProperties.position = glm::vec3(pos[0], pos[1], pos[2]);
     }
     ImGui::SliderFloat("Rough Scale", &mPerViewUniform.roughnessScale, 0.0f, 5.0f);
     ImGui::SliderFloat("Normal Scale", &mPerViewUniform.normalScale, 0.0f, 1.0f);

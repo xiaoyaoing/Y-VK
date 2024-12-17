@@ -169,7 +169,10 @@ uint32_t Image::getMipLevelCount() const {
     return mip_level_count;
 }
 
-void Image::transitionLayout(CommandBuffer& commandBuffer, VulkanLayout newLayout,const VkImageSubresourceRange& subresourceRange) {
+void Image::transitionLayout(CommandBuffer& commandBuffer, VulkanLayout newLayout, VkImageSubresourceRange subresourceRange) {
+    if (isDepthOrStencilFormat(format)) {
+        subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    }
     auto oldLayout = getLayout(subresourceRange);
 
     if (oldLayout == newLayout) {

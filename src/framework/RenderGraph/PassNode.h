@@ -17,6 +17,8 @@ struct RenderGraphSubpassInfo {
     std::vector<RenderGraphHandle> outputAttachments{};
 
     bool disableDepthTest{false};
+
+ 
 };
 
 struct RenderGraphPassDescriptor {
@@ -39,6 +41,11 @@ struct RenderGraphPassDescriptor {
     RenderGraphPassDescriptor(const std::vector<RenderGraphHandle>& textures, const RenderGraphSubpassInfo& subpass) : textures(textures), subpasses({subpass}) {
     }
     RenderGraphPassDescriptor() = default;
+    
+    std::unordered_map<RenderGraphHandle,VulkanLayout,RenderGraphHandle::Hash> finalLayouts{};
+    void setFinalLayout(const RenderGraphHandle& inputAttachment,VulkanLayout layout) {
+        finalLayouts[inputAttachment] = layout;
+    }
 };
 
 class PassNode : public RenderGraphNode {
