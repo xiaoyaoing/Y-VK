@@ -24,7 +24,6 @@ void SSGIPass::render(RenderGraph& rg) {
             auto  depth_hiz  = blackBoard["depth_hiz"];
             auto  normal     = blackBoard["normal"];
             auto  diffuse    = blackBoard["diffuse"];
-            auto  emission   = blackBoard["emission"];
             auto  output     = blackBoard.getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
             auto  ssgi       = rg.createTexture("ssgi",
                                                 {
@@ -32,7 +31,7 @@ void SSGIPass::render(RenderGraph& rg) {
                                                     .useage = TextureUsage::SAMPLEABLE | TextureUsage::STORAGE | TextureUsage::TRANSFER_SRC,
 
                                          });
-            builder.readTextures({output, depth, depth_hiz, normal, diffuse, emission}, RenderGraphTexture::Usage::SAMPLEABLE);
+            builder.readTextures({output, depth, depth_hiz, normal, diffuse}, RenderGraphTexture::Usage::SAMPLEABLE);
             builder.writeTexture(ssgi, RenderGraphTexture::Usage::STORAGE);
 
             settings.pipelineLayout = mPipelineLayout.get();
@@ -51,24 +50,22 @@ void SSGIPass::render(RenderGraph& rg) {
             auto&      hizDepth             = rg.getBlackBoard().getImageView("depth_hiz");
             auto&      hizSampler           = g_context->getDevice().getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_FILTER_LINEAR, hizDepth.getSubResourceRange().levelCount);
             glm::ivec2 dispatchSize         = glm::ivec2((g_context->getViewPortExtent().width + 7) / 8, (g_context->getViewPortExtent().height + 7) / 8);
-            g_context->bindImageSampler(0, blackBoard.getImageView("diffuse"), sampler)
-                .bindImage(0, blackBoard.getImageView("ssgi"))
+            g_context->bindImage(0, blackBoard.getImageView("ssgi"))
                 .bindPushConstants(mPushConstant);
             bool useCombinedSampler = false;
             if (useCombinedSampler) {
-                g_context->bindImageSampler(1, blackBoard.getImageView("normal"), sampler)
-                    .bindImageSampler(2, blackBoard.getImageView("emission"), sampler)
+                g_context->bindImageSampler(0, blackBoard.getImageView("diffuse"), sampler)
+                     .bindImageSampler(1, blackBoard.getImageView("normal"), sampler)
                     .bindImageSampler(3, blackBoard.getImageView(DEPTH_IMAGE_NAME), sampler)
                     .bindImageSampler(4, blackBoard.getImageView(RENDER_VIEW_PORT_IMAGE_NAME), sampler)
                     .bindImageSampler(5, TextureHelper::GetBlueNoise()->getVkImageView(), sampler)
                     .bindImageSampler(6, hizDepth, hizSampler);
             } else {
-                g_context->bindImage(1, blackBoard.getImageView("normal"))
-                    .bindImage(2, blackBoard.getImageView("emission"))
-                    .bindImage(3, blackBoard.getImageView(DEPTH_IMAGE_NAME))
-                    .bindImage(4, blackBoard.getImageView(RENDER_VIEW_PORT_IMAGE_NAME))
-                    .bindImage(5, TextureHelper::GetBlueNoise()->getVkImageView())
-                    .bindImage(6, hizDepth)
+                g_context->bindImage(0,blackBoard.getImageView("diffuse"),1).bindImage(1, blackBoard.getImageView("normal"),1)
+                    .bindImage(3, blackBoard.getImageView(DEPTH_IMAGE_NAME),1)
+                    .bindImage(4, blackBoard.getImageView(RENDER_VIEW_PORT_IMAGE_NAME),1)
+                    .bindImage(5, TextureHelper::GetBlueNoise()->getVkImageView(),1)
+                    .bindImage(6, hizDepth,1)
                     .bindSampler(7, sampler);
             }
             g_context->flushAndDispatch(commandBuffer, dispatchSize.x, dispatchSize.y, 1);

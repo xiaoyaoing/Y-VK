@@ -527,7 +527,9 @@ void RenderContext::flushDescriptorState(CommandBuffer& commandBuffer, VkPipelin
                                 case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
                                     imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
                                     break;
-
+                                case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+                                    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                                    break;
                                 default:
                                     continue;
                             }
