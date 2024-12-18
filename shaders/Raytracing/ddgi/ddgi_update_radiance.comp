@@ -22,6 +22,8 @@ layout(set = 0, binding = 0) uniform _DDGIUboBuffer{ DDGIUbo ddgi_ubo; };
 
 #include "ddgi_sample.glsl"
 
+
+
 #ifdef UPDATE_RADIANCE
 #define NUM_THREADS_X PROBE_RADIANCE_WITH_BORDER_SIDE
 #define NUM_THREADS_Y PROBE_RADIANCE_WITH_BORDER_SIDE
@@ -133,14 +135,7 @@ void main(){
 
                     #ifdef UPDATE_RADIANCE
                     vec3 irradiance = ddgi_ray_data_buffer.data[index].irradiance;
-                    vec3 position = get_position_by_grid(probe_coord) - ddgi_ubo.probe_start_position;
-                    //irradiance = abs(position) / 10.f;
-                    result += irradiance * weight;// * 10.f;
-//                    result = texel_dir * 0.5f + 0.5f ;
-//                    if(result.x /total_weight > 100){
-//                        debugPrintfEXT("irradiance and weight: %f %f i %d %f\n", irradiance.x, weight,i, total_weight);
-//                    }
-                    
+                    result += irradiance * weight;
                     #else
                     dist = min(dist, ddgi_ubo.max_distance);
                     result.rg  += vec2(dist, dist * dist) * weight;

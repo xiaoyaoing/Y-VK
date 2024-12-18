@@ -19,7 +19,7 @@ layout(location = 1) rayPayloadEXT AnyHitPayload any_hit_payload;
 layout(push_constant) uniform _PushConstantRay { PCPath pc_ray; };
 layout(set = 0, binding = 0) uniform _DDGIUboBuffer{ DDGIUbo ddgi_ubo; };
 layout(set = 0, binding = 6, std430)  buffer DDGIRayDataBuffer { DDGIRayData data[]; } ddgi_ray_data_buffer;
-layout(set = 0, binding = 7)  buffer ProbeOffsets { vec3 d[]; } probe_offsets;
+layout(set = 0, binding = 7)  buffer ProbeOffsetBuffer { vec3 probe_offsets[]; } ddgi_probe_offset_buffer;
 
 layout(set = 1, binding = 0) uniform sampler2D radiance_map;
 layout(set = 1, binding = 1) uniform sampler2D dist_map;
@@ -27,6 +27,18 @@ layout(set = 1, binding = 1) uniform sampler2D dist_map;
 
 #include "../trace_common.glsl"
 #include  "ddgi_sample.glsl"
+
+
+vec3 get_probe_offset(uint probe_idx){
+
+    return ddgi_probe_offset_buffer.probe_offsets[probe_idx];
+}
+
+vec3 get_probe_position(ivec3 probe_coord){
+    float  probe_grid_size = ddgi_ubo.probe_distance;
+    vec3 probe_grid_origin = ddgi_ubo.probe_start_position;
+    return probe_grid_origin + vec3(probe_coord) * probe_grid_size + get_probe_offset(get_probe_index_by_coord(probe_coord));
+}
 
 uvec4 seed = init_rng(gl_LaunchIDEXT.xy, gl_LaunchSizeEXT.xy, pc_ray.frame_num);
 //layout(buffer_reference, scalar, buffer_reference_align = 4) readonly buffer DDGIRayDataBuffer { DDGIRayData data[];};
@@ -104,7 +116,7 @@ vec3 sample_irradiance_map(vec3 normal, vec3 position, vec3 surface_bias) {
 
         //        probeRadiance = vec3(0.5);
 
-        irradiance += probeRadiance * weight ;//* 10;
+        irradiance += probeRadiance * weight;//* 10;
         total_weight += weight;
     }
 
@@ -121,8 +133,7 @@ vec3 sample_irradiance_map(vec3 normal, vec3 position, vec3 surface_bias) {
 
 
 vec3 probe_location(int index) {
-    vec3 offset = probe_offsets.d[index].xyz;
-    offset = vec3(0);
+    vec3 offset = ddgi_probe_offset_buffer.probe_offsets[index];
     return offset + get_position_by_grid(get_probe_coord_by_index(index));
 }
 
@@ -155,6 +166,7 @@ vec3 eval_env(vec3 dir){
     return texture(scene_textures[lights[scene_desc.envmap_idx].light_texture_id], dir_uv).xyz;
 }
 
+
 void main()
 {
 
@@ -186,23 +198,29 @@ void main()
             distance = 1000.f;
         }
         else {
-            event = make_surface_scatter_event(hitPayload, -direction.xyz);
+            distance = length(hitPayload.p - origin);
+
+            if(dot(hitPayload.n_g, direction) > 0){
+                distance = -distance * 0.2f;
+            }
+            
+            event = make_surface_scatter_event(hitPayload, -direction.xyz,false);
             irradiance += Le(direction.xyz, event);
 
             vec3 light_sample = uniform_sample_one_light(seed, event, pc_ray.light_num, pc_ray.enable_sample_light>0, pc_ray.enable_sample_bsdf>0);
-           // light_sample = get_albedo(materials.m[event.material_idx],event.uv);
+            // light_sample = get_albedo(materials.m[event.material_idx],event.uv);
             irradiance +=  light_sample;
-            
-            distance = length(hitPayload.p - origin);
-        }   
+
+          
+    }
     }
     if (isnan(irradiance.x) || isnan(irradiance.y) || isnan(irradiance.z)){
         debugPrintfEXT("nan irradiance %f %f %f\n", irradiance.x, irradiance.y, irradiance.z);
     }
-    
-//    if(!isBlack(irradiance))
-//        debugPrintfEXT("irradiance %f %f %f\n", irradiance.x, irradiance.y, irradiance.z);
-    
+
+    //    if(!isBlack(irradiance))
+    //        debugPrintfEXT("irradiance %f %f %f\n", irradiance.x, irradiance.y, irradiance.z);
+
     vec3 light_irradiance = vec3(0);
     float volumeBlendWeight = 1.f;
 
@@ -210,12 +228,12 @@ void main()
     if (volumeBlendWeight > 0 && found_intersect && pc_ray.frame_num > 0)
     {
         // Get irradiance from the DDGIVolume
-        light_irradiance = sample_irradiance_map(event.p,event.frame.n, vec3(event.frame.n * pc_ray.ddgi_normal_bias));
+        light_irradiance = sample_irradiance_map(event.p, event.frame.n, vec3(event.frame.n * pc_ray.ddgi_normal_bias));
         light_irradiance *= pc_ray.ddgi_indirect_scale;
         light_irradiance = get_albedo(materials.m[event.material_idx], event.uv) * light_irradiance / PI;
-       // debugPrintfEXT("light_irradiance %f %f %f\n", light_irradiance.x, light_irradiance.y, light_irradiance.z);
+        // debugPrintfEXT("light_irradiance %f %f %f\n", light_irradiance.x, light_irradiance.y, light_irradiance.z);
     }
-    
+
     DDGIRayData ray_data;
     ray_data.irradiance = irradiance + light_irradiance;
     ray_data.dist = distance;
@@ -224,6 +242,4 @@ void main()
 
     ddgi_ray_data_buffer.data[index] = ray_data;
     return;
-
-
 }

@@ -39,6 +39,7 @@ protected:
     std::unique_ptr<ShadowMapPass> shadowMapPass;
     bool debugDDGI = true;
     bool showIndirect = true;
+    bool relocate = false;
     bool showDirect = false;
     uint frameCount = 0;
     std::unique_ptr<Primitive> spherePrimitive;

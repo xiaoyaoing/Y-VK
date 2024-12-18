@@ -1,0 +1,22 @@
+#include "ddgi_commons.h"
+#include "ddgi_sample.glsl"
+
+layout(set = 0, binding = 0) uniform buffer ProbeOffsetBuffer { vec3 probe_offsets[]; } ddgi_probe_offset_buffer;
+layout(set = 0, binding = 1) readonly buffer DDGIRayDataBuffer { DDGIRayData data[]; } ddgi_ray_data_buffer;
+
+layout(local_size_x = NUM_THREADS_X, local_size_y = NUM_THREADS_Y,
+local_size_z = 1) in;
+void main(){
+
+
+    const int probe_idx = int(gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x);
+
+    uint num_probes = ddgi_ubo.probe_counts.x * ddgi_ubo.probe_counts.y * ddgi_ubo.probe_counts.z;
+    if (probe_idx >= num_probes){
+        return;
+    }
+
+    const ivec3 probe_coord = get_probe_coord_by_index(probe_idx);
+    ddgi_probe_offset_buffer.probe_offsets[probe_idx] = vec3(0.0);
+}
+

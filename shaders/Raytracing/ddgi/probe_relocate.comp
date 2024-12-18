@@ -1,0 +1,119 @@
+#version 460
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_scalar_block_layout : enable
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_debug_printf : enable
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
+#extension GL_EXT_buffer_reference2 : require
+#extension GL_EXT_shader_atomic_float : require
+
+#include "ddgi_commons.h"
+layout(set = 0, binding = 0) uniform _DDGIUboBuffer{ DDGIUbo ddgi_ubo; };
+layout(set = 0, binding = 1)  buffer ProbeOffsetBuffer { vec3 probe_offsets[]; } ddgi_probe_offset_buffer;
+layout(set = 0, binding = 2) readonly buffer  DDGIRayDataBuffer { DDGIRayData data[]; } ddgi_ray_data_buffer;
+layout(push_constant) uniform _PushConstantRay { PCPath pc_ray; };
+
+#include "ddgi_sample.glsl"
+
+vec3 get_probe_offset(uint probe_idx){
+
+    return ddgi_probe_offset_buffer.probe_offsets[probe_idx];
+}
+
+vec3 get_probe_position(ivec3 probe_coord){
+    float  probe_grid_size = ddgi_ubo.probe_distance;
+    vec3 probe_grid_origin = ddgi_ubo.probe_start_position;
+    return probe_grid_origin + vec3(probe_coord) * probe_grid_size + get_probe_offset(get_probe_index_by_coord(probe_coord));
+}
+
+#define NUM_THREADS_X 32
+#define NUM_THREADS_Y 32
+
+
+layout(local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+void main(){
+
+
+    const int probe_idx = int(gl_GlobalInvocationID.x);
+
+    uint num_probes = ddgi_ubo.probe_counts.x * ddgi_ubo.probe_counts.y * ddgi_ubo.probe_counts.z;
+    if (probe_idx >= num_probes){
+        return;
+    }
+
+    const ivec3 probe_coord = get_probe_coord_by_index(probe_idx);
+    vec3 probe_offset = ddgi_probe_offset_buffer.probe_offsets[probe_idx];
+
+    int   closestBackfaceIndex = -1;
+    int   closestFrontfaceIndex = -1;
+    int   farthestFrontfaceIndex = -1;
+    float closestBackfaceDistance = 1e27f;
+    float closestFrontfaceDistance = 1e27f;
+    float farthestFrontfaceDistance = 0.f;
+    float backfaceCount = 0.f;
+
+    int num_rays = ddgi_ubo.rays_per_probe;
+    for (int ray_idx = 0; ray_idx < num_rays; ray_idx++){
+        int global_ray_idx = probe_idx * num_rays + ray_idx;
+        DDGIRayData  ray_data = ddgi_ray_data_buffer.data[global_ray_idx];
+        float hit_distance = ray_data.dist;
+        
+//        if(probe_idx == 243){
+//            debugPrintfEXT("ray_idx: %d hit_distance: %f\n", ray_idx, hit_distance);
+//        }
+        
+        if (hit_distance<0.0f){
+            backfaceCount++;
+            hit_distance = -5.f * hit_distance;
+            if (hit_distance < closestBackfaceDistance){
+                closestBackfaceDistance = hit_distance;
+                closestBackfaceIndex = global_ray_idx;
+            }
+        } else {
+            if (hit_distance < closestFrontfaceDistance){
+                closestFrontfaceDistance = hit_distance;
+                closestFrontfaceIndex = global_ray_idx;
+            }
+            if (hit_distance > farthestFrontfaceDistance){
+                farthestFrontfaceDistance = hit_distance;
+                farthestFrontfaceIndex = global_ray_idx;
+            }
+        }
+    }
+
+
+    vec3 full_offset = vec3(1e27f);
+    float probeFixedRayBackfaceThreshold = pc_ray.backface_threshold;
+    float probeMinfrontFaceDistance = pc_ray.min_frontface_distance;
+    
+    float backfaceRatio = float(backfaceCount) / float(num_rays);
+//    if(probe_idx == 243){
+//        debugPrintfEXT("backfaceRatio: %f\n", backfaceRatio);
+//    }
+    if (closestBackfaceIndex != -1 && backfaceRatio > pc_ray.backface_threshold){
+        vec3 direction = normalize(ddgi_ray_data_buffer.data[closestBackfaceIndex].direction);
+        full_offset = probe_offset + direction * (closestBackfaceDistance + 0.5f * probeMinfrontFaceDistance);
+    }
+    else if (closestFrontfaceDistance < probeMinfrontFaceDistance){
+        vec3 closestFrontfaceDirection = normalize(ddgi_ray_data_buffer.data[closestFrontfaceIndex].direction);
+        vec3 farthestFrontfaceDirection = normalize(ddgi_ray_data_buffer.data[farthestFrontfaceIndex].direction);
+        if (dot(closestFrontfaceDirection, farthestFrontfaceDirection) <= 0.f){
+            full_offset = probe_offset + farthestFrontfaceDirection * min(farthestFrontfaceDistance, 1.f);
+        }
+    }
+    else if (closestFrontfaceDistance > probeMinfrontFaceDistance && length(probe_offset) > 0.f){
+        vec3 moveBackMargin = vec3(min(closestFrontfaceDistance - probeMinfrontFaceDistance, length(probe_offset)));
+        vec3 moveBackDirection = normalize(-probe_offset);
+        full_offset = probe_offset + moveBackDirection * moveBackMargin;
+    }
+
+//    if(full_offset!=vec3(1e27f)){
+//       debugPrintfEXT("probe_idx: %d full_offset: %f %f %f\n", probe_idx, full_offset.x, full_offset.y, full_offset.z);
+//    }
+    vec3 normalizedOffset = full_offset / ddgi_ubo.probe_distance;
+    if (dot(normalizedOffset, normalizedOffset) < 0.2025f){
+       // debugPrintfEXT("relocate success probe_idx: %d normalizedOffset: %f %f %f\n", probe_idx, normalizedOffset.x, normalizedOffset.y, normalizedOffset.z);
+        probe_offset = full_offset;
+    }
+    ddgi_probe_offset_buffer.probe_offsets[probe_idx] = probe_offset;
+}

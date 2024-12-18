@@ -15,14 +15,14 @@ struct DDGIUbo {
     float normal_bias;
 
     float view_bias;
-    float backface_ratio;
+    float backface_threshold;
     int   irradiance_width;
     int   irradiance_height;
 
     int   depth_width;
     int   depth_height;
-    float min_frontface_dist;
-    float pad;
+    float min_frontface_distance;
+    float padding;
 };
 
 struct DDGIRayData {

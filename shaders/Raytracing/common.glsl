@@ -65,12 +65,12 @@ bool is_two_sided(uint material_idx){
     return material_type == RT_BSDF_TYPE_DIELECTRIC || material_type == RT_BSDF_TYPE_PRINCIPLE;
 }
 
-SurfaceScatterEvent make_surface_scatter_event(HitPayload hit_pay_load, const vec3 wo){
+SurfaceScatterEvent make_surface_scatter_event(HitPayload hit_pay_load, const vec3 wo,bool enable_two_sided){
     SurfaceScatterEvent event;
 
     bool two_sided = is_two_sided(hit_pay_load.material_idx);
     vec3 n_s = hit_pay_load.n_s;
-    if (dot(wo, hit_pay_load.n_s) < 0 && !two_sided){
+    if (dot(wo, hit_pay_load.n_s) < 0 && !two_sided && enable_two_sided){
         n_s = -n_s;
     }
 
@@ -81,6 +81,10 @@ SurfaceScatterEvent make_surface_scatter_event(HitPayload hit_pay_load, const ve
     event.uv = hit_pay_load.uv;
     event.prim_idx = hit_pay_load.prim_idx;
     return event;
+}
+
+SurfaceScatterEvent make_surface_scatter_event(HitPayload hit_pay_load, const vec3 wo){
+   return make_surface_scatter_event(hit_pay_load, wo, true);
 }
 
 SurfaceScatterEvent make_surface_scatter_event(vec3 wo, vec3 n, vec3 p, vec2 uv, uint material_idx){

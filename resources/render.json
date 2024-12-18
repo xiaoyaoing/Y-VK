@@ -8,15 +8,15 @@
     {
       "type": "ddgi",
       "ray_per_probe": 256,
-      "probe_distance": 1,
+      "probe_distance": 0.3,
       "normal_bias" : 0.4,
       "use_rt_gbuffer" : true
     }
   ],
   "integrator": {
-    "type": "path"
+    "type": "ddgi"
   },
-  "scene_path": "D:\\code\\glTF-Sample-Models\\glTF-Sample-Models-main\\glTF-Sample-Models-main\\2.0\\Sponza\\glTF\\Sponza.gltf",
+  "scene_path": "E:\\code\\RTXGI\\media\\cornell_box\\cornell_box.gltf",
   "scene_scale": 1.0,
   "scene_translation": [
     0.0,

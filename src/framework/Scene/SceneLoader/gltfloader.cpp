@@ -653,7 +653,11 @@ void GLTFLoadingImpl::processNode(const tinygltf::Node& node, const tinygltf::Mo
 
             LOGI("Primitive {} has {} vertices and {} indices {} {} material_idx", j, primVertexCount, curPrimitiveIndexCount, mIndexCount, primitive.material)
             auto transform          = modelTransforms[&node];
-            newPrimitive->setDimensions(transform.getLocalToWorldMatrix() * glm::vec4(posMin, 1.0f), transform.getLocalToWorldMatrix() * glm::vec4(posMax, 1.0f));
+            auto min = transform.getLocalToWorldMatrix() * glm::vec4(posMin, 1.0f);
+            auto max = transform.getLocalToWorldMatrix() * glm::vec4(posMax, 1.0f);
+            auto tempMin = glm::vec3(std::min(min.x, max.x), std::min(min.y, max.y), std::min(min.z, max.z));
+            auto tempMax = glm::vec3(std::max(min.x, max.x), std::max(min.y, max.y), std::max(min.z, max.z));
+            newPrimitive->setDimensions(tempMin, tempMax);
             newPrimitive->transform = transform;
             sceneBBox.unite(newPrimitive->getDimensions());
             //     primitiveUniforms.push_back(newPrimitive->GetPerPrimitiveUniform());
