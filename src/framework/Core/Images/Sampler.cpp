@@ -9,8 +9,8 @@ Sampler::Sampler(Device& device, VkSamplerAddressMode sampleMode, VkFilter filte
     vkGetPhysicalDeviceProperties(device.getPhysicalDevice(), &properties);
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    samplerInfo.magFilter               = VK_FILTER_LINEAR;
-    samplerInfo.minFilter               = VK_FILTER_LINEAR;
+    samplerInfo.magFilter               = filter;
+    samplerInfo.minFilter               = filter;
     samplerInfo.addressModeU            = addressModeU;
     samplerInfo.addressModeV            = addressModeV;
     samplerInfo.addressModeW            = addressModeW;

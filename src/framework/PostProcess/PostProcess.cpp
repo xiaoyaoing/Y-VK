@@ -2,6 +2,7 @@
 
 #include "imgui.h"
 #include "Common/ResourceCache.h"
+#include "Common/TextureHelper.h"
 #include "Core/RenderContext.h"
 #include "RenderGraph/RenderGraph.h"
 
@@ -28,9 +29,9 @@ void PostProcess::render(RenderGraph& rg) {
         },
         [&](RenderPassContext& context) {
             g_context->getPipelineState().setPipelineLayout(*mPipelineLayout).setDepthStencilState({.depthTestEnable = false}).setRasterizationState({.cullMode = VK_CULL_MODE_NONE});
-            g_context->bindImageSampler(0, rg.getBlackBoard().getImageView(RENDER_VIEW_PORT_IMAGE_NAME), *mSampler)
-                    .bindPushConstants(pcPost)
+            g_context->bindImageSampler(0, rg.getBlackBoard().getImageView(RENDER_VIEW_PORT_IMAGE_NAME), *mSampler).bindImageSampler(1,TextureHelper::GetBlueNoise256()->getVkImageView(), *mSampler).bindPushConstants(pcPost)
                     .flushAndDraw(context.commandBuffer, 3, 1, 0, 0);
+            pcPost.frame_number++;
         });
 }
 void PostProcess::updateGui() {
@@ -38,5 +39,7 @@ void PostProcess::updateGui() {
     ImGui::Begin("PostProcess");
     ImGui::SliderFloat("Bloom Exposure", &pcPost.bloom_exposure, 0.0f, 10.0f);
     ImGui::Combo("Tonemapper", reinterpret_cast<int*>(&pcPost.tone_mapper), tonemapperNames.data(), tonemapperNames.size());
+    ImGui::Checkbox("Enable Dither", reinterpret_cast<bool*>(&pcPost.dither));
+    ImGui::Checkbox("Enable Gamma Correction", reinterpret_cast<bool*>(&pcPost.gamma_correction));
     ImGui::End();
 }

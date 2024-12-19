@@ -46,10 +46,9 @@ uvec4 seed = init_rng(gl_LaunchIDEXT.xy, gl_LaunchSizeEXT.xy, pc_ray.frame_num);
 
 //DDGIRayDataBuffer ddgi_ray_data_buffer = DDGIRayDataBuffer(scene_desc.ddgi_ray_data_addr);
 
-vec3 sample_irradiance_map(vec3 normal, vec3 position, vec3 surface_bias) {
+vec3 sample_irradiance_map(vec3 normal, vec3 position,vec3 surface_bias) {
 
 
-    //  normal = vec3(0,0,1);
 
     vec3 irradiance = vec3(0.0);
     float total_weight = 0.0;
@@ -61,7 +60,7 @@ vec3 sample_irradiance_map(vec3 normal, vec3 position, vec3 surface_bias) {
     vec3 probe_blend_alpha = clamp((biased_position - base_probe_position) / (ddgi_ubo.probe_distance), vec3(0.0), vec3(1.0));
 
 
-    for (int probe_index = 0;probe_index<8;probe_index ++){
+    for (int probe_index = 0;probe_index<1;probe_index ++){
         ivec3 adjacent_probe_offset = ivec3(probe_index, probe_index >> 1, probe_index >> 2) & ivec3(1, 1, 1);
 
 
@@ -84,6 +83,10 @@ vec3 sample_irradiance_map(vec3 normal, vec3 position, vec3 surface_bias) {
         float trilinear_weight = trilinear.x * trilinear.y * trilinear.z;
         float weight = 1.f;
 
+
+        float wrapShading = (dot(dir_world_pos_to_adjacent_probe, normal) + 1.f) * 0.5f;
+        weight *= (wrapShading * wrapShading) + 0.2f;
+
         //        vec2 octant_coord = encode_to_oct(dir_biased_pos_to_adjacent_probe);
         vec2 probe_sample_uv = get_probe_color_uv(ivec3(adjacent_probe_coord), -dir_biased_pos_to_adjacent_probe, PROBE_DEPTH_SIDE);
 
@@ -97,7 +100,7 @@ vec3 sample_irradiance_map(vec3 normal, vec3 position, vec3 surface_bias) {
             chebyshev_weight = max(pow(chebyshev_weight, 3), 0.f);
         }
 
-        weight = max(0.05f, chebyshev_weight);
+        weight *= max(0.05f, chebyshev_weight);
         weight = max(1e-5f, weight);
 
         const float crush_threshold = 0.2f;
@@ -105,18 +108,12 @@ vec3 sample_irradiance_map(vec3 normal, vec3 position, vec3 surface_bias) {
             weight *= (weight * weight) / (crush_threshold * crush_threshold);
         }
 
-        weight *= trilinear_weight;
+        weight = trilinear_weight;
+        weight = 0.125f;
 
         probe_sample_uv = get_probe_color_uv(ivec3(adjacent_probe_coord), normal, PROBE_RADIANCE_SIDE);
         vec3 probeRadiance = textureLod(radiance_map, probe_sample_uv, 0).rgb;
-
-        //  return probeRadiance;
-        //        probeRadiance = vec3(probe_sample_uv, 0);
-        //        weight = 0.125f;
-
-        //        probeRadiance = vec3(0.5);
-
-        irradiance += probeRadiance * weight;//* 10;
+        irradiance += probeRadiance * weight ;//* 10;
         total_weight += weight;
     }
 
@@ -126,8 +123,8 @@ vec3 sample_irradiance_map(vec3 normal, vec3 position, vec3 surface_bias) {
     else {
         irradiance = vec3(0.0);
     }
-
-    return irradiance * 3.1415926 * 0.85f;;
+    //    return vec3(total_weight * 10);
+    return irradiance * 3.1415926;// * 0.85f;;
 }
 
 
@@ -166,6 +163,11 @@ vec3 eval_env(vec3 dir){
     return texture(scene_textures[lights[scene_desc.envmap_idx].light_texture_id], dir_uv).xyz;
 }
 
+float DDGIGetVolumeBlendWeight(vec3 worldPosition)
+{
+   return 1.f;
+}
+
 
 void main()
 {
@@ -181,6 +183,7 @@ void main()
     float tmax = 10000.0;
 
     vec3 direction = normalize(mat3(pc_ray.probe_rotation) *  spherical_fibonacci(ray_index, ddgi_ubo.rays_per_probe));
+    direction = spherical_fibonacci(ray_index, ddgi_ubo.rays_per_probe);
     vec3 origin = probe_location(probe_index);
     vec3 irradiance = vec3(0);
     float distance;
@@ -201,16 +204,16 @@ void main()
             distance = length(hitPayload.p - origin);
 
             if(dot(hitPayload.n_g, direction) > 0){
-                distance = -distance * 0.2f;
+                distance = -distance;// * 0.2f;
             }
             
             event = make_surface_scatter_event(hitPayload, -direction.xyz,false);
             irradiance += Le(direction.xyz, event);
 
-            vec3 light_sample = uniform_sample_one_light(seed, event, pc_ray.light_num, pc_ray.enable_sample_light>0, pc_ray.enable_sample_bsdf>0);
+            vec3 light_sample = uniform_sample_one_light(seed, event, pc_ray.light_num, true,false);
             // light_sample = get_albedo(materials.m[event.material_idx],event.uv);
             irradiance +=  light_sample;
-
+        
           
     }
     }
@@ -228,14 +231,14 @@ void main()
     if (volumeBlendWeight > 0 && found_intersect && pc_ray.frame_num > 0)
     {
         // Get irradiance from the DDGIVolume
-        light_irradiance = sample_irradiance_map(event.p, event.frame.n, vec3(event.frame.n * pc_ray.ddgi_normal_bias));
+        light_irradiance = sample_irradiance_map(event.p, event.frame.n, get_surface_bias(event.frame.n, direction,pc_ray.ddgi_normal_bias, pc_ray.ddgi_view_bias));
         light_irradiance *= pc_ray.ddgi_indirect_scale;
         light_irradiance = get_albedo(materials.m[event.material_idx], event.uv) * light_irradiance / PI;
         // debugPrintfEXT("light_irradiance %f %f %f\n", light_irradiance.x, light_irradiance.y, light_irradiance.z);
     }
 
     DDGIRayData ray_data;
-    ray_data.irradiance = irradiance + light_irradiance;
+    ray_data.irradiance = irradiance ;//+ light_irradiance;
     ray_data.dist = distance;
     ray_data.direction = direction;
     uint index = probe_index * ddgi_ubo.rays_per_probe + ray_index;

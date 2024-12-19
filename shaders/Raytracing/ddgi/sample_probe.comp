@@ -23,7 +23,7 @@ layout(set = 2, binding = 0, rgba32f) uniform image2D radiance_image;
 layout(set = 0, binding = 0) uniform _DDGIUboBuffer{ DDGIUbo ddgi_ubo; };
 layout(set = 0, binding = 1) buffer ProbeOffsetBuffer { vec3 probe_offsets[]; } ddgi_probe_offset_buffer;
 //layout(set = 0, binding = 3) uniform SceneDescBuffer { SceneDesc scene_desc; };
-layout(push_constant) uniform _PushConstantRay { PCPath pc; };
+layout(push_constant) uniform _PushConstantRay { PCPath pc_ray; };
 
 
 layout(buffer_reference, std430, buffer_reference_align = 4) readonly buffer GBuffer_{ GBuffer d[]; };
@@ -46,7 +46,6 @@ vec3 get_probe_position(ivec3 probe_coord){
 vec3 sample_irradiance_map(vec3 normal, vec3 position, vec3 surface_bias) {
 
 
-    
     vec3 irradiance = vec3(0.0);
     float total_weight = 0.0;
 
@@ -77,8 +76,14 @@ vec3 sample_irradiance_map(vec3 normal, vec3 position, vec3 surface_bias) {
         float biased_pos_to_adjacent_probe_distance = length(adjacent_probe_position - biased_position);
 
         vec3 trilinear= mix(vec3(1-probe_blend_alpha), probe_blend_alpha, vec3(adjacent_probe_offset));
-        float trilinear_weight = trilinear.x * trilinear.y * trilinear.z;
+        trilinear = max(trilinear, vec3(0.001f));
+        float trilinear_weight = trilinear.y;// * trilinear.y ;//* trilinear.z;
+//        trilinear_weight = trilinear_weight * trilinear_weight;
         float weight = 1.f;
+
+
+        float wrapShading = (dot(dir_world_pos_to_adjacent_probe, normal) + 1.f) * 0.5f;
+       // weight *= (wrapShading * wrapShading) + 0.2f;
 
         //        vec2 octant_coord = encode_to_oct(dir_biased_pos_to_adjacent_probe);
         vec2 probe_sample_uv = get_probe_color_uv(ivec3(adjacent_probe_coord), -dir_biased_pos_to_adjacent_probe, PROBE_DEPTH_SIDE);
@@ -92,8 +97,7 @@ vec3 sample_irradiance_map(vec3 normal, vec3 position, vec3 surface_bias) {
             chebyshev_weight = variance / (variance + v * v);
             chebyshev_weight = max(pow(chebyshev_weight, 3), 0.f);
         }
-
-        weight = max(0.05f, chebyshev_weight);
+        weight *= max(0.05f, chebyshev_weight);
         weight = max(1e-5f, weight);
 
         const float crush_threshold = 0.2f;
@@ -101,18 +105,36 @@ vec3 sample_irradiance_map(vec3 normal, vec3 position, vec3 surface_bias) {
             weight *= (weight * weight) / (crush_threshold * crush_threshold);
         }
 
-        weight *= trilinear_weight;
+//        weight = trilinear_weight;
+////        weight = 0.125f;
+//        probe_sample_uv = get_probe_color_uv(ivec3(adjacent_probe_coord), normal, PROBE_RADIANCE_SIDE);
+//        
+//        uint tex_width = ddgi_ubo.irradiance_width;
+//        uint tex_height = ddgi_ubo.irradiance_height;
+//        
+//        vec3 probeRadiance = texture(radiance_map, probe_sample_uv).rgb;
 
-        probe_sample_uv = get_probe_color_uv(ivec3(adjacent_probe_coord), normal, PROBE_RADIANCE_SIDE);
-        vec3 probeRadiance = textureLod(radiance_map, probe_sample_uv, 0).rgb;
+        uint tex_width = ddgi_ubo.irradiance_width;
+        uint tex_height = ddgi_ubo.irradiance_height;
 
-      //  return probeRadiance;
-//        probeRadiance = vec3(probe_sample_uv, 0);
-//        weight = 0.125f;
-        
-//        probeRadiance = vec3(0.5);
+        vec2 texel_size = vec2(1.0 / tex_width, 1.0 / tex_height);
+        vec2 uv00 = vec2(int(probe_sample_uv.x * tex_width) * texel_size.x, int(probe_sample_uv.y * tex_height) * texel_size.y);
+        vec2 uv10 = uv00 + vec2(texel_size.x, 0);
+        vec2 uv01 = uv00 + vec2(0, texel_size.y);
+        vec2 uv11 = uv00 + texel_size;
 
-        irradiance += probeRadiance * weight ;//* 10;
+        vec3 color00 = texture(radiance_map, uv00).rgb;
+        vec3 color10 = texture(radiance_map, uv10).rgb;
+        vec3 color01 = texture(radiance_map, uv01).rgb;
+        vec3 color11 = texture(radiance_map, uv11).rgb;
+
+        vec2 f = fract(probe_sample_uv * vec2(tex_width, tex_height));
+        vec3 probeRadiance = mix(mix(color00, color10, f.x), mix(color01, color11, f.x), f.y);
+//        probeRadiance = vec3(get_probe_color_uv(ivec3(adjacent_probe_coord), -dir_biased_pos_to_adjacent_probe, PROBE_DEPTH_SIDE), 0);
+       // probeRadiance = vec3(encode_to_oct(normal), 0);
+        //return probeRadiance;
+      //  irradiance = vec3(probe_sample_uv,0);
+        irradiance += probeRadiance * weight;//* 10;
         total_weight += weight;
     }
 
@@ -134,22 +156,25 @@ const float tmax = 10000.0;
 void main(){
     const ivec2 pixel_index  = ivec2(gl_GlobalInvocationID.xy);
 
-    if (pixel_index.x >= pc.size_x || pixel_index.y >= pc.size_y){
+    if (pixel_index.x >= pc_ray.size_x || pixel_index.y >= pc_ray.size_y){
         return;
     }
-    const uint g_buffer_index = pixel_index.y * pc.size_x + pixel_index.x;
+    const uint g_buffer_index = pixel_index.y * pc_ray.size_x + pixel_index.x;
     if (gbuffer.d[g_buffer_index].material_idx == -1){
         return;
     }
     vec3 normal = gbuffer.d[g_buffer_index].normal;
     vec3 position = gbuffer.d[g_buffer_index].position;
-    vec3 indirect_lighting = sample_irradiance_map(normal, position, normal * pc.ddgi_normal_bias) * pc.ddgi_indirect_scale;
+
+    vec3 camera_position = (scene_ubo.viewInverse * vec4(0, 0, 0, 1)).xyz;
+    vec3 camera_dir = normalize(position - camera_position);
+    vec3 indirect_lighting = sample_irradiance_map(normal, position, get_surface_bias(normal, camera_dir, pc_ray.ddgi_normal_bias, pc_ray.ddgi_view_bias)) * pc_ray.ddgi_indirect_scale;
 
     vec3 direct_lighting = imageLoad(radiance_image, ivec2(pixel_index)).xyz;
-//    direct_lighting = normal;
+    //    direct_lighting = normal;
 
     vec3 result = indirect_lighting * get_albedo(materials.m[gbuffer.d[g_buffer_index].material_idx], gbuffer.d[g_buffer_index].uv);
-    if (pc.ddgi_show_direct > 0){
+    if (pc_ray.ddgi_show_direct > 0){
         result += direct_lighting;
     }
     imageStore(radiance_image, pixel_index, vec4(result, 1));

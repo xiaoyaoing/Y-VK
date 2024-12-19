@@ -12,6 +12,9 @@ public:
         int      height;
         float    bloom_exposure{1};
         float    bloom_amount;
+        int gamma_correction{0};
+        int dither{0};
+        int frame_number{0};
     };
 
     void init() override;

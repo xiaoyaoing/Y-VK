@@ -229,7 +229,7 @@ void Application::update() {
         }
         updateScene();
         drawFrame(graph);
-        //mPostProcessPass->render(graph);
+        mPostProcessPass->render(graph);
     }
 
     mCurrentTextures = graph.getResourceNames(RenderResourceType::ETexture);

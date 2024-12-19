@@ -37,7 +37,7 @@ protected:
     uint pong = 0;
     std::unique_ptr<GBufferPass> gbufferPass;
     std::unique_ptr<ShadowMapPass> shadowMapPass;
-    bool debugDDGI = true;
+    bool debugDDGI = false;
     bool showIndirect = true;
     bool relocate = false;
     bool showDirect = false;

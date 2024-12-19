@@ -17,14 +17,30 @@ struct PCPost {
     int height;
     float bloom_exposure;
     float bloom_amount;
+    int gamma_correction;
+    int dither;
+    int frame_number;
 };
 
 layout(location = 0) in vec2 in_uv;
 layout(location = 0) out vec4 fragColor;
 
 layout(set = 1, binding = 0) uniform  sampler2D input_img;
-//layout(set = 1, binding = 0) uniform subpassInput input_img;
+layout(set = 1, binding = 1) uniform  sampler2D blue_noise_tex;
 layout(push_constant) uniform PCPost_ { PCPost pc; };
+
+const float goldenRatioConjugate = 0.61803398875;
+
+vec3 GetLowDiscrepancyBlueNoise(ivec2 screenPosition, uint frameNumber, float noiseScale, sampler2D blueNoise) {
+    // Load random value from a blue noise texture
+    vec3 rnd = texture(blueNoise, vec2(screenPosition % 256 + vec2(0.5f)) / 256.0).rgb;
+
+    // Generate a low discrepancy sequence
+    rnd = fract(rnd + goldenRatioConjugate * float((frameNumber - 1) % 16));
+
+    // Scale the noise magnitude to [0, noiseScale]
+    return rnd * noiseScale;
+}
 
 vec3 aces(vec3 x) {
     const float a = 2.51;
@@ -63,6 +79,7 @@ vec3 Tonemap(vec3 color, float exposure, uint tonemapper)
 
 
 
+
 void main() {
     vec4 input_tex = texture(input_img, vec2(in_uv.x,  in_uv.y));
     vec4 img;
@@ -74,4 +91,12 @@ void main() {
     }
     img = vec4(Tonemap(img.xyz, pc.bloom_exposure, pc.tone_mapper), 1.0);
     fragColor =  img;
+    
+    if(pc.dither > 0) {
+        vec3 dither = GetLowDiscrepancyBlueNoise(ivec2(gl_FragCoord.xy), pc.frame_number, 1.f / 255.f, blue_noise_tex);
+        fragColor.rgb += dither;
+    }
+    if(pc.gamma_correction > 0) {
+        fragColor.rgb = pow(fragColor.rgb, vec3(1.0 / 2.2));
+    }
 }

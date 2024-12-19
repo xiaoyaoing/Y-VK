@@ -10,6 +10,7 @@ namespace TextureHelper {
     enum HELPERTEXTURE_COUNT {
         HELPERTEXTURE_LOGO,
         HELPERTEXTURE_BLUENOISE,
+        HELPERTEXTURE_BLUENOISE256,
         HELPERTEXTURE_PERLINNOISE,
         HELPERTEXTURE_COUNT
     };
@@ -65,6 +66,9 @@ namespace TextureHelper {
             blueNoise->getVkImage().transitionLayout(commandBuffer, VulkanLayout::READ_ONLY, subresourceRange);
             g_context->submit(commandBuffer,true,VK_QUEUE_TRANSFER_BIT);
             helperTextures[HELPERTEXTURE_BLUENOISE] = std::move(blueNoise);
+
+            auto noise256 = Texture::loadTextureFromFile(g_context->getDevice(), FileUtils::getResourcePath("blue-noise-rgb-256.png"));
+            helperTextures[HELPERTEXTURE_BLUENOISE256] = std::move(noise256->image);
         }
 
         {
@@ -76,4 +80,7 @@ namespace TextureHelper {
     const SgImage* GetBlueNoise() {
         return helperTextures[HELPERTEXTURE_BLUENOISE].get();
     }
-}
+    const SgImage* GetBlueNoise256() {
+        return helperTextures[HELPERTEXTURE_BLUENOISE256].get();
+    }
+}// namespace TextureHelper

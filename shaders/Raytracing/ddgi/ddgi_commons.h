@@ -12,17 +12,12 @@ struct DDGIUbo {
     int   rays_per_probe;
     float max_distance;
     float depth_sharpness;
-    float normal_bias;
-
-    float view_bias;
-    float backface_threshold;
     int   irradiance_width;
+    
     int   irradiance_height;
-
     int   depth_width;
     int   depth_height;
     float min_frontface_distance;
-    float padding;
 };
 
 struct DDGIRayData {

@@ -14,7 +14,6 @@
 #include "Integrators/PathIntegrator.h"
 #include "Integrators/RestirIntegrator.h"
 #include "Integrators/SimpleIntegrator.h"
-#include "PostProcess/PostProcess.h"
 #include "Scene/SceneLoader/SceneLoaderInterface.h"
 #include "Scene/SceneLoader/gltfloader.h"
 
@@ -52,8 +51,8 @@ void RayTracer::drawFrame(RenderGraph& renderGraph) {
 }
 
 void RayTracer::onSceneLoaded() {
-    scene->addDirectionalLight(glm::vec3(0.0, -1.0, 0.3), glm::vec3(1.0f), 1.5f);
-    // scene->addDirectionalLight(glm::vec3(0.6,-0.435,-0.816), glm::vec3(1.0f), 1.0f);
+    // scene->addDirectionalLight(glm::vec3(0.0, -1.0, 0.3), glm::vec3(1.0f), 1.5f);
+    scene->addDirectionalLight(glm::vec3(0.6,-0.435,-0.816), glm::vec3(1.0f), 1.0f);
     camera = scene->getCameras()[0];
     Config::GetInstance().CameraFromConfig(*camera, scene->getName());
     sceneFirstLoad = false;
@@ -89,7 +88,7 @@ void RayTracer::prepare() {
                           .indexType               = VK_INDEX_TYPE_UINT32,
                           .bufferAddressAble       = true,
                           .bufferForAccel          = true,
-                          .bufferForStorage        = true};
+                          .bufferForStorage        = true,.loadLight =  false};
     config.getSceneLoadingConfig(sceneLoadingConfig);
     loadScene(config.getScenePath());
     g_context->setFlipViewport(false);

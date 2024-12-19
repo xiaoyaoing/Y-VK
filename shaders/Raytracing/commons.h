@@ -151,9 +151,10 @@ struct PCPath {
     float ddgi_indirect_scale;
     float ddgi_normal_bias;
 
-    vec3 padding1;
+    float ddgi_view_bias;
     float backface_threshold;
     float min_frontface_distance;
+    float padding2;
 };
 
 struct GBuffer {

@@ -25,6 +25,16 @@ namespace glm {
         v.z = j.at(2).get<float>();
     }
 
+    void from_json(const Json& j, ivec3& v) {
+        if (!j.is_array()) {
+            v = ivec3(j.get<int>());
+            return;
+        }
+        v.x = j.at(0).get<int>();
+        v.y = j.at(1).get<int>();
+        v.z = j.at(2).get<int>();
+    }
+
     void from_json(const Json& j, vec2& v) {
         if (!j.is_array()) {
             v = vec2(j.get<float>());

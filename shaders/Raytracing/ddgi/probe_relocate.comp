@@ -64,7 +64,7 @@ void main(){
         
         if (hit_distance<0.0f){
             backfaceCount++;
-            hit_distance = -5.f * hit_distance;
+            hit_distance = - hit_distance;
             if (hit_distance < closestBackfaceDistance){
                 closestBackfaceDistance = hit_distance;
                 closestBackfaceIndex = global_ray_idx;

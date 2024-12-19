@@ -9,7 +9,10 @@
       "type": "ddgi",
       "ray_per_probe": 256,
       "probe_distance": 0.3,
-      "normal_bias" : 0.4,
+      "probe_counts": [9,9,9],
+      "probe_start_position": [0.0 ,0 ,0.0],
+      "normal_bias" : 0.02,
+      "view_bias" : 0.1,
       "use_rt_gbuffer" : true
     }
   ],
@@ -23,6 +26,6 @@
     0.0,
     0.0
   ],
-  "window_width": 1920,
-  "window_height": 1080
+  "window_width": 1571,
+  "window_height": 1074
 }

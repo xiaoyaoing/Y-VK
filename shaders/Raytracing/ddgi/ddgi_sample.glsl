@@ -1,7 +1,7 @@
-#define PROBE_DEPTH_WITH_BORDER_SIDE 16
-#define PROBE_DEPTH_SIDE 14
-#define PROBE_RADIANCE_WITH_BORDER_SIDE 8
-#define PROBE_RADIANCE_SIDE 6
+#define PROBE_DEPTH_WITH_BORDER_SIDE 18
+#define PROBE_DEPTH_SIDE 16
+#define PROBE_RADIANCE_WITH_BORDER_SIDE 10
+#define PROBE_RADIANCE_SIDE 8
 
 ivec3 get_probe_coord_by_index(int probe_idx){
     ivec3 probe_counts  = ddgi_ubo.probe_counts;
@@ -22,7 +22,9 @@ ivec3 get_probe_coord_by_position(vec3 position){
     return ivec3(probe_grid);
 }
 
-
+vec3 get_surface_bias(vec3 normal,vec3 view,float normal_bias,float view_bias){
+    return normal * normal_bias - view * view_bias;
+}
 
 vec3 get_position_by_grid(ivec3 grid){
     float  probe_grid_size = ddgi_ubo.probe_distance;
