@@ -131,6 +131,10 @@ void DDGIIntegrator::render(RenderGraph& renderGraph) {
     pc_ray.frame_num   = frameCount;
     frameCount++;
 
+    if (camera->moving())
+        pc_ray.frame_num = 0;
+
+
     if (!entry_->primAreaBuffersInitialized) {
         initLightAreaDistribution(renderGraph);
     }
@@ -138,6 +142,14 @@ void DDGIIntegrator::render(RenderGraph& renderGraph) {
     renderGraph.setCutUnUsedResources(false);
 
     pc_ray.probe_rotation = ComputeRandomRotation();
+    
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> dis(-1.0, 1.0);
+    glm::vec4 rands(0.5 * dis(gen) + 0.5, dis(gen), dis(gen), dis(gen));
+    pc_ray.probe_rotation = glm::mat4_cast(
+        glm::angleAxis(2.0f * glm::pi<float>() * rands.x, glm::normalize(glm::vec3(rands.y, rands.z, rands.w))));
+    
     if (useRTGBuffer) {
         renderGraph.addRaytracingPass(
             "Generate Primary Rays",
@@ -152,7 +164,7 @@ void DDGIIntegrator::render(RenderGraph& renderGraph) {
             [&](RenderPassContext& context) {
                 auto& commandBuffer = context.commandBuffer;
                 bindRaytracingResources(commandBuffer);
-                g_context->bindImage(0, renderGraph.getBlackBoard().getImageView(RT_IMAGE_NAME));
+                g_context->bindImage(0, renderGraph.getBlackBoard().getImageView(RT_IMAGE_NAME)).bindBuffer(0, *buffers->uboBuffer);
                 g_context->bindPushConstants(pc_ray);
                 g_context->traceRay(commandBuffer, VkExtent3D{width, height, 1});
             });
@@ -182,7 +194,7 @@ void DDGIIntegrator::render(RenderGraph& renderGraph) {
         [&](RenderPassContext& context) {
             auto& commandBuffer = context.commandBuffer;
             bindRaytracingResources(commandBuffer);
-            auto& sampler = device.getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_FILTER_LINEAR, 1);
+            auto& sampler = device.getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, usePointSampler ? VK_FILTER_NEAREST : VK_FILTER_LINEAR, 1);
             g_context->bindImageSampler(0, renderGraph.getBlackBoard().getImageView("ddgi_radiance_map"), sampler)
                 .bindImageSampler(1, renderGraph.getBlackBoard().getImageView("ddgi_depth_map"), sampler);
             g_context->bindBuffer(0, *buffers->uboBuffer)
@@ -232,7 +244,7 @@ void DDGIIntegrator::render(RenderGraph& renderGraph) {
                 builder.writeTexture(RT_IMAGE_NAME, RenderGraphTexture::Usage::STORAGE);
             },
             [&](RenderPassContext& context) {
-                auto& sampler = device.getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_FILTER_NEAREST, 1);
+                auto& sampler = device.getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, usePointSampler?VK_FILTER_NEAREST:VK_FILTER_LINEAR, 1);
                 bindRaytracingResources(context.commandBuffer);
 
                 g_context->bindImageSampler(0, renderGraph.getBlackBoard().getImageView("ddgi_radiance_map"), sampler)
@@ -240,6 +252,7 @@ void DDGIIntegrator::render(RenderGraph& renderGraph) {
                     .bindBuffer(3, *entry_->sceneDescBuffer)
                     .bindBuffer(0, *buffers->uboBuffer)
                     .bindBuffer(1, *buffers->probeOffsets)
+                    .bindBuffer(6, *buffers->probeRayData)
                     .bindImage(0, renderGraph.getBlackBoard().getImageView(RT_IMAGE_NAME))
                     .bindPushConstants(pc_ray);
                 g_context->bindShaders({kSampleProbe})
@@ -296,7 +309,7 @@ void DDGIIntegrator::render(RenderGraph& renderGraph) {
                     .setVertexInputState({})
                     .setRasterizationState({.cullMode = VK_CULL_MODE_BACK_BIT})
                     .setDepthStencilState({.depthTestEnable = true, .depthWriteEnable = true});
-                g_context->bindBuffer(0, *buffers->uboBuffer).bindBuffer(1, *buffers->probeOffsets).bindBuffer(2, *entry_->sceneUboBuffer).bindImageSampler(0, renderGraph.getBlackBoard().getImageView("ddgi_radiance_map"), device.getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_FILTER_LINEAR, 1));
+                g_context->bindBuffer(0, *buffers->uboBuffer).bindBuffer(1, *buffers->probeOffsets).bindBuffer(2, *entry_->sceneUboBuffer).bindImageSampler(0, renderGraph.getBlackBoard().getImageView("ddgi_radiance_map"), device.getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, usePointSampler?VK_FILTER_NEAREST:VK_FILTER_LINEAR, 1));
                 uint probeCount = ubo.probe_counts.x * ubo.probe_counts.y * ubo.probe_counts.z;
                 // g_context->bindPrimitiveGeom(context.commandBuffer,*spherePrimitive).flushAndDrawIndexed(context.commandBuffer, spherePrimitive->indexCount, probeCount, 0, 0);
                 g_context->flushAndDraw(context.commandBuffer, kSphereVertexCount, probeCount, 0, 0);
@@ -325,11 +338,12 @@ void DDGIIntegrator::initScene(RTSceneEntry& entry) {
     pc_ray.backface_threshold     = 0.25f;
     pc_ray.min_frontface_distance = 0.f;
     pc_ray.wrap_border            = 1;
+    pc_ray.ddgi_hysteresis = 0.98f;
 
-    ubo.probe_counts         = 1.1f * (entry.scene->getSceneBBox().max() - entry.scene->getSceneBBox().min()) / config.probe_distance;
+    ubo.probe_counts         = 1.1f * (entry.scene->getSceneBBox().max() - entry.scene->getSceneBBox().min() + 0.2f) / config.probe_distance;
     ubo.probe_distance       = config.probe_distance;
     ubo.max_distance         = 1.5f * ((entry.scene->getSceneBBox().max() - entry.scene->getSceneBBox().min()) / vec3(ubo.probe_counts)).length();
-    ubo.probe_start_position = entry.scene->getSceneBBox().min() + 0.5f * (entry.scene->getSceneBBox().max() - entry.scene->getSceneBBox().min()) / vec3(ubo.probe_counts);
+    ubo.probe_start_position = entry.scene->getSceneBBox().min() + 0.1f;
 
     // ubo.probe_counts         = config.probe_counts;
     // ubo.probe_start_position = config.probe_start_position;
@@ -366,7 +380,7 @@ void DDGIIntegrator::initScene(RTSceneEntry& entry) {
     entry_->sceneDesc.ddgi_ray_data_addr = buffers->probeRayData->getDeviceAddress();
     entry_->sceneDescBuffer->uploadData(&entry_->sceneDesc, sizeof(entry_->sceneDesc));
 
-    config.irradiance_texel_count = 10;
+    config.irradiance_texel_count = 8;
     config.distance_texel_count   = 18;
 
     VkExtent3D irradianceImageExtent = {uint32(ubo.probe_counts.x * ubo.probe_counts.y * config.irradiance_texel_count), uint32(ubo.probe_counts.z * config.irradiance_texel_count), 1};
@@ -435,10 +449,12 @@ void DDGIIntegrator::onUpdateGUI() {
     ImGui::Checkbox("Show direct light", reinterpret_cast<bool*>(&pc_ray.ddgi_show_direct));
     ImGui::Checkbox("Warp Border", reinterpret_cast<bool*>(&pc_ray.wrap_border));
     ImGui::Checkbox("Relocate Probes", &relocate);
+    ImGui::Checkbox("Use Point Sampler", &usePointSampler);
     ImGui::SliderFloat("indirect scale", &pc_ray.ddgi_indirect_scale, 0.0f, 10.0f);
     ImGui::SliderFloat("normal bias", &pc_ray.ddgi_normal_bias, 0.0f, 1.0f);
     ImGui::SliderFloat("view bias", &pc_ray.ddgi_view_bias, 0.0f, 1.0f);
     ImGui::SliderFloat("backface threshold", &pc_ray.backface_threshold, 0.0f, 1.0f);
     ImGui::SliderFloat("min frontface distance", &pc_ray.min_frontface_distance, 0.0f, 1.0f);
+    ImGui::SliderFloat("ddgi hyteresis", &pc_ray.ddgi_hysteresis, 0.0f, 1.0f);
     ImGui::Checkbox("Use RT GBuffer", &useRTGBuffer);
 }

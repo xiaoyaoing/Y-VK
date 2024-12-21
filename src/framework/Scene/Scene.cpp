@@ -110,6 +110,9 @@ bool Scene::getVertexAttribute(const std::string& name, VertexAttribute* attribu
 Buffer& Scene::getVertexBuffer(const std::string& name) const {
     return *sceneVertexBuffer.at(name);
 }
+void Scene::addVertexBuffer(const std::string& name, std::unique_ptr<Buffer>&& buffer) {
+    sceneVertexBuffer.emplace(name, std::move(buffer));
+}
 VkIndexType Scene::getIndexType() const {
     return indexType;
 }

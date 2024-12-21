@@ -154,7 +154,7 @@ struct PCPath {
     float ddgi_view_bias;
     float backface_threshold;
     float min_frontface_distance;
-    float padding2;
+    float ddgi_hysteresis;
 };
 
 struct GBuffer {

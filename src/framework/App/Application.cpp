@@ -9,6 +9,7 @@
 #include <Core/Device/Instance.h>
 #include "../Common/VkCommon.h"
 #include "Common/Config.h"
+#include "Common/ResourceCache.h"
 #include "Common/TextureHelper.h"
 #include "Gui/Gui.h"
 #include "Core/RenderTarget.h"
@@ -213,6 +214,11 @@ void Application::update() {
         onViewUpdated();
     }
 
+    if(reloadShader) {
+        device->getResourceCache().reloadShaders();
+        reloadShader = false;
+    }
+
     updateGUI();
 
     renderContext->beginFrame();
@@ -301,6 +307,7 @@ void Application::updateGUI() {
     ImGui::Checkbox("save png", &imageSave.savePng);
     ImGui::Checkbox("save exr", &imageSave.saveExr);
     ImGui::Checkbox("save camera config", &saveCamera);
+    ImGui::Checkbox("reload shader", &reloadShader);
 
     auto file = gui->showFileDialog("Select gltf or json file", {".gltf", ".json"});
 

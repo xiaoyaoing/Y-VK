@@ -7,7 +7,7 @@
 // }
 
 
-PipelineLayout::PipelineLayout(Device& device, const ShaderPipelineKey& shaderKeys) : device(device) {
+PipelineLayout::PipelineLayout(Device& device, const ShaderPipelineKey& shaderKeys) : device(device),shaderKeys(shaderKeys) {
     shaders.reserve(shaderKeys.size());
     for (auto& shaderKey : shaderKeys) {
         shaders.emplace_back(&device.getResourceCache().requestShaderModule(shaderKey));
@@ -130,4 +130,14 @@ VkShaderStageFlags PipelineLayout::getPushConstantRangeStage(uint32_t size) cons
 }
 const std::map<std::uint32_t, std::vector<ShaderResource>>& PipelineLayout::getShaderSets() const {
     return shaderSets;
+}
+void PipelineLayout::recreate() {
+    vkDestroyPipelineLayout(device.getHandle(), layout, nullptr);
+    shaders.clear();
+    shaders.reserve(shaderKeys.size());
+    for (auto& shaderKey : shaderKeys) {
+        shaders.emplace_back(&device.getResourceCache().requestShaderModule(shaderKey));
+    }
+    create();
+    recreated = true;
 }

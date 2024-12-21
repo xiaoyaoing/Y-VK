@@ -899,6 +899,26 @@ void GLTFLoadingImpl::loadMaterials(tinygltf::Model& gltfModel) {
         LOGI("base color factor {} {} {} {}", material.pbrBaseColorFactor.x, material.pbrBaseColorFactor.y, material.pbrBaseColorFactor.z, material.pbrBaseColorFactor.w);
         materials.emplace_back(material);
     }
+
+    if(materials.empty()) {
+        LOGI("No material found in gltf file, using default material");
+        GltfMaterial material;
+        material.alphaCutoff = 0.5f;
+        material.alphaMode = 0;
+        material.doubleSided = 0;
+        material.emissiveFactor = glm::vec3(0.0f, 0.0f, 0.0f);
+        material.emissiveTexture = -1;
+        material.normalTexture = -1;
+        material.normalTextureScale = 1.0f;
+        material.occlusionTexture = -1;
+        material.occlusionTextureStrength = 1.0f;
+        material.pbrBaseColorFactor = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+        material.pbrBaseColorTexture = -1;
+        material.pbrMetallicFactor = 0.0f;
+        material.pbrMetallicRoughnessTexture = -1;
+        material.pbrRoughnessFactor = 1.0f;
+        materials.emplace_back(material);
+    }
     //   materials.resize(gltfModel.materials.size());
 }
 

@@ -8,9 +8,9 @@
     {
       "type": "ddgi",
       "ray_per_probe": 256,
-      "probe_distance": 0.3,
-      "probe_counts": [9,9,9],
-      "probe_start_position": [0.0 ,0 ,0.0],
+      "probe_distance": 1,
+      "probe_counts": [40, 40, 40],
+      "probe_start_position": [-1.35,-0.35,-1.35],
       "normal_bias" : 0.02,
       "view_bias" : 0.1,
       "use_rt_gbuffer" : true
@@ -19,7 +19,7 @@
   "integrator": {
     "type": "ddgi"
   },
-  "scene_path": "E:\\code\\RTXGI\\media\\cornell_box\\cornell_box.gltf",
+  "scene_path": "F:\\code\\RTXGI-DDGI\\samples\\test-harness\\data\\gltf\\cornell\\cornell_box.gltf",
   "scene_scale": 1.0,
   "scene_translation": [
     0.0,

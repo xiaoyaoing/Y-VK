@@ -70,9 +70,9 @@ void updateBorderTexel(ivec2 pixel_coord_top_left, ivec2 pixel_coord_local){
         debugPrintfEXT("copy_pixel_coord: %d %d\n", copy_pixel_coord.x, copy_pixel_coord.y);
     }
     vec4 result = imageLoad(output_image, pixel_coord_top_left + copy_pixel_coord);
-    //    result = vec4(0,0,0,1);
     imageStore(output_image, pixel_coord_top_left + pixel_coord_local, result);
 }
+
 
 const float tmax = 10000.0;
 void main(){
@@ -97,10 +97,12 @@ void main(){
     if (!is_border_pixel)
     {
         vec3 texel_dir = oct_decode(normalized_oct_coord(pixel_coord_local- ivec2(1, 1), OUTPUT_SIDE));
+        if(texel_dir.y > 0){
+          //  texel_dir.x = -texel_dir.x;
+        }
         // debugPrintfEXT("texel_dir: %f %f %f\n",texel_dir.x,texel_dir.y,texel_dir.z);
 
         const ivec2 test_coord = pixel_coord_local - 1;
-        vec3 test_coord_dir = oct_decode(normalized_oct_coord(test_coord, OUTPUT_SIDE));
         vec2 res = encode_to_oct(vec3(0, 0, 1));
         res = res * 0.5  * float(OUTPUT_SIDE) + 0.5f * float(OUTPUT_SIDE);
 
@@ -124,6 +126,7 @@ void main(){
                 const vec3 dir = ddgi_ray_data_buffer.data[index].direction;
                 float dist = ddgi_ray_data_buffer.data[index].dist;
                 float weight = clamp(dot(texel_dir, dir), 0.0, 1.0);
+//                weight = 1.f;
 
                 #ifndef UPDATE_RADIANCE
                 weight = pow(weight, ddgi_ubo.depth_sharpness);
@@ -154,7 +157,7 @@ void main(){
         result /= total_weight;
         if (pc_ray.first_frame == 0 || pc_ray.frame_num > 0)
         {
-            float hysteresis = 0.97;
+            float hysteresis = pc_ray.ddgi_hysteresis;
             vec3 prev_result = imageLoad(output_image, ivec2(pixel_current)).rgb;
             float w = 1. / float(pc_ray.frame_num + 1);
             #ifdef UPDATE_RADIANCE
@@ -169,8 +172,10 @@ void main(){
                 lerpDelta.y = min(max(c_threshold, abs(lerpDelta.y)), abs(delta.y)) * sign(lerpDelta.y);
                 lerpDelta.z = min(max(c_threshold, abs(lerpDelta.z)), abs(delta.z)) * sign(lerpDelta.z);
             }
-            result = prev_result + lerpDelta;
-            //result = mix(result, prev_result, hysteresis);
+          //  result = prev_result + lerpDelta;
+            //result = texel_dir;
+            result = mix(result, prev_result, hysteresis);
+         //   result = texel_dir ;///2.f +0.5f;
 //            result = result;
          //   result = mix(prev_result, result, w);
 

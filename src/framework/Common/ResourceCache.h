@@ -148,6 +148,14 @@ public:
         state.shader_modules.clear();
     }
 
+    void reloadShaders() {
+        state.shader_modules.clear();
+        state.pipelines.clear();
+        for(auto & pipeline : state.pipeline_layouts) {
+            pipeline.second.recreate();
+        }
+    }
+    
     void clearPipelineLayouts() {
         state.pipeline_layouts.clear();
     }

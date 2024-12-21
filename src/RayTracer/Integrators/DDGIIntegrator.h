@@ -38,9 +38,10 @@ protected:
     std::unique_ptr<GBufferPass> gbufferPass;
     std::unique_ptr<ShadowMapPass> shadowMapPass;
     bool debugDDGI = false;
-    bool showIndirect = true;
+    bool usePointSampler = false;
+    bool showIndirect = false;
     bool relocate = false;
-    bool showDirect = false;
+    bool showDirect = true;
     uint frameCount = 0;
     std::unique_ptr<Primitive> spherePrimitive;
     bool useRTGBuffer = true;

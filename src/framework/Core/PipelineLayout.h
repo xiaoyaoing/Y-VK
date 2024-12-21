@@ -26,7 +26,7 @@ public:
     VkShaderStageFlags getPushConstantRangeStage(uint32_t size) const;
 
     const std::map<std::uint32_t, std::vector<ShaderResource>>& getShaderSets() const;
-
+    void recreate();
 private:
     void create();
 
@@ -34,5 +34,7 @@ private:
     Device&                                              device;
     std::map<uint32_t, DescriptorLayout*>                descriptorLayouts;
     std::vector<const Shader *>                                  shaders;
+    ShaderPipelineKey                            shaderKeys;
     std::map<std::uint32_t, std::vector<ShaderResource>> shaderSets;
+    bool recreated = false;
 };

@@ -16,6 +16,7 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
         return vec3(0, 0, 0);
     }
 
+   
     
     const RTLight light = lights[light_idx];
 
@@ -23,8 +24,8 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
     enable_sample_bsdf = enable_sample_bsdf && !is_delta_light(light.light_type);
     
     LightSample light_sample = sample_li(light, event, light_sample_rand);
-    
 
+    
     if (enable_sample_light)
     {
         if (!isBlack(light_sample.indensity) && light_sample.pdf != 0){

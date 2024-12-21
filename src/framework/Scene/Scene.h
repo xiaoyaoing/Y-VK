@@ -82,6 +82,7 @@ public:
     std::vector<std::shared_ptr<Camera>>&          getCameras();
     bool                                           getVertexAttribute(const std::string& name, VertexAttribute* attribute = nullptr) const;
     Buffer&                                        getVertexBuffer(const std::string& name) const;
+    void addVertexBuffer(const std::string& name, std::unique_ptr<Buffer>&& buffer);
     VkIndexType                                    getIndexType() const;
     bool                                           hasVertexBuffer(const std::string& name) const;
     Buffer&                                        getIndexBuffer() const;

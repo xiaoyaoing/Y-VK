@@ -87,7 +87,17 @@ void RTSceneEntryImpl::initScene(Scene& scene_) {
     scene = &scene_;
 
     indexBuffer  = &scene->getIndexBuffer();
-    uvBuffer     = &scene->getVertexBuffer(TEXCOORD_ATTRIBUTE_NAME);
+    if (scene->hasVertexBuffer(TEXCOORD_ATTRIBUTE_NAME)) {
+        uvBuffer = &scene->getVertexBuffer(TEXCOORD_ATTRIBUTE_NAME);
+    } else {
+        // 如果没有 UV 缓冲区，创建一个全为 0 的 UV 缓冲区
+        size_t vertexCount = scene->getVertexBuffer(POSITION_ATTRIBUTE_NAME).getSize() / sizeof(glm::vec3);
+        std::vector<glm::vec2> zeroUVs(vertexCount, glm::vec2(0.0f, 0.0f));
+        auto uvBufferTemp  = std::make_unique< Buffer>(device, zeroUVs.size() * sizeof(glm::vec2), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, zeroUVs.data());
+
+        scene->addVertexBuffer(TEXCOORD_ATTRIBUTE_NAME, std::move(uvBufferTemp));
+        uvBuffer = &scene->getVertexBuffer(TEXCOORD_ATTRIBUTE_NAME);
+    }
     normalBuffer = &scene->getVertexBuffer(NORMAL_ATTRIBUTE_NAME);
     vertexBuffer = &scene->getVertexBuffer(POSITION_ATTRIBUTE_NAME);
 

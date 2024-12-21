@@ -37,6 +37,7 @@ void main()
     position += ddgi_probe_offset_buffer.probe_offsets[probe_index];
 //    debugPrintfEXT("probe_index: %d position: %f %f %f\n", probe_index, position.x, position.y, position.z);
     gl_Position = (scene_ubo.proj * scene_ubo.view) * vec4(position, 1.0);
+    gl_Position = (scene_ubo.proj * scene_ubo.view) * vec4(position, 1.0);
    // gl_Position.y = 1- gl_Position.y;
   
 }

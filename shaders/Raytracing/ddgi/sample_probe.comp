@@ -22,6 +22,8 @@ layout(set = 1, binding = 1) uniform sampler2D dist_map;
 layout(set = 2, binding = 0, rgba32f) uniform image2D radiance_image;
 layout(set = 0, binding = 0) uniform _DDGIUboBuffer{ DDGIUbo ddgi_ubo; };
 layout(set = 0, binding = 1) buffer ProbeOffsetBuffer { vec3 probe_offsets[]; } ddgi_probe_offset_buffer;
+layout(set = 0, binding = 6) readonly buffer DDGIRayDataBuffer { DDGIRayData data[]; } ddgi_ray_data_buffer;
+
 //layout(set = 0, binding = 3) uniform SceneDescBuffer { SceneDesc scene_desc; };
 layout(push_constant) uniform _PushConstantRay { PCPath pc_ray; };
 
@@ -43,6 +45,7 @@ vec3 get_probe_position(ivec3 probe_coord){
 }
 
 
+
 vec3 sample_irradiance_map(vec3 normal, vec3 position, vec3 surface_bias) {
 
 
@@ -61,6 +64,19 @@ vec3 sample_irradiance_map(vec3 normal, vec3 position, vec3 surface_bias) {
 
 
         ivec3 adjacent_probe_coord = clamp(ivec3(base_probe_coord) + adjacent_probe_offset, ivec3(0), ivec3(ddgi_ubo.probe_counts) - ivec3(1));
+        
+        vec3 p_radiace = vec3(0);
+        float p_total_weight = 0;
+        int probe_index_global = get_probe_index_by_coord(adjacent_probe_coord);
+        for(int i =probe_index_global * 256; i < (probe_index_global + 1) * 256; i++){
+            DDGIRayData ray_data = ddgi_ray_data_buffer.data[i];
+            float weight = dot(ray_data.direction, normal);
+            weight = max(0.0, weight);
+            p_radiace += ray_data.irradiance * weight;
+           // p_radiace += ray_data.direction * weight;
+            p_total_weight += weight;
+        }
+        p_radiace /= p_total_weight;
 
         int adjacent_probe_index = get_probe_index_by_coord(adjacent_probe_coord);
 
@@ -69,6 +85,7 @@ vec3 sample_irradiance_map(vec3 normal, vec3 position, vec3 surface_bias) {
             continue;
         }
         vec3 adjacent_probe_position = get_probe_position(adjacent_probe_coord);
+        //return position - adjacent_probe_position;
         vec3 dir_world_pos_to_adjacent_probe = normalize(adjacent_probe_position - position);
         vec3 dir_biased_pos_to_adjacent_probe = normalize(adjacent_probe_position - biased_position);
 
@@ -77,13 +94,12 @@ vec3 sample_irradiance_map(vec3 normal, vec3 position, vec3 surface_bias) {
 
         vec3 trilinear= mix(vec3(1-probe_blend_alpha), probe_blend_alpha, vec3(adjacent_probe_offset));
         trilinear = max(trilinear, vec3(0.001f));
-        float trilinear_weight = trilinear.y;// * trilinear.y ;//* trilinear.z;
-//        trilinear_weight = trilinear_weight * trilinear_weight;
+        float trilinear_weight = trilinear.x * trilinear.y * trilinear.z;
         float weight = 1.f;
 
 
         float wrapShading = (dot(dir_world_pos_to_adjacent_probe, normal) + 1.f) * 0.5f;
-       // weight *= (wrapShading * wrapShading) + 0.2f;
+        weight *= (wrapShading * wrapShading) + 0.2f;
 
         //        vec2 octant_coord = encode_to_oct(dir_biased_pos_to_adjacent_probe);
         vec2 probe_sample_uv = get_probe_color_uv(ivec3(adjacent_probe_coord), -dir_biased_pos_to_adjacent_probe, PROBE_DEPTH_SIDE);
@@ -104,15 +120,7 @@ vec3 sample_irradiance_map(vec3 normal, vec3 position, vec3 surface_bias) {
         if (weight < crush_threshold){
             weight *= (weight * weight) / (crush_threshold * crush_threshold);
         }
-
-//        weight = trilinear_weight;
-////        weight = 0.125f;
-//        probe_sample_uv = get_probe_color_uv(ivec3(adjacent_probe_coord), normal, PROBE_RADIANCE_SIDE);
-//        
-//        uint tex_width = ddgi_ubo.irradiance_width;
-//        uint tex_height = ddgi_ubo.irradiance_height;
-//        
-//        vec3 probeRadiance = texture(radiance_map, probe_sample_uv).rgb;
+        
 
         uint tex_width = ddgi_ubo.irradiance_width;
         uint tex_height = ddgi_ubo.irradiance_height;
@@ -134,6 +142,22 @@ vec3 sample_irradiance_map(vec3 normal, vec3 position, vec3 surface_bias) {
        // probeRadiance = vec3(encode_to_oct(normal), 0);
         //return probeRadiance;
       //  irradiance = vec3(probe_sample_uv,0);
+//        if(normal.y < 0){
+//            normal.x = -normal.x;
+//            //        normal.z = -normal.z;
+//        }
+        
+        probe_sample_uv = get_probe_color_uv(ivec3(adjacent_probe_coord), normal, PROBE_RADIANCE_SIDE);
+
+        vec2 pixel_coord = 0.5f * vec2(PROBE_RADIANCE_SIDE+2);
+        pixel_coord += (encode_to_oct(normal)) * 0.5 * float(PROBE_RADIANCE_SIDE);
+        vec3 dir = oct_decode(normalized_oct_coord(ivec2(pixel_coord)- ivec2(1, 1), PROBE_RADIANCE_SIDE));
+        debugPrintfEXT("dir: %f %f %f normal: %f %f %f\n",dir.x,dir.y,dir.z,normal.x,normal.y,normal.z);
+        //return dir-normal;
+        probeRadiance = vec3(probe_sample_uv, 0);
+        probeRadiance = texture(radiance_map, probe_sample_uv).rgb;
+        weight *= trilinear_weight;
+      //  probeRadiance = trilinear;
         irradiance += probeRadiance * weight;//* 10;
         total_weight += weight;
     }

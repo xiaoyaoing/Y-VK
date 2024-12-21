@@ -142,6 +142,7 @@ protected:
     } imageSave;
 
     bool saveCamera{false};
+    bool reloadShader{false};
 
     void handleMouseMove(float x, float y);
 
