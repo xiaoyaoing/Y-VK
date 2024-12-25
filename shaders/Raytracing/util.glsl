@@ -13,6 +13,9 @@ struct HitPayload{
     uint material_idx;
     uint triangle_idx;
     uint prim_idx;
+    uint hit_kind;
+    float dist;
+
 };
 
 struct AnyHitPayload {

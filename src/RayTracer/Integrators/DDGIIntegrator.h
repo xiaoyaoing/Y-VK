@@ -39,7 +39,7 @@ protected:
     std::unique_ptr<ShadowMapPass> shadowMapPass;
     bool debugDDGI = false;
     bool usePointSampler = false;
-    bool showIndirect = false;
+    bool showIndirect = true;
     bool relocate = false;
     bool showDirect = true;
     uint frameCount = 0;

@@ -97,8 +97,8 @@ void main(){
     if (!is_border_pixel)
     {
         vec3 texel_dir = oct_decode(normalized_oct_coord(pixel_coord_local- ivec2(1, 1), OUTPUT_SIDE));
-        if(texel_dir.y > 0){
-          //  texel_dir.x = -texel_dir.x;
+        if (texel_dir.y > 0){
+            //  texel_dir.x = -texel_dir.x;
         }
         // debugPrintfEXT("texel_dir: %f %f %f\n",texel_dir.x,texel_dir.y,texel_dir.z);
 
@@ -121,12 +121,13 @@ void main(){
             }
             barrier();
 
+
             for (uint i = 0; i < num_rays; i++){
                 uint index = i + probe_idx * ddgi_ubo.rays_per_probe + offset;
                 const vec3 dir = ddgi_ray_data_buffer.data[index].direction;
                 float dist = ddgi_ray_data_buffer.data[index].dist;
                 float weight = clamp(dot(texel_dir, dir), 0.0, 1.0);
-//                weight = 1.f;
+                //                weight = 1.f;
 
                 #ifndef UPDATE_RADIANCE
                 weight = pow(weight, ddgi_ubo.depth_sharpness);
@@ -172,34 +173,24 @@ void main(){
                 lerpDelta.y = min(max(c_threshold, abs(lerpDelta.y)), abs(delta.y)) * sign(lerpDelta.y);
                 lerpDelta.z = min(max(c_threshold, abs(lerpDelta.z)), abs(delta.z)) * sign(lerpDelta.z);
             }
-          //  result = prev_result + lerpDelta;
-            //result = texel_dir;
-            result = mix(result, prev_result, hysteresis);
-         //   result = texel_dir ;///2.f +0.5f;
-//            result = result;
-         //   result = mix(prev_result, result, w);
+              result = prev_result + lerpDelta;
+          //  result = mix(result, prev_result, hysteresis);
 
             #else
             result = mix(result, prev_result, hysteresis);
-//            result = mix(prev_result, result, w);
+            //            result = mix(prev_result, result, w);
             #endif
         }
-        //  result = texel_dir;// * 0.5f + 0.5f ;
-        #ifdef UPDATE_RADIANCE
-        //        if(dot(texel_dir,vec3(0,0,1)) > 0.9){
-        //            debugPrintfEXT("result: %f %f %f texl_dir: %f %f %f %d %d\n",result.x,result.y,result.z,texel_dir.x,texel_dir.y,texel_dir.z,pixel_coord_local.x,pixel_coord_local.y);
-        //        }
-        #endif
         imageStore(output_image, ivec2(pixel_current), vec4(result, 1.0));
+
+
     }
 
     else {
         imageStore(output_image, ivec2(pixel_current), vec4(0, 0, 0, 1));
     }
 
-    //    barrier();
-    //    memoryBarrier();
-    //    memoryBarrierImage();
+
     if (is_border_pixel){
         updateBorderTexel(pixel_coord_top_left, pixel_coord_local);
     }

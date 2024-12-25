@@ -57,14 +57,10 @@ void main(){
         int global_ray_idx = probe_idx * num_rays + ray_idx;
         DDGIRayData  ray_data = ddgi_ray_data_buffer.data[global_ray_idx];
         float hit_distance = ray_data.dist;
-        
-//        if(probe_idx == 243){
-//            debugPrintfEXT("ray_idx: %d hit_distance: %f\n", ray_idx, hit_distance);
-//        }
-        
+
         if (hit_distance<0.0f){
             backfaceCount++;
-            hit_distance = - hit_distance;
+            hit_distance = -5 * hit_distance;
             if (hit_distance < closestBackfaceDistance){
                 closestBackfaceDistance = hit_distance;
                 closestBackfaceIndex = global_ray_idx;
@@ -85,11 +81,8 @@ void main(){
     vec3 full_offset = vec3(1e27f);
     float probeFixedRayBackfaceThreshold = pc_ray.backface_threshold;
     float probeMinfrontFaceDistance = pc_ray.min_frontface_distance;
-    
+
     float backfaceRatio = float(backfaceCount) / float(num_rays);
-//    if(probe_idx == 243){
-//        debugPrintfEXT("backfaceRatio: %f\n", backfaceRatio);
-//    }
     if (closestBackfaceIndex != -1 && backfaceRatio > pc_ray.backface_threshold){
         vec3 direction = normalize(ddgi_ray_data_buffer.data[closestBackfaceIndex].direction);
         full_offset = probe_offset + direction * (closestBackfaceDistance + 0.5f * probeMinfrontFaceDistance);
@@ -107,12 +100,8 @@ void main(){
         full_offset = probe_offset + moveBackDirection * moveBackMargin;
     }
 
-//    if(full_offset!=vec3(1e27f)){
-//       debugPrintfEXT("probe_idx: %d full_offset: %f %f %f\n", probe_idx, full_offset.x, full_offset.y, full_offset.z);
-//    }
     vec3 normalizedOffset = full_offset / ddgi_ubo.probe_distance;
-    if (dot(normalizedOffset, normalizedOffset) < 0.2025f){
-       // debugPrintfEXT("relocate success probe_idx: %d normalizedOffset: %f %f %f\n", probe_idx, normalizedOffset.x, normalizedOffset.y, normalizedOffset.z);
+    if (dot(normalizedOffset, normalizedOffset) < 0.25f){
         probe_offset = full_offset;
     }
     ddgi_probe_offset_buffer.probe_offsets[probe_idx] = probe_offset;

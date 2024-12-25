@@ -53,6 +53,7 @@ public:
     void init();
     int getWindowWidth() const;
     int getWindowHeight() const;
+    std::vector<SgLight> getLights() const;
 protected:
     DDGIConfig ddgiConfig{};
     PathTracingConfig pathTracingConfig{};
@@ -62,4 +63,5 @@ protected:
     int window_width = 1920;
     int window_height = 1080;
     Json json;
+    std::vector<SgLight> lights;
 };

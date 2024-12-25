@@ -8,7 +8,7 @@
     {
       "type": "ddgi",
       "ray_per_probe": 256,
-      "probe_distance": 0.3,
+      "probe_distance": 1,
       "probe_counts": [40, 40, 40],
       "probe_start_position": [-1.35,-0.35,-1.35],
       "normal_bias" : 0.6,
@@ -16,19 +16,18 @@
       "use_rt_gbuffer" : true
     }
   ],
-
-  "lights": [
-    {
-      "type": "directional",
-      "direction": [0.6,-0.435,-0.816],
-      "intensity": 1.5
-    }
-  ],
-  
   "integrator": {
     "type": "ddgi"
   },
-  "scene_path": "F:\\code\\RTXGI-DDGI\\samples\\test-harness\\data\\gltf\\cornell\\cornell_box.gltf",
+  "lights": [
+    {
+      "type": "directional",
+        "direction": [0.0, -1.0, 0.3],
+        "color": [1.0, 1.0, 1.0],
+        "intensity": 1.5
+    }
+  ],
+  "scene_path": "F:\\code\\RTXGI-DDGI\\samples\\test-harness\\data\\gltf\\sponza\\Sponza.gltf",
   "scene_scale": 1.0,
   "scene_translation": [
     0.0,

@@ -1,7 +1,7 @@
 #define PROBE_DEPTH_WITH_BORDER_SIDE 18
 #define PROBE_DEPTH_SIDE 16
-#define PROBE_RADIANCE_WITH_BORDER_SIDE 8
-#define PROBE_RADIANCE_SIDE 6
+#define PROBE_RADIANCE_WITH_BORDER_SIDE 10
+#define PROBE_RADIANCE_SIDE 8
 
 ivec3 get_probe_coord_by_index(int probe_idx){
     ivec3 probe_counts  = ddgi_ubo.probe_counts;

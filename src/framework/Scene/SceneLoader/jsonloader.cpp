@@ -14,7 +14,7 @@
 
 struct JsonLoader {
     JsonLoader(Device& device) : device(device) {}
-    void    LoadSceneFromGLTFFile(Device& device, const std::string& path, const SceneLoadingConfig& config);
+    void    LoadSceneFromJsonFile(Device& device, const std::string& path, const SceneLoadingConfig& config);
     void    loadCamera();
     void    PreprocessMaterials();
     void    loadMaterials();
@@ -58,7 +58,7 @@ VkBufferUsageFlags GetBufferUsageFlags(const SceneLoadingConfig& config, VkBuffe
     return vkBufferUsageFlags;
 }
 
-void JsonLoader::LoadSceneFromGLTFFile(Device& device, const std::string& path, const SceneLoadingConfig& config) {
+void JsonLoader::LoadSceneFromJsonFile(Device& device, const std::string& path, const SceneLoadingConfig& config) {
     std::ifstream file(path);
     file >> sceneJson;
     rootPath     = std::filesystem::path(path).parent_path();
@@ -509,7 +509,7 @@ void JsonLoader::Valiation() {
 
 std::unique_ptr<Scene> Jsonloader::LoadSceneFromJsonFile(Device& device, const std::string& path, const SceneLoadingConfig& config) {
     JsonLoader loader(device);
-    loader.LoadSceneFromGLTFFile(device, path, config);
+    loader.LoadSceneFromJsonFile(device, path, config);
 
     auto scene               = std::make_unique<Scene>();
     scene->primitives        = std::move(loader.primitives);

@@ -13,3 +13,4 @@ cmake-build-release-visual-studio--2022
 /resources/scenes
 /savedImage
 /target
+/.cursorignore

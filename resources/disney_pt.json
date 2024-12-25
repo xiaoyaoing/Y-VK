@@ -1,0 +1,21 @@
+{
+  "integrators": [
+    {
+      "type": "path",
+      "min_depth": 0,
+      "max_depth": 8
+    }],
+  "integrator": {
+    "type": "path"
+  },
+  "lights": [
+    
+  ],
+  "scene_path": "E:/code/car/resources/scenes/disney-bsdf/scene.json",
+  "scene_scale": 1.0,
+  "scene_translation": [
+    0.0,
+    0.0,
+    0.0
+  ]
+}

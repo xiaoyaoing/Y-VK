@@ -876,7 +876,7 @@ void GLTFLoadingImpl::loadMaterials(tinygltf::Model& gltfModel) {
 
         if (mat.extensions.find("KHR_materials_pbrSpecularGlossiness") == mat.extensions.end()) {
             auto& pbr                            = mat.pbrMetallicRoughness;
-            material.pbrBaseColorFactor          = glm::vec4(pbr.baseColorFactor[0], pbr.baseColorFactor[1], pbr.baseColorFactor[2], pbr.baseColorFactor[3]);
+            material.pbrBaseColorFactor          = glm::vec4(pbr.baseColorFactor[0], pbr.baseColorFactor[1], pbr.baseColorFactor[2], pbr.baseColorFactor[3]);   
             material.pbrBaseColorTexture         = requestTexture(pbr.baseColorTexture.index, gltfModel);
             material.pbrMetallicFactor           = static_cast<float>(pbr.metallicFactor);
             material.pbrMetallicRoughnessTexture = requestTexture(pbr.metallicRoughnessTexture.index, gltfModel);
@@ -888,9 +888,6 @@ void GLTFLoadingImpl::loadMaterials(tinygltf::Model& gltfModel) {
                 material.pbrBaseColorFactor = glm::vec4(pbr.Get("diffuseFactor").Get(0).Get<double>(), pbr.Get("diffuseFactor").Get(1).Get<double>(), pbr.Get("diffuseFactor").Get(2).Get<double>(), pbr.Get("diffuseFactor").Get(3).Get<double>());
                 if (pbr.Has("diffuseTexture"))
                     material.pbrBaseColorTexture = requestTexture(pbr.Get("diffuseTexture").Get("index").Get<int>(), gltfModel);
-                // material.pbrSpecularFactor            = glm::vec3(pbr.Get("specularFactor").Get(0).Get<double>(), pbr.Get("specularFactor").Get(1).Get<double>(), pbr.Get("specularFactor").Get(2).Get<double>());
-                // material.pbrGlossinessFactor          = static_cast<float>(pbr.Get("glossinessFactor").Get<double>());
-                // material.pbrSpecularGlossinessTexture = requestTexture(pbr.Get("specularGlossinessTexture").Get("index").Get<int>(), gltfModel);
             }
         }
         if (material.alphaMode == 2) {
