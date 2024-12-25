@@ -336,20 +336,15 @@ void DDGIIntegrator::initScene(RTSceneEntry& entry) {
     pc_ray.ddgi_normal_bias       = config.normal_bias;
     pc_ray.ddgi_view_bias         = config.view_bias;
     pc_ray.backface_threshold     = 0.25f;
-    pc_ray.min_frontface_distance = 0.f;
+    pc_ray.min_frontface_distance = 0.1f;
     pc_ray.wrap_border            = 1;
     pc_ray.ddgi_hysteresis = 0.98f;
 
     ubo.probe_counts         = 1.1f * (entry.scene->getSceneBBox().max() - entry.scene->getSceneBBox().min() + 0.2f) / config.probe_distance;
     ubo.probe_distance       = config.probe_distance;
     ubo.max_distance         = 1.5f * ((entry.scene->getSceneBBox().max() - entry.scene->getSceneBBox().min()) / vec3(ubo.probe_counts)).length();
-    ubo.probe_start_position = entry.scene->getSceneBBox().min() + 0.1f;
-
-    // ubo.probe_counts         = config.probe_counts;
-    // ubo.probe_start_position = config.probe_start_position;
-    // ubo.probe_distance       = config.probe_distance;
-    // ubo.max_distance         = glm::length(ubo.probe_distance);
-
+    ubo.probe_start_position = entry.scene->getSceneBBox().min() - 0.1f;
+    
     buffers = new DDGIBuffers();
 
     uint numProbes = ubo.probe_counts.x * ubo.probe_counts.y * ubo.probe_counts.z;
@@ -380,7 +375,7 @@ void DDGIIntegrator::initScene(RTSceneEntry& entry) {
     entry_->sceneDesc.ddgi_ray_data_addr = buffers->probeRayData->getDeviceAddress();
     entry_->sceneDescBuffer->uploadData(&entry_->sceneDesc, sizeof(entry_->sceneDesc));
 
-    config.irradiance_texel_count = 8;
+    config.irradiance_texel_count = 10;
     config.distance_texel_count   = 18;
 
     VkExtent3D irradianceImageExtent = {uint32(ubo.probe_counts.x * ubo.probe_counts.y * config.irradiance_texel_count), uint32(ubo.probe_counts.z * config.irradiance_texel_count), 1};

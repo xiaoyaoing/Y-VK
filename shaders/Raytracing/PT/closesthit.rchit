@@ -119,12 +119,12 @@ void main()
     payload.n_g = normalize(vec3(cross(e1, e0) * gl_WorldToObjectEXT));
     payload.n_s = world_nrm;
     payload.p = world_pos;
-    payload.p = world_pos;
     payload.uv = uv;
     payload.material_idx = material_index;
     payload.triangle_idx = gl_PrimitiveID;
     payload.prim_idx = gl_InstanceCustomIndexEXT;
-
+    payload.hit_kind = gl_HitKindEXT;
+    payload.dist = gl_RayTminEXT + gl_HitTEXT;
     // if (pinfo.area!=0)
     //debugPrintfEXT("prim_idx area light: %d %f\n", gl_InstanceCustomIndexEXT, pinfo.area);
     //

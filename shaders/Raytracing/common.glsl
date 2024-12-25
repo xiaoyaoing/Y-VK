@@ -523,8 +523,8 @@ LightSample sample_li_directional_light(const RTLight light, const SurfaceScatte
     result.indensity = light.L;
     result.wi = normalize(-light.direction);
     result.pdf = 1.f;
-    result.p = event.p + result.wi * 1000.f;
-    result.dist = 1000.f;
+    result.p = light.position;
+    result.dist = length(light.position - event.p);
     return result;
 }
 

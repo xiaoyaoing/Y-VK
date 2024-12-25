@@ -53,7 +53,9 @@ struct LightProperties {
 struct SgLight {
     LIGHT_TYPE      type;
     LightProperties lightProperties;
+
 };
+
 
 
 struct alignas(16) LightUib {
@@ -82,6 +84,7 @@ struct LightingState {
     std::unique_ptr<Buffer> buffer{nullptr};
     void                    addLight(const SgLight& light);
 };
+
 
 inline void LightingState::addLight(const SgLight& light) {
     switch (light.type) {

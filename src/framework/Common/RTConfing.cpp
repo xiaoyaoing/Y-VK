@@ -42,6 +42,9 @@ int RTConfing::getWindowWidth() const {
 int RTConfing::getWindowHeight() const {
     return window_height;
 }
+std::vector<SgLight> RTConfing::getLights() const {
+    return lights;
+}
 RTConfing::RTConfing(const Json& json) {
     this->json              = json;
     init();
@@ -50,6 +53,42 @@ RTConfing::RTConfing(const std::string& path) {
     json = JsonUtil::fromFile(path);
     init();
 }
+
+
+static void loadLightsFromJsonPart(const Json& json, std::vector<SgLight>& lights) {
+    for (const auto& lightJson : json) {
+        SgLight light;
+        // 解析光源类型
+        std::string typeStr = lightJson["type"].get<std::string>();
+        if (typeStr == "directional") {
+            light.type = LIGHT_TYPE::Directional;
+        } else if (typeStr == "point") {
+            light.type = LIGHT_TYPE::Point;
+        } else if (typeStr == "spot") {
+            light.type = LIGHT_TYPE::Spot;
+        } else if (typeStr == "area") {
+            light.type = LIGHT_TYPE::Area;
+        } else if (typeStr == "sky") {
+            light.type = LIGHT_TYPE::Sky;
+        } else {
+            LOGE("Unknown light type: {}", typeStr);
+            continue;
+        }
+        // 解析光源属性
+        light.lightProperties.position = GetOptional(lightJson, "position", glm::vec3(0.0f));
+        light.lightProperties.direction = GetOptional(lightJson, "direction", glm::vec3(0.0f, 0.0f, -1.0f));
+        light.lightProperties.color = GetOptional(lightJson, "color", glm::vec3(1.0f));
+        light.lightProperties.intensity = GetOptional(lightJson, "intensity", 1.0f);
+        light.lightProperties.range = GetOptional(lightJson, "range", 0.0f);
+        light.lightProperties.inner_cone_angle = GetOptional(lightJson, "inner_cone_angle", 0.0f);
+        light.lightProperties.outer_cone_angle = GetOptional(lightJson, "outer_cone_angle", 0.0f);
+        light.lightProperties.use_shadow = GetOptional(lightJson, "use_shadow", true);
+        // 添加到光源列表
+        lights.push_back(light);
+    }
+}
+
+
 void RTConfing::init() {
     auto integratorsTypeStr = json["integrators"];
     for (auto& integratorJson : integratorsTypeStr) {
@@ -82,5 +121,7 @@ void RTConfing::init() {
 
     {
         scenePath = json["scene_path"].get<std::string>();
+        if(json.contains("lights"))
+           loadLightsFromJsonPart(json["lights"], lights);
     }
 }
