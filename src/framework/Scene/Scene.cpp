@@ -85,6 +85,9 @@ const std::vector<std::unique_ptr<Primitive>>& Scene::getPrimitives() const {
 const std::vector<std::unique_ptr<Texture>>& Scene::getTextures() const {
     return textures;
 }
+std::vector<std::unique_ptr<Texture>>& Scene::getTextures() {
+    return textures;
+}
 
 const std::vector<GltfMaterial>& Scene::getGltfMaterials() const {
     return materials;

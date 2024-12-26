@@ -9,23 +9,23 @@
 #define VK_KHR_get_physical_device_properties2 1
 
 #include "Common/VkCommon.h"
-void MeshShaderGrass::drawFrame(RenderGraph& rg) {
+void TinyNanite::drawFrame(RenderGraph& rg) {
     grassPass->render(rg);
 }
-MeshShaderGrass::MeshShaderGrass() : Application("MGS", 1920, 1080) {
+TinyNanite::TinyNanite() : Application("MGS", 1920, 1080) {
     addDeviceExtension(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     addInstanceExtension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 }
-void MeshShaderGrass::prepare() {
+void TinyNanite::prepare() {
     Application::prepare();
     scene = loadDefaultTriangleScene(*device);
     initView();
     grassPass = std::make_unique<GrassPass>();
 }
 
-void MeshShaderGrass::onUpdateGUI() {
+void TinyNanite::onUpdateGUI() {
     Application::onUpdateGUI();
     grassPass->updateGui();
 }
 
-MAIN(MeshShaderGrass)
+MAIN(TinyNanite)

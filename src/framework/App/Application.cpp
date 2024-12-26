@@ -201,7 +201,6 @@ void Application::mainloop() {
  * - Updates the camera based on the delta time.
  */
 
-
 void Application::update() {
 
     deltaTime = timer.tick<Timer::Seconds>();
@@ -229,7 +228,7 @@ void Application::update() {
         }
         updateScene();
         drawFrame(graph);
-        //mPostProcessPass->render(graph);
+        mPostProcessPass->render(graph);
     }
 
     mCurrentTextures = graph.getResourceNames(RenderResourceType::ETexture);
@@ -249,6 +248,12 @@ void Application::update() {
     if (camera->moving()) {
         viewUpdated = true;
     }
+
+    perFrameUpdate();
+
+    
+}
+void Application::perFrameUpdate() {
 }
 
 void Application::updateScene() {

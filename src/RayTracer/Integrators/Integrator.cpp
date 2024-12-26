@@ -8,34 +8,12 @@
 #include <numeric>
 
 Integrator::Integrator(Device& device) : renderContext(g_context), device(device) {
-    // init();
-    // storageImage = std::make_shared<SgImage>(device,"",VkExtent3D{width,height,1},VK_FORMAT_B8G8R8A8_UNORM,VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,VMA_MEMORY_USAGE_GPU_ONLY,VK_IMAGE_VIEW_TYPE_2D);
+    
 }
 
-void Integrator::initScene(RTSceneEntry & sceneEntry) {
-    // auto sceneEntry = RTSceneUtil::convertScene(device, scene);,s
-    // //  return;
-    // vertexBuffer = sceneEntry.vertexBuffer;
-    // normalBuffer = sceneEntry.normalBuffer;
-    // uvBuffer     = sceneEntry.uvBuffer;
-    // indexBuffer  = sceneEntry.indexBuffer;
-    //
-    // materialsBuffer     = sceneEntry.materialsBuffer;
-    // primitiveMeshBuffer = sceneEntry.primitiveMeshBuffer;
-    // transformBuffers    = sceneEntry.transformBuffers;
-    // rtLightBuffer       = sceneEntry.rtLightBuffer;
-    //
-    // blases     = &(sceneEntry.blases);
-    // tlas       = &(sceneEntry.tlas);
-    // lights     = &(sceneEntry.lights);
-    // primitives = &(sceneEntry.primitives);
-    // materials  = &(sceneEntry.materials);
+void Integrator::initScene(RTSceneEntry & sceneEntry) {;
     entry_ = &sceneEntry;
-
     mScene = sceneEntry.scene;
-
-   // sceneUboBuffer = std::make_shared<Buffer>(device, sizeof(SceneUbo), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, &sceneUbo);
-
     camera        = sceneEntry.scene->getCameras()[0];
     camera->flipY = false;
 
@@ -56,7 +34,7 @@ void Integrator::destroy() {
 void Integrator::update() {
 }
 void Integrator::initLightAreaDistribution(RenderGraph& _graph) {
-      RenderGraph graph(device);
+    RenderGraph graph(device);
     // RenderGraph graph(device);
     struct PC {
         uint32_t index_offset;
@@ -69,7 +47,7 @@ void Integrator::initLightAreaDistribution(RenderGraph& _graph) {
     };
 
     for (auto& light : entry_->lights) {
-        if(light.light_type != RT_LIGHT_TYPE_AREA)
+        if (light.light_type != RT_LIGHT_TYPE_AREA)
             continue;
         auto prim_idx = light.prim_idx;
 
@@ -85,7 +63,7 @@ void Integrator::initLightAreaDistribution(RenderGraph& _graph) {
                 graph.setOutput(areaBuffer);
                 builder.writeBuffer(areaBuffer, BufferUsage::STORAGE);
             },
-            [this, prim_idx,&graph,tri_count](RenderPassContext& context) {
+            [this, prim_idx, &graph, tri_count](RenderPassContext& context) {
                 g_context->getPipelineState().setPipelineLayout(*computePrimAreaLayout);
                 PC pc{entry_->primitives[prim_idx].index_offset, entry_->primitives[prim_idx].vertex_offset, entry_->primitives[prim_idx].index_count, 0, entry_->vertexBuffer->getDeviceAddress(), entry_->indexBuffer->getDeviceAddress(), entry_->primitives[prim_idx].world_matrix};
                 LOGI("model matrix {} ", glm::to_string(entry_->primitives[prim_idx].world_matrix));
@@ -100,7 +78,7 @@ void Integrator::initLightAreaDistribution(RenderGraph& _graph) {
     for (const auto& pair : entry_->primAreaBuffers) {
         auto           data = pair.second->getData<float>();
         Distribution1D distribution1D(data.data(), data.size());
-        entry_->primAreaBuffers[pair.first]              = (distribution1D.toGpuBuffer(device));
+        entry_->primAreaBuffers[pair.first]                          = (distribution1D.toGpuBuffer(device));
         entry_->primitives[pair.first].area_distribution_buffer_addr = entry_->primAreaBuffers[pair.first]->getDeviceAddress();
         entry_->primitives[pair.first].area                          = std::accumulate(data.begin(), data.end(), 0.0f);
         // for(auto & light : lights){
@@ -112,6 +90,9 @@ void Integrator::initLightAreaDistribution(RenderGraph& _graph) {
     entry_->rtLightBuffer->uploadData(entry_->lights.data());
     entry_->primitiveMeshBuffer->uploadData(entry_->primitives.data());
     entry_->primAreaBuffersInitialized = true;
+}
+void Integrator::resetFrameCount() {
+    // frameCount = 0;
 }
 
 Integrator::~Integrator() {
@@ -125,4 +106,13 @@ void Integrator::bindRaytracingResources(CommandBuffer& commandBuffer)
     for (const auto& texture : mScene->getTextures()) {
         g_context->bindImageSampler(6, texture->getImage().getVkImageView(), texture->getSampler(), 1, arrayElement++);
     }
+}
+bool Integrator::resetFrameOnCameraMove() const {
+    return false;
+}
+PCPath& Integrator::getPC() {
+    return *mPcPath;
+}
+void Integrator::setPC(std::shared_ptr<PCPath> pc) {
+    mPcPath = pc;
 }

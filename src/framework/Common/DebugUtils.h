@@ -3,12 +3,12 @@
 #include <volk.h>
 #pragma once
 
-#define VK_CHECK_RESULT(f)                                                                                                                    \
-    {                                                                                                                                         \
-        VkResult res = (f);                                                                                                                   \
-        if (res != VK_SUCCESS) {                                                                                                              \
-            std::cout << "Fatal : VkResult is \"" << DebugUtils::errorString(res) << "\" in " << __FILE__ << " at line " << __LINE__ << "\n"; \
-        }                                                                                                                                     \
+#define VK_CHECK_RESULT(f)                                                                                           \
+    {                                                                                                                \
+        VkResult res = (f);                                                                                          \
+        if (res != VK_SUCCESS) {                                                                                     \
+            LOGE("Fatal : VkResult is \"{}\" in {} at line {}\n", DebugUtils::errorString(res), __FILE__, __LINE__); \
+        }                                                                                                            \
     }
 
 #define CHECK_RESULT(f)                                                           \
@@ -16,7 +16,7 @@
         if (!(f)) {                                                               \
             std::cout << "Fatal \""                                               \
                       << "\" in " << __FILE__ << " at line " << __LINE__ << "\n"; \
-            throw std::runtime_error("Fatal error");                    \
+            throw std::runtime_error("Fatal error");                              \
         }                                                                         \
     }
 

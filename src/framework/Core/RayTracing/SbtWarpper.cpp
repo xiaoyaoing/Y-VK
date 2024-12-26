@@ -60,9 +60,10 @@ void SbtWarpper::create(VkPipeline rtPipeline, VkRayTracingPipelineCreateInfoKHR
 
     uint32_t sbtSize = total_group_cnt * handle_size;
     std::vector<uint8_t> shader_handle_storage(sbtSize);
-
+    
     VK_CHECK_RESULT(vkGetRayTracingShaderGroupHandlesKHR(device.getHandle(), rtPipeline, 0, total_group_cnt, sbtSize,
                                                        shader_handle_storage.data()));
+
 
     
     
@@ -75,9 +76,8 @@ void SbtWarpper::create(VkPipeline rtPipeline, VkRayTracingPipelineCreateInfoKHR
         for (uint32_t index = 0; index < static_cast<uint32_t>(indices.size()); index++)
         {
             auto *pStart = pBuffer;
-            // Copy the handle
             memcpy(pBuffer, shader_handle_storage.data() + (indices[index] * handle_size), handle_size);
-            pBuffer = pStart + stride;        // Jumping to next group
+            pBuffer = pStart + stride;       
         }
     };
 

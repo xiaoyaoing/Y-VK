@@ -9,10 +9,10 @@
 
 #include <App/Application.h>
 
-class MeshShaderGrass : public Application {
+class TinyNanite : public Application {
 public:
     void drawFrame(RenderGraph& rg) override;
-    MeshShaderGrass();
+    TinyNanite();
     void prepare() override;
     void onUpdateGUI() override;
 

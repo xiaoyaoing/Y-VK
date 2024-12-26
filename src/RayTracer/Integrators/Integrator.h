@@ -16,12 +16,13 @@ public:
     virtual void destroy();
     virtual void update();
     void initLightAreaDistribution(RenderGraph& graph);
-
+    void resetFrameCount();
+    
     virtual void bindRaytracingResources(CommandBuffer& commandBuffer);
-
-
     virtual void onUpdateGUI(){};
-
+    virtual  bool resetFrameOnCameraMove() const;
+    PCPath & getPC();
+    void setPC(std::shared_ptr<PCPath> pc);
 protected:
 
     // Buffer* vertexBuffer{nullptr};
@@ -60,4 +61,6 @@ protected:
 
     RenderContext* renderContext;
     Device&        device;
+    std::shared_ptr<PCPath> mPcPath;
+
 };

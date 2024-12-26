@@ -50,6 +50,13 @@ glm::vec3 Transform::TransformPoint(const glm::vec3& point) const {
     glm::vec4 p = glm::vec4(point, 1.0f);
     return glm::vec3(getLocalToWorldMatrix() * p);
 }
+BBox Transform::TransformBBox(const BBox& bbox) const {
+    glm::vec3 min = TransformPoint(bbox.min());
+    glm::vec3 max = TransformPoint(bbox.max());
+    glm::vec3 tempMin = glm::vec3(std::min(min.x, max.x), std::min(min.y, max.y), std::min(min.z, max.z));
+    glm::vec3 tempMax = glm::vec3(std::max(min.x, max.x), std::max(min.y, max.y), std::max(min.z, max.z));
+    return BBox(tempMin, tempMax);
+}
 void Transform::setLocalToWorldMatrix(const glm::mat4& matrix) {
     m_localToWorldMatrix = matrix;
     m_worldToLocalMatrix = glm::inverse(matrix);

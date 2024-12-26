@@ -24,6 +24,8 @@ public:
 
     glm::vec3 TransformPoint(const glm::vec3& point) const;
 
+    BBox TransformBBox(const BBox& bbox) const;
+
     /**
     * Returns the transformation matrix from the local coordinate system of this transform to the world coordinate system.
     */

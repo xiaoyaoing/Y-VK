@@ -4,7 +4,7 @@
 #include "commons.h"
 #include "util.glsl"
 
-#define HANDLE_BSDF_SAMPLE(BSDF_NAME_UPPER, BSDF_NAME_LOWER) if(bsdf_type == RT_BSDF_TYPE_##BSDF_NAME_UPPER){ return BSDF_NAME_LOWER##_sample(mat, rand, event); }
+#define HANDLE_BSDF_SAMPLE(BSDF_NAME_UPPER, BSDF_NAME_LOWER) if(bsdf_type == RT_BSDF_TYPE_##BSDF_NAME_UPPER){ return BSDF_NAME_LOWER##_sample(mat, seed, event); }
 
 
 #define HANDLE_BSDF_PDF(BSDF_NAME_UPPER, BSDF_NAME_LOWER) \
@@ -37,6 +37,10 @@ float get_roughness(const RTMaterial mat, const vec2 uv){
     return mat.roughness_texture_id == -1 ? mat.roughness : texture(scene_textures[mat.roughness_texture_id], uv).r;
 }
 
+float get_metallness(const RTMaterial mat, const vec2 uv){
+    return mat.roughness_texture_id == -1 ? mat.metallic : texture(scene_textures[mat.roughness_texture_id], uv).g;
+}
+
 vec3 diffuse_f(const RTMaterial mat, const SurfaceScatterEvent event){
     // return INV_PI * vec3(max(0, get_cos_theta(event.wo)));
     vec3 albedo  = get_albedo(mat, event.uv);
@@ -51,7 +55,8 @@ BsdfSampleRecord invalid_record(){
     return record;
 }
 
-BsdfSampleRecord  diffuse_sample(const RTMaterial mat, const vec2 rand, inout SurfaceScatterEvent event){
+BsdfSampleRecord  diffuse_sample(const RTMaterial mat, inout uvec4 seed, inout SurfaceScatterEvent event){
+    const vec2 rand = rand2(seed);
     BsdfSampleRecord record;
     event.wi = square_to_cosine_hemisphere(rand);
 
@@ -79,12 +84,13 @@ float conductor_pdf(const RTMaterial mat, const SurfaceScatterEvent event){
     if (event.wi.z <= 0 || event.wo.z <= 0){
         return 0;
     }
-    if (mat.roughness <1e-3f){
+    float roughness = get_roughness(mat, event.uv);
+    if (roughness <1e-3f){
         return 0;
     }
     else {
         vec3 wh = normalize(event.wi + event.wo);
-        return ggx_d(mat.roughness, wh, event.wi) * get_cos_theta(wh) / (4 * dot(wh, event.wo));
+        return ggx_d(roughness, wh, event.wi) * get_cos_theta(wh) / (4 * dot(wh, event.wo));
     }
 }
 
@@ -92,21 +98,24 @@ float conductor_albedo_pdf(const RTMaterial mat, const SurfaceScatterEvent event
     if (event.wi.z <= 0 || event.wo.z <= 0){
         return 0;
     }
-    if (mat.roughness <1e-3f){
+    float roughness = get_roughness(mat, event.uv);
+    if (roughness <1e-3f){
         return 0;
     }
     else {
         vec3 wh = normalize(event.wi + event.wo);
-        return ggx_d(mat.roughness, wh, event.wi) * get_cos_theta(wh) / (4 * dot(wh, event.wo));
+        return ggx_d(roughness, wh, event.wi) * get_cos_theta(wh) / (4 * dot(wh, event.wo));
     }
 }
 
-BsdfSampleRecord conductor_albedo_sample(const RTMaterial mat, const vec2 rand, inout SurfaceScatterEvent event){
+BsdfSampleRecord conductor_albedo_sample(const RTMaterial mat, inout uvec4 seed, inout SurfaceScatterEvent event){
+    const vec2 rand = rand2(seed);
     BsdfSampleRecord record;
     if (event.wo.z <= 0){
         return invalid_record();
     }
-    if (mat.roughness <1e-3f){
+    float roughness = get_roughness(mat, event.uv);
+    if (roughness <1e-3f){
         event.wi = my_reflect(event.wo);
         record.f = conductorReflectanceVec3(mat.eta, mat.k, event.wo.z) * get_albedo(mat, event.uv);
         record.pdf = 1;
@@ -114,15 +123,15 @@ BsdfSampleRecord conductor_albedo_sample(const RTMaterial mat, const vec2 rand, 
         return record;
     }
     else {
-        vec3 wh = ggx_sample(mat.roughness, rand);
+        vec3 wh = ggx_sample(roughness, rand);
         event.wi = my_reflect(event.wo, wh);
         if (dot(event.wi, wh) <= 0){
             return invalid_record();
         }
-        record.pdf = ggx_d(mat.roughness, wh, event.wo) * get_cos_theta(wh) / (4 * dot(wh, event.wo));
+        record.pdf = ggx_d(roughness, wh, event.wo) * get_cos_theta(wh) / (4 * dot(wh, event.wo));
         float cos_o = dot(wh, event.wo);
         vec3 conductor_fresnel = conductorReflectanceVec3(mat.eta, mat.k, cos_o);
-        record.f = get_albedo(mat, event.uv) *  conductor_fresnel * ggx_d(mat.roughness, wh, event.wi) * ggx_g(mat.roughness, event.wi, event.wo, wh) / (4 *  event.wo.z);
+        record.f = get_albedo(mat, event.uv) *  conductor_fresnel * ggx_d(roughness, wh, event.wi) * ggx_g(roughness, event.wi, event.wo, wh) / (4 *  event.wo.z);
         record.sample_flags = RT_BSDF_LOBE_GLOSSY | RT_BSDF_LOBE_REFLECTION;
         return record;
     }
@@ -133,24 +142,26 @@ vec3 conductor_albedo_f(const RTMaterial mat, const SurfaceScatterEvent event){
     if (event.wi.z <= 0 || event.wo.z <= 0){
         return vec3(0);
     }
-    if (mat.roughness <= 1e-3f){
+    float roughness = get_roughness(mat, event.uv);
+    if (roughness <= 1e-3f){
         return vec3(0);
     }
     else {
         vec3 wh = normalize(event.wi + event.wo);
         float cos_o = dot(wh, event.wo);
         vec3 conductor_fresnel = conductorReflectanceVec3(mat.eta, mat.k, cos_o);
-        return conductor_fresnel * get_albedo(mat, event.uv) * ggx_d(mat.roughness, wh, event.wi) * ggx_g(mat.roughness, event.wi, event.wo, wh) / (4 * event.wo.z);
+        return conductor_fresnel * get_albedo(mat, event.uv) * ggx_d(roughness, wh, event.wi) * ggx_g(roughness, event.wi, event.wo, wh) / (4 * event.wo.z);
     }
 }
 
 
-BsdfSampleRecord plastic_sample(const RTMaterial mat, const vec2 rand, inout SurfaceScatterEvent event){
+BsdfSampleRecord plastic_sample(const RTMaterial mat, inout uvec4 seed, inout SurfaceScatterEvent event){
+    const vec2 rand = rand2(seed);
 
     //    debugPrintfEXT("Plastic Sample\n");
     BsdfSampleRecord record;
-
-    if (mat.roughness>0){
+    float roughness = get_roughness(mat, event.uv);
+    if (roughness>0){
         if (get_cos_theta(event.wo) <= 0) {
             return invalid_record();
         }
@@ -159,19 +170,16 @@ BsdfSampleRecord plastic_sample(const RTMaterial mat, const vec2 rand, inout Sur
         float glossyProb = FOut;
         float diffProb = (1 - glossyProb) * mat.avgTransmittance;
         glossyProb /= (glossyProb + diffProb);
-
-
-
         vec3 wh;
         if (rand.x < glossyProb) {
             float remapU0 = (glossyProb - rand.x) / glossyProb;
             vec2 newU = vec2(remapU0, rand.y);
-            wh = ggx_sample(mat.roughness, newU);
+            wh = ggx_sample(roughness, newU);
             event.wi = my_reflect(event.wo, wh);
             if (event.wi.z <= 0)
             return invalid_record();
             record.sample_flags = RT_BSDF_LOBE_GLOSSY | RT_BSDF_LOBE_REFLECTION;
-            record.pdf = glossyProb * ggx_d(mat.roughness, wh, event.wo) / (4 * abs(dot(event.wo, wh))) +
+            record.pdf = glossyProb * ggx_d(roughness, wh, event.wo) / (4 * abs(dot(event.wo, wh))) +
             (1 - glossyProb) * event.wi.z / PI;
         } else {
             float remapU0 = (rand.x - glossyProb) / (1 - glossyProb);
@@ -181,12 +189,12 @@ BsdfSampleRecord plastic_sample(const RTMaterial mat, const vec2 rand, inout Sur
             return invalid_record();
             record.sample_flags = RT_BSDF_LOBE_DIFFUSE | RT_BSDF_LOBE_REFLECTION;
             wh = normalize((event.wi + event.wo));
-            record.pdf = glossyProb * ggx_d(mat.roughness, wh, event.wo) / (4 * abs(dot(event.wo, wh))) +
+            record.pdf = glossyProb * ggx_d(roughness, wh, event.wo) / (4 * abs(dot(event.wo, wh))) +
             (1 - glossyProb) * event.wi.z / PI;
         }
         vec3 albedo = get_albedo(mat, event.uv);
-        float D = ggx_d(mat.roughness, wh, event.wo);
-        float G = ggx_g(mat.roughness, event.wi, event.wo, wh);
+        float D = ggx_d(roughness, wh, event.wo);
+        float G = ggx_g(roughness, event.wi, event.wo, wh);
         vec3 specularContrib = vec3(FOut * D * G / (4 * event.wo.z));
         float FIn = dielectricReflectance(1 / mat.ior, event.wo.z);
         vec3 diffuseContrib =
@@ -204,33 +212,33 @@ BsdfSampleRecord plastic_sample(const RTMaterial mat, const vec2 rand, inout Sur
 }
 
 vec3 plastic_f(const RTMaterial mat, const SurfaceScatterEvent event){
-    if (mat.roughness>0){
-        {
-            const vec3 wo = event.wo;
-            const vec3 wi = event.wi;
-            if (wo.z <= 0 || wi.z <= 0) {
-                return vec3(0);
-            }
-            vec3 wh = normalize((wo + wi));
-            float FOut = dielectricReflectance(1 / mat.ior, dot(wo, wh));
-            float D = ggx_d(mat.roughness, wh, wi);
-            float G = ggx_g(mat.roughness, wi, wo, wh);
-            vec3 specularContrib = vec3(FOut * D * G / (4 * wo.z));
-
-            float FIn = dielectricReflectance(1 / mat.ior, dot(wi, wh));
-            vec3 albedo = get_albedo(mat, event.uv);
-            vec3 diffuseContrib =
-            albedo * (1 - FOut) * (1 - FIn) * (1 / (mat.ior * mat.ior)) * abs(get_cos_theta(wi)) * INV_PI / (vec3(1) - mat.diffuseFresnel * albedo);
-            if (all(greaterThan(mat.scaledSigmaA, vec3(0))))
-            diffuseContrib *= exp(mat.scaledSigmaA * (-1.0f / wo.z - 1.0f / wi.z));
-            return specularContrib + diffuseContrib;
+    float roughness = get_roughness(mat, event.uv);
+    if (roughness>0){
+        const vec3 wo = event.wo;
+        const vec3 wi = event.wi;
+        if (wo.z <= 0 || wi.z <= 0) {
+            return vec3(0);
         }
+        vec3 wh = normalize((wo + wi));
+        float FOut = dielectricReflectance(1 / mat.ior, dot(wo, wh));
+        float D = ggx_d(roughness, wh, wi);
+        float G = ggx_g(roughness, wi, wo, wh);
+        vec3 specularContrib = vec3(FOut * D * G / (4 * wo.z));
+
+        float FIn = dielectricReflectance(1 / mat.ior, dot(wi, wh));
+        vec3 albedo = get_albedo(mat, event.uv);
+        vec3 diffuseContrib =
+        albedo * (1 - FOut) * (1 - FIn) * (1 / (mat.ior * mat.ior)) * abs(get_cos_theta(wi)) * INV_PI / (vec3(1) - mat.diffuseFresnel * albedo);
+        if (all(greaterThan(mat.scaledSigmaA, vec3(0))))
+        diffuseContrib *= exp(mat.scaledSigmaA * (-1.0f / wo.z - 1.0f / wi.z));
+        return specularContrib + diffuseContrib;
     }
     return vec3(0);
 }
 
 float plastic_pdf(const RTMaterial mat, const SurfaceScatterEvent event){
-    if (mat.roughness>0){
+    float roughness = get_roughness(mat, event.uv);
+    if (roughness>0){
         const vec3 wo = event.wo;
         const vec3 wi = event.wi;
         if (get_cos_theta(wo) <= 0 || get_cos_theta(wi) <= 0)
@@ -241,20 +249,22 @@ float plastic_pdf(const RTMaterial mat, const SurfaceScatterEvent event){
         float diffProb = (1 - glossyProb) * mat.avgTransmittance;
         glossyProb /= (glossyProb + diffProb);
         diffProb = 1 - glossyProb;
-        float D = ggx_d(mat.roughness, wh, wi);
+        float D = ggx_d(roughness, wh, wi);
         glossyProb *= D / (4 * abs(dot(wo, wh)));
         diffProb *= wi.z / PI;
         return glossyProb + diffProb;
     }
-    return 1;
+    return 0;
 }
 
-BsdfSampleRecord conductor_sample(const RTMaterial mat, const vec2 rand, inout SurfaceScatterEvent event){
+BsdfSampleRecord conductor_sample(const RTMaterial mat, inout uvec4 seed, inout SurfaceScatterEvent event){
+    float roughness = get_roughness(mat, event.uv);
+    const vec2 rand = rand2(seed);
     BsdfSampleRecord record;
     if (event.wo.z <= 0){
         return invalid_record();
     }
-    if (mat.roughness <1e-3f){
+    if (roughness <1e-3f){
         event.wi = my_reflect(event.wo);
         record.f = conductorReflectanceVec3(mat.eta, mat.k, event.wo.z) * get_albedo(mat, event.uv);
         record.pdf = 1;
@@ -262,16 +272,16 @@ BsdfSampleRecord conductor_sample(const RTMaterial mat, const vec2 rand, inout S
         return record;
     }
     else {
-        vec3 wh = ggx_sample(mat.roughness, rand);
+        vec3 wh = ggx_sample(roughness, rand);
         event.wi = my_reflect(event.wo, wh);
         if (dot(event.wi, wh) <= 0){
             // debugPrintfEXT("Invalid Sample wi %f %f %f wo %f %f %f wh %f %f %f\n", event.wi.x, event.wi.y, event.wi.z, event.wo.x, event.wo.y, event.wo.z, wh.x, wh.y, wh.z);
             return invalid_record();
         }
-        record.pdf = ggx_d(mat.roughness, wh, event.wo) * get_cos_theta(wh) / (4 * dot(wh, event.wo));
+        record.pdf = ggx_d(roughness, wh, event.wo) * get_cos_theta(wh) / (4 * dot(wh, event.wo));
         float cos_o = dot(wh, event.wo);
         vec3 conductor_fresnel = conductorReflectanceVec3(mat.eta, mat.k, cos_o);
-        record.f = get_albedo(mat, event.uv) *  conductor_fresnel * ggx_d(mat.roughness, wh, event.wi) * ggx_g(mat.roughness, event.wi, event.wo, wh) / (4 *  event.wo.z);
+        record.f = get_albedo(mat, event.uv) *  conductor_fresnel * ggx_d(roughness, wh, event.wo) * ggx_g(roughness, event.wi, event.wo, wh) / (4 *  event.wo.z);
         record.sample_flags = RT_BSDF_LOBE_GLOSSY | RT_BSDF_LOBE_REFLECTION;
         return record;
     }
@@ -279,22 +289,24 @@ BsdfSampleRecord conductor_sample(const RTMaterial mat, const vec2 rand, inout S
 }
 
 vec3 conductor_f(const RTMaterial mat, const SurfaceScatterEvent event){
+    float roughness = get_roughness(mat, event.uv);
     if (event.wi.z <= 0 || event.wo.z <= 0){
         return vec3(0);
     }
-    if (mat.roughness <= 1e-3f){
+    if (roughness <= 1e-3f){
         return vec3(0);
     }
     else {
         vec3 wh = normalize(event.wi + event.wo);
         float cos_o = dot(wh, event.wo);
         vec3 conductor_fresnel = conductorReflectanceVec3(mat.eta, mat.k, cos_o);
-        return conductor_fresnel * get_albedo(mat, event.uv) * ggx_d(mat.roughness, wh, event.wi) * ggx_g(mat.roughness, event.wi, event.wo, wh) / (4 * event.wo.z);
+        return conductor_fresnel * get_albedo(mat, event.uv) * ggx_d(roughness, wh, event.wo) * ggx_g(roughness, event.wi, event.wo, wh) / (4 * event.wo.z);
     }
 }
 
 
-BsdfSampleRecord mirror_sample(const RTMaterial mat, const vec2 rand, inout SurfaceScatterEvent event){
+BsdfSampleRecord mirror_sample(const RTMaterial mat, inout uvec4 seed, inout SurfaceScatterEvent event){
+    const vec2 rand = rand2(seed);
     BsdfSampleRecord record;
     record.f = get_albedo(mat, event.uv);
     record.pdf = 1;
@@ -307,54 +319,204 @@ float copy_sign(float value, float sign_v){
     return sign(sign_v) * value;
 }
 
-BsdfSampleRecord dielectric_sample(const RTMaterial mat, const vec2 rand, inout SurfaceScatterEvent event){
+
+float dielectric_pdf(const RTMaterial mat, const SurfaceScatterEvent event) {
+    float roughness = get_roughness(mat, event.uv);
+    if (roughness < 1e-3f) {
+        return 0.0;
+    } else {
+        vec3 outgoing = event.wo;
+        vec3 incoming = event.wi;
+        bool reflect = outgoing.z * incoming.z > 0;
+        float eta = outgoing.z > 0 ? 1.0 / mat.ior : mat.ior;
+        vec3 wh;
+        float pdf;
+        if (reflect) {
+            wh = normalize(incoming + outgoing) * sign(outgoing.z);
+        } else {
+            wh = -normalize(incoming + outgoing * eta);
+        }
+        float F = dielectricReflectance(1.0 / mat.ior, dot(outgoing, wh));
+        float whPdf = ggx_d(roughness, wh,outgoing);
+        if (whPdf < 1e-50) {
+            return 0.0;
+        }
+        if (reflect) {
+            pdf = F * whPdf / (4.0 * abs(dot(outgoing, wh)));
+        } else {
+            float sqrtDenom = dot(outgoing, wh) * eta + dot(incoming, wh);
+            float dWhDWi = abs(dot(incoming, wh)) / (sqrtDenom * sqrtDenom);
+            pdf = whPdf * (1.0 - F) * dWhDWi;
+        }
+        return pdf;
+    }
+}
+
+vec3 dielectric_f(const RTMaterial mat, const SurfaceScatterEvent event) {
+    float roughness = get_roughness(mat, event.uv);
+    if (roughness < 1e-3f) {
+        return vec3(0);
+    } else {
+        vec3 albedo = get_albedo(mat, event.uv);
+        vec3 outgoing = event.wo;
+        vec3 incoming = event.wi;
+        bool reflect = outgoing.z * incoming.z > 0;
+        float eta = outgoing.z > 0 ? 1.0 / mat.ior : mat.ior;
+        vec3 wh;
+        if (reflect) {
+            wh = sign(outgoing.z) * normalize(incoming + outgoing);
+        } else {
+            wh = -normalize(incoming + outgoing * eta);
+        }
+        float F = dielectricReflectance(1.0 / mat.ior, dot(outgoing, wh));
+
+        float D = ggx_d(roughness, wh, outgoing);
+        float G = ggx_g(roughness, incoming, outgoing, wh);
+        if (reflect) {
+            return albedo * F * D * G / (4.0 * abs(outgoing.z));
+        } else {
+            float whDotIn = dot(wh, incoming);
+            float whDotOut = dot(wh, outgoing);
+            float sqrtDenom = eta * whDotOut + whDotIn;
+            return albedo * (1.0 - F) * D * G * abs(whDotIn * whDotOut / (outgoing.z * sqrtDenom * sqrtDenom));
+        }
+    }
+}
+
+
+BsdfSampleRecord dielectric_sample(const RTMaterial mat, inout uvec4 seed, inout SurfaceScatterEvent event) {
+    float roughness = get_roughness(mat, event.uv);
+    const vec2 rand = rand2(seed);
     BsdfSampleRecord record;
-    float eta = event.wo.z < 0 ? mat.ior : 1 / mat.ior;
-    if (mat.roughness < 1e-3f){
+    float eta = event.wo.z < 0 ? mat.ior : 1.0 / mat.ior;
+
+    if (roughness < 1e-3f) {
         float costhetaT;
         float fresnel = dielectricReflectance(eta, event.wo.z, costhetaT);
-       // debugPrintfEXT("Fresnel %f\n", fresnel);
-//        fresnel = 0;
-        if (rand.x < fresnel){
+        if (rand.x < fresnel) {
             event.wi = my_reflect(event.wo, vec3(0, 0, 1));
             record.f = vec3(fresnel) * get_albedo(mat, event.uv);
             record.pdf = fresnel;
             record.sample_flags = RT_BSDF_LOBE_SPECULAR | RT_BSDF_LOBE_REFLECTION;
-        }
-        else {
-            event.wi =  vec3(-eta * event.wo.x, -eta * event.wo.y, -copy_sign(costhetaT, event.wo.z));
-//            if(isnan(event.wi.x) || isnan(event.wi.y) || isnan(event.wi.z)){
-//                debugPrintfEXT("eta ,event.wo.x, event.wo.y, event.wo.z, costhetaT %f %f %f %f %f wi.x, wi.y, wi.z %f %f %f\n", eta, event.wo.x, event.wo.y, event.wo.z, costhetaT, event.wi.x, event.wi.y, event.wi.z);
-//            }
+        } else {
+            event.wi = vec3(-eta * event.wo.x, -eta * event.wo.y, -copy_sign(costhetaT, event.wo.z));
             record.f = vec3(1 - fresnel) * get_albedo(mat, event.uv);
             record.pdf = 1 - fresnel;
             record.sample_flags = RT_BSDF_LOBE_SPECULAR | RT_BSDF_LOBE_REFRACTION;
         }
-    }
-    else {
-       
+    } else {
+        vec3 wh = ggx_sample(roughness, rand);
+        float whDotOut = dot(event.wo, wh);
+        float cosThetaT;
+        float F = dielectricReflectance(1.0 / mat.ior, whDotOut, cosThetaT);
+        bool reflect = rand1(seed) < F;
+        if (reflect) {
+            vec3 incoming = -event.wo + 2.0 * dot(event.wo, wh) * wh;
+            event.wi = incoming;
+            record.sample_flags = RT_BSDF_LOBE_GLOSSY | RT_BSDF_LOBE_REFLECTION;
+        } else {
+            float eta = whDotOut < 0.0 ? mat.ior : 1.0 / mat.ior;
+            vec3 incoming = (eta * whDotOut - sign(whDotOut) * cosThetaT) * wh - eta * event.wo;
+            event.wi = incoming;
+            record.sample_flags = RT_BSDF_LOBE_GLOSSY | RT_BSDF_LOBE_REFRACTION;
+        }
+        record.pdf = dielectric_pdf(mat, event);
+        record.f = dielectric_f(mat, event);
     }
 
     return record;
 }
 
-float dielectric_pdf(const RTMaterial mat, const SurfaceScatterEvent event){
-    if (mat.roughness < 1e-3f){
-        return 0;
-    }
-    else {
-        return 0;
-    }
+
+
+//Generate Code for Disney BSDF
+
+float disney_pdf(const RTMaterial mat, const SurfaceScatterEvent event){
+    return 0;
 }
 
-vec3 dielectric_f(const RTMaterial mat, const SurfaceScatterEvent event){
-    if (mat.roughness < 1e-3f){
-        return vec3(0);
-    }
-    else {
-        return vec3(0);
-    }
+vec3 disney_f(const RTMaterial mat, const SurfaceScatterEvent event){
+    return vec3(0);
 }
+
+
+BsdfSampleRecord disney_sample(const RTMaterial mat, inout uvec4 seed, inout SurfaceScatterEvent event){ 
+//    BsdfSampleRecord record;
+//    float roughness = mat.roughness;
+//    vec3 outgoing = event.wo;
+//
+//    if (outgoing.z <= 0) {
+//        return dielectric_sample(mat, seed, event);
+//    }
+//
+//    // 根据权重选择不同的 BxDF 进行采样
+//    float weights[4];
+//    weights[0] = (1.0 - mat.metallic) * (1.0 - mat.specularTransmission); // Diffuse
+//    weights[1] = mat.metallic; // Metal
+//    weights[2] = (1.0 - mat.metallic) * mat.specularTransmission; // Glass
+//    weights[3] = 0.25 * mat.clearCoat; // ClearCoat
+//
+//    float totalWeight = weights[0] + weights[1] + weights[2] + weights[3];
+//    float r = rand1(seed) * totalWeight;
+//    int idx = 0;
+//    for (int i = 0; i < 4; ++i) {
+//        if (r < weights[i]) {
+//            idx = i;
+//            break;
+//        }
+//        r -= weights[i];
+//    }
+//
+//    // 根据选择的 BxDF 进行采样
+//    if (idx == 0) {
+//        // Diffuse
+//        event.wi = square_to_cosine_hemisphere(rand);
+//        record.pdf = square_to_cosine_hemisphere_pdf(event.wi);
+//        record.f = disney_f(mat, event);
+//        record.sample_flags = RT_BSDF_LOBE_DIFFUSE;
+//    } else if (idx == 1) {
+//        // Metal
+//        vec3 wh = ggx_sample(roughness, rand);
+//        event.wi = my_reflect(outgoing, wh);
+//        if (dot(event.wi, wh) <= 0) {
+//            return invalid_record();
+//        }
+//        record.pdf = ggx_pdf(roughness, outgoing, wh) / (4.0 * dot(outgoing, wh));
+//        record.f = disney_f(mat, event);
+//        record.sample_flags = RT_BSDF_LOBE_GLOSSY | RT_BSDF_LOBE_REFLECTION;
+//    } else if (idx == 2) {
+//        // Glass
+//        vec3 wh = ggx_sample(roughness, rand);
+//        float whDotOut = dot(outgoing, wh);
+//        float cosThetaT;
+//        float F = dielectricReflectance(1.0 / mat.eta, whDotOut, cosThetaT);
+//        bool reflect = rand1(seed) < F;
+//        if (reflect) {
+//            event.wi = my_reflect(outgoing, wh);
+//            record.sample_flags = RT_BSDF_LOBE_GLOSSY | RT_BSDF_LOBE_REFLECTION;
+//        } else {
+//            float eta = whDotOut < 0.0 ? mat.eta : 1.0 / mat.eta;
+//            event.wi = (eta * whDotOut - sign(whDotOut) * cosThetaT) * wh - eta * outgoing;
+//            record.sample_flags = RT_BSDF_LOBE_GLOSSY | RT_BSDF_LOBE_REFRACTION;
+//        }
+//        record.pdf = disney_pdf(mat, event);
+//        record.f = disney_f(mat, event);
+//    } else if (idx == 3) {
+//        // ClearCoat
+//        vec3 wh = ggx_sample(roughness, rand);
+//        event.wi = my_reflect(outgoing, wh);
+//        if (dot(event.wi, wh) <= 0) {
+//            return invalid_record();
+//        }
+//        record.pdf = ggx_pdf(roughness, outgoing, wh) / (4.0 * dot(outgoing, wh));
+//        record.f = disney_f(mat, event);
+//        record.sample_flags = RT_BSDF_LOBE_GLOSSY | RT_BSDF_LOBE_REFLECTION;
+//    }
+//
+//    return record;
+    return invalid_record();
+}
+
 
 
 vec3 eval_bsdf(const RTMaterial mat, const SurfaceScatterEvent event) {
@@ -379,7 +541,7 @@ return 0;
 
 
 
-BsdfSampleRecord sample_bsdf(const RTMaterial mat, inout SurfaceScatterEvent event, const vec2 rand){
+BsdfSampleRecord sample_bsdf(const RTMaterial mat, inout SurfaceScatterEvent event, inout uvec4 seed) {
     //Fill event.wo
     //Fill record.f and record.pdf and record.sample_flags
     uint bsdf_type = mat.bsdf_type;

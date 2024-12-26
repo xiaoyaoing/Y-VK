@@ -10,7 +10,7 @@ public:
     void render(RenderGraph& renderGraph) override;
     void initScene(RTSceneEntry & entry) override;
     void onUpdateGUI() override;
-
+    bool resetFrameOnCameraMove() const override;
     PathIntegrator(Device& device,PathTracingConfig config);
 
     // ~PathIntegrator();
@@ -18,11 +18,10 @@ protected:
     GBufferPass                     gbufferPass;
     LightingPass                    lightingPass;
     std::unique_ptr<PipelineLayout> layout;
-    std::unique_ptr<PipelineLayout> tem_layout;
-    struct
+   struct
     {
         glm::mat4 viewInverse;
         glm::mat4 projInverse;
     } cameraUbo;
-    PCPath pcPath{};
+    PathTracingConfig config;
 };

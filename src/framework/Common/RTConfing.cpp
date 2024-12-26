@@ -59,9 +59,10 @@ void RTConfing::init() {
             pathTracingConfig.max_depth = GetOptional(integratorJson, "max_depth", pathTracingConfig.max_depth);
         } else if (integratorTypeStr == kDDGIIntegrator) {
             ddgiConfig.rays_per_probe = GetOptional(integratorJson, "ray_per_probe", ddgiConfig.rays_per_probe);
-            ddgiConfig.probe_distance = GetOptional(integratorJson, "probe_distance", ddgiConfig.probe_distance);
+            ddgiConfig.probe_counts = GetOptional(integratorJson, "probe_counts", ddgiConfig.probe_counts);
             ddgiConfig.normal_bias    = GetOptional(integratorJson, "normal_bias", ddgiConfig.normal_bias);
             ddgiConfig.use_rt_gbuffer = GetOptional(integratorJson, "use_rt_gbuffer", ddgiConfig.use_rt_gbuffer);
+            ddgiConfig.debug_ddgi     = GetOptional(integratorJson, "debug_ddgi", ddgiConfig.debug_ddgi);
         } else if (integratorTypeStr == kRestirDIIntegrator) {
             // integratorType = eRestirDI;
         }

@@ -6,6 +6,7 @@
 #include "RayTracer.h"
 
 #include "imgui.h"
+#include "ctpl_stl.h"
 #include "Common/Config.h"
 #include "Common/ResourceCache.h"
 #include "Common/VkCommon.h"
@@ -15,10 +16,11 @@
 #include "Integrators/RestirIntegrator.h"
 #include "Integrators/SimpleIntegrator.h"
 #include "PostProcess/PostProcess.h"
+#include "Scene/SceneLoader/HDRSampling.h"
 #include "Scene/SceneLoader/SceneLoaderInterface.h"
 #include "Scene/SceneLoader/gltfloader.h"
 
-RayTracer::RayTracer(const RTConfing& settings) : Application("Real time Ray tracer", settings.getWindowWidth(), settings.getWindowHeight(),settings) {
+RayTracer::RayTracer(const RTConfing& settings) : Application("Real time Ray tracer", settings.getWindowWidth(), settings.getWindowHeight(), settings) {
     addDeviceExtension(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     addDeviceExtension(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
     addDeviceExtension(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
@@ -28,8 +30,6 @@ RayTracer::RayTracer(const RTConfing& settings) : Application("Real time Ray tra
     addDeviceExtension(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     addDeviceExtension(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
     addDeviceExtension(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-
-    //Application::g_App = this;
 }
 
 void RayTracer::drawFrame(RenderGraph& renderGraph) {
@@ -52,20 +52,40 @@ void RayTracer::drawFrame(RenderGraph& renderGraph) {
 }
 
 void RayTracer::onSceneLoaded() {
-    scene->addDirectionalLight(glm::vec3(0.420776,-2.158489, -3), glm::vec3(1.0f), 1.0f);
-
+    scene->addDirectionalLight(glm::vec3(0.0, -1.0, 0.3), glm::vec3(1.0f), 1.5f);
     // scene->addDirectionalLight(glm::vec3(0.6,-0.435,-0.816), glm::vec3(1.0f), 1.0f);
     camera = scene->getCameras()[0];
     Config::GetInstance().CameraFromConfig(*camera, scene->getName());
     sceneFirstLoad = false;
 
     rtSceneEntry = RTSceneUtil::convertScene(*device, *scene);
+
+
     for (auto& integrator : integrators) {
         integrator.second->initScene(*rtSceneEntry);
         integrator.second->init();
     }
-
+    pcPath->first_frame = true;
+    pcPath->frame_num   = 0;
     initView();
+}
+void RayTracer::perFrameUpdate() {
+    Application::perFrameUpdate();
+    pcPath->frame_num++;
+    if (asyncEnvironmenMap) {
+        EnvMapUpdateData envMapUpdateData;
+        envMapUpdateData.envMap = std::move(asyncEnvironmenMap);
+        asyncEnvironmenMap      = nullptr;
+        rtSceneEntry->updateEnvMap(*device, envMapUpdateData);
+        pcPath->frame_num   = 0;
+        pcPath->first_frame = true;
+    }
+    else {
+        pcPath->first_frame = false;
+    }
+    if (camera->moving() && integrators[currentIntegrator]->resetFrameOnCameraMove()) {
+        pcPath->frame_num = 0;
+    }
 }
 std::string RayTracer::getHdrImageToSave() {
     return RT_IMAGE_NAME;
@@ -76,11 +96,14 @@ void RayTracer::prepare() {
     GlslCompiler::setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_6);
     GlslCompiler::forceRecompile = true;
 
+    pcPath = std::make_shared<PCPath>();
+    
     integrators[to_string(ePathTracing)] = std::make_unique<PathIntegrator>(*device, config.getPathTracingConfig());
     integrators[to_string(eDDGI)]        = std::make_unique<DDGIIntegrator>(*device, config.getDDGIConfig());
 
     for (auto& integrator : integrators) {
         integratorNames.push_back(integrator.first);
+        integrator.second->setPC(pcPath);
     }
 
     currentIntegrator = to_string(config.getIntegratorType());
@@ -90,13 +113,23 @@ void RayTracer::prepare() {
                           .indexType               = VK_INDEX_TYPE_UINT32,
                           .bufferAddressAble       = true,
                           .bufferForAccel          = true,
-                          .bufferForStorage        = true,.loadLight = false};
+                          .bufferForStorage        = true};
     config.getSceneLoadingConfig(sceneLoadingConfig);
     loadScene(config.getScenePath());
     g_context->setFlipViewport(false);
 }
 void RayTracer::onUpdateGUI() {
     Application::onUpdateGUI();
+
+    auto file = gui->showFileDialog("Select a cubemap", {".exr", ".hdr"});
+
+    if (file != "no file selected") {
+        ctpl::thread_pool pool(1);
+        pool.push([this, file](size_t) {
+            LOGI("file selected: {}", file);
+            asyncEnvironmenMap = Texture::loadTextureFromFile(g_context->getDevice(), file);
+        });
+    }
 
     int itemCurrent = 0;
     for (int i = 0; i < integratorNames.size(); i++) {
@@ -111,14 +144,18 @@ void RayTracer::onUpdateGUI() {
     }
     ImGui::Combo("Integrators", &itemCurrent, integratorNamesCStr.data(), integratorNames.size());
 
-    currentIntegrator = integratorNames[itemCurrent];
+    if (currentIntegrator != integratorNames[itemCurrent]) {
+        //When switch integrator, reset the frame count
+        currentIntegrator = integratorNames[itemCurrent];
+        integrators[currentIntegrator]->resetFrameCount();
+    }
 
     integrators[currentIntegrator]->onUpdateGUI();
 }
 
 int main() {
     Json config = JsonUtil::fromFile(FileUtils::getResourcePath("render.json"));
-    
+
     RayTracer rayTracer(config);
     rayTracer.prepare();
     rayTracer.mainloop();

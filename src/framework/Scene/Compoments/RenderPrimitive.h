@@ -43,7 +43,8 @@ protected:
 
     VkIndexType indexType{VK_INDEX_TYPE_UINT16};
 
-    BBox dimensions;
+    BBox transformedDimensions;
+    BBox originalDimensions;
 
     std::unordered_map<std::string, VertexAttribute>         vertexAttributes;
     std::unordered_map<std::string, std::unique_ptr<Buffer>> vertexBuffers;
@@ -79,16 +80,18 @@ public:
     bool        hasIndexBuffer() const;
     Buffer&     getUniformBuffer() const;
 
-    void        setDimensions(glm::vec3 min, glm::vec3 max);
-    void        setDimensions(const BBox& box);
+    // void        setDimensions(glm::vec3 min, glm::vec3 max);
+    // void        setDimensions(const BBox& box);
+    void        setOriginalDimensions(const BBox& box);
+    void        setTransform(const Transform& transform);
     const BBox& getDimensions() const;
 
     Primitive(uint32_t firstVertex, uint32_t firstIndex, uint32_t vertexCount, uint32_t indexCount, uint32_t materialIndex = 0) : firstIndex(firstIndex),
                                                                                                                                   indexCount(indexCount), firstVertex(firstVertex), vertexCount(vertexCount),
-                                                                                                                                  materialIndex(materialIndex), dimensions({}) {
+                                                                                                                                  materialIndex(materialIndex), transformedDimensions({}) {
     }
 
-    Primitive(uint32_t firstVertex, uint32_t vertexCount, uint32_t materialIndex) : firstVertex(firstVertex), vertexCount(vertexCount), materialIndex(materialIndex), dimensions({}) {
+    Primitive(uint32_t firstVertex, uint32_t vertexCount, uint32_t materialIndex) : firstVertex(firstVertex), vertexCount(vertexCount), materialIndex(materialIndex), transformedDimensions({}) {
     }
     PerPrimitiveUniform GetPerPrimitiveUniform() const {
         return {transform.getLocalToWorldMatrix(), glm::transpose(glm::inverse(transform.getLocalToWorldMatrix())), materialIndex, 0, 0, 0};

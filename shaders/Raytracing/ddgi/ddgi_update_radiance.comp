@@ -156,7 +156,7 @@ void main(){
         
         if (total_weight>0.0)
             result /= total_weight;
-        if (pc_ray.first_frame == 0 || pc_ray.frame_num > 0)
+        if (pc_ray.first_frame == 0)
         {
             vec3 prev_result = imageLoad(output_image, ivec2(pixel_current)).rgb;
             float w = 1. / float(pc_ray.frame_num + 1);

@@ -7,7 +7,7 @@ struct DDGIUbo {
     ivec3 probe_counts;
     float hysteresis;
     vec3  probe_start_position;
-    float probe_distance;
+    float pad0;
 
     int   rays_per_probe;
     float max_distance;
@@ -22,7 +22,10 @@ struct DDGIUbo {
     int   depth_width;
     int   depth_height;
     float min_frontface_dist;
-    float pad;
+    float pad1;
+
+    vec3 probe_distance;
+    float pad2;
 };
 
 struct DDGIRayData {
