@@ -1075,13 +1075,3 @@ Node::~Node() {
 Mesh::Mesh(Device& device, glm::mat4 matrix) : device(device) {
 }
 
-void Primitive::setDimensions(glm::vec3 min, glm::vec3 max) {
-    dimensions = BBox(min, max);
-}
-void Primitive::setDimensions(const BBox& box) {
-    dimensions = box;
-}
-
-const BBox& Primitive::getDimensions() const {
-    return dimensions;
-}

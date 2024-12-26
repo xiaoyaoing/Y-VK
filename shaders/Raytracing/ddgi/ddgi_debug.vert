@@ -32,7 +32,8 @@ void main()
 
     normal = position;
     
-    position *= 0.05f;
+  //  position *= ddgi_ubo.max_distance / 3.f;
+    position *= (min(ddgi_ubo.probe_distance.x,min(ddgi_ubo.probe_distance.y,ddgi_ubo.probe_distance.z)))/ 3.f;
     position += probe_position;
     position += ddgi_probe_offset_buffer.probe_offsets[probe_index];
 //    debugPrintfEXT("probe_index: %d position: %f %f %f\n", probe_index, position.x, position.y, position.z);

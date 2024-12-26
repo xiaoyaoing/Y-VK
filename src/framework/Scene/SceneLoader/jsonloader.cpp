@@ -421,7 +421,6 @@ void JsonLoader::loadPrimitives() {
             }
         }
         auto primitive = std::make_unique<Primitive>(vertexOffset, indexOffset, vertexCount, indexCount, material_index);
-        primitive->setDimensions(primitiveData->bbox);
         
         vertexOffsets.push_back(vertexOffset);
         indexOffsets.push_back(indexOffset);
@@ -433,9 +432,13 @@ void JsonLoader::loadPrimitives() {
         vertexDatas.push_back(std::move(primitiveData->buffers));
 
         primitive->lightIndex = lightIndex;
+        auto bbox             = primitiveData->bbox;
+        auto tempMin          = transform.getLocalToWorldMatrix() * glm::vec4(bbox.min(), 1.0f);
+        auto tempMax          = transform.getLocalToWorldMatrix() * glm::vec4(bbox.max(), 1.0f);
+        primitive->setDimensions(vec3(std::min(tempMin.x, tempMax.x), std::min(tempMin.y, tempMax.y), std::min(tempMin.z, tempMax.z)),
+                                 vec3(std::max(tempMin.x, tempMax.x), std::max(tempMin.y, tempMax.y), std::max(tempMin.z, tempMax.z)));
         primitive->transform = transform;
-
-        primitive->setDimensions(primitive->transform.transformPointToWorld(primitive->getDimensions().min()), primitive->transform.transformPointToWorld(primitive->getDimensions().max()));
+        
         sceneBBox.unite(primitive->getDimensions());
         primitives.push_back(std::move(primitive));
     }

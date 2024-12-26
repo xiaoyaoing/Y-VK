@@ -134,7 +134,7 @@ void main()
     float volumeBlendWeight = 1.f;
 
     // Don't evaluate irradiance when the surface is outside the volume
-    if (volumeBlendWeight > 0 && found_intersect && pc_ray.frame_num > 0)
+    if (volumeBlendWeight > 0 && found_intersect && pc_ray.first_frame==0)
     {
         // Get irradiance from the DDGIVolume
         light_irradiance = sample_irradiance_map(event.p, event.frame.n, get_surface_bias(event.frame.n, direction,pc_ray.ddgi_normal_bias, pc_ray.ddgi_view_bias));

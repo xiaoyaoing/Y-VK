@@ -10,6 +10,11 @@ struct BlasInput {
 
 using TlasInput = VkAccelerationStructureInstanceKHR;
 
+struct EnvMapUpdateData {
+    // std::shared_ptr<Buffer> infiniteSamplingBuffer{nullptr};
+    std::unique_ptr<Texture> envMap{nullptr};
+};
+
 struct RTSceneEntry {
     Scene*  scene{nullptr};
     Buffer* vertexBuffer{nullptr};
@@ -36,14 +41,16 @@ struct RTSceneEntry {
     std::vector<RTLight>     lights;
     std::vector<RTPrimitive> primitives;
     std::vector<RTMaterial>  materials;
-    std::vector<Texture*>    textures{};
 
     SceneDesc sceneDesc;
 
     bool primAreaBuffersInitialized{false};
 
     virtual ~RTSceneEntry() = default;
+    virtual void updateEnvMap(Device & device,EnvMapUpdateData& data) {};
 };
+
+
 
 class RTSceneUtil {
 public:

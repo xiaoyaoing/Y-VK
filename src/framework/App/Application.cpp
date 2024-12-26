@@ -202,7 +202,6 @@ void Application::mainloop() {
  * - Updates the camera based on the delta time.
  */
 
-
 void Application::update() {
 
     deltaTime = timer.tick<Timer::Seconds>();
@@ -255,6 +254,12 @@ void Application::update() {
     if (camera->moving()) {
         viewUpdated = true;
     }
+
+    perFrameUpdate();
+
+    
+}
+void Application::perFrameUpdate() {
 }
 
 void Application::updateScene() {

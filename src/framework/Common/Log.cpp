@@ -7,3 +7,6 @@
 // void DebugBreak() {
 //     __debugbreak();
 // }
+void Log::DebugBreakPoint() {
+    throw std::runtime_error("DebugBreakPoint");
+}

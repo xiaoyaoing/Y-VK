@@ -77,6 +77,7 @@ public:
     void setSceneBBox(const BBox& bbox);
     const std::vector<std::unique_ptr<Primitive>>& getPrimitives() const;
     const std::vector<std::unique_ptr<Texture>>&   getTextures() const;
+     std::vector<std::unique_ptr<Texture>>&   getTextures();
     const std::vector<GltfMaterial>&               getGltfMaterials() const;
     const std::vector<RTMaterial>&                 getRTMaterials() const;
     std::vector<std::shared_ptr<Camera>>&          getCameras();

@@ -60,7 +60,7 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
 
     if (enable_sample_bsdf)
     {
-        BsdfSampleRecord record = sample_bsdf(materials.m[event.material_idx], event, rand2(seed));
+        BsdfSampleRecord record = sample_bsdf(materials.m[event.material_idx], event, seed);
         vec3 f = record.f;
         float bsdf_pdf = record.pdf;
         if (f != vec3(0) && bsdf_pdf != 0){

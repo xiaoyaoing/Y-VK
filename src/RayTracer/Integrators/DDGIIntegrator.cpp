@@ -127,12 +127,6 @@ static glm::mat4 ComputeRandomRotation() {
 }
 
 void DDGIIntegrator::render(RenderGraph& renderGraph) {
-    pc_ray.first_frame = frameCount == 0;
-    pc_ray.frame_num   = frameCount;
-    frameCount++;
-
-    if (camera->moving())
-        pc_ray.frame_num = 0;
 
     if (!entry_->primAreaBuffersInitialized) {
         initLightAreaDistribution(renderGraph);
@@ -140,14 +134,9 @@ void DDGIIntegrator::render(RenderGraph& renderGraph) {
 
     renderGraph.setCutUnUsedResources(false);
 
-    pc_ray.probe_rotation = ComputeRandomRotation();
+    getPC().probe_rotation = ComputeRandomRotation();
 
-    std::random_device               rd;
-    std::mt19937                     gen(rd());
-    std::uniform_real_distribution<> dis(-1.0, 1.0);
-    glm::vec4                        rands(0.5 * dis(gen) + 0.5, dis(gen), dis(gen), dis(gen));
-    pc_ray.probe_rotation = glm::mat4_cast(
-        glm::angleAxis(2.0f * glm::pi<float>() * rands.x, glm::normalize(glm::vec3(rands.y, rands.z, rands.w))));
+ 
 
     if (useRTGBuffer) {
         renderGraph.addRaytracingPass(
@@ -163,8 +152,8 @@ void DDGIIntegrator::render(RenderGraph& renderGraph) {
             [&](RenderPassContext& context) {
                 auto& commandBuffer = context.commandBuffer;
                 bindRaytracingResources(commandBuffer);
-                g_context->bindImage(0, renderGraph.getBlackBoard().getImageView(RT_IMAGE_NAME)).bindBuffer(0, *buffers->uboBuffer);
-                g_context->bindPushConstants(pc_ray);
+                g_context->bindImage(0, renderGraph.getBlackBoard().getImageView(RT_IMAGE_NAME));
+                g_context->bindPushConstants(getPC());
                 g_context->traceRay(commandBuffer, VkExtent3D{width, height, 1});
             });
     } else {
@@ -200,7 +189,7 @@ void DDGIIntegrator::render(RenderGraph& renderGraph) {
                 .bindBuffer(6, *buffers->probeRayData)
                 .bindBuffer(7, *buffers->probeOffsets);
             uint probeCount = ubo.probe_counts.x * ubo.probe_counts.y * ubo.probe_counts.z;
-            g_context->bindPushConstants(pc_ray)
+            g_context->bindPushConstants(getPC())
                 .traceRay(commandBuffer, VkExtent3D{probeCount, uint(ubo.rays_per_probe), 1});
         });
 
@@ -215,7 +204,7 @@ void DDGIIntegrator::render(RenderGraph& renderGraph) {
                 .bindBuffer(6, renderGraph.getBlackBoard().getBuffer(kProbeDataBufferName))
                 .bindBuffer(0, *buffers->uboBuffer);
             g_context->bindShaders({kRadianceUpdate})
-                .bindPushConstants(pc_ray)
+                .bindPushConstants(getPC())
                 .flushAndDispatch(context.commandBuffer, ubo.probe_counts.x * ubo.probe_counts.y, ubo.probe_counts.z, 1);
         });
 
@@ -230,7 +219,7 @@ void DDGIIntegrator::render(RenderGraph& renderGraph) {
                 .bindBuffer(6, renderGraph.getBlackBoard().getBuffer(kProbeDataBufferName))
                 .bindBuffer(0, *buffers->uboBuffer);
             g_context->bindShaders({kDepthUpdate})
-                .bindPushConstants(pc_ray)
+                .bindPushConstants(getPC())
                 .flushAndDispatch(context.commandBuffer, ubo.probe_counts.x * ubo.probe_counts.y, ubo.probe_counts.z, 1);
         });
 
@@ -243,27 +232,18 @@ void DDGIIntegrator::render(RenderGraph& renderGraph) {
                 builder.writeTexture(RT_IMAGE_NAME, RenderGraphTexture::Usage::STORAGE);
             },
             [&](RenderPassContext& context) {
-                auto& sampler = device.getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, usePointSampler ? VK_FILTER_NEAREST : VK_FILTER_LINEAR, 1);
+                auto& sampler = device.getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_FILTER_LINEAR, 1);
                 bindRaytracingResources(context.commandBuffer);
 
                 g_context->bindImageSampler(0, renderGraph.getBlackBoard().getImageView("ddgi_radiance_map"), sampler)
                     .bindImageSampler(1, renderGraph.getBlackBoard().getImageView("ddgi_depth_map"), sampler)
                     .bindBuffer(3, *entry_->sceneDescBuffer)
                     .bindBuffer(0, *buffers->uboBuffer)
-                    .bindBuffer(1, *buffers->probeOffsets)
-                    .bindBuffer(6, *buffers->probeRayData)
                     .bindImage(0, renderGraph.getBlackBoard().getImageView(RT_IMAGE_NAME))
-                    .bindPushConstants(pc_ray);
+                    .bindPushConstants(getPC());
                 g_context->bindShaders({kSampleProbe})
                     .flushAndDispatch(context.commandBuffer, (width + 15) / 16, (height + 15) / 16, 1);
             });
-    if (relocate)
-        renderGraph.addComputePass("ddgi_relocate_probes", [&](RenderGraph::Builder& builder, ComputePassSettings& settings) {
-                                   builder.readBuffer(renderGraph.getBlackBoard().getHandle(kProbeDataBufferName), RenderGraphBuffer::Usage::READ);
-                                   builder.writeBuffer(renderGraph.getBlackBoard().getHandle(kprobeOffsetBufferName), BufferUsage::STORAGE); }, [&](RenderPassContext& context) {
-                                   g_context->bindBuffer(0, *buffers->uboBuffer).bindBuffer(1, renderGraph.getBlackBoard().getBuffer(kprobeOffsetBufferName)).bindBuffer(2, renderGraph.getBlackBoard().getBuffer(kProbeDataBufferName));
-                                   g_context->bindPushConstants(pc_ray); 
-                                       g_context->bindShaders({kPorbeRelocate}).flushAndDispatch(context.commandBuffer, (ubo.probe_counts.x * ubo.probe_counts.y *ubo.probe_counts.z +31)/32,1, 1); });
 
     if (debugDDGI) {
         if (!renderGraph.getBlackBoard().contains(DEPTH_IMAGE_NAME))
@@ -323,8 +303,6 @@ void DDGIIntegrator::init() {
     shadowMapPass = std::make_unique<ShadowMapPass>();
     shadowMapPass->init();
     spherePrimitive = SceneLoaderInterface::loadSpecifyTypePrimitive(device, "sphere");
-    std::random_device rd;
-    m_rng.seed(rd());
 }
 
 void DDGIIntegrator::initScene(RTSceneEntry& entry) {
@@ -332,12 +310,12 @@ void DDGIIntegrator::initScene(RTSceneEntry& entry) {
 
     ubo.rays_per_probe            = config.rays_per_probe;
     ubo.depth_sharpness           = 50.f;
-    pc_ray.ddgi_normal_bias       = config.normal_bias;
-    pc_ray.ddgi_view_bias         = config.view_bias;
-    pc_ray.backface_threshold     = 0.25f;
-    pc_ray.min_frontface_distance = 0.1f;
-    pc_ray.wrap_border            = 1;
-    pc_ray.ddgi_hysteresis        = 0.98f;
+    getPC().ddgi_normal_bias       = config.normal_bias;
+    getPC().ddgi_view_bias         = config.view_bias;
+    getPC().backface_threshold     = 0.25f;
+    getPC().min_frontface_distance = 0.1f;
+    getPC().wrap_border            = 1;
+    getPC().ddgi_hysteresis        = 0.98f;
 
     ubo.probe_counts         = 1.1f * (entry.scene->getSceneBBox().max() - entry.scene->getSceneBBox().min() + 0.2f) / config.probe_distance;
     ubo.probe_distance       = config.probe_distance;
@@ -348,6 +326,15 @@ void DDGIIntegrator::initScene(RTSceneEntry& entry) {
 
     uint numProbes = ubo.probe_counts.x * ubo.probe_counts.y * ubo.probe_counts.z;
 
+    if (numProbes < 10 || numProbes > 64 * 64 * 64) {
+        vec3 probeDistance= 1.1f * (entry_->scene->getSceneBBox().max() - entry_->scene->getSceneBBox().min()) / 64;
+        ubo.probe_counts   = 1.1f * abs(entry_->scene->getSceneBBox().max() - entry_->scene->getSceneBBox().min()) / probeDistance;
+        numProbes          = ubo.probe_counts.x * ubo.probe_counts.y * ubo.probe_counts.z;
+        ubo.probe_distance = probeDistance;
+        ubo.max_distance   = 1.5f * probeDistance.length();
+    }
+
+    LOGI("probe counts: {} {} {}", ubo.probe_counts.x, ubo.probe_counts.y, ubo.probe_counts.z);
     buffers->probeRayData = std::make_unique<Buffer>(
         device,
         sizeof(DDGIRayData) * numProbes * ubo.rays_per_probe,
@@ -409,19 +396,19 @@ void DDGIIntegrator::initScene(RTSceneEntry& entry) {
         VMA_MEMORY_USAGE_GPU_ONLY,
         VK_IMAGE_VIEW_TYPE_2D);
 
-    pc_ray.probe_rotation      = glm::mat4(1.0f);
-    pc_ray.size_x              = width;
-    pc_ray.size_y              = height;
-    pc_ray.frame_num           = 0;
-    pc_ray.light_num           = mScene->getLights().size();
-    pc_ray.enable_sample_bsdf  = 1;
-    pc_ray.enable_sample_light = 1;
-    pc_ray.max_depth           = 2;
-    pc_ray.min_depth           = 0;
-    pc_ray.probe_rotation      = glm::mat4(1.0f);
-    pc_ray.first_frame         = 1;
-    pc_ray.ddgi_show_direct    = 1;
-    pc_ray.ddgi_indirect_scale = 1.0f;
+    getPC().probe_rotation      = glm::mat4(1.0f);
+    getPC().size_x              = width;
+    getPC().size_y              = height;
+    getPC().frame_num           = 0;
+    getPC().light_num           = mScene->getLights().size();
+    getPC().enable_sample_bsdf  = 1;
+    getPC().enable_sample_light = 1;
+    getPC().max_depth           = 2;
+    getPC().min_depth           = 0;
+    getPC().probe_rotation      = glm::mat4(1.0f);
+    getPC().first_frame         = 1;
+    getPC().ddgi_show_direct    = 1;
+    getPC().ddgi_indirect_scale = 1.0f;
 
     useRTGBuffer = config.use_rt_gbuffer;
 
@@ -440,15 +427,15 @@ void DDGIIntegrator::onUpdateGUI() {
     Integrator::onUpdateGUI();
     ImGui::Checkbox("Debug DDGI", &debugDDGI);
     ImGui::Checkbox("Show indirect light", &showIndirect);
-    ImGui::Checkbox("Show direct light", reinterpret_cast<bool*>(&pc_ray.ddgi_show_direct));
-    ImGui::Checkbox("Warp Border", reinterpret_cast<bool*>(&pc_ray.wrap_border));
+    ImGui::Checkbox("Show direct light", reinterpret_cast<bool*>(&getPC().ddgi_show_direct));
+    ImGui::Checkbox("Warp Border", reinterpret_cast<bool*>(&getPC().wrap_border));
     ImGui::Checkbox("Relocate Probes", &relocate);
     ImGui::Checkbox("Use Point Sampler", &usePointSampler);
-    ImGui::SliderFloat("indirect scale", &pc_ray.ddgi_indirect_scale, 0.0f, 10.0f);
-    ImGui::SliderFloat("normal bias", &pc_ray.ddgi_normal_bias, 0.0f, 1.0f);
-    ImGui::SliderFloat("view bias", &pc_ray.ddgi_view_bias, 0.0f, 1.0f);
-    ImGui::SliderFloat("backface threshold", &pc_ray.backface_threshold, 0.0f, 1.0f);
-    ImGui::SliderFloat("min frontface distance", &pc_ray.min_frontface_distance, 0.0f, 1.0f);
-    ImGui::SliderFloat("ddgi hyteresis", &pc_ray.ddgi_hysteresis, 0.0f, 1.0f);
+    ImGui::SliderFloat("indirect scale", &getPC().ddgi_indirect_scale, 0.0f, 10.0f);
+    ImGui::SliderFloat("normal bias", &getPC().ddgi_normal_bias, 0.0f, 1.0f);
+    ImGui::SliderFloat("view bias", &getPC().ddgi_view_bias, 0.0f, 1.0f);
+    ImGui::SliderFloat("backface threshold", &getPC().backface_threshold, 0.0f, 1.0f);
+    ImGui::SliderFloat("min frontface distance", &getPC().min_frontface_distance, 0.0f, 1.0f);
+    ImGui::SliderFloat("ddgi hyteresis", &getPC().ddgi_hysteresis, 0.0f, 1.0f);
     ImGui::Checkbox("Use RT GBuffer", &useRTGBuffer);
 }

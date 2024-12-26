@@ -12,6 +12,7 @@ target_link_libraries(${target_name} PUBLIC
         vma
         glfw
         stb_image
+        tinyexr
 
         glm
         imgui
@@ -35,7 +36,6 @@ target_link_libraries(${target_name} PUBLIC
 
 set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../shaders")
 
-Message("SHADER_DIR: ${SHADER_DIR}")
 
 # 设置头文件搜索路径
 target_include_directories(${target_name} PUBLIC . ${SHADER_DIR}  $<BUILD_INTERFACE:${Y_VK_THIRD_PARTY_DIR}/DirectXShaderCompiler/include>

@@ -16,6 +16,7 @@ struct RTSceneEntryImpl : public RTSceneEntry {
     void           buildBLAS();
     void           buildTLAS();
     Accel          createAccel(VkAccelerationStructureCreateInfoKHR& accel);
+    void           updateEnvMap(Device& device, EnvMapUpdateData& data) override;
     RTLight        toRTLight(Scene& scene, const SgLight& light);
     Device&        device;
     RenderContext* renderContext{nullptr};
@@ -59,18 +60,18 @@ RTLight RTSceneEntryImpl::toRTLight(Scene& scene, const SgLight& light) {
         rtLight.light_type = RT_LIGHT_TYPE_POINT;
     } else if (light.type == LIGHT_TYPE::Sky) {
         HDRSampling hdrSampling;
-        rtLight.world_matrix                     = light.lightProperties.world_matrix;
-        rtLight.light_texture_id                 = light.lightProperties.texture_index;
-        rtLight.light_type                       = RT_LIGHT_TYPE_INFINITE;
-        Texture* tex                             = scene.getTextures().operator[](rtLight.light_texture_id).get();
-        auto                               aceel = hdrSampling.createEnvironmentAccel(reinterpret_cast<const float*>(tex->image->getData().data()), tex->image->getExtent2D());
-        infiniteSamplingBuffer                   = std::make_unique<Buffer>(device, sizeof(EnvAccel) * aceel.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, aceel.data());
-        sceneDesc.env_sampling_addr              = infiniteSamplingBuffer->getDeviceAddress();
-        sceneDesc.envmap_idx                     = lights.size();
+        rtLight.world_matrix        = light.lightProperties.world_matrix;
+        rtLight.light_texture_id    = light.lightProperties.texture_index;
+        rtLight.light_type          = RT_LIGHT_TYPE_INFINITE;
+        Texture* tex                = scene.getTextures().operator[](rtLight.light_texture_id).get();
+        auto     aceel              = hdrSampling.createEnvironmentAccel(reinterpret_cast<const float*>(tex->image->getData().data()), tex->image->getExtent2D());
+        infiniteSamplingBuffer      = std::make_unique<Buffer>(device, sizeof(EnvAccel) * aceel.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, aceel.data());
+        sceneDesc.env_sampling_addr = infiniteSamplingBuffer->getDeviceAddress();
+        sceneDesc.envmap_idx        = lights.size();
     } else if (light.type == LIGHT_TYPE::Directional) {
-        rtLight.L         = light.lightProperties.color * light.lightProperties.intensity;
-        rtLight.direction = light.lightProperties.direction;
-        rtLight.position  = light.lightProperties.position;
+        rtLight.L          = light.lightProperties.color * light.lightProperties.intensity;
+        rtLight.direction  = light.lightProperties.direction;
+        rtLight.position   = light.lightProperties.position;
         rtLight.light_type = RT_LIGHT_TYPE_DIRECTIONAL;
     }
 
@@ -137,16 +138,13 @@ void RTSceneEntryImpl::initScene(Scene& scene_) {
 
     if (scene_.getLights().empty()) {
         LOGI("No lights in the scene Adding default light");
-        std::string envPath    = FileUtils::getResourcePath("default.hdr");
+        std::string envPath    = FileUtils::getResourcePath("default.exr");
         auto        envTexture = Texture::loadTextureFromFile(device, envPath);
         scene->addTexture(std::move(envTexture));
         scene->addLight(SgLight{.type = LIGHT_TYPE::Sky, .lightProperties = {
                                                              .texture_index = static_cast<uint32_t>(scene_.getTextures().size()) - 1,
                                                          }});
     }
-
-    textures.resize(scene->getTextures().size());
-    std::ranges::transform(scene->getTextures().begin(), scene->getTextures().end(), textures.begin(), [](const auto& texture) { return texture.get(); });
 
     // primitives.resize(1);
 
@@ -173,7 +171,9 @@ void RTSceneEntryImpl::initScene(Scene& scene_) {
 
     primitiveMeshBuffer = std::make_unique<Buffer>(device, sizeof(RTPrimitive) * primitives.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, primitives.data());
     materialsBuffer     = std::make_unique<Buffer>(device, sizeof(RTMaterial) * materials.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, materials.data());
-    rtLightBuffer       = std::make_unique<Buffer>(device, sizeof(RTLight) * lights.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, lights.data());
+
+    //Leave some space for additional lights
+    rtLightBuffer = std::make_unique<Buffer>(device, sizeof(RTLight) * (lights.size() + 10), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, lights.data());
 
     sceneUboBuffer           = std::make_unique<Buffer>(device, sizeof(SceneUbo), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
     sceneDesc.vertex_addr    = vertexBuffer->getDeviceAddress();
@@ -411,6 +411,30 @@ void RTSceneEntryImpl::buildTLAS() {
     renderContext->submit(cmdBuffer);
 }
 
+void RTSceneEntryImpl::updateEnvMap(Device& device, EnvMapUpdateData& data) {
+    if (data.envMap) {
+        if (sceneDesc.envmap_idx != -1) {
+            scene->getTextures()[lights[sceneDesc.envmap_idx].light_texture_id]    = std::move(data.envMap);
+            HDRSampling hdrSampling;
+            int lightTextureIdx = lights[sceneDesc.envmap_idx].light_texture_id;
+            auto &     hdrTexture = scene->getTextures()[lightTextureIdx];
+            auto aceel           = hdrSampling.createEnvironmentAccel(reinterpret_cast<const float*>(hdrTexture->image->getData().data()), hdrTexture->image->getExtent2D());
+            infiniteSamplingBuffer      = std::make_unique<Buffer>(device, sizeof(EnvAccel) * aceel.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, aceel.data());
+            sceneDesc.env_sampling_addr = infiniteSamplingBuffer->getDeviceAddress();
+        } else {
+            // int light_idx = lights.size();
+            int tex_idx   = scene->getTextures().size();
+            scene->addTexture(std::move(data.envMap));
+            lights.push_back(toRTLight(*scene, SgLight{.type = LIGHT_TYPE::Sky, .lightProperties = {
+                                                                                    .texture_index = static_cast<uint32_t>(tex_idx),
+                                                                                }}));
+        }
+    }
+    
+
+    rtLightBuffer->uploadData(lights.data(), sizeof(RTLight) * lights.size());
+    sceneDescBuffer->uploadData(&sceneDesc, sizeof(SceneDesc));
+}
 std::unique_ptr<RTSceneEntry> RTSceneUtil::convertScene(Device& device, Scene& scene) {
     auto result = std::make_unique<RTSceneEntryImpl>(device);
     result->initScene(scene);

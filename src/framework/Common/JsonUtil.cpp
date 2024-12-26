@@ -44,11 +44,11 @@ namespace glm {
         v.y = j.at(1).get<float>();
     }
 
-    void from_json(const Json& j, quat& v)
-    {
+    void from_json(const Json& j, quat& v) {
         v.x = j.at(0).get<float>();
         v.y = j.at(1).get<float>();
         v.z = j.at(2).get<float>();
         v.w = j.at(3).get<float>();
     }
+    
 }// namespace glm

@@ -32,7 +32,7 @@ protected:
     struct DDGIBuffers;
     DDGIBuffers * buffers{nullptr};
     DDGIUbo ubo;
-    PCPath pc_ray;
+    // PCPath pc_ray;
     uint ping = 0;
     uint pong = 0;
     std::unique_ptr<GBufferPass> gbufferPass;
