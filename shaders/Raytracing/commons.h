@@ -81,15 +81,22 @@ struct RTMaterial {
     float avgTransmittance;
 
     float ior;
+    vec3  padding;
+    
     int roughness_texture_id;
+
+    //Disney Attributes
+    float sheenTint;
     float sheen;
     float clearCoat;
-
+    
     float metallic;
     float specularTint;
     float anisotropic;
-    float specular;
-    
+    float specularTransmission;
+
+    float clearCoatGloss;
+    float subSurfaceFactor;
 };
 
 struct RTLight {
@@ -177,7 +184,7 @@ struct GBuffer {
 #define RT_BSDF_TYPE_DIELECTRIC 2
 #define RT_BSDF_TYPE_CONDUCTOR  3
 #define RT_BSDF_TYPE_PLASTIC    4
-#define RT_BSDF_TYPE_PRINCIPLE  5
+#define RT_BSDF_TYPE_DISNEY     5
 
 #define RT_LIGHT_TYPE_AREA     0
 #define RT_LIGHT_TYPE_INFINITE 1

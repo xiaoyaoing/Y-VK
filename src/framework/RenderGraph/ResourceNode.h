@@ -15,6 +15,17 @@ struct ResourceBarrierInfo {
     std::vector<VkImageMemoryBarrier2KHR> imageBarriers;
     std::vector<VkBufferMemoryBarrier2KHR> bufferBarriers;
     std::vector<VkMemoryBarrier2KHR> memoryBarriers;
+    VkDependencyInfo GetVkDependencyInfo() {
+        VkDependencyInfo dependencyInfo{};
+        dependencyInfo.sType                    = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+        dependencyInfo.bufferMemoryBarrierCount = bufferBarriers.size();
+        dependencyInfo.imageMemoryBarrierCount  = imageBarriers.size();
+        dependencyInfo.memoryBarrierCount       = memoryBarriers.size();
+        dependencyInfo.pBufferMemoryBarriers    = bufferBarriers.data();
+        dependencyInfo.pImageMemoryBarriers     = imageBarriers.data();
+        dependencyInfo.pMemoryBarriers          = memoryBarriers.data();
+        return dependencyInfo;
+    }
 };
 
 class ResourceNode : public RenderGraphNode {
@@ -24,7 +35,6 @@ public:
     virtual void                       resloveUsage(ResourceBarrierInfo & barrierInfo, uint16_t lastUsage, uint16_t nextUsage,RenderPassType lastPassType, RenderPassType nextPassType) = 0;
     virtual uint16_t getDefaultUsage(uint16_t nextUsage) = 0;
     virtual RenderResourceType getType() const                                            = 0;
-    
 public:
     PassNode *first{nullptr},
         *last{nullptr};

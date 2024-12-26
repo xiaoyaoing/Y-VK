@@ -24,14 +24,12 @@ layout(binding = 4, set = 0) uniform LightsInfo
 
 
 layout(input_attachment_index = 0, binding = 0, set=2) uniform subpassInput gbuffer_diffuse_roughness;
-//layout(input_attachment_index = 1, binding = 1, set=2) uniform subpassInput gbuffer_specular;
 layout(input_attachment_index = 1, binding = 1, set=2) uniform subpassInput gbuffer_normal_metalic;
 layout(input_attachment_index = 2, binding = 2, set=2) uniform subpassInput gbuffer_emission;
 layout(input_attachment_index = 3, binding = 3, set=2) uniform subpassInput gbuffer_depth;
 
 
 void main(){
-    //  return ;
 
     vec4  diffuse_roughness  = subpassLoad(gbuffer_diffuse_roughness);
     vec4  normal_metalic    = subpassLoad(gbuffer_normal_metalic);
@@ -44,11 +42,8 @@ void main(){
     if (depth == 1.0){
         discard;
     }
-
     vec3 world_pos = worldPosFromDepth(in_uv, depth);
-    // return;
-
-
+    
     vec3 diffuse_color = diffuse_roughness.xyz;
     float perceptual_roughness = diffuse_roughness.a;
 
@@ -73,7 +68,6 @@ void main(){
         pbr_info.F0 = mix(vec3(0.04), diffuse_color, metallic);
         pbr_info.F90 = vec3(1.0);
         pbr_info.alphaRoughness = perceptual_roughness * perceptual_roughness;
-        //  pbr_info.alphaRoughness = 0.01f;
         pbr_info.diffuseColor = diffuse_color;
         
 
@@ -92,6 +86,5 @@ void main(){
             direct_contribution += light_contribution;
         }
     }
-//    direct_contribution = vec3(1,0,0);
     out_color = vec4(direct_contribution, 1);
 }

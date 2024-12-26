@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Integrator.h"
-#include "Common/RTConfing.h"
+#include "Common/RenderConfig.h"
 #include "Raytracing/PT/path_commons.h"
 #include "RenderPasses/GBufferPass.h"
 

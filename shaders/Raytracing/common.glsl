@@ -62,7 +62,7 @@ vec3 visualize_normal(vec3 n) {
 
 bool is_two_sided(uint material_idx){
     const uint material_type = materials.m[material_idx].bsdf_type;
-    return material_type == RT_BSDF_TYPE_DIELECTRIC || material_type == RT_BSDF_TYPE_PRINCIPLE;
+    return material_type == RT_BSDF_TYPE_DIELECTRIC || material_type == RT_BSDF_TYPE_DISNEY;
 }
 
 SurfaceScatterEvent make_surface_scatter_event(HitPayload hit_pay_load, const vec3 wo,bool enable_two_sided){
@@ -232,6 +232,9 @@ vec3 uv_to_envdir(mat4 toLocal, vec2 uv, out float sin_theta) {
     cos(phi) * sin_theta,
     -cos(theta),
     sin(phi) * sin_theta);
+    if(hasNaN(wLocal)){
+        debugPrintfEXT("wLocal %f %f %f %f %f\n", wLocal.x, wLocal.y, wLocal.z, phi, theta);
+    }
     return mat3(toLocal) * wLocal;
 }
 
@@ -468,9 +471,11 @@ vec3 Environment_sample(sampler2D lat_long_tex, mat4 matrix, in vec3 randVal, ou
 
     // Uniformly sample the solid angle subtended by the pixel.
     // Generate both the UV for texture lookup and a direction in spherical coordinates
-    const float u       = float(px + xi.y) / float(width);
-    const float v = float(py + xi.z) / float(height);
+    float u       = float(px + xi.y) / float(width);
+    float v = float(py + xi.z) / float(height);
 
+//    u = 0;
+//    v = 0;
 
     float sin_theta;
     // Convert to a light direction vector in Cartesian coordinates
@@ -496,7 +501,8 @@ LightSample sample_li_infinite_light(const RTLight light, const SurfaceScatterEv
         float pdf;
         LightSample result;
         vec3 radiance = Environment_sample(scene_textures[light.light_texture_id], light.world_matrix, rand, result.wi, pdf);
-        result.wi = normalize(mat3(light.world_matrix) * result.wi);
+        result.wi = normalize(result.wi);
+        result.wi = normalize(result.wi);
         // Uniformly pick a texel index idx in the environment map
         result.pdf = pdf;
         result.indensity = radiance;
@@ -533,6 +539,7 @@ LightSample sample_li(const RTLight light, const SurfaceScatterEvent event, cons
     uint light_type = light.light_type;
     LightSample result;
 
+
     if (light_type == RT_LIGHT_TYPE_AREA){
         result =  sample_li_area_light(light, event, rand);
         result.is_infinite = false;
@@ -550,6 +557,7 @@ LightSample sample_li(const RTLight light, const SurfaceScatterEvent event, cons
         result =  sample_li_directional_light(light, event, rand);
         result.is_infinite = true;
     }
+    
     return result;
 }
 

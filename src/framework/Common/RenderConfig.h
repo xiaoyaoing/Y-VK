@@ -40,16 +40,16 @@ enum EIntegraotrType {
 std::string to_string(EIntegraotrType type);
 
 
-class RTConfing {
+class RenderConfig {
 public:
-    RTConfing() = default;
+    RenderConfig() = default;
     DDGIConfig getDDGIConfig() const;
     PathTracingConfig getPathTracingConfig() const;
     EIntegraotrType getIntegratorType() const;
     void getSceneLoadingConfig(SceneLoadingConfig& config) const;
     std::string getScenePath() const;
-    RTConfing(const Json & json);
-    RTConfing(const std::string & path);
+    RenderConfig(const Json & json);
+    RenderConfig(const std::string & path);
     void init();
     int getWindowWidth() const;
     int getWindowHeight() const;

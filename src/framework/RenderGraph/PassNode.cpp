@@ -182,6 +182,11 @@ void PassNode::addResourceUsage(RenderGraphHandle handle, uint16_t usage) {
     else
         mResourceUsage.emplace(handle, usage);
 }
+uint16_t PassNode::getResourceUsage(RenderGraphHandle handle) const {
+    if (mResourceUsage.contains(handle))
+        return mResourceUsage.at(handle);
+    return 0;
+}
 
 void ImageCopyPassNode::execute(RenderGraph& renderGraph, CommandBuffer& commandBuffer) {
 

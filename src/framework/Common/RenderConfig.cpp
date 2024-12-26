@@ -1,4 +1,4 @@
-#include "RTConfing.h"
+#include "RenderConfig.h"
 
 
 using IntegratorKey = std::string;
@@ -16,40 +16,40 @@ std::string to_string(EIntegraotrType type) {
     return kIntegratorTypeToString.at(type);
 }
 
-std::string RTConfing::getScenePath() const {
+std::string RenderConfig::getScenePath() const {
     return scenePath;
 }
 
-DDGIConfig RTConfing::getDDGIConfig() const {
+DDGIConfig RenderConfig::getDDGIConfig() const {
     return ddgiConfig;
 }
-PathTracingConfig RTConfing::getPathTracingConfig() const {
+PathTracingConfig RenderConfig::getPathTracingConfig() const {
     return pathTracingConfig;
 }
-EIntegraotrType RTConfing::getIntegratorType() const {
+EIntegraotrType RenderConfig::getIntegratorType() const {
     return mIntegratorType;
 }
-void RTConfing::getSceneLoadingConfig(SceneLoadingConfig& config) const {
+void RenderConfig::getSceneLoadingConfig(SceneLoadingConfig& config) const {
     {
         config.sceneScale = GetOptional(json, "scene_scale", config.sceneScale);
         config.sceneRotation = GetOptional(json, "scene_rotation",config.sceneRotation);
         config.sceneTranslation = GetOptional(json, "scene_translation", config.sceneTranslation);
     }
 }
-int RTConfing::getWindowWidth() const {
+int RenderConfig::getWindowWidth() const {
     return window_width;
 }
-int RTConfing::getWindowHeight() const {
+int RenderConfig::getWindowHeight() const {
     return window_height;
 }
-std::vector<SgLight> RTConfing::getLights() const {
+std::vector<SgLight> RenderConfig::getLights() const {
     return lights;
 }
-RTConfing::RTConfing(const Json& json) {
+RenderConfig::RenderConfig(const Json& json) {
     this->json              = json;
     init();
 }
-RTConfing::RTConfing(const std::string& path) {
+RenderConfig::RenderConfig(const std::string& path) {
     json = JsonUtil::fromFile(path);
     init();
 }
@@ -89,7 +89,7 @@ static void loadLightsFromJsonPart(const Json& json, std::vector<SgLight>& light
 }
 
 
-void RTConfing::init() {
+void RenderConfig::init() {
     auto integratorsTypeStr = json["integrators"];
     for (auto& integratorJson : integratorsTypeStr) {
         auto integratorTypeStr = integratorJson["type"].get<std::string>();

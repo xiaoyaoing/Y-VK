@@ -150,6 +150,10 @@ vec3 conductorReflectanceVec3(const vec3 eta, const vec3 k, float cosThetaI) {
     conductorReflectance(eta.z, k.z, cosThetaI));
 }
 
+vec3 fresnelSchlick(const vec3 f0, float cosTheta) {
+    return f0 + (vec3(1) - f0) * pow(1.0 - cosTheta, 5);
+}
+
 float diffuseReflectance(float eta, float sampleCount) {
     double diffuseFresnel = 0.0;
     float  fb             = dielectricReflectance(eta, 0.0f);

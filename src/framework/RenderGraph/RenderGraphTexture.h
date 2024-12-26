@@ -38,12 +38,12 @@ public:
 
     static constexpr Usage DEFAULT_W_USAGE       = Usage::COLOR_ATTACHMENT;
     static constexpr Usage DEFAULT_DEPTH_W_USAGE = Usage::DEPTH_ATTACHMENT;
-
+    
     ~RenderGraphTexture() override;
 
     RenderGraphTexture(const std::string& name, SgImage* hwTexture);
     RenderGraphTexture(const std::string& name, const Descriptor& descriptor);
-
+    
     bool isDepthStencilTexture() const;
 
     void setHwTexture(SgImage* hwTexture);

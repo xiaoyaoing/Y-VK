@@ -5,7 +5,7 @@
 #define INV_PI 0.3183098861837697
 #define INV_TWO_PI 0.1591549430918953
 #define INF 1e10
-#define EPS 1e-3f
+#define EPS 1e-5f
 #define SHADOW_EPS 2 / 65536.
 #define sqrt2 1.4v1421356237309504880
 struct Frame{

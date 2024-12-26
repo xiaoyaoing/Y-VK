@@ -18,13 +18,14 @@ void PostProcess::render(RenderGraph& rg) {
     rg.addGraphicPass(
         "PostProcess",
         [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
-            auto inputRt = rg.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
-            auto output  = rg.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
-            builder.readTextures({inputRt}, TextureUsage::SAMPLEABLE);
-            builder.writeTexture(output, TextureUsage::COLOR_ATTACHMENT);
+            auto input  = rg.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
+            auto & viewPortImage = rg.getBlackBoard().getHwImage(RENDER_VIEW_PORT_IMAGE_NAME);
+            auto outputRT = rg.createTexture("PostProcessInput", RenderGraphTexture::Descriptor{.extent = viewPortImage.getExtent2D(),.useage = TextureUsage::TRANSFER_SRC | TextureUsage::COLOR_ATTACHMENT, .format = viewPortImage.getFormat()});
+            builder.readTexture(input, TextureUsage::SAMPLEABLE);
+            builder.writeTexture(outputRT, TextureUsage::COLOR_ATTACHMENT);
             RenderGraphPassDescriptor desc{};
-            desc.textures = {inputRt, output};
-            desc.addSubpass({{}, {output}});
+            desc.textures = {outputRT};
+            desc.addSubpass({{}, {outputRT}});
             builder.declare(desc);
         },
         [&](RenderPassContext& context) {
@@ -33,6 +34,7 @@ void PostProcess::render(RenderGraph& rg) {
                     .flushAndDraw(context.commandBuffer, 3, 1, 0, 0);
             pcPost.frame_number++;
         });
+    rg.addImageCopyPass(rg.getBlackBoard().getHandle("PostProcessInput"), rg.getBlackBoard().getHandle(RENDER_VIEW_PORT_IMAGE_NAME));
 }
 void PostProcess::updateGui() {
     PassBase::updateGui();

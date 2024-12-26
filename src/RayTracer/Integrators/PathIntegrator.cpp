@@ -24,7 +24,7 @@ void PathIntegrator::render(RenderGraph& renderGraph) {
         settings.accel = &entry_->tlas;
         settings.pipelineLayout = layout.get();
         settings.rTPipelineSettings.dims = {width,height,1};
-        settings.rTPipelineSettings.maxDepth = 5;
+        settings.rTPipelineSettings.maxDepth = getPC().max_depth;
     
     
         auto output = renderGraph.getBlackBoard().getHandle(RT_IMAGE_NAME);
@@ -42,7 +42,8 @@ void PathIntegrator::render(RenderGraph& renderGraph) {
 void PathIntegrator::initScene(RTSceneEntry& entry) {
     Integrator::initScene(entry);
     
-    getPC().light_num = entry_->lights.size(); getPC().enable_sample_bsdf  = config.sample_bsdf;
+    getPC().light_num = entry_->lights.size();
+    getPC().enable_sample_bsdf  = config.sample_bsdf;
     getPC().enable_sample_light = config.sample_light;
     getPC().enable_accumulation = true;
     getPC().max_depth           = config.max_depth;

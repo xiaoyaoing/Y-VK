@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Common/RTConfing.h"
+#include "Common/RenderConfig.h"
 #include "Core/Buffer.h"
 #include "Core/Device/Device.h"
 #include "PlatForm/Window.h"
@@ -54,7 +54,7 @@ class Application {
     void initLogger();
 
 public:
-    Application(const char* name, uint32_t width, uint32_t height,RTConfing config = RTConfing());
+    Application(const char* name, uint32_t width, uint32_t height,RenderConfig config = RenderConfig());
     Application(const char* name, std::string configPath);
     Application() : Application("Vulkan", 1920, 1080) {
     }
@@ -149,7 +149,7 @@ protected:
 
 protected:
     bool sceneFirstLoad{true};
-    RTConfing config;
+    RenderConfig config;
 
 private:
     std::string               mPresentTexture = RENDER_VIEW_PORT_IMAGE_NAME;

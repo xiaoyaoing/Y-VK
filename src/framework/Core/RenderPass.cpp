@@ -285,6 +285,9 @@ RenderPass::RenderPass(Device& device, const std::vector<Attachment>& attachment
             subpassDescriptions.push_back(subpassDescription);
         }
     }
+
+
+    
     setAttachmentLayouts(subpassDescriptions, attachmentDescriptions);
 
     for (int i = 0; i < subpass_count; i++) {
@@ -309,6 +312,10 @@ RenderPass::RenderPass(Device& device, const std::vector<Attachment>& attachment
     renderPassInfo.pSubpasses      = subpassDescriptions.data();
     renderPassInfo.dependencyCount = subpassDependencies.size();
     renderPassInfo.pDependencies   = subpassDependencies.data();
+
+    if(subpassDescriptions[0].pColorAttachments[0].layout== VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+        LOGE("attachment is VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL");
+    }
 
     for (const auto& attachmentDesc : attachmentDescriptions) {
         attachmentFinalLayouts.push_back(getVulkanLayout(attachmentDesc.finalLayout, attachmentDesc.format));

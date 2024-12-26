@@ -8,6 +8,7 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
     
     
     vec3 result = vec3(0);
+    
 
     vec3 light_sample_rand = rand3(seed);
 
@@ -37,7 +38,7 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
             gl_RayFlagsSkipClosestHitShaderEXT,
             0xFF, 1, 0, 1, event.p, EPS , light_sample.wi, light_sample.dist - EPS, 1);
             bool  visible = any_hit_payload.hit == 0;
-//            visible = true;
+           // visible = true;
             if (visible){
                 uint material_idx = event.material_idx;
                 event.wi = to_local(event.frame, light_sample.wi);
@@ -46,13 +47,13 @@ vec3 sample_specify_light(const uint light_idx, inout SurfaceScatterEvent event,
                 vec3 bsdf =eval_bsdf(materials.m[material_idx], event);
                 result += light_sample.indensity  * bsdf * light_mis_weight / light_sample.pdf;
                 if (hasNaN(result)){
-                    debugPrintfEXT("light L %f %f %f, bsdf %f %f %f, light_mis_weight %f, light_sample.pdf %f, bsdf_pdf %f, result %f %f %f\n",
+                    debugPrintfEXT("light L %f %f %f, bsdf %f %f %f, light_mis_weight %f, light_sample.pdf %f, bsdf_pdf %f, result %f %f %f event.wi %f %f %f\n",
                     light_sample.indensity.x, light_sample.indensity.y, light_sample.indensity.z,
                     bsdf.x, bsdf.y, bsdf.z,
                     light_mis_weight,
                     light_sample.pdf,
                     bsdf_pdf,
-                    result.x, result.y, result.z);
+                    result.x, result.y, result.z,light_sample.wi.x, light_sample.wi.y, light_sample.wi.z);
                 }
             }
         }

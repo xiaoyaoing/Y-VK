@@ -20,7 +20,7 @@
 
 class RayTracer : public Application {
 public:
-    RayTracer(const RTConfing& settings);
+    RayTracer(const RenderConfig& settings);
     void prepare() override;
     void onUpdateGUI() override;
     void drawFrame(RenderGraph& renderGraph) override;

@@ -470,3 +470,7 @@ void Camera::setMoveSpeed(float moveSpeed) {
 float Camera::getMoveSpeed() const {
     return mMoveSpeed;
 }
+void Camera::setScreenSize(float screenWidth, float screenHeight) {
+    this->m_screenWidth  = screenWidth;
+    this->m_screenHeight = screenHeight;
+}
