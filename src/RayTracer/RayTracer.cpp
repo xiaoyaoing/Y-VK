@@ -90,7 +90,7 @@ void RayTracer::prepare() {
                           .indexType               = VK_INDEX_TYPE_UINT32,
                           .bufferAddressAble       = true,
                           .bufferForAccel          = true,
-                          .bufferForStorage        = true,.loadLight =  false};
+                          .bufferForStorage        = true};
     config.getSceneLoadingConfig(sceneLoadingConfig);
     loadScene(config.getScenePath());
     g_context->setFlipViewport(false);
