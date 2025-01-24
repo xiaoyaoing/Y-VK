@@ -56,7 +56,7 @@ void ShadowMapPass::render(RenderGraph& rg) {
            lastDirectionalLight = i;
        }
    }
-    
+
     for(int i = 0; i < lights.size(); i++) {
         if (lights[i].type == LIGHT_TYPE::Directional) {
             if(!lights[i].lightProperties.use_shadow) {
@@ -77,9 +77,9 @@ void ShadowMapPass::render(RenderGraph& rg) {
                 builder.declare(desc);
                 builder.writeTexture(depth, TextureUsage::DEPTH_ATTACHMENT);
                 },
-                
+
                 [light = &lights[i],name = shadowName,i,lastDirectionalLight,this,&rg](RenderPassContext& context) {
-                    g_context->getPipelineState().setPipelineLayout(*mPipelineLayout).setDepthStencilState({.depthCompareOp = VK_COMPARE_OP_LESS}).setRasterizationState({.cullMode = VK_CULL_MODE_NONE});
+                    g_context->bindShaders({"shadows/shadowMap.vert", "shadows/shadowMap.frag"}).getPipelineState().setDepthStencilState({.depthCompareOp = VK_COMPARE_OP_LESS}).setRasterizationState({.cullMode = VK_CULL_MODE_NONE});
                     auto desc = getLightMVP(light->lightProperties.position,light->lightProperties.direction);
                     auto mvp = desc.proj * desc.view;
                     g_context->bindPushConstants(mvp);
@@ -102,5 +102,4 @@ void ShadowMapPass::render(RenderGraph& rg) {
 }
 void ShadowMapPass::init() {
     PassBase::init();
-    mPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice().getResourceCache().requestPipelineLayout({"shadows/shadowMap.vert", "shadows/shadowMap.frag"}));
 }

@@ -1,6 +1,6 @@
 #version 460 core
 
-#extension GL_GOOGLE_include_directive : enable 
+#extension GL_GOOGLE_include_directive : enable
 #extension GL_EXT_debug_printf : enable
 #extension GL_EXT_nonuniform_qualifier : enable
 
@@ -244,6 +244,7 @@ vec3 sample_reflection_dir(vec3 normal, vec3 world_wo, float roughness, int disp
     //  return MyReflect(world_wo, normal);
     //    return MyReflect(world_wo, normal);
     // return MyReflect(world_wo, normal);
+	return MyReflect(world_wo, normal);
 
     if (roughness<0.01){
         return MyReflect(world_wo, normal);
@@ -510,7 +511,7 @@ float ValidHit(vec3 hit, vec2 uv, vec3 world_space_ray_direction, float depth_bu
     //Reject if the hit is behind the surface
     vec3 hit_normal = normalize(2.0 * textureLod(gbuffer_normal_metalic, uv, 0).xyz - 1.0);
 
-    //there should be > 0 
+    //there should be > 0
     //however, when set > 0, result is absolutely wrong
     //todo : find out why
     if (dot(hit_normal, world_space_ray_direction) < 0){
@@ -548,9 +549,9 @@ void main(){
     vec4  diffuse_roughness  =  textureLod(gbuffer_diffuse_roughness, uv, 0);
     vec4  normal_metalic    =  textureLod(gbuffer_normal_metalic, uv, 0);
     vec3 normal      = normalize(2.0 * normal_metalic.xyz - 1.0);
-    
+
     float depth    =  textureLod(gbuffer_depth, uv, 0).x;
-    
+
     if (depth == 1){
         vec4 color =  textureLod(frame_color_attach, uv, 0);
         imageStore(out_image, ivec2(gl_GlobalInvocationID.xy), vec4(color.rgb, 1.0));
@@ -570,10 +571,13 @@ void main(){
     vec3 color = vec3(0.0);
 
     vec3 screen_origin = vec3(uv, depth);
+
+	mat4 view_transponse_and_inverse = transpose(per_frame.view);
     vec3 view_normal = normalize(per_frame.view * vec4(normal, 0.0)).xyz;
     vec3 view_origin = InvProjectPosition(screen_origin, per_frame.inv_proj);
     vec3 view_ray_dir = normalize(view_origin);
     vec3 reflect_dir_view = sample_reflection_dir(view_normal, -view_ray_dir, perceptual_roughness, 0);
+
 
     vec3 ray_dir_TS = ProjectDirection(view_origin, reflect_dir_view, screen_origin);
 
@@ -631,5 +635,6 @@ void main(){
     vec3 frame_color =  textureLod(frame_color_attach, uv, 0).rgb;
     // reflection_radiance = world_space_ray_direction;
     // imageStore(out_image, ivec2(gl_GlobalInvocationID.xy), vec4(position.xy-screen_origin.xy, 0, 1.0));
+	reflection_radiance = screen_origin;
     imageStore(out_image, ivec2(gl_GlobalInvocationID.xy), vec4(reflection_radiance, 1.0));
 }

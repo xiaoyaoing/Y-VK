@@ -39,7 +39,7 @@ struct PushConstant {
   float depth_buffer_thickness;
   uint hiz_mip_count;
   uint show_origin;
-  float padding3;
+  int show_hiz;
 };
 
 // Bindings
@@ -97,12 +97,14 @@ float3 ggx_sample(float alpha, float2 rand) {
 // SSR specific functions
 float3 worldPosFromDepth(float depth ,float2 uv) {
   float4 clip = float4(uv * 2.0 - 1.0, depth, 1.0);
-  float4 world_w = mul(per_frame.inv_view_proj, clip);
+  float4 world_w = mul( clip,per_frame.inv_view_proj);
   return world_w.xyz / world_w.w;
 }
 
 float3 sample_reflection_dir(float3 normal, float3 world_wo, float roughness,
                              uint2 dispatch_thread_id) {
+    return MyReflect(world_wo, normal);
+
   if (roughness < 0.01) {
     return MyReflect(world_wo, normal);
   }
@@ -120,7 +122,7 @@ float3 sample_reflection_dir(float3 normal, float3 world_wo, float roughness,
 float3 InvProjectPosition(float3 coord, row_major float4x4 mat) {
   coord.y = (1 - coord.y);
   coord.xy = 2 * coord.xy - 1;
-  float4 projected = mul(mat, float4(coord, 1.0));
+  float4 projected = mul( float4(coord, 1.0),mat);
   projected.xyz /= projected.w;
   return projected.xyz;
 }
@@ -132,7 +134,7 @@ float3 ScreenSpaceToViewSpace(float3 screen_space) {
 float3 ProjectDirection(float3 view_origin, float3 view_dir,
                         float3 proj_origin) {
   float3 view_target = view_origin + view_dir;
-  float4 proj_target = mul(per_frame.proj, float4(view_target, 1.0));
+  float4 proj_target = mul(float4(view_target, 1.0),per_frame.proj);
   proj_target.xyz /= proj_target.w;
 
   proj_target.xy = proj_target.xy * 0.5 + 0.5;
@@ -241,13 +243,14 @@ float3 ssr_hierarch_ray_march(float3 origin, float3 direction,
   float2 uv_offset = 0.005 * exp2(0) / screen_size;
 
   if (direction.x < 0) {
-    floor_offset.x = 0;
+    floor_offset.x *= -1;
     uv_offset.x = -uv_offset.x;
   }
   if (direction.y < 0) {
-    floor_offset.y = 0;
+    floor_offset.y *= -1;
     uv_offset.y = -uv_offset.y;
   }
+
 
   ssr_initial_advance_ray(origin, direction, inv_direction,
                           current_mip_resolution, current_mip_resolution_inv,
@@ -256,13 +259,21 @@ float3 ssr_hierarch_ray_march(float3 origin, float3 direction,
   uint max_traversal_intersections = 64;
   uint i = 0;
   while (i < max_traversal_intersections && current_mip >= 0) {
-    float2 current_mip_position = current_mip_resolution * position.xy;
-    float surface_z = GetHizDepth(current_mip_position, current_mip);
 
+    if (position.x < 0 || position.x > 1 || position.y < 0 || position.y > 1) {
+        valid_hit = false;
+        return position;
+    }
+
+    float2 current_mip_position = current_mip_resolution * position.xy;
+    float surface_z = GetHizDepth(position.xy, current_mip);
+    surface_z = surface_z + 0.001f;
     bool skipped_tile =
         ssr_advance_ray(origin, direction, inv_direction, current_mip_position,
                         current_mip_resolution_inv, floor_offset, uv_offset,
                         surface_z, position, current_t);
+      //   valid_hit = true;
+      // return position;
 
     current_mip += skipped_tile ? 1 : -1;
     current_mip_resolution *= skipped_tile ? 0.5 : 2;
@@ -270,13 +281,14 @@ float3 ssr_hierarch_ray_march(float3 origin, float3 direction,
 
     ++i;
   }
-
   valid_hit = (i <= max_traversal_intersections);
+  //return float3(float(i/max_traversal_intersections),0,0);
   return position;
 }
 
 float ValidHit(float3 hit, float2 uv, float3 world_space_ray_direction,
                float depth_buffer_thickness) {
+    return 1;
   if (any(hit.xy > 1.0 + 1e-4) || any(hit.xy < -1e-4))
     return 0;
 
@@ -315,20 +327,80 @@ float ValidHit(float3 hit, float2 uv, float3 world_space_ray_direction,
   return vignette * confidence;
 }
 
+void write_result(float3 color, uint2 screen_position) {
+  out_image[screen_position] = float4(color, 1.0);
+}
+
+
+
+// 添加linear raymarch相关函数
+float3 ssr_linear_ray_march(float3 origin_TS, float3 ray_dir_TS, float max_trace_distance, out bool found_hit) {
+    float3 end_pos_TS = origin_TS + ray_dir_TS * max_trace_distance;
+
+   // return ray_dir_TS;
+    float3 dp = end_pos_TS - origin_TS;
+    int2 origin_screen_pos = int2(origin_TS.xy * pc.screen_size);
+    int2 end_screen_pos = int2(end_pos_TS.xy * pc.screen_size);
+    int2 dp_screen = end_screen_pos - origin_screen_pos;
+
+    const int max_dist = max(abs(dp_screen.x), abs(dp_screen.y));
+    dp /= max_dist;
+
+    float3 current_pos_TS = origin_TS + dp;
+    int hit_index = -1;
+
+    uint MAX_ITERATION = 1024;
+    for (int i = 0; i < MAX_ITERATION && i < max_dist; i++) {
+        float depth = gbuffer_depth.SampleLevel(samplerLinear, current_pos_TS.xy, 0).x;
+
+        float thickness = abs(current_pos_TS.z - depth);
+        if (depth < current_pos_TS.z && thickness < 0.00001) {
+            hit_index = i;
+            break;
+        }
+        current_pos_TS += dp;
+    }
+
+    found_hit = hit_index != -1;
+    return origin_TS + dp * (hit_index + 1);
+}
+
+// 在main函数或其他使用SSR的地方添加linear raymarch的分支
+float3 trace_ray(float3 origin, float3 direction, float2 screen_size, out bool valid_hit) {
+    float3 position;
+  //  return position;
+    if (pc.use_hiz == 2) {
+        // ... 现有的hierarchical z-buffer ray marching代码 ...
+        position = ssr_hierarch_ray_march(origin, direction, screen_size, valid_hit);
+    }
+    else if (pc.use_hiz == 1) {
+        position = ssr_hierarch_ray_march(origin, direction, screen_size, valid_hit);
+    }
+    else {
+        float max_trace_distance = direction.x >= 0 ?
+            (1 - origin.x) / direction.x : (-origin.x) / direction.x;
+        max_trace_distance = min(max_trace_distance, direction.y >= 0 ?
+            (1 - origin.y) / direction.y : (-origin.y) / direction.y);
+        max_trace_distance = min(max_trace_distance, direction.z >= 0 ?
+            (1 - origin.z) / direction.z : (-origin.z) / direction.z);
+        position = ssr_linear_ray_march(origin, direction, max_trace_distance, valid_hit);
+    }
+    return position;
+}
+
 // Update the main function to use these new functions
 [numthreads(8, 8, 1)] void main(uint3 DTid
                                 : SV_DispatchThreadID) {
   // 声明和初始化 screen_origin
-  float3 screen_origin =
-      float3(DTid.xy / pc.screen_size, 0.0); // 假设 z = 0.0，您可以根据需要调整
+// 假设 z = 0.0，您可以根据需要调整
 
   // 声明 ray_dir_TS
-  float3 ray_dir_TS = float3(0.0, 0.0, 0.0); // 根据需要初始化
 
   // 声明和初始化 uv
   float2 uv = DTid.xy / pc.screen_size; // 根据需要计算 UV 坐标
   uv.x = float(DTid.x) / pc.screen_size.x;
   uv.y = float(DTid.y) / pc.screen_size.y;
+
 
   // 从 G-buffer 中获取数据
   float4 diffuse_roughness =
@@ -337,51 +409,71 @@ float ValidHit(float3 hit, float2 uv, float3 world_space_ray_direction,
       gbuffer_normal_metalic.SampleLevel(samplerLinear, uv, 0);
   float depth = gbuffer_depth.SampleLevel(samplerLinear, uv, 0).x;
 
-  out_image[DTid.xy] = float4(diffuse_roughness.rgb, 1.0);
+    float3 screen_origin = float3(uv.x,uv.y,depth);
+
+  float4 base_color = frame_color_attach.SampleLevel(samplerLinear, uv, 0);
  // out_image[DTid.xy] = float4(uv, 0.0, 1.0);
-  if (depth == 1) {
+  float back_depth = pc.use_inverse_depth > 0 ? 0.0 : 1.0;
+  if (depth == back_depth) {
     // 如果深度为 1，直接返回颜色
     float4 color = frame_color_attach.SampleLevel(samplerLinear, uv, 0);
     out_image[DTid.xy] = float4(color.rgb, 1.0);
     return;
   }
 
+    if (pc.show_hiz>0) {
+        uint hiz_mip_show = pc.show_hiz;
+        float4 color = hiz_depth.SampleLevel(samplerLinear, uv, hiz_mip_show);
+        color.x = color.x;
+        write_result(color, DTid.xy);
+        return;
+    }
+
   // 计算世界空间位置
   float3 world_pos = worldPosFromDepth(depth, uv);
   float3 normal = normalize(2.0 * normal_metalic.xyz - 1.0);
+    if (abs(normal.y) <0.99f) {
+        write_result(base_color, DTid.xy);
+        return;;
+    }
   float perceptual_roughness = diffuse_roughness.a;
 
   // 计算反射方向
+  float3 view_normal = mul(float4(normal, 0.0), per_frame.view).xyz;
   float3 view_origin = InvProjectPosition(screen_origin, per_frame.inv_proj);
-  float3 view_ray_dir = normalize(view_origin - world_pos);
+  float3 view_ray_dir = normalize(view_origin);
   float3 reflect_dir_view = sample_reflection_dir(
-      normal, -view_ray_dir, perceptual_roughness, DTid.xy);
+      view_normal, -view_ray_dir, perceptual_roughness, DTid.xy);
 
+  // write_result(view_origin, DTid.xy);
+  //   return;
   // 计算 ray_dir_TS
-  ray_dir_TS = ProjectDirection(view_origin, reflect_dir_view, screen_origin);
+  float3 ray_dir_TS = ProjectDirection(view_origin, reflect_dir_view, screen_origin);
 
+  // write_result(reflect_dir_view, DTid.xy);
+  // return;
   bool valid_hit;
-  float3 position;
+  float3 position = trace_ray(screen_origin, ray_dir_TS, pc.screen_size, valid_hit);
 
-  if (pc.use_hiz == 2) {
-    float max_trace_distance = ray_dir_TS.x >= 0
-                                   ? (1 - screen_origin.x) / ray_dir_TS.x
-                                   : (-screen_origin.x) / ray_dir_TS.x;
-    max_trace_distance =
-        min(max_trace_distance, ray_dir_TS.y >= 0
-                                    ? (1 - screen_origin.y) / ray_dir_TS.y
-                                    : (-screen_origin.y) / ray_dir_TS.y);
-    max_trace_distance =
-        min(max_trace_distance, ray_dir_TS.z >= 0
-                                    ? (1 - screen_origin.z) / ray_dir_TS.z
-                                    : (-screen_origin.z) / ray_dir_TS.z);
-    position = ssr_hierarch_ray_march(screen_origin, ray_dir_TS, pc.screen_size,
-                                      valid_hit);
-  } else {
-    // 实现线性光线行进
-    position = screen_origin;
-    valid_hit = false;
-  }
+  // if (pc.use_hiz == 2) {
+  //   float max_trace_distance = ray_dir_TS.x >= 0
+  //                                  ? (1 - screen_origin.x) / ray_dir_TS.x
+  //                                  : (-screen_origin.x) / ray_dir_TS.x;
+  //   max_trace_distance =
+  //       min(max_trace_distance, ray_dir_TS.y >= 0
+  //                                   ? (1 - screen_origin.y) / ray_dir_TS.y
+  //                                   : (-screen_origin.y) / ray_dir_TS.y);
+  //   max_trace_distance =
+  //       min(max_trace_distance, ray_dir_TS.z >= 0
+  //                                   ? (1 - screen_origin.z) / ray_dir_TS.z
+  //                                   : (-screen_origin.z) / ray_dir_TS.z);
+  //   position = ssr_hierarch_ray_march(screen_origin, ray_dir_TS, pc.screen_size,
+  //                                     valid_hit);
+  // } else {
+  //   // 实现线性光线行进
+  //   position = screen_origin;
+  //   valid_hit = false;
+  // }
 
   // 计算世界空间光线方向
   float3 world_space_hit =
@@ -406,6 +498,8 @@ float ValidHit(float3 hit, float2 uv, float3 world_space_ray_direction,
     screen_origin.y = 0;
     reflection_radiance = screen_origin;
   }
-
-  out_image[DTid.xy] = float4(reflection_radiance, 1.0);
+// reflection_radiance = position;
+//  reflection_radiance =  position;
+    base_color.xyz = float3(0,0,0);
+  out_image[DTid.xy] = float4(reflection_radiance + base_color , 1.0);
 }

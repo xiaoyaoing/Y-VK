@@ -96,9 +96,9 @@ void main(){
     const ivec2 pixel_coord_local = ivec2(gl_LocalInvocationID.xy);
 
     const ivec2 pixel_current = pixel_coord_top_left + pixel_coord_local;
-    
 
-    
+
+
     if (!is_border_pixel)
     {
         vec3 texel_dir = oct_decode(normalized_oct_coord(pixel_coord_local- ivec2(1, 1), OUTPUT_SIDE));
@@ -117,7 +117,7 @@ void main(){
             barrier();
 
 
-    
+
             for (uint i = 0; i < num_rays; i++){
                 #ifdef USE_CACHE
                 uint index = i;
@@ -144,7 +144,7 @@ void main(){
                     #else
                     vec3 irradiance = ddgi_ray_data_buffer.data[probe_idx * ddgi_ubo.rays_per_probe + i + offset].irradiance;
                     #endif
-                    
+
                     result += irradiance * weight;
                     #else
                     dist = min(abs(dist), ddgi_ubo.max_distance);
@@ -152,7 +152,7 @@ void main(){
                     #endif
                 }
             }
-  
+
 
 
 
@@ -162,12 +162,12 @@ void main(){
             barrier();
         }
 
-        
+
         if (total_weight>0.0)
         result /= total_weight;
 
-    
-        
+
+
         if (pc_ray.first_frame == 0 )
         {
             float hysteresis = pc_ray.ddgi_hysteresis;
@@ -184,10 +184,8 @@ void main(){
                 lerpDelta.y = min(max(c_threshold, abs(lerpDelta.y)), abs(delta.y)) * sign(lerpDelta.y);
                 lerpDelta.z = min(max(c_threshold, abs(lerpDelta.z)), abs(delta.z)) * sign(lerpDelta.z);
             }
-         //   result = prev_result + lerpDelta;
-
             result = mix(result, prev_result, hysteresis);
-            
+
             #else
             result = mix(result, prev_result, hysteresis);
             #endif

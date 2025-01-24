@@ -34,7 +34,6 @@ void SSGIPass::render(RenderGraph& rg) {
             builder.readTextures({output, depth, depth_hiz, normal, diffuse}, RenderGraphTexture::Usage::SAMPLEABLE);
             builder.writeTexture(ssgi, RenderGraphTexture::Usage::STORAGE);
 
-            settings.pipelineLayout = mPipelineLayout.get();
             // builder.addSubPass();
         },
         [&](RenderPassContext& context) {
@@ -52,7 +51,9 @@ void SSGIPass::render(RenderGraph& rg) {
             glm::ivec2 dispatchSize         = glm::ivec2((g_context->getViewPortExtent().width + 7) / 8, (g_context->getViewPortExtent().height + 7) / 8);
             g_context->bindImage(0, blackBoard.getImageView("ssgi"))
                 .bindPushConstants(mPushConstant);
-            bool useCombinedSampler = false;
+            if (useHlsl)g_context->bindShaders({ShaderKey{"postprocess/ssr.hlsl", VK_SHADER_STAGE_COMPUTE_BIT}});
+            else g_context->bindShaders({ShaderKey{"postprocess/ssgi.comp"}});
+            bool useCombinedSampler = !useHlsl;
             if (useCombinedSampler) {
                 g_context->bindImageSampler(0, blackBoard.getImageView(ALBEDO_RG), sampler)
                      .bindImageSampler(1, blackBoard.getImageView(NORMAL_RG), sampler)
@@ -77,16 +78,18 @@ void SSGIPass::init() {
     PassBase::init();
     mResource = std::make_unique<SSRResource>();
     //mPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), ShaderPipelineKey{"postprocess/ssgi.comp"});
-    ShaderKey key("postprocess/ssr.hlsl");
-    key.stage             = VK_SHADER_STAGE_COMPUTE_BIT;
-    mPipelineLayout       = std::make_unique<PipelineLayout>(g_context->getDevice(), ShaderPipelineKey{key});
-    mPushConstant.use_hiz = 2;
+    //ShaderKey key("postprocess/ssr.hlsl");
+    //key.stage             = VK_SHADER_STAGE_COMPUTE_BIT;
+    //mPipelineLayout       = std::make_unique<PipelineLayout>(g_context->getDevice(), ShaderPipelineKey{key});
+    mPushConstant.use_hiz = 0;
 }
 void SSGIPass::updateGui() {
     PassBase::updateGui();
     ImGui::SliderInt("Use hiz", reinterpret_cast<int*>(&mPushConstant.use_hiz), 0, 2);
+    ImGui::SliderInt("show Hiz", &mPushConstant.show_hiz, -1, 10);
     ImGui::SliderFloat("Depth thickness", &mPushConstant.depth_buffer_thickness, 0.0f, 0.1f);
     ImGui::Checkbox("Show original", reinterpret_cast<bool*>(&mPushConstant.show_original));
+    ImGui::Checkbox("use hlsl", &useHlsl);
 }
 void SSGIPass::update() {
     PassBase::update();

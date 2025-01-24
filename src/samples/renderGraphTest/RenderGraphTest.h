@@ -25,6 +25,6 @@ protected:
     void                     drawFrame(RenderGraph& renderGraph) override;
     std::vector<std::unique_ptr<PassBase>> passes;
     std::unique_ptr<SSGIPass>              ssrPass;
-    bool enableSSR{false};
+    bool enableSSR{true};
 
 };

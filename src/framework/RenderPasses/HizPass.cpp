@@ -91,9 +91,14 @@ void HizPass::render(RenderGraph& rg) {
                     g_context->bindImageSampler(0, hierrachy.getVkImageView(VK_IMAGE_VIEW_TYPE_MAX_ENUM, VK_FORMAT_UNDEFINED, i - 1, 0, 1), rg.getDevice().getResourceCache().requestSampler());
                     g_context->bindImage(0, hierrachy.getVkImageView(VK_IMAGE_VIEW_TYPE_MAX_ENUM, VK_FORMAT_UNDEFINED, i, 0, 1));
                 }
+
+
+
                 ivec2        dispatchSize = ivec2((extent.width + 7) / 8, (extent.height + 7) / 8);
-                PushConstant pushConstant{.params = glm::vec4(extent.width, extent.height, i, 0)};
+                PushConstant pushConstant{.params = glm::vec4(extent.width, extent.height, i, g_manager->getView()->getCamera()->useInverseDepth)};
                 g_context->bindPushConstants(pushConstant).flushAndDispatch(context.commandBuffer, dispatchSize.x, dispatchSize.y, 1);
+
+
                 extent.width  = std::max(1u, extent.width / 2);
                 extent.height = std::max(1u, extent.height / 2);
 

@@ -124,10 +124,10 @@ struct ShaderKey {
     ShaderVariant variant{};
 
     using EntryPoint = std::string;
-    //Used for hlsl shader 
+    //Used for hlsl shader
     VkShaderStageFlagBits   stage{VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM};
     EntryPoint entryPoint{"main"};
-    
+
     ShaderKey&    operator=(const std::string& _path) {
         this->path = _path;
         return *this;
@@ -150,6 +150,8 @@ struct ShaderKey {
             variant.add_define(define);
         }
     }
+    ShaderKey(const std::string& _path, VkShaderStageFlagBits _stage) : path(_path), stage(_stage) {
+	}
     // std::string getDefineString() const {
     //     std::string defineString;
     //     for (const auto& define : definitions) {

@@ -14,9 +14,9 @@ struct IBLLightingPassPushConstant {
     int   padding[3];
 };
 
-void GBufferPass::init() {
-    // mNormal = std::make_unique<SgImage>(device,NORMAL_RG,VKExt, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-    Device& device  = g_context->getDevice();
+
+VkCompareOp getCompareOp(const Camera & camera){
+    return camera.useInverseDepth ? VK_COMPARE_OP_GREATER : VK_COMPARE_OP_LESS;
 }
 
 void VBufferPass::render(RenderGraph& rg) {
@@ -65,7 +65,7 @@ void VBufferPass::render(RenderGraph& rg) {
 
             // 设置渲染状态
             renderContext->getPipelineState()
-                .setDepthStencilState({.depthCompareOp = VK_COMPARE_OP_LESS})
+                .setDepthStencilState({.depthCompareOp = getCompareOp(*g_manager->getView()->getCamera())})
                 .setRasterizationState({.cullMode = VK_CULL_MODE_NONE});
 
             // 绑定视图数据并绘制
@@ -77,13 +77,10 @@ void VBufferPass::render(RenderGraph& rg) {
         });
 }
 
-void VBufferPass::init() {
-    PassBase::init();
-}
-
 void LightingPass::render(RenderGraph& rg) {
     rg.addGraphicPass(
-        "LightingPass", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
+        "LightingPass",
+        [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
             auto& blackBoard = rg.getBlackBoard();
             auto  depth      = blackBoard[DEPTH_IMAGE_NAME];
             auto  normal     = blackBoard[NORMAL_RG];
@@ -103,7 +100,13 @@ void LightingPass::render(RenderGraph& rg) {
             auto& commandBuffer = context.commandBuffer;
             auto  view          = g_manager->fetchPtr<View>("view");
             auto& blackBoard    = rg.getBlackBoard();
-            g_context->getPipelineState().setPipelineLayout(*mPipelineLayout).setRasterizationState({.cullMode = VK_CULL_MODE_NONE}).setDepthStencilState({.depthTestEnable = false});
+
+            // 直接使用shader路径
+            g_context->bindShaders({"full_screen.vert", "lighting_pbr.frag"});
+            g_context->getPipelineState()
+                .setRasterizationState({.cullMode = VK_CULL_MODE_NONE})
+                .setDepthStencilState({.depthTestEnable = false});
+
             view->bindViewBuffer().bindViewShading();
             g_context->bindImage(0, blackBoard.getImageView(ALBEDO_RG))
                 .bindImage(1, blackBoard.getImageView(NORMAL_RG))
@@ -112,13 +115,11 @@ void LightingPass::render(RenderGraph& rg) {
                 .flushAndDraw(commandBuffer, 3, 1, 0, 0);
         });
 }
-void LightingPass::init() {
-    ShaderPipelineKey shadersPath{"full_screen.vert", "lighting_pbr.frag"};
-    mPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), shadersPath);
-}
+
 void ForwardPass::render(RenderGraph& rg) {
     rg.addGraphicPass(
-        "ForwardPass", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
+        "ForwardPass",
+        [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
             auto& blackBoard = rg.getBlackBoard();
             auto  output     = blackBoard.getHandle(RENDER_VIEW_PORT_IMAGE_NAME);
             auto  depth = rg.createTexture(DEPTH_IMAGE_NAME, {.extent = g_context->getViewPortExtent(), .useage = TextureUsage::DEPTH_ATTACHMENT | TextureUsage::SAMPLEABLE});
@@ -128,10 +129,14 @@ void ForwardPass::render(RenderGraph& rg) {
 
             RenderGraphPassDescriptor desc{};
             desc.setTextures({output, depth}).addSubpass({.outputAttachments = {output,depth}});
-            builder.declare(desc); }, [&](RenderPassContext& context) {
+            builder.declare(desc);
+        },
+        [&](RenderPassContext& context) {
             auto view = g_manager->fetchPtr<View>("view");
 
-            g_context->getPipelineState().setPipelineLayout(*mPipelineLayout);
+            // 直接使用shader路径
+            g_context->bindShaders({"defered_one_scene_buffer.vert", "forward_lighting.frag"});
+            g_context->getPipelineState();
             view->bindViewBuffer().bindViewShading().bindViewGeom(context.commandBuffer);
 
             auto& blackBoard     = rg.getBlackBoard();
@@ -149,7 +154,7 @@ void ForwardPass::render(RenderGraph& rg) {
             auto& brdfLUTSampler        = g_context->getDevice().getResourceCache().requestSampler(VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_FILTER_LINEAR, 1);
             g_context->bindImageSampler(0, irradianceCube, irradianceCubeSampler).bindImageSampler(1, prefilterCube, prefilterCubeSampler).bindImageSampler(2, brdfLUT, brdfLUTSampler);
 
-            g_context->getPipelineState().setDepthStencilState({.depthCompareOp = VK_COMPARE_OP_LESS});
+            g_context->getPipelineState().setDepthStencilState({.depthCompareOp = getCompareOp(*g_manager->getView()->getCamera())});
             view->drawPrimitives(context.commandBuffer, [&view](const Primitive& primitive) { return view->getAlphaMode(primitive) == AlphaMode::OPAQUE; });
 
             ColorBlendAttachmentState colorBlendAttachmentState{};
@@ -167,17 +172,16 @@ void ForwardPass::render(RenderGraph& rg) {
             g_context->getPipelineState().setColorBlendState(blendState);
 
             g_context->getPipelineState().setDepthStencilState({.depthTestEnable = false});
-            view->drawPrimitives(context.commandBuffer, [&view](const Primitive& primitive) { return view->getAlphaMode(primitive) == AlphaMode::BLEND; }); });
+            view->drawPrimitives(context.commandBuffer, [&view](const Primitive& primitive) { return view->getAlphaMode(primitive) == AlphaMode::BLEND; });
+        });
 }
-void ForwardPass::init() {
-    PassBase::init();
-    ShaderPipelineKey shadersPath{"defered_one_scene_buffer.vert", "forward_lighting.frag"};
-    mPipelineLayout = std::make_unique<PipelineLayout>(g_context->getDevice(), shadersPath);
-}
+
+
 
 void IBLLightingPass::render(RenderGraph& rg) {
     rg.addGraphicPass(
-        "IBLLightingPass", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
+        "IBLLightingPass",
+        [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
             auto& blackBoard     = rg.getBlackBoard();
             auto  depth          = blackBoard[DEPTH_IMAGE_NAME];
             auto  normal         = blackBoard[NORMAL_RG];
@@ -202,7 +206,13 @@ void IBLLightingPass::render(RenderGraph& rg) {
             auto& commandBuffer = context.commandBuffer;
             auto  view          = g_manager->fetchPtr<View>("view");
             auto& blackBoard    = rg.getBlackBoard();
-            g_context->getPipelineState().setPipelineLayout(g_context->getDevice().getResourceCache().requestPipelineLayout(ShaderPipelineKey{"full_screen.vert", "pbrLab/lighting_ibl.frag"})).setRasterizationState({.cullMode = VK_CULL_MODE_NONE}).setDepthStencilState({.depthTestEnable = false});
+
+            // 直接使用shader路径
+            g_context->bindShaders({"full_screen.vert", "pbrLab/lighting_ibl.frag"});
+            g_context->getPipelineState()
+                .setRasterizationState({.cullMode = VK_CULL_MODE_NONE})
+                .setDepthStencilState({.depthTestEnable = false});
+
             view->bindViewBuffer();
 
             auto& irradianceCube = blackBoard.getImageView("irradianceCube");
@@ -252,36 +262,52 @@ void GBufferPass::render(RenderGraph& rg) {
     auto& blackBoard    = rg.getBlackBoard();
     auto& renderContext = g_context;
     rg.addGraphicPass(
-        "GBufferPass", [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
+        "GBufferPass",
+        [&](RenderGraph::Builder& builder, GraphicPassSettings& settings) {
             auto diffuse = rg.createTexture(ALBEDO_RG,
-                                            {.extent             = renderContext->getViewPortExtent(),
-                                             .useage = TextureUsage::SUBPASS_INPUT |
-                                                       TextureUsage::COLOR_ATTACHMENT| TextureUsage::SAMPLEABLE});
+                {.extent = renderContext->getViewPortExtent(),
+                 .useage = TextureUsage::SUBPASS_INPUT |
+                          TextureUsage::COLOR_ATTACHMENT |
+                          TextureUsage::SAMPLEABLE});
 
             auto normal = rg.createTexture(NORMAL_RG,
-                                           {.extent = renderContext->getViewPortExtent(),
-                                            .useage = TextureUsage::SUBPASS_INPUT |
-                                                      TextureUsage::COLOR_ATTACHMENT | TextureUsage::SAMPLEABLE
-
-                                           });
+                {.extent = renderContext->getViewPortExtent(),
+                 .useage = TextureUsage::SUBPASS_INPUT |
+                          TextureUsage::COLOR_ATTACHMENT |
+                          TextureUsage::SAMPLEABLE});
 
             auto emission = rg.createTexture(EMISSION_RG,
-                                             {.extent = renderContext->getViewPortExtent(),
-                                              .useage = TextureUsage::SUBPASS_INPUT |
-                                                        TextureUsage::COLOR_ATTACHMENT | TextureUsage::SAMPLEABLE});
+                {.extent = renderContext->getViewPortExtent(),
+                 .useage = TextureUsage::SUBPASS_INPUT |
+                          TextureUsage::COLOR_ATTACHMENT |
+                          TextureUsage::SAMPLEABLE});
 
-            auto depth = rg.createTexture(DEPTH_IMAGE_NAME, {.extent = renderContext->getViewPortExtent(),
-                .useage = TextureUsage::SUBPASS_INPUT | TextureUsage::DEPTH_ATTACHMENT | TextureUsage::SAMPLEABLE
+            auto depth = rg.createTexture(DEPTH_IMAGE_NAME,
+                {.extent = renderContext->getViewPortExtent(),
+                 .useage = TextureUsage::SUBPASS_INPUT |
+                          TextureUsage::DEPTH_ATTACHMENT |
+                          TextureUsage::SAMPLEABLE});
 
-                                                   });
-
-         RenderGraphPassDescriptor desc({diffuse,  normal, emission, depth}, {.outputAttachments = {diffuse,  normal, emission, depth}});
+            RenderGraphPassDescriptor desc({diffuse, normal, emission, depth},
+                {.outputAttachments = {diffuse, normal, emission, depth}});
             builder.declare(desc);
 
-            builder.writeTextures({diffuse,  emission, depth}, TextureUsage::COLOR_ATTACHMENT).writeTexture(depth, TextureUsage::DEPTH_ATTACHMENT); }, [&](RenderPassContext& context) {
+            builder.writeTextures({diffuse, emission, depth}, TextureUsage::COLOR_ATTACHMENT)
+                   .writeTexture(depth, TextureUsage::DEPTH_ATTACHMENT);
+        },
+        [&](RenderPassContext& context) {
+            // 直接使用shader路径而不是PipelineLayout
             renderContext->bindShaders({"defered_one_scene_buffer.vert", "defered_pbr.frag"});
-            renderContext->getPipelineState().setDepthStencilState({.depthCompareOp = VK_COMPARE_OP_LESS}).setRasterizationState({.cullMode =  VK_CULL_MODE_NONE});
-            g_manager->fetchPtr<View>("view")->bindViewBuffer().bindViewShading().bindViewGeom(context.commandBuffer).drawPrimitives(context.commandBuffer); });
+            renderContext->getPipelineState()
+                .setDepthStencilState({.depthCompareOp = getCompareOp(*g_manager->getView()->getCamera())})
+                .setRasterizationState({.cullMode = VK_CULL_MODE_NONE});
+
+            g_manager->fetchPtr<View>("view")
+                ->bindViewBuffer()
+                .bindViewShading()
+                .bindViewGeom(context.commandBuffer)
+                .drawPrimitives(context.commandBuffer);
+        });
 }
 
 std::vector<std::string> outputToBufferDefines                  = {"OUTPUT_TO_BUFFER"};
@@ -320,6 +346,6 @@ void GBufferPass::renderToBuffer(RenderGraph& rg, RenderGraphHandle outputBuffer
             g_context->bindBuffer(5,*rg.getBuffer(_outputBuffer)->getHwBuffer());
 
             g_context->bindShaders(_directLightingImage.isInitialized() ? GBufferToBufferAndDirectLighting : GBufferToBuffer);
-            g_context->getPipelineState().setDepthStencilState({.depthCompareOp = VK_COMPARE_OP_LESS}).setRasterizationState({.cullMode =  VK_CULL_MODE_NONE});
+            g_context->getPipelineState().setDepthStencilState({.depthCompareOp = getCompareOp(*g_manager->getView()->getCamera())}).setRasterizationState({.cullMode =  VK_CULL_MODE_NONE});
             g_manager->fetchPtr<View>("view")->bindViewBuffer().bindViewShading().bindViewGeom(context.commandBuffer).drawPrimitives(context.commandBuffer); });
 }

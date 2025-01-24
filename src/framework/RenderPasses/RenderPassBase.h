@@ -24,12 +24,13 @@ public:
     // RenderPtrManangr(const RenderPtrManangr&) = delete;
     // RenderPtrManangr& operator=(const RenderPtrManangr&) = delete;
     // RenderPtrManangr(RenderPtrManangr&&) = delete;
-    
+
     template<typename T>
     T* fetchPtr(const std::string_view name) {
         void * ptr = mPointersMap[name];
         if (ptr == nullptr) {
-            LOGE("Failed to fetch pointer with name: {0}", name);
+            LOGW("Pointer {} is nullptr", name);
+            return nullptr;
         }
         return static_cast<T*>(ptr);
     }

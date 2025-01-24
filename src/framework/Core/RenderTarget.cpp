@@ -109,11 +109,11 @@ Image& RenderTarget::getImage(uint32_t index) const {
 // {
 // }
 
-std::vector<VkClearValue> RenderTarget::getDefaultClearValues() const {
+std::vector<VkClearValue> RenderTarget::getDefaultClearValues(bool useInverseDepth) const {
     std::vector<VkClearValue> clearValues;
     for (int i = 0; i < mHwTextures.size(); i++) {
         if (isDepthOrStencilFormat(mHwTextures[i]->getFormat()))
-            clearValues.emplace_back(VkClearValue{.depthStencil = {1.f}});
+            clearValues.emplace_back(VkClearValue{.depthStencil = {useInverseDepth ? 0.f : 1.f, 0}});
         else
             clearValues.emplace_back(VkClearValue{.color = {0.f, 0.f, 0.f, 0.f}});
     }

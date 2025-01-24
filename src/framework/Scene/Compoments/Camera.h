@@ -230,6 +230,7 @@ public:
     bool  flipY{false};
     bool  flipYTemp{false};
     bool  useInverseDepth{false};
+    bool  useInverseDepthTemp{false};
 
 protected:
     bool m_perspective{true};

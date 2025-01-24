@@ -191,8 +191,13 @@ void Camera::onShowInEditor() {
     if (flipYTemp != flipY) {
         flipY = flipYTemp;
     }
+    ImGui::Checkbox("Use Inverse Depth", &useInverseDepthTemp);
+    if (useInverseDepthTemp != useInverseDepth) {
+		useInverseDepth = useInverseDepthTemp;
+		updateProjMatrix();
+	}
 
-    //Todo Add cache 
+    //Todo Add cache
     updateProjMatrix();
 
 }
@@ -434,7 +439,7 @@ Frustum Camera::getFrustum(float nearZ, float farZ) const {
     frustum.nearBottomRight = glm::vec3(nearBottomRight / nearBottomRight.w);
     frustum.nearTopLeft     = glm::vec3(nearTopLeft / nearTopLeft.w);
     frustum.nearTopRight    = glm::vec3(nearTopRight / nearTopRight.w);
-                                        
+
     frustum.farBottomLeft   = glm::vec3(farBottomLeft / farBottomLeft.w);
     frustum.farBottomRight	= glm::vec3(farBottomRight / farBottomRight.w);
     frustum.farTopLeft		= glm::vec3(farTopLeft / farTopLeft.w);

@@ -8,7 +8,7 @@
     {
       "type": "ddgi",
       "ray_per_probe": 256,
-      "probe_distance": 0.3,
+      "probe_distance": 1,
       "probe_counts": [40, 40, 40],
       "probe_start_position": [-1.35,-0.35,-1.35],
       "normal_bias" : 0.6,
@@ -16,7 +16,7 @@
       "use_rt_gbuffer" : true
     },
 	  {
-		  	  "type": "surfel"
+		  	  "type": "path"
 	}
 
   ],
@@ -30,9 +30,9 @@
   ],
 
   "integrator": {
-    "type": "surfel"
+    "type": "ddgi"
   },
-  "scene_path": "D:\\code\\WickedEngine\\Y-VK\\resources\\scenes\\Sponza\\glTF\\Sponza.gltf",
+  "scene_path": "D:\\code\\WickedEngine\\Y-VK\\resources\\kitchen\\kitchen\\scene.json",
   "scene_scale": 1.0,
   "scene_translation": [
     0.0,

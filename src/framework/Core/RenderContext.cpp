@@ -610,7 +610,11 @@ void RenderContext::beginRenderPass(CommandBuffer& commandBuffer, RenderTarget& 
     auto& framebuffer = device.getResourceCache().requestFrameBuffer(
         renderTarget, renderPass, renderTarget.getExtent());
 
-    commandBuffer.beginRenderPass(renderPass, framebuffer, renderTarget.getDefaultClearValues(), {});
+    bool useInverseDepth = false;
+    if (g_manager->getView() && g_manager->getView()->getCamera()) {
+		useInverseDepth = g_manager->getView()->getCamera()->useInverseDepth;
+	}
+    commandBuffer.beginRenderPass(renderPass, framebuffer, renderTarget.getDefaultClearValues(useInverseDepth), {});
 
     ColorBlendState colorBlendState = pipelineState.getColorBlendState();
     colorBlendState.attachments.resize(renderPass.getColorOutputCount(0));

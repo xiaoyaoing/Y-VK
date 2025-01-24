@@ -10,6 +10,6 @@ public:
     void render(RenderGraph& rg) override;
     void init() override;
 protected:
-    std::unique_ptr<PipelineLayout> mPipelineLayout;
+   // std::unique_ptr<PipelineLayout> mPipelineLayout;
     Sampler & mSampler;
 };

@@ -39,7 +39,7 @@ public:
 
     RenderTarget(const std::vector<SgImage*>& hwTextures, const std::vector<Attachment>& attachments, VkExtent2D extent);
 
-    std::vector<VkClearValue> getDefaultClearValues() const;
+    std::vector<VkClearValue> getDefaultClearValues(bool useInverseDepth = false) const;
 
     RenderTarget(std::vector<Image>&& images);
 

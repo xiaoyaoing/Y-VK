@@ -24,10 +24,11 @@ protected:
         float      depth_buffer_thickness{0.015};
         uint32_t   hiz_mip_count;
         uint32_t   show_original;
-        float      pdding3;
+        int   show_hiz{-1};
     };
 
     std::unique_ptr<SSRResource>    mResource;
-    std::unique_ptr<PipelineLayout> mPipelineLayout;
+    bool useHlsl = true;
+ //   std::unique_ptr<PipelineLayout> mPipelineLayout;
     SSRPushConstant                 mPushConstant{};
 };
