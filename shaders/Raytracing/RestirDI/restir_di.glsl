@@ -57,7 +57,8 @@ void update_restir_reservoir(inout RestirReservoir  r_new, RestirData s, float w
 vec3 restir_sample_light(inout SurfaceScatterEvent event, const vec4 rand, const uint light_num, out uint light_idx, out LightSample light_sample){
     vec3 result = vec3(0);
 
-    float light_choose_rand =rand.x;
+
+	float light_choose_rand =rand.x;
 
     light_idx = uint(light_choose_rand * light_num);
 
@@ -67,12 +68,18 @@ vec3 restir_sample_light(inout SurfaceScatterEvent event, const vec4 rand, const
 
     light_sample = sample_li(light, event, light_sample_rand);
 
-    uint material_idx = event.material_idx;
+
+	uint material_idx = event.material_idx;
     event.wi = to_local(event.frame, light_sample.wi);
+
+
+	material_idx = 1;
 
     vec3 bsdf =eval_bsdf(materials.m[material_idx], event);
 
-    if (light_sample.pdf >0) {
+
+
+	if (light_sample.pdf >0) {
         result = light_sample.indensity * bsdf  / light_sample.pdf;
     }
     //result = vec3(1, 0, 0);

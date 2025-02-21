@@ -122,7 +122,7 @@ void RenderGraphTest::prepare() {
     ssrPass->init();
 
     sceneLoadingConfig.indexType = VK_INDEX_TYPE_UINT32;
-    loadScene(config.getScenePath());
+    loadScene("E:\\downloads\\simplify_gltfpack.gltf");
     RenderPtrManangr::Initalize();
     g_manager->putPtr("view", view.get());
 }

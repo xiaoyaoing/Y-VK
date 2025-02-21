@@ -72,12 +72,16 @@ void main()
             update_restir_reservoir(r_new, restir_data, length(un_shadowed_light_contrib));
         }
 
+		//debugPrintfEXT("r_new.m: %d\n", r_new.m);
 
         vec3 color = vec3(0);
         if (r_new.w_sum > 0)
         {
             uvec4 r_seed = r_new.s.seed;
-            color = restir_sample_light(event, rand4(r_seed), pc_ray.light_num);
+			LightSample light_sample;
+			uint light_idx;
+			color = restir_sample_light(event, rand4(r_seed), pc_ray.light_num, light_idx, light_sample);
+            //color = restir_sample_light(event, rand4(r_seed), pc_ray.light_num);
             float p_hat = length(color);
             if (p_hat == 0)
             {
@@ -90,7 +94,10 @@ void main()
             combine_reservoir(r, r_new);
         }
 
-        if (pc_ray.do_temporal_reuse>0 && pc_ray.frame_num>0)
+//		return;
+
+
+		if (pc_ray.do_temporal_reuse>0 && pc_ray.frame_num>0)
         {
             vec4 prev_pos = scene_ubo.prev_proj * scene_ubo.prev_view * vec4(hitPayload.p, 1);
             ivec2 prev_screen_pos = ivec2((prev_pos.xy/prev_pos.w  + 1) * 0.5 * gl_LaunchSizeEXT.xy);
@@ -101,8 +108,12 @@ void main()
             }
         }
 
+		return;
 
-    }
+
+
+	}
+
 
     uint num_samples = r_new.m;
     if (pc_ray.do_temporal_reuse>0 && pc_ray.frame_num>0){

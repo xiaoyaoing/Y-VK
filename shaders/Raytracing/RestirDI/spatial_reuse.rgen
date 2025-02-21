@@ -28,6 +28,7 @@ layout(push_constant) uniform _PushConstantRay { RestirDIPC pc_ray; };
 
 void main()
 {
+	return;
     if (pc_ray.do_spatial_reuse== 0)
     {
         spatial_reservoirs.r[pixel_idx] = pass_reservoir.r[pixel_idx];
@@ -41,7 +42,7 @@ void main()
 
     const RestirReservoir curr_reservoir = pass_reservoir.r[pixel_idx];
     RestirReservoir r = init_restir_reservoir();
-    //if (curr_reservoir.W != 0) 
+    //if (curr_reservoir.W != 0)
     {
         combine_reservoir(r, curr_reservoir);
         uint num_samples = curr_reservoir.m;

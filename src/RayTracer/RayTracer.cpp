@@ -98,9 +98,10 @@ void RayTracer::prepare() {
 
     pcPath = std::make_shared<PCPath>();
 
-    integrators[to_string(ePathTracing)] = std::make_unique<PathIntegrator>(*device, config.getPathTracingConfig());
-    integrators[to_string(eDDGI)]        = std::make_unique<DDGIIntegrator>(*device, config.getDDGIConfig());
-    integrators[to_string(eSurfelGI)]    = std::make_unique<SurfelIntegrator>(*device, config.getSurfelConfig());
+  // integrators[to_string(ePathTracing)] = std::make_unique<PathIntegrator>(*device, config.getPathTracingConfig());
+ //   integrators[to_string(eDDGI)]        = std::make_unique<DDGIIntegrator>(*device, config.getDDGIConfig());
+    integrators[to_string(eRestirDI)] = std::make_unique<RestirIntegrator>(*device);
+ //   integrators[to_string(eSurfelGI)]    = std::make_unique<SurfelIntegrator>(*device, config.getSurfelConfig());
 
     for (auto& integrator : integrators) {
         integratorNames.push_back(integrator.first);

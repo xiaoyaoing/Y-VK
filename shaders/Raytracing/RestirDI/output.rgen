@@ -28,7 +28,7 @@ layout(push_constant) uniform _PushConstantRay { RestirDIPC pc_ray; };
 
 void main()
 {
-    //    return ;
+        return ;
     pixel_idx =  gl_LaunchIDEXT.y * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.x;
     load_gbuffer();
     uint light_idx = spatial_reservoirs.r[pixel_idx].s.light_idx;

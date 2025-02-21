@@ -49,8 +49,8 @@ void RestirIntegrator::render(RenderGraph& renderGraph) {
         settings.pipelineLayout = temporalLayout.get();
         settings.rTPipelineSettings.dims = {width,height,1};
         settings.rTPipelineSettings.maxDepth = 5;
-    
-    
+
+
         auto output = renderGraph.createTexture(RT_IMAGE_NAME,{width,height,TextureUsage::STORAGE | TextureUsage::TRANSFER_SRC | TextureUsage::SAMPLEABLE,VK_FORMAT_R32G32B32A32_SFLOAT});
         builder.writeTexture(output,TextureUsage::STORAGE);
         renderGraph.getBlackBoard().put(RT_IMAGE_NAME,output); }, [&](RenderPassContext& context) {
@@ -59,7 +59,7 @@ void RestirIntegrator::render(RenderGraph& renderGraph) {
             renderContext->bindPushConstants(pcPath);
             renderContext->bindImage(0, renderGraph.getBlackBoard().getImageView(RT_IMAGE_NAME));
          renderContext->traceRay(commandBuffer, {width, height, 1});
-    
+
             pcPath.frame_num++;
             pcPath.frame_num_from_view_changed++; });
 
