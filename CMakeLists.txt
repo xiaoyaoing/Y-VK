@@ -21,35 +21,23 @@ file(GLOB_RECURSE shaders_src CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.h
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.rcall
     ${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.rint
-    #${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.hlsl
 )
 
-# 将 HLSL 文件添加到项目中，但不编译它们
-#set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/shaders/*.hlsl PROPERTIES HEADER_FILE_ONLY TRUE)
-
 set(BINARY_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/target")
-
-# set ouput folder
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BINARY_ROOT_DIR}/bin)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${BINARY_ROOT_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${BINARY_ROOT_DIR}/lib)
 set(CMAKE_PDB_OUTPUT_DIRECTORY ${BINARY_ROOT_DIR}/bin)
 set(Y_VK_THIRD_PARTY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/ext")
+set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders")
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/ext/tinygltf)
 add_subdirectory(ext)
-add_subdirectory(src/framework)
+add_subdirectory(src/rhi)
+add_subdirectory(src/engine)
+add_subdirectory(src/rendercore)
+add_subdirectory(src/render_modules)
+add_subdirectory(src/app)
 
-add_subdirectory(src/RayTracer)
-add_subdirectory(src/samples/renderGraphTest)
-add_subdirectory(src/samples/computePipelineTest)
-add_subdirectory(src/samples/vxgi)
-add_subdirectory(src/samples/pbrLab)
-add_subdirectory(src/samples/ssgi)
-add_subdirectory(src/samples/meshShaderGrass)
-add_subdirectory(src/samples/triangle)
-add_subdirectory(src/samples/tinynanite)
-#add_subdirectory(src/samples/visualize_texture)
-
-# add_subdirectory(src/samples/vxgiapp)
 file(COPY shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+

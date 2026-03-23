@@ -7,22 +7,34 @@
     },
     {
       "type": "ddgi",
-      "ray_per_probe": 256,
-      "probe_distance": 0.3,
-      "normal_bias" : 0.4,
+      "ray_per_probe": 128,
+      "probe_distance": 1,
+      "probe_counts": [40, 40, 40],
+      "probe_start_position": [-1.35,-0.35,-1.35],
+      "normal_bias" : 0.6,
+      "view_bias" : 0.1,
       "use_rt_gbuffer" : true
     }
   ],
+
+  "lights": [
+    {
+      "type": "directional",
+      "direction": [0.6,-0.435,-0.816],
+      "intensity": 1.5
+    }
+  ],
+  
   "integrator": {
     "type": "ddgi"
   },
-  "scene_path": "E:\\code\\RTXGI\\media\\cornell_box\\cornell_box.gltf",
+  "scene_path": "E:\\code\\RTXGI\\media\\glTF-Sample-Models\\2.0\\Sponza\\glTF\\Sponza.gltf",
   "scene_scale": 1.0,
   "scene_translation": [
     0.0,
     0.0,
     0.0
   ],
-  "window_width": 1920,
-  "window_height": 1080
+  "window_width": 1571,
+  "window_height": 1074
 }
