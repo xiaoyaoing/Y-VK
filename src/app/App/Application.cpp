@@ -1,5 +1,5 @@
-//
-// Created by 打工�?on 2023/3/19.
+﻿//
+// Created by 鎵撳伐浜?on 2023/3/19.
 //
 
 #include "Application.h"
@@ -26,8 +26,58 @@
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include <imgui.h>
+#include <imgui_internal.h>
 #include "Core/SwapChain.h"
 #include <volk.h>
+#include <algorithm>
+
+namespace {
+const char* renderPassTypeToString(RenderPassType type) {
+    switch (type) {
+        case RenderPassType::GRAPHICS:
+            return "Graphics";
+        case RenderPassType::COMPUTE:
+            return "Compute";
+        case RenderPassType::RAYTRACING:
+            return "RayTracing";
+        case RenderPassType::TRANSFER:
+            return "Transfer";
+        default:
+            return "Unknown";
+    }
+}
+
+void beginEditorDockspace() {
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->WorkPos);
+    ImGui::SetNextWindowSize(viewport->WorkSize);
+    ImGui::SetNextWindowViewport(viewport->ID);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+    constexpr ImGuiWindowFlags hostWindowFlags =
+        ImGuiWindowFlags_NoDocking |
+        ImGuiWindowFlags_NoTitleBar |
+        ImGuiWindowFlags_NoCollapse |
+        ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoBringToFrontOnFocus |
+        ImGuiWindowFlags_NoNavFocus |
+        ImGuiWindowFlags_NoBackground;
+
+    ImGui::Begin("EditorDockspace", nullptr, hostWindowFlags);
+    ImGui::PopStyleVar(3);
+    ImGuiID dockspaceId = ImGui::GetID("EditorDockspaceRoot");
+    ImGui::DockSpace(dockspaceId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
+    ImGui::End();
+}
+
+void setNextWindowDockSize(float width, float height, ImGuiCond cond = ImGuiCond_FirstUseEver) {
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowSize(ImVec2(viewport->WorkSize.x * width, viewport->WorkSize.y * height), cond);
+}
+} // namespace
 
 
 /*
@@ -221,6 +271,7 @@ void Application::update() {
     vkResetFences(device->getHandle(), 1, &fence);
 
     RenderGraph graph(*device);
+    graph.setProfilingEnabled(mRenderGraphProfilingEnabled);
     graph.importTexture(RENDER_VIEW_PORT_IMAGE_NAME, &renderContext->getCurHwtexture());
     
     if (scene && scene->getLoadCompleteInfo().GetSceneLoaded()) {
@@ -241,6 +292,36 @@ void Application::update() {
     graph.execute(renderContext->getGraphicCommandBuffer());
 
     renderContext->submitAndPresent(renderContext->getGraphicCommandBuffer(), fence);
+
+    mRenderGraphProfile.passes.clear();
+    mRenderGraphProfile.totalCpuMs      = graph.getFrameProfile().totalCpuMs;
+    mRenderGraphProfile.totalGpuMs      = 0.0;
+    mRenderGraphProfile.activePassCount = graph.getFrameProfile().activePassCount;
+    mRenderGraphProfile.gpuSupported    = renderContext->isTimestampProfilingSupported();
+    mRenderGraphProfile.passes.reserve(graph.getFrameProfile().samples.size());
+    for (const auto& sample : graph.getFrameProfile().samples) {
+        mRenderGraphProfile.passes.push_back(RenderGraphProfileView::PassTiming{
+            .name = sample.name,
+            .type = renderPassTypeToString(sample.type),
+            .gpuMs = 0.0,
+            .cpuMs = sample.cpuMs,
+        });
+    }
+
+    const auto& gpuProfile = renderContext->getResolvedTimestampProfile();
+    mRenderGraphProfile.gpuSupported = gpuProfile.supported;
+    mRenderGraphProfile.totalGpuMs   = gpuProfile.totalGpuMs;
+    const size_t mergedCount = std::min(mRenderGraphProfile.passes.size(), gpuProfile.samples.size());
+    for (size_t i = 0; i < mergedCount; ++i) {
+        mRenderGraphProfile.passes[i].gpuMs = gpuProfile.samples[i].gpuMs;
+    }
+
+    if (mRenderGraphProfilingEnabled && mRenderGraphProfile.gpuSupported) {
+        mRenderGraphFrameHistory.push_back(static_cast<float>(mRenderGraphProfile.totalGpuMs));
+        if (mRenderGraphFrameHistory.size() > 180) {
+            mRenderGraphFrameHistory.erase(mRenderGraphFrameHistory.begin());
+        }
+    }
 
     resetImageSave();
 
@@ -281,75 +362,128 @@ void Application::updateGUI() {
     io.DeltaTime   = 0;
 
     gui->newFrame();
+    beginEditorDockspace();
 
-    {
+    setNextWindowDockSize(0.22f, 0.65f);
+    if (ImGui::Begin("Workspace")) {
+        ImGui::TextUnformatted("Session");
+        ImGui::Separator();
+        ImGui::Text("%.2f ms/frame", 1000.f * deltaTime);
+        ImGui::Text("%u fps", deltaTime > 0.f ? toUint32(1.f / deltaTime) : 0);
+        ImGui::Spacing();
 
-        // mainloop
-        //  while(continueRendering)
-        {
-            //...do other stuff like ImGui::NewFrame();
+        ImGui::Checkbox("Profile RenderGraph", &mRenderGraphProfilingEnabled);
+        if (!renderContext->isTimestampProfilingSupported()) {
+            ImGui::TextDisabled("GPU timestamps are not supported on this device/queue.");
+        }
+        ImGui::Checkbox("Save PNG", &imageSave.savePng);
+        ImGui::Checkbox("Save EXR", &imageSave.saveExr);
+        ImGui::Checkbox("Save Camera", &saveCamera);
+        ImGui::Spacing();
 
-            //...do other stuff like ImGui::Render();
+        auto file = gui->showFileDialog("Open Scene", {".gltf", ".json"});
+        if (file != "no file selected") {
+            ctpl::thread_pool pool(1);
+            pool.push([this, file](size_t) {
+                LOGI("file selected: {}", file);
+                sceneAsync = SceneLoaderInterface::LoadSceneFromFile(*device, file, sceneLoadingConfig);
+            });
+        }
+
+        if (!mCurrentTextures.empty()) {
+            auto itemIter = std::ranges::find(mCurrentTextures.begin(), mCurrentTextures.end(), mPresentTexture);
+            int itemCurrent = itemIter != mCurrentTextures.end() ? static_cast<int>(itemIter - mCurrentTextures.begin()) : 0;
+            std::vector<const char*> currentTexturesCStr;
+            currentTexturesCStr.reserve(mCurrentTextures.size());
+            std::ranges::transform(mCurrentTextures.begin(), mCurrentTextures.end(), std::back_inserter(currentTexturesCStr), [](const std::string& str) { return str.c_str(); });
+            if (ImGui::Combo("Preview Target", &itemCurrent, currentTexturesCStr.data(), static_cast<int>(currentTexturesCStr.size()))) {
+                mPresentTexture = mCurrentTextures[itemCurrent];
+            } else if (itemCurrent >= 0 && itemCurrent < static_cast<int>(mCurrentTextures.size())) {
+                mPresentTexture = mCurrentTextures[itemCurrent];
+            }
+        }
+
+        if (scene) {
+            ImGui::Spacing();
+            ImGui::TextUnformatted("Scene");
+            ImGui::Separator();
+            ImGui::TextWrapped("%s", scene->getPath().string().c_str());
         }
     }
+    ImGui::End();
 
-    ImGui::Begin("Basic", nullptr, ImGuiWindowFlags_NoMove);
-    
-    ImGui::Text("%.2f ms/frame ", 1000.f * deltaTime);
-    ImGui::NextColumn();
-    ImGui::Text(" %d fps", toUint32(1.f / deltaTime));
-    ImGui::Checkbox("save png", &imageSave.savePng);
-    ImGui::Checkbox("save exr", &imageSave.saveExr);
-    ImGui::Checkbox("save camera config", &saveCamera);
-
-    auto file = gui->showFileDialog("Select gltf or json file", {".gltf", ".json"});
-
-    if (file != "no file selected") {
-        ctpl::thread_pool pool(1);
-        pool.push([this, file](size_t) {
-            LOGI("file selected: {}", file);
-            sceneAsync = SceneLoaderInterface::LoadSceneFromFile(*device, file, sceneLoadingConfig);
-        });
+    setNextWindowDockSize(0.25f, 0.80f);
+    if (ImGui::Begin("Inspector")) {
+        if (ImGui::CollapsingHeader("Renderer", ImGuiTreeNodeFlags_DefaultOpen)) {
+            onUpdateGUI();
+        }
+        if (camera && ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen)) {
+            camera->onShowInEditor();
+        }
+        if (ImGui::CollapsingHeader("Post Process", ImGuiTreeNodeFlags_DefaultOpen)) {
+            mPostProcessPass->updateGui();
+        }
+        if (view && ImGui::CollapsingHeader("View", ImGuiTreeNodeFlags_DefaultOpen)) {
+            view->updateGui();
+        }
     }
-
-    auto                     itemIter    = std::ranges::find(mCurrentTextures.begin(), mCurrentTextures.end(), mPresentTexture);
-    int                      itemCurrent = itemIter - mCurrentTextures.begin();
-    std::vector<const char*> currentTexturesCStr;
-    std::ranges::transform(mCurrentTextures.begin(), mCurrentTextures.end(), std::back_inserter(currentTexturesCStr), [](const std::string& str) { return str.c_str(); });
-    ImGui::Combo("RenderGraphTextures", &itemCurrent, currentTexturesCStr.data(), currentTexturesCStr.size());
-    mPresentTexture = mCurrentTextures[itemCurrent];
-
     ImGui::End();
-    ImGui::Separator();
 
-    ImGui::Begin("camera", nullptr, ImGuiWindowFlags_NoMove);
-    camera->onShowInEditor();
-    ImGui::End();
-    ImGui::Separator();
-
-    ImGui::Begin("app sepcify", nullptr, ImGuiWindowFlags_NoMove);
-    onUpdateGUI();
-    ImGui::End();
-    
-    ImGui::Separator();
-    
-    mPostProcessPass->updateGui();
-    if(view) view->updateGui();
-
+    setNextWindowDockSize(0.65f, 0.72f);
     auto& texture = g_context->getCurHwtexture();
+    if (ImGui::Begin("Viewport")) {
+        ImVec2 viewportSize = ImGui::GetContentRegionAvail();
+        viewportSize.x = std::max(viewportSize.x, 1.0f);
+        viewportSize.y = std::max(viewportSize.y, 1.0f);
+        ImGui::Image(&texture.getVkImageView(), viewportSize, ImVec2(0, 0), ImVec2(1, 1));
+    }
+    ImGui::End();
 
-    ImGui::SameLine();
+    setNextWindowDockSize(0.65f, 0.28f);
+    if (ImGui::Begin("RenderGraph")) {
+        if (mRenderGraphProfile.gpuSupported) {
+            ImGui::Text("Total GPU: %.3f ms", mRenderGraphProfile.totalGpuMs);
+            ImGui::SameLine();
+        }
+        ImGui::Text("Total CPU: %.3f ms", mRenderGraphProfile.totalCpuMs);
+        ImGui::SameLine();
+        ImGui::Text("| Passes: %u", mRenderGraphProfile.activePassCount);
 
-    ImGui::Begin("Render view port", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoMouseInputs);// Leave room for 1 line below us
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{0.f, 0.f});
+        if (!mRenderGraphFrameHistory.empty()) {
+            float maxValue = 0.0f;
+            for (float sample : mRenderGraphFrameHistory) {
+                maxValue = std::max(maxValue, sample);
+            }
+            maxValue = std::max(maxValue, 0.1f);
+            ImGui::PlotLines("Frame History", mRenderGraphFrameHistory.data(), static_cast<int>(mRenderGraphFrameHistory.size()), 0, nullptr, 0.0f, maxValue * 1.1f, ImVec2(0.0f, 72.0f));
+        }
 
-    ImVec2 size;
-    auto   p = ImGui::GetWindowPos();
-    size.x   = ImGui::GetWindowWidth();
-    size.y   = ImGui::GetWindowHeight();
+        if (ImGui::BeginTable("RenderGraphPassTable", 4, ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_ScrollY)) {
+            ImGui::TableSetupColumn("Pass");
+            ImGui::TableSetupColumn("Type");
+            ImGui::TableSetupColumn("GPU ms", ImGuiTableColumnFlags_WidthFixed, 90.0f);
+            ImGui::TableSetupColumn("CPU ms", ImGuiTableColumnFlags_WidthFixed, 90.0f);
+            ImGui::TableHeadersRow();
 
-    ImGui::Image(&texture.getVkImageView(), size, ImVec2(0, 0), ImVec2(1, 1));
-    ImGui::PopStyleVar();
+            for (const auto& pass : mRenderGraphProfile.passes) {
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::TextUnformatted(pass.name.c_str());
+                ImGui::TableSetColumnIndex(1);
+                ImGui::TextUnformatted(pass.type.c_str());
+                ImGui::TableSetColumnIndex(2);
+                if (mRenderGraphProfile.gpuSupported) {
+                    ImGui::Text("%.3f", pass.gpuMs);
+                } else {
+                    ImGui::TextUnformatted("-");
+                }
+                ImGui::TableSetColumnIndex(3);
+                ImGui::Text("%.3f", pass.cpuMs);
+            }
+
+            ImGui::EndTable();
+        }
+    }
     ImGui::End();
 
     ImGui::Render();
@@ -670,4 +804,5 @@ void Application::onViewUpdated() {
 }
 void Application::preparePerViewData() {
 }
+
 

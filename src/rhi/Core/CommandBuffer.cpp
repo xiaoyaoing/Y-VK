@@ -69,6 +69,14 @@ void CommandBuffer::copyBufferToImage(Buffer& src, Image& dst, const std::vector
                            copyRegions.data());
 }
 
+void CommandBuffer::resetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) const {
+    vkCmdResetQueryPool(mCommandBuffer, queryPool, firstQuery, queryCount);
+}
+
+void CommandBuffer::writeTimestamp(VkPipelineStageFlagBits pipelineStage, VkQueryPool queryPool, uint32_t queryIndex) const {
+    vkCmdWriteTimestamp(mCommandBuffer, pipelineStage, queryPool, queryIndex);
+}
+
 void CommandBuffer::endRenderPass() {
     vkCmdEndRenderPass(mCommandBuffer);
 }

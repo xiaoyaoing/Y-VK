@@ -1,7 +1,7 @@
 #include "Integrator.h"
 
 #include "Scene/Compoments/Camera.h"
-#include "../Utils/RTSceneUtil.h"
+
 #include "Common/Distrib.hpp"
 #include "Common/ResourceCache.h"
 
@@ -126,3 +126,4 @@ void Integrator::bindRaytracingResources(CommandBuffer& commandBuffer)
         g_context->bindImageSampler(6, texture->getImage().getVkImageView(), texture->getSampler(), 1, arrayElement++);
     }
 }
+

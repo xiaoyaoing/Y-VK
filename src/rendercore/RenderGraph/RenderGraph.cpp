@@ -1,9 +1,11 @@
 #include "RenderGraph.h"
 #include "Core/CommandBuffer.h"
+#include "Core/RenderContext.h"
 #include "Core/Pipeline.h"
 #include "Core/Texture.h"
 #include "Scene/SceneLoader/gltfloader.h"
 
+#include <chrono>
 #include <stack>
 
 // void RenderGraph::Builder::read(VirtualResource* resource, PassNode* node)
@@ -388,18 +390,24 @@ bool RenderGraph::needToCutResource(ResourceNode* resourceNode) const {
 }
 
 void RenderGraph::execute(CommandBuffer& commandBuffer) {
+    mFrameProfile.samples.clear();
+    mFrameProfile.totalCpuMs      = 0.0;
+    mFrameProfile.activePassCount = 0;
 
     // DebugUtils::CmdInsertLabel(commandBuffer, "RenderGraph")
 
     //todo handle compile
     compile();
 
+    using Clock = std::chrono::high_resolution_clock;
+    const auto graphStart = mProfilingEnabled ? Clock::now() : Clock::time_point{};
     auto first = mPassNodes.begin();
     while (first != mActivePassNodesEnd) {
-
         const auto pass = *first;
-
         first++;
+        if (mProfilingEnabled) {
+            mFrameProfile.activePassCount++;
+        }
 
         //
         for (const auto& resource : pass->devirtualize) {
@@ -407,12 +415,32 @@ void RenderGraph::execute(CommandBuffer& commandBuffer) {
             //getBlackBoard().put(resource->getName(), resource->handle);
         }
         pass->resolveResourceUsages(*this, commandBuffer);
+        const int gpuSampleIndex = (mProfilingEnabled && g_context)
+            ? g_context->beginPassTimestamp(commandBuffer, pass->getName(), pass->getType())
+            : -1;
+        const auto passStart = mProfilingEnabled ? Clock::now() : Clock::time_point{};
         pass->execute(*this, commandBuffer);
+        if (mProfilingEnabled && g_context) {
+            g_context->endPassTimestamp(commandBuffer, gpuSampleIndex);
+        }
+        if (mProfilingEnabled) {
+            const auto passEnd = Clock::now();
+            const auto passMs  = std::chrono::duration<double, std::milli>(passEnd - passStart).count();
+            mFrameProfile.samples.push_back(PassProfileSample{
+                .name = pass->getName(),
+                .type = pass->getType(),
+                .cpuMs = passMs,
+            });
+        }
 
         for (const auto& resourceNode : pass->destroy) {
             //getBlackBoard().remove(texture->getName());
             resourceNode->destroy();
         }
+    }
+
+    if (mProfilingEnabled) {
+        mFrameProfile.totalCpuMs = std::chrono::duration<double, std::milli>(Clock::now() - graphStart).count();
     }
 }
 
@@ -425,6 +453,18 @@ RenderGraphHandle RenderGraph::importTexture(const std::string& name, SgImage* h
     DebugUtils::SetObjectName(device.getHandle(),reinterpret_cast<uint64_t>(texture->getHwTexture()->getVkImage().getHandle()),VK_OBJECT_TYPE_IMAGE,name);
     if (addRef) texture->addRef();
     return addTexture(texture);
+}
+
+void RenderGraph::setProfilingEnabled(bool enabled) {
+    mProfilingEnabled = enabled;
+}
+
+bool RenderGraph::isProfilingEnabled() const {
+    return mProfilingEnabled;
+}
+
+const RenderGraph::FrameProfile& RenderGraph::getFrameProfile() const {
+    return mFrameProfile;
 }
 
 // RenderGraphHandle RenderGraph::Builder::readTexture(RenderGraphHandle input,

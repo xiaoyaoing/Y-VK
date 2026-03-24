@@ -11,6 +11,7 @@
 #include "Scene/Scene.h"
 #include "Core/BufferPool.h"
 #include "Images/VirtualViewport.h"
+#include <string>
 
 class Device;
 
@@ -27,6 +28,7 @@ class View;
 
 struct FrameResource {
     static constexpr uint32_t BUFFER_POOL_BLOCK_SIZE = 256;
+    static constexpr uint32_t MAX_TIMESTAMP_QUERIES = 512;
 
     const std::unordered_map<VkBufferUsageFlags, uint32_t> supported_usage_map = {
         {VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 1},
@@ -36,15 +38,33 @@ struct FrameResource {
         {VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 1}};
 
     FrameResource(Device&);
-
-    ~FrameResource() = default;
+    ~FrameResource();
 
     void reset();
+
+    struct TimestampSample {
+        std::string    name;
+        RenderPassType type{RenderPassType::UNDEFINED};
+        uint32_t       beginQuery{0};
+        uint32_t       endQuery{0};
+        double         gpuMs{0.0};
+    };
+
+    struct TimestampProfile {
+        std::vector<TimestampSample> samples;
+        double                       totalGpuMs{0.0};
+        bool                         supported{false};
+    };
 
     std::unique_ptr<CommandBuffer> graphicCommandBuffer{nullptr};
     // std::unique_ptr<CommandBuffer> computeComputeBuffer{nullptr};
 
     std::unordered_map<VkBufferUsageFlags, std::unique_ptr<BufferPool>> bufferPools{};
+    Device*                                            device{nullptr};
+    VkQueryPool                                        timestampQueryPool{VK_NULL_HANDLE};
+    uint32_t                                           nextTimestampQuery{0};
+    std::vector<TimestampSample>                       pendingTimestampSamples{};
+    TimestampProfile                                   resolvedTimestampProfile{};
     // CommandBuffer commandBuffer;
 };
 
@@ -184,8 +204,14 @@ public:
     void copyBuffer(const Buffer& src, Buffer& dst);
     void setFlipViewport(bool flip);
     bool getFlipViewport() const;
+    bool isTimestampProfilingSupported() const;
+    int beginPassTimestamp(CommandBuffer& commandBuffer, const std::string& name, RenderPassType type);
+    void endPassTimestamp(CommandBuffer& commandBuffer, int sampleIndex);
+    const FrameResource::TimestampProfile& getResolvedTimestampProfile() const;
 
 private:
+    void resolveTimestampProfile(uint32_t frameIndex);
+
     bool        frameActive = false;
     VkSemaphore acquiredSem;
     bool        prepared{false};
@@ -221,6 +247,8 @@ private:
     std::vector<uint8_t> storePushConstants;
     uint32_t             maxPushConstantSize;
     bool                 flipViewport = true;
+    bool                 timestampProfilingSupported{false};
+    float                timestampPeriod{0.0f};
 };
 
 extern RenderContext* g_context;

@@ -8,6 +8,8 @@
 #include "Core/RenderPass.h"
 #include "BlackBoard.h"
 #include "RenderGraphBuffer.h"
+#include <string>
+#include <vector>
 /**render Graph **/
 /*
  * 1.add pass 需要指明pass的输入 注册RenderGraphTexture 这一步会添加passNode 这里node会根据传入的RenderGraphPass::Descriptor创建RenderTarget
@@ -47,6 +49,18 @@ class CommandBuffer;
 
 class RenderGraph {
 public:
+    struct PassProfileSample {
+        std::string   name;
+        RenderPassType type{RenderPassType::UNDEFINED};
+        double        cpuMs{0.0};
+    };
+
+    struct FrameProfile {
+        std::vector<PassProfileSample> samples;
+        double                         totalCpuMs{0.0};
+        uint32_t                       activePassCount{0};
+    };
+
     RenderGraph(Device& device);
 
     RenderGraph(RenderGraph& rhs) = delete;
@@ -179,6 +193,9 @@ public:
 
     bool getCutUnUsedResources() const;
     void setCutUnUsedResources(const bool cut_un_used_resources);
+    void setProfilingEnabled(bool enabled);
+    bool isProfilingEnabled() const;
+    const FrameProfile& getFrameProfile() const;
     ResourceStateTracker& getResourceStateTracker(){
         return resourceStateTracker;
     }
@@ -246,6 +263,8 @@ private:
 
     //when an algothrim is not completed,some resource may be cutted,which is not desired for debug process
     bool cutUnUsedResources{true};
+    bool mProfilingEnabled{false};
+    FrameProfile mFrameProfile{};
 
     // std::vector<std::unique_ptr<Vi>>
 };

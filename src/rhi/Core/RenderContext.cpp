@@ -1,5 +1,5 @@
-//
-// Created by 打工人 on 2023/3/30.
+﻿//
+// Created by 鎵撳伐浜?on 2023/3/30.
 //
 #include "RenderContext.h"
 #include "Core/CommandBuffer.h"
@@ -22,6 +22,7 @@
 #include "RayTracing/Accel.h"
 #include "RayTracing/SbtWarpper.h"
 
+#include <limits>
 #include <unordered_set>
 
 RenderContext* g_context = nullptr;
@@ -32,10 +33,23 @@ void FrameResource::reset() {
 }
 
 FrameResource::FrameResource(Device& device) {
+    this->device = &device;
     for (auto& it : supported_usage_map) {
         bufferPools.emplace(
             it.first,
             std::move(std::make_unique<BufferPool>(device, BUFFER_POOL_BLOCK_SIZE * it.second * 1024, it.first)));
+    }
+
+    VkQueryPoolCreateInfo queryPoolInfo{};
+    queryPoolInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    queryPoolInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
+    queryPoolInfo.queryCount = MAX_TIMESTAMP_QUERIES;
+    VK_CHECK_RESULT(vkCreateQueryPool(device.getHandle(), &queryPoolInfo, nullptr, &timestampQueryPool));
+}
+
+FrameResource::~FrameResource() {
+    if (device && timestampQueryPool != VK_NULL_HANDLE) {
+        vkDestroyQueryPool(device->getHandle(), timestampQueryPool, nullptr);
     }
 }
 
@@ -82,6 +96,10 @@ RenderContext::RenderContext(Device& device, VkSurfaceKHR surface, Window& windo
     }
 
     maxPushConstantSize = device.getProperties().limits.maxPushConstantsSize;
+    timestampPeriod = device.getProperties().limits.timestampPeriod;
+    timestampProfilingSupported =
+        device.getProperties().limits.timestampComputeAndGraphics &&
+        device.getQueueByFlag(VK_QUEUE_GRAPHICS_BIT, 0).getProp().timestampValidBits > 0;
     virtualViewport     = std::make_unique<VirtualViewport>(device, VkExtent2D{1920, 1080}, getSwapChainImageCount());
 }
 
@@ -96,6 +114,12 @@ void RenderContext::beginFrame() {
 
     auto& commandBuffer = getGraphicCommandBuffer();
     commandBuffer.beginRecord(0);
+    if (timestampProfilingSupported) {
+        auto& frameResource = *frameResources[activeFrameIndex];
+        frameResource.nextTimestampQuery = 0;
+        frameResource.pendingTimestampSamples.clear();
+        commandBuffer.resetQueryPool(frameResource.timestampQueryPool, 0, FrameResource::MAX_TIMESTAMP_QUERIES);
+    }
 
     commandBuffer.setViewport(0, {vkCommon::initializers::viewport(float(getViewPortExtent().width), float(getViewPortExtent().height), 0.0f, 1.0f, flipViewport)});
     commandBuffer.setScissor(0, {vkCommon::initializers::rect2D(float(getViewPortExtent().width), float(getViewPortExtent().height), 0, 0)});
@@ -152,6 +176,7 @@ void RenderContext::submitAndPresent(CommandBuffer& commandBuffer, VkFence fence
         frameActive = false;
     }
     queue.wait();
+    resolveTimestampProfile(activeFrameIndex);
 }
 
 void RenderContext::submit(CommandBuffer& commandBuffer, bool waiteFence,VkQueueFlagBits queueFlags ) {
@@ -751,4 +776,98 @@ void RenderContext::setFlipViewport(bool flip) {
 }
 bool RenderContext::getFlipViewport() const {
     return flipViewport;
+}
+
+bool RenderContext::isTimestampProfilingSupported() const {
+    return timestampProfilingSupported;
+}
+
+int RenderContext::beginPassTimestamp(CommandBuffer& commandBuffer, const std::string& name, RenderPassType type) {
+    if (!timestampProfilingSupported) {
+        return -1;
+    }
+
+    auto& frameResource = *frameResources[activeFrameIndex];
+    if (frameResource.nextTimestampQuery + 1 >= FrameResource::MAX_TIMESTAMP_QUERIES) {
+        return -1;
+    }
+
+    const uint32_t beginQuery = frameResource.nextTimestampQuery++;
+    const uint32_t endQuery   = frameResource.nextTimestampQuery++;
+    frameResource.pendingTimestampSamples.push_back(FrameResource::TimestampSample{
+        .name = name,
+        .type = type,
+        .beginQuery = beginQuery,
+        .endQuery = endQuery,
+    });
+    commandBuffer.writeTimestamp(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, frameResource.timestampQueryPool, beginQuery);
+    return static_cast<int>(frameResource.pendingTimestampSamples.size() - 1);
+}
+
+void RenderContext::endPassTimestamp(CommandBuffer& commandBuffer, int sampleIndex) {
+    if (!timestampProfilingSupported || sampleIndex < 0) {
+        return;
+    }
+
+    auto& frameResource = *frameResources[activeFrameIndex];
+    if (sampleIndex >= static_cast<int>(frameResource.pendingTimestampSamples.size())) {
+        return;
+    }
+
+    commandBuffer.writeTimestamp(
+        VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+        frameResource.timestampQueryPool,
+        frameResource.pendingTimestampSamples[sampleIndex].endQuery);
+}
+
+const FrameResource::TimestampProfile& RenderContext::getResolvedTimestampProfile() const {
+    return frameResources[activeFrameIndex]->resolvedTimestampProfile;
+}
+
+void RenderContext::resolveTimestampProfile(uint32_t frameIndex) {
+    auto& frameResource = *frameResources[frameIndex];
+    frameResource.resolvedTimestampProfile.samples.clear();
+    frameResource.resolvedTimestampProfile.totalGpuMs = 0.0;
+    frameResource.resolvedTimestampProfile.supported = timestampProfilingSupported;
+
+    if (!timestampProfilingSupported || frameResource.pendingTimestampSamples.empty()) {
+        return;
+    }
+
+    std::vector<uint64_t> timestamps(frameResource.nextTimestampQuery, 0);
+    VkResult result = vkGetQueryPoolResults(
+        device.getHandle(),
+        frameResource.timestampQueryPool,
+        0,
+        frameResource.nextTimestampQuery,
+        sizeof(uint64_t) * timestamps.size(),
+        timestamps.data(),
+        sizeof(uint64_t),
+        VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+
+    if (result != VK_SUCCESS) {
+        return;
+    }
+
+    for (const auto& sample : frameResource.pendingTimestampSamples) {
+        if (sample.beginQuery >= timestamps.size() || sample.endQuery >= timestamps.size()) {
+            continue;
+        }
+
+        const uint64_t beginTick = timestamps[sample.beginQuery];
+        const uint64_t endTick = timestamps[sample.endQuery];
+        if (endTick < beginTick) {
+            continue;
+        }
+
+        const double gpuMs = static_cast<double>(endTick - beginTick) * static_cast<double>(timestampPeriod) / 1000000.0;
+        frameResource.resolvedTimestampProfile.samples.push_back(FrameResource::TimestampSample{
+            .name = sample.name,
+            .type = sample.type,
+            .beginQuery = sample.beginQuery,
+            .endQuery = sample.endQuery,
+            .gpuMs = gpuMs,
+        });
+        frameResource.resolvedTimestampProfile.totalGpuMs += gpuMs;
+    }
 }

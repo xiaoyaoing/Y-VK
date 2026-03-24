@@ -12,4 +12,4 @@ target_include_directories(framework INTERFACE
 
 set(FRAMEWORK_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}" CACHE PATH "Path to the framework include directory")
 
-add_subdirectory(viewer)
+add_subdirectory(editor)

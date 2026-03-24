@@ -36,8 +36,8 @@ add_subdirectory(ext)
 add_subdirectory(src/rhi)
 add_subdirectory(src/engine)
 add_subdirectory(src/rendercore)
+add_subdirectory(src/render_features)
 add_subdirectory(src/render_modules)
 add_subdirectory(src/app)
 
 file(COPY shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-

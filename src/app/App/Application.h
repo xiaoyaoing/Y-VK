@@ -14,6 +14,7 @@
 
 #include "Common/Timer.h"
 #include "Core/View.h"
+#include "RenderGraph/RenderGraph.h"
 #include "RenderPasses/RenderPassBase.h"
 #include "Scene/SceneLoader/SceneLoadingConfig.h"
 
@@ -102,6 +103,21 @@ protected:
     void resetImageSave();
     //void loadScene(const std::string & path);
 protected:
+    struct RenderGraphProfileView {
+        struct PassTiming {
+            std::string name;
+            std::string type;
+            double      gpuMs{0.0};
+            double      cpuMs{0.0};
+        };
+
+        std::vector<PassTiming> passes;
+        double                  totalGpuMs{0.0};
+        double                  totalCpuMs{0.0};
+        uint32_t                activePassCount{0};
+        bool                    gpuSupported{false};
+    };
+
     VmaAllocator _allocator{};
 
     float deltaTime{0};
@@ -153,6 +169,9 @@ protected:
 protected:
     bool sceneFirstLoad{true};
     RTConfing config;
+    bool mRenderGraphProfilingEnabled{true};
+    RenderGraphProfileView mRenderGraphProfile{};
+    std::vector<float> mRenderGraphFrameHistory{};
 
 private:
     std::string               mPresentTexture = RENDER_VIEW_PORT_IMAGE_NAME;

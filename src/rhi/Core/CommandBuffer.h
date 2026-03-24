@@ -61,6 +61,8 @@ public:
     void bindIndicesBuffer(const Buffer& buffer, VkDeviceSize offset, VkIndexType indexType = VK_INDEX_TYPE_UINT16);
 
     void copyBufferToImage(Buffer&, Image&, const std::vector<VkBufferImageCopy>& copyRegions);
+    void resetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) const;
+    void writeTimestamp(VkPipelineStageFlagBits pipelineStage, VkQueryPool queryPool, uint32_t queryIndex) const;
 
     inline void bindPipeline(const VkPipeline& pipeline) const {
         vkCmdBindPipeline(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
