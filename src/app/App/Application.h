@@ -170,6 +170,7 @@ protected:
     bool sceneFirstLoad{true};
     RTConfing config;
     bool mRenderGraphProfilingEnabled{true};
+    bool mEditorLayoutInitialized{false};
     RenderGraphProfileView mRenderGraphProfile{};
     std::vector<float> mRenderGraphFrameHistory{};
 

@@ -165,7 +165,6 @@ Gui::Gui(Device& device) : device(device) {
 }
 Gui::~Gui() {
     vkDestroyPipeline(device.getHandle(), pipeline, nullptr);
-    ImGui::SaveIniSettingsToDisk(FileUtils::getResourcePath("imgui.ini").c_str());
 }
 
 bool Gui::inputEvent(const InputEvent& input_event) {
@@ -311,7 +310,8 @@ void Gui::prepareResoucrces(Application* app) {
 
     ImGui::GetIO().Fonts->SetTexID(&fontTexture->getImage().getVkImageView());
 
-    ImGui::LoadIniSettingsFromDisk(iniFileName.c_str());
+    // Keep editor layout deterministic: do not restore stale dock/window state from imgui.ini.
+    ImGui::GetIO().IniFilename = nullptr;
 }
 
 bool Gui::update() {

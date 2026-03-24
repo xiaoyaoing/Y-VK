@@ -73,6 +73,30 @@ void beginEditorDockspace() {
     ImGui::End();
 }
 
+void buildEditorDockLayout(bool& initialized) {
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    const ImGuiID dockspaceId = ImGui::GetID("EditorDockspaceRoot");
+    ImGuiDockNode* dockNode = ImGui::DockBuilderGetNode(dockspaceId);
+    if (initialized && dockNode != nullptr) {
+        return;
+    }
+
+    initialized = true;
+    ImGui::DockBuilderRemoveNode(dockspaceId);
+    ImGui::DockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags_DockSpace);
+    ImGui::DockBuilderSetNodeSize(dockspaceId, viewport->WorkSize);
+
+    ImGuiID rootDock = dockspaceId;
+    ImGuiID settingsDock = ImGui::DockBuilderSplitNode(rootDock, ImGuiDir_Left, 0.30f, nullptr, &rootDock);
+    ImGuiID profileDock = ImGui::DockBuilderSplitNode(rootDock, ImGuiDir_Down, 0.30f, nullptr, &rootDock);
+    ImGuiID viewportDock = rootDock;
+
+    ImGui::DockBuilderDockWindow("Settings", settingsDock);
+    ImGui::DockBuilderDockWindow("Viewport", viewportDock);
+    ImGui::DockBuilderDockWindow("Profile", profileDock);
+    ImGui::DockBuilderFinish(dockspaceId);
+}
+
 void setNextWindowDockSize(float width, float height, ImGuiCond cond = ImGuiCond_FirstUseEver) {
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowSize(ImVec2(viewport->WorkSize.x * width, viewport->WorkSize.y * height), cond);
@@ -363,57 +387,76 @@ void Application::updateGUI() {
 
     gui->newFrame();
     beginEditorDockspace();
+    buildEditorDockLayout(mEditorLayoutInitialized);
 
-    setNextWindowDockSize(0.22f, 0.65f);
-    if (ImGui::Begin("Workspace")) {
-        ImGui::TextUnformatted("Session");
-        ImGui::Separator();
-        ImGui::Text("%.2f ms/frame", 1000.f * deltaTime);
-        ImGui::Text("%u fps", deltaTime > 0.f ? toUint32(1.f / deltaTime) : 0);
-        ImGui::Spacing();
-
-        ImGui::Checkbox("Profile RenderGraph", &mRenderGraphProfilingEnabled);
-        if (!renderContext->isTimestampProfilingSupported()) {
-            ImGui::TextDisabled("GPU timestamps are not supported on this device/queue.");
+    if (ImGui::BeginMainMenuBar()) {
+        ImGui::TextUnformatted("YVK Editor");
+        ImGui::SeparatorText("Runtime");
+        ImGui::Text("%.2f ms", 1000.f * deltaTime);
+        ImGui::SeparatorText("Graph");
+        if (mRenderGraphProfile.gpuSupported) {
+            ImGui::Text("GPU %.2f ms", mRenderGraphProfile.totalGpuMs);
+        } else {
+            ImGui::Text("CPU %.2f ms", mRenderGraphProfile.totalCpuMs);
         }
-        ImGui::Checkbox("Save PNG", &imageSave.savePng);
-        ImGui::Checkbox("Save EXR", &imageSave.saveExr);
-        ImGui::Checkbox("Save Camera", &saveCamera);
-        ImGui::Spacing();
+        ImGui::EndMainMenuBar();
+    }
 
-        auto file = gui->showFileDialog("Open Scene", {".gltf", ".json"});
-        if (file != "no file selected") {
-            ctpl::thread_pool pool(1);
-            pool.push([this, file](size_t) {
-                LOGI("file selected: {}", file);
-                sceneAsync = SceneLoaderInterface::LoadSceneFromFile(*device, file, sceneLoadingConfig);
-            });
+    setNextWindowDockSize(0.30f, 1.0f, ImGuiCond_Once);
+    if (ImGui::Begin("Settings", nullptr, ImGuiWindowFlags_NoSavedSettings)) {
+        if (ImGui::BeginChild("SessionCard", ImVec2(0.0f, 120.0f), ImGuiChildFlags_Border)) {
+            ImGui::TextUnformatted("Session");
+            ImGui::Separator();
+            ImGui::Text("%.2f ms/frame", 1000.f * deltaTime);
+            ImGui::Text("%u fps", deltaTime > 0.f ? toUint32(1.f / deltaTime) : 0);
+            ImGui::Text("Renderer passes: %u", mRenderGraphProfile.activePassCount);
         }
+        ImGui::EndChild();
 
-        if (!mCurrentTextures.empty()) {
-            auto itemIter = std::ranges::find(mCurrentTextures.begin(), mCurrentTextures.end(), mPresentTexture);
-            int itemCurrent = itemIter != mCurrentTextures.end() ? static_cast<int>(itemIter - mCurrentTextures.begin()) : 0;
-            std::vector<const char*> currentTexturesCStr;
-            currentTexturesCStr.reserve(mCurrentTextures.size());
-            std::ranges::transform(mCurrentTextures.begin(), mCurrentTextures.end(), std::back_inserter(currentTexturesCStr), [](const std::string& str) { return str.c_str(); });
-            if (ImGui::Combo("Preview Target", &itemCurrent, currentTexturesCStr.data(), static_cast<int>(currentTexturesCStr.size()))) {
-                mPresentTexture = mCurrentTextures[itemCurrent];
-            } else if (itemCurrent >= 0 && itemCurrent < static_cast<int>(mCurrentTextures.size())) {
-                mPresentTexture = mCurrentTextures[itemCurrent];
-            }
-        }
-
-        if (scene) {
-            ImGui::Spacing();
+        if (ImGui::BeginChild("SceneCard", ImVec2(0.0f, 0.0f), ImGuiChildFlags_Border)) {
             ImGui::TextUnformatted("Scene");
             ImGui::Separator();
-            ImGui::TextWrapped("%s", scene->getPath().string().c_str());
-        }
-    }
-    ImGui::End();
+            auto file = gui->showFileDialog("Open Scene", {".gltf", ".json"});
+            if (file != "no file selected") {
+                ctpl::thread_pool pool(1);
+                pool.push([this, file](size_t) {
+                    LOGI("file selected: {}", file);
+                    sceneAsync = SceneLoaderInterface::LoadSceneFromFile(*device, file, sceneLoadingConfig);
+                });
+            }
 
-    setNextWindowDockSize(0.25f, 0.80f);
-    if (ImGui::Begin("Inspector")) {
+            if (!mCurrentTextures.empty()) {
+                auto itemIter = std::ranges::find(mCurrentTextures.begin(), mCurrentTextures.end(), mPresentTexture);
+                int itemCurrent = itemIter != mCurrentTextures.end() ? static_cast<int>(itemIter - mCurrentTextures.begin()) : 0;
+                std::vector<const char*> currentTexturesCStr;
+                currentTexturesCStr.reserve(mCurrentTextures.size());
+                std::ranges::transform(mCurrentTextures.begin(), mCurrentTextures.end(), std::back_inserter(currentTexturesCStr), [](const std::string& str) { return str.c_str(); });
+                if (ImGui::Combo("Preview Target", &itemCurrent, currentTexturesCStr.data(), static_cast<int>(currentTexturesCStr.size()))) {
+                    mPresentTexture = mCurrentTextures[itemCurrent];
+                } else if (itemCurrent >= 0 && itemCurrent < static_cast<int>(mCurrentTextures.size())) {
+                    mPresentTexture = mCurrentTextures[itemCurrent];
+                }
+            }
+
+            ImGui::Checkbox("Profile RenderGraph", &mRenderGraphProfilingEnabled);
+            ImGui::Checkbox("Save PNG", &imageSave.savePng);
+            ImGui::Checkbox("Save EXR", &imageSave.saveExr);
+            ImGui::Checkbox("Save Camera", &saveCamera);
+            if (!renderContext->isTimestampProfilingSupported()) {
+                ImGui::TextDisabled("GPU timestamps are not supported on this device/queue.");
+            }
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            if (scene) {
+                ImGui::TextWrapped("%s", scene->getPath().string().c_str());
+            } else {
+                ImGui::TextDisabled("No scene loaded.");
+            }
+        }
+        ImGui::EndChild();
+
+        ImGui::Spacing();
         if (ImGui::CollapsingHeader("Renderer", ImGuiTreeNodeFlags_DefaultOpen)) {
             onUpdateGUI();
         }
@@ -429,9 +472,11 @@ void Application::updateGUI() {
     }
     ImGui::End();
 
-    setNextWindowDockSize(0.65f, 0.72f);
+    setNextWindowDockSize(0.70f, 0.70f, ImGuiCond_Once);
     auto& texture = g_context->getCurHwtexture();
-    if (ImGui::Begin("Viewport")) {
+    if (ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
+        ImGui::TextUnformatted("Viewport");
+        ImGui::Separator();
         ImVec2 viewportSize = ImGui::GetContentRegionAvail();
         viewportSize.x = std::max(viewportSize.x, 1.0f);
         viewportSize.y = std::max(viewportSize.y, 1.0f);
@@ -439,24 +484,25 @@ void Application::updateGUI() {
     }
     ImGui::End();
 
-    setNextWindowDockSize(0.65f, 0.28f);
-    if (ImGui::Begin("RenderGraph")) {
-        if (mRenderGraphProfile.gpuSupported) {
-            ImGui::Text("Total GPU: %.3f ms", mRenderGraphProfile.totalGpuMs);
-            ImGui::SameLine();
-        }
-        ImGui::Text("Total CPU: %.3f ms", mRenderGraphProfile.totalCpuMs);
-        ImGui::SameLine();
-        ImGui::Text("| Passes: %u", mRenderGraphProfile.activePassCount);
-
-        if (!mRenderGraphFrameHistory.empty()) {
-            float maxValue = 0.0f;
-            for (float sample : mRenderGraphFrameHistory) {
-                maxValue = std::max(maxValue, sample);
+    setNextWindowDockSize(0.70f, 0.30f, ImGuiCond_Once);
+    if (ImGui::Begin("Profile", nullptr, ImGuiWindowFlags_NoSavedSettings)) {
+        if (ImGui::BeginChild("GraphSummary", ImVec2(0.0f, 96.0f), ImGuiChildFlags_Border)) {
+            if (mRenderGraphProfile.gpuSupported) {
+                ImGui::Text("Total GPU: %.3f ms", mRenderGraphProfile.totalGpuMs);
             }
-            maxValue = std::max(maxValue, 0.1f);
-            ImGui::PlotLines("Frame History", mRenderGraphFrameHistory.data(), static_cast<int>(mRenderGraphFrameHistory.size()), 0, nullptr, 0.0f, maxValue * 1.1f, ImVec2(0.0f, 72.0f));
+            ImGui::Text("Total CPU: %.3f ms", mRenderGraphProfile.totalCpuMs);
+            ImGui::Text("Passes: %u", mRenderGraphProfile.activePassCount);
+
+            if (!mRenderGraphFrameHistory.empty()) {
+                float maxValue = 0.0f;
+                for (float sample : mRenderGraphFrameHistory) {
+                    maxValue = std::max(maxValue, sample);
+                }
+                maxValue = std::max(maxValue, 0.1f);
+                ImGui::PlotLines("Frame History", mRenderGraphFrameHistory.data(), static_cast<int>(mRenderGraphFrameHistory.size()), 0, nullptr, 0.0f, maxValue * 1.1f, ImVec2(0.0f, 48.0f));
+            }
         }
+        ImGui::EndChild();
 
         if (ImGui::BeginTable("RenderGraphPassTable", 4, ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_ScrollY)) {
             ImGui::TableSetupColumn("Pass");
